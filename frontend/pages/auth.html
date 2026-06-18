@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication - Vibentra</title>
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#0F172A">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png" type="image/png">
+    <link rel="stylesheet" id="mainCss" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js')
+                    .then(registration => console.log('ServiceWorker registered'))
+                    .catch(error => console.log('ServiceWorker registration failed: ', error));
+            });
+        }
+
+        // Aggressive fix for browser dropping CSS cache on back navigation
+        window.addEventListener("pageshow", function (event) {
+            var historyTraversal = event.persisted || 
+                                   (typeof window.performance != "undefined" && 
+                                    window.performance.navigation.type === 2);
+            if (historyTraversal) {
+                window.location.reload();
+            }
+            
+            // Force CSS to re-evaluate just in case BFCache corrupted it
+            const cssNode = document.getElementById('mainCss');
+            if (cssNode) {
+                cssNode.href = '../css/style.css?v=' + new Date().getTime();
+            }
+        });
+        
+        // Also apply theme immediately on load to prevent flash
+        const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
+        const themes = {
+            'default': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: '#1E293B' },
+            'ocean': { primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: '#0C4A6E' },
+            'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
+            'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
+            'cherry': { primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: '#881337' },
+            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' }
+        };
+        const theme = themes[savedTheme] || themes['default'];
+        document.documentElement.style.setProperty('--primary', theme.primary);
+        document.documentElement.style.setProperty('--secondary', theme.secondary);
+        document.documentElement.style.setProperty('--accent', theme.accent);
+        document.documentElement.style.setProperty('--background', theme.background);
+        document.documentElement.style.setProperty('--cards', theme.cards);
+    </script>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Login Form -->
+        <div class="glass-panel auth-card" id="loginCard">
+            <h2>Welcome Back</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" class="form-control" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" required placeholder="Enter your password">
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn">Login</button>
+            </form>
+            
+            <div class="divider">OR</div>
+            
+            <button id="googleLoginBtn" class="btn google-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Sign in with Google
+            </button>
+            
+            <div class="auth-links">
+                <p>Don't have an account? <a href="#" id="showRegister">Register here</a></p>
+                <p style="margin-top: 10px;"><a href="#" id="showForgotPassword">Forgot Password?</a></p>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div class="glass-panel auth-card hidden" id="registerCard">
+            <h2>Create Account</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <input type="text" id="regUsername" class="form-control" required placeholder="Choose a username">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" class="form-control" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" class="form-control" required placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Confirm Password</label>
+                    <input type="password" id="regConfirmPassword" class="form-control" required placeholder="Confirm your password">
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn">Register</button>
+            </form>
+            
+            <div class="auth-links">
+                <p>Already have an account? <a href="#" id="showLogin">Login here</a></p>
+            </div>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div class="glass-panel auth-card hidden" id="forgotPasswordCard">
+            <h2>Reset Password</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; text-align: center;">Enter your email to receive a password reset link.</p>
+            <form id="forgotPasswordForm">
+                <div class="form-group">
+                    <label for="resetEmail">Email</label>
+                    <input type="email" id="resetEmail" class="form-control" required placeholder="Enter your email">
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn">Send Reset Link</button>
+            </form>
+            
+            <div class="auth-links">
+                <p><a href="#" id="backToLogin">Back to Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Vibentra</title>
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#0F172A">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png" type="image/png">
+    <link rel="stylesheet" id="mainCss" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js')
+                    .then(registration => console.log('ServiceWorker registered'))
+                    .catch(error => console.log('ServiceWorker registration failed: ', error));
+            });
+        }
+
+        // Aggressive fix for browser dropping CSS cache on back navigation
+        window.addEventListener("pageshow", function (event) {
+            var historyTraversal = event.persisted || 
+                                   (typeof window.performance != "undefined" && 
+                                    window.performance.navigation.type === 2);
+            if (historyTraversal) {
+                window.location.reload();
+            }
+            
+            // Force CSS to re-evaluate just in case BFCache corrupted it
+            const cssNode = document.getElementById('mainCss');
+            if (cssNode) {
+                cssNode.href = '../css/style.css?v=' + new Date().getTime();
+            }
+        });
+        
+        // Immediately apply theme to prevent FOUC (Flash of Unstyled Content)
+        const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
+        const themes = {
+            'default': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: '#1E293B' },
+            'ocean': { primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: '#0C4A6E' },
+            'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
+            'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
+            'cherry': { primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: '#881337' },
+            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' }
+        };
+        const theme = themes[savedTheme] || themes['default'];
+        document.documentElement.style.setProperty('--primary', theme.primary);
+        document.documentElement.style.setProperty('--secondary', theme.secondary);
+        document.documentElement.style.setProperty('--accent', theme.accent);
+        document.documentElement.style.setProperty('--background', theme.background);
+        document.documentElement.style.setProperty('--cards', theme.cards);
+    </script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-music"></i>
+                <span>Vibentra</span>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active" data-path="home">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </li>
+                <li class="nav-item" data-path="search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Search</span>
+                </li>
+                <li class="nav-item" data-path="playlists">
+                    <i class="fa-solid fa-list"></i>
+                    <span>Playlists</span>
+                </li>
+                <li class="nav-item" data-path="favorites">
+                    <i class="fa-solid fa-heart"></i>
+                    <span>Favorites</span>
+                </li>
+                <li class="nav-item" data-path="connect">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    <span>Connect</span>
+                </li>
+                <li class="nav-item" data-path="vibe-ai">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Vibe AI</span>
+                </li>
+            </ul>
+
+            <ul class="nav-menu sidebar-bottom">
+                <li class="nav-item" data-path="profile">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Profile</span>
+                </li>
+                <li class="nav-item" data-path="settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </li>
+                <li class="nav-item" id="logoutBtn">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Topbar -->
+            <header class="topbar">
+                <button class="mobile-nav-toggle" id="mobileNavToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <img src="../images/vibentra-logo.jpg" alt="Vibentra Logo" class="mobile-logo" style="height: 40px; border-radius: 8px;">
+                
+                <div class="topbar-actions" style="display: flex; align-items: center; gap: 20px;">
+                    <div class="notification-btn" id="notificationBtn" style="position: relative; cursor: pointer; color: var(--text-muted); font-size: 1.2rem; transition: color 0.3s;">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="badge" id="notificationBadge" style="position: absolute; top: -5px; right: -5px; background: var(--accent); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 50%; display: none;">0</span>
+                        
+                        <!-- Notification Dropdown -->
+                        <div class="notifications-dropdown hidden" id="notificationsDropdown" style="position: absolute; top: 150%; right: -50px; width: 320px; background: var(--cards); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden;">
+                            <div style="padding: 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="font-size: 1rem;">Notifications</h3>
+                                <span style="font-size: 0.8rem; color: var(--primary); cursor: pointer;" id="markAllReadBtn">Mark all read</span>
+                            </div>
+                            <div id="notificationsList" style="max-height: 350px; overflow-y: auto;">
+                                <div style="padding: 15px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No new notifications</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-profile" id="userProfileBtn" style="position: relative;">
+                        <img src="https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff" alt="Profile" id="topProfileImg">
+                        <span id="topUsername">Loading...</span>
+
+                        <!-- Profile Dropdown -->
+                        <div class="notifications-dropdown hidden" id="profileDropdown" style="position: absolute; top: 130%; right: 0; width: 200px; background: var(--cards); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden; display: flex; flex-direction: column; padding: 5px 0;">
+                            <div class="option-item" data-target="profile" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-user"></i> Profile</div>
+                            <div class="option-item" data-target="favorites" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-heart"></i> Favorites</div>
+                            <div class="option-item" data-target="settings" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-gear"></i> Settings</div>
+                            <div class="option-item mobile-only-item" data-target="connect" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-users"></i> Connect</div>
+                            <div class="option-item mobile-only-item" data-target="vibe-ai" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-robot"></i> Vibe AI</div>
+                            <div class="option-item" id="dropdownLogout" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #ef4444; border-top: 1px solid var(--glass-border); margin-top: 5px;"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div id="dynamicContent">
+                <!-- Category Chips (Mobile) -->
+                <div class="category-chips mobile-only-chips" style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 5px;">
+                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Podcasts</div>
+                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Workout</div>
+                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Feel good</div>
+                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Romance</div>
+                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Relax</div>
+                </div>
+                
+                <!-- Welcome Banner -->
+                <div class="section-header" style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.5rem; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        Good Morning, <span id="welcomeName">User</span>!
+                    </h2>
+                </div>
+
+                <!-- Trending Songs -->
+                <div class="section-header">
+                    <h2>Trending Now</h2>
+                    <a href="#">See All</a>
+                </div>
+                <div class="cards-grid" id="trendingGrid">
+                    <!-- Dummy Cards, to be populated by JS -->
+                    <div class="music-card">
+                        <div class="card-img-wrapper">
+                            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" alt="Cover">
+                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                        </div>
+                        <div class="card-info">
+                            <h3>Midnight City</h3>
+                            <p>M83</p>
+                        </div>
+                    </div>
+                    <div class="music-card">
+                        <div class="card-img-wrapper">
+                            <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80" alt="Cover">
+                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                        </div>
+                        <div class="card-info">
+                            <h3>Blinding Lights</h3>
+                            <p>The Weeknd</p>
+                        </div>
+                    </div>
+                    <div class="music-card">
+                        <div class="card-img-wrapper">
+                            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" alt="Cover">
+                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                        </div>
+                        <div class="card-info">
+                            <h3>Starboy</h3>
+                            <p>The Weeknd, Daft Punk</p>
+                        </div>
+                    </div>
+                    <div class="music-card">
+                        <div class="card-img-wrapper">
+                            <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80" alt="Cover">
+                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                        </div>
+                        <div class="card-info">
+                            <h3>Levitating</h3>
+                            <p>Dua Lipa</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Featured Playlists -->
+                <div class="section-header">
+                    <h2>Featured Playlists</h2>
+                    <a href="#">See All</a>
+                </div>
+                <div class="cards-grid">
+                    <div class="music-card">
+                        <div class="card-img-wrapper">
+                            <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80" alt="Playlist">
+                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                        </div>
+                        <div class="card-info">
+                            <h3>Chill Vibes</h3>
+                            <p>Vibentra Curated</p>
+                        </div>
+                    </div>
+                    <div class="music-card">
+                        <div class="card-img-wrapper">
+                            <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80" alt="Playlist">
+                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                        </div>
+                        <div class="card-info">
+                            <h3>Workout Mix</h3>
+                            <p>High Energy</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Popular Artists -->
+                <div class="section-header">
+                    <h2>Popular Artists</h2>
+                </div>
+                <div class="cards-grid">
+                    <div class="music-card artist-card">
+                        <div class="card-img-wrapper">
+                            <img src="https://images.unsplash.com/photo-1549834125-82d3c48159a3?w=500&q=80" alt="Artist">
+                        </div>
+                        <div class="card-info">
+                            <h3>The Weeknd</h3>
+                            <p>Artist</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Music Player UI -->
+    <div class="music-player glass">
+        <div class="player-left">
+            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" alt="Now Playing" class="now-playing-img" id="playerImg">
+            <div class="now-playing-info">
+                <h4 id="playerTitle">Midnight City</h4>
+                <p id="playerArtist">M83</p>
+            </div>
+            <button class="like-btn" id="playerLikeBtn">
+                <i class="fa-regular fa-heart"></i>
+            </button>
+        </div>
+
+        <div class="player-center">
+            <div class="player-controls">
+                <button class="control-btn" id="shuffleBtn"><i class="fa-solid fa-shuffle"></i></button>
+                <button class="control-btn" id="prevBtn"><i class="fa-solid fa-backward-step"></i></button>
+                <button class="play-pause-btn" id="playPauseBtn"><i class="fa-solid fa-play"></i></button>
+                <button class="control-btn" id="nextBtn"><i class="fa-solid fa-forward-step"></i></button>
+                <button class="control-btn" id="repeatBtn"><i class="fa-solid fa-repeat"></i></button>
+            </div>
+            <div class="progress-container">
+                <span class="time" id="currentTime">0:00</span>
+                <input type="range" id="progressSlider" min="0" max="100" value="0" class="progress-slider">
+                <span class="time" id="totalTime">4:03</span>
+            </div>
+        </div>
+
+        <div class="player-right">
+            <div style="position: relative;" id="playerOptionsContainer">
+                <button class="control-btn" id="playerOptionsBtn"><i class="fa-solid fa-list-ul"></i></button>
+                <div class="notifications-dropdown hidden" id="playerOptionsDropdown" style="position: absolute; bottom: 150%; right: -20px; width: 220px; background: var(--cards); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden; padding: 10px 0;">
+                    <div class="option-item" id="addToPlaylistOpt" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 10px; color: white;">
+                        <i class="fa-solid fa-folder-plus"></i> Save to Playlist
+                    </div>
+                    <div class="option-item" id="downloadRingtoneOpt" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 10px; color: white;">
+                        <i class="fa-solid fa-mobile-screen-button"></i> Set as Ringtone
+                    </div>
+                    <div class="option-item" id="showLyricsOpt" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 10px; color: white;">
+                        <i class="fa-solid fa-align-left"></i> Show Lyrics
+                    </div>
+                </div>
+            </div>
+            <div class="volume-container">
+                <button class="control-btn" id="volumeMuteBtn"><i class="fa-solid fa-volume-high" id="volumeIcon"></i></button>
+                <input type="range" id="volumeSlider" min="0" max="100" value="100" class="volume-slider">
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation (Echo Music Style) -->
+    <div class="mobile-bottom-nav hidden" id="mobileBottomNav">
+        <div class="nav-items-container">
+            <div class="mobile-nav-item active" data-target="home" onclick="document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active')); this.classList.add('active');">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </div>
+            <div class="mobile-nav-item" data-target="search" onclick="document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active')); this.classList.add('active');">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Search</span>
+            </div>
+            <div class="mobile-nav-item" data-target="playlists" onclick="document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active')); this.classList.add('active');">
+                <i class="fa-solid fa-music"></i>
+                <span>Library</span>
+            </div>
+        </div>
+        <div style="position: relative;">
+            <button class="mobile-fab" id="mobileFab">
+                <i class="fa-solid fa-ellipsis"></i>
+            </button>
+            <div class="notifications-dropdown hidden" id="mobileFabDropdown" style="position: absolute; bottom: 120%; right: 0; width: 180px; background: #2a201c; border: 1px solid #3e2f28; border-radius: 12px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden; padding: 10px 0;">
+                <div class="option-item" id="mobileRingtoneOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #e5ccb8; font-family: 'Delius', cursive;">
+                    <i class="fa-solid fa-mobile-screen-button"></i> Set Ringtone
+                </div>
+                <div class="option-item" id="mobileLyricsOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #e5ccb8; font-family: 'Delius', cursive;">
+                    <i class="fa-solid fa-align-left"></i> Lyrics
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lyrics Modal -->
+    <div class="large-player-modal" id="lyricsModal">
+        <div class="glass-panel" style="width: 600px; max-width: 90%; height: 80vh; padding: 40px; border-radius: 16px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <button class="close-large-player" id="closeLyricsModal" style="top: 20px; left: auto; right: 20px; width: 40px; height: 40px;"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="lyricsTitle" style="margin-bottom: 20px; color: var(--primary);">Lyrics</h2>
+            <div id="lyricsContent" style="width: 100%; flex: 1; overflow-y: auto; font-size: 1.2rem; line-height: 2; white-space: pre-wrap; padding-right: 15px;">
+                Loading lyrics...
+            </div>
+        </div>
+    </div>
+
+    <!-- Large Player Modal -->
+    <div class="large-player-modal" id="largePlayerModal">
+        <button class="close-large-player" id="closeLargePlayerBtn"><i class="fa-solid fa-chevron-down"></i></button>
+        <div class="large-player-content">
+            <div class="large-player-left">
+                <img src="" alt="Cover" id="largePlayerImg">
+                <h2 id="largePlayerTitle">Title</h2>
+                <p id="largePlayerArtist">Artist</p>
+            </div>
+            <div class="large-player-right">
+                <h3>Up Next</h3>
+                <div class="up-next-list" id="upNextList">
+                    <!-- Up next songs will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Playlist Modal -->
+    <div class="large-player-modal" id="playlistModal">
+        <div class="glass-panel" style="width: 400px; padding: 30px; border-radius: 16px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <button class="close-large-player" id="closePlaylistModal" style="top: -20px; left: auto; right: -20px; width: 40px; height: 40px;"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="playlistModalTitle" style="margin-bottom: 20px;">Create Playlist</h2>
+            <input type="hidden" id="editingPlaylistId">
+            <div class="search-container" style="max-width: 100%; margin-bottom: 15px;">
+                <input type="text" id="playlistNameInput" class="search-input" placeholder="Playlist Name" style="padding-left: 20px;">
+            </div>
+            <div class="search-container" style="max-width: 100%; margin-bottom: 25px;">
+                <input type="text" id="playlistDescInput" class="search-input" placeholder="Description (Optional)" style="padding-left: 20px;">
+            </div>
+            <button class="btn btn-primary" id="savePlaylistBtn" style="width: 100%; padding: 12px;">Save Playlist</button>
+        </div>
+    </div>
+
+    <!-- Add to Playlist Modal -->
+    <div class="large-player-modal" id="addToPlaylistModal">
+        <div class="glass-panel" style="width: 400px; padding: 30px; border-radius: 16px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <button class="close-large-player" id="closeAddToPlaylistModal" style="top: -20px; left: auto; right: -20px; width: 40px; height: 40px;"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="margin-bottom: 20px;">Save to Playlist</h2>
+            <div id="playlistSelectionList" style="width: 100%; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <!-- Dynamically populated playlists -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/home.js"></script>
+</body>
+</html>
