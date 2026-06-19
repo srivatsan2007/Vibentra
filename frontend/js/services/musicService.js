@@ -592,9 +592,28 @@ class MusicService {
 
     updatePlayerUI(track) {
         document.getElementById('playerTitle').textContent = track.title;
-        document.getElementById('playerArtist').textContent = track.artist;
         document.getElementById('playerImg').src = track.cover;
         document.getElementById('totalTime').textContent = track.duration || "0:00";
+
+        // Next song hint for mini player
+        let nextSongTitle = "";
+        if (this.queue.length > 0) {
+            const currentIndex = this.queue.findIndex(t => t.id === track.id);
+            if (this.isShuffle) {
+                nextSongTitle = "Shuffle Mode";
+            } else if (currentIndex >= 0 && currentIndex < this.queue.length - 1) {
+                nextSongTitle = this.queue[currentIndex + 1].title;
+            }
+        }
+        
+        const artistEl = document.getElementById('playerArtist');
+        if (artistEl) {
+            if (nextSongTitle) {
+                artistEl.innerHTML = `${track.artist} <span style="color: var(--secondary); margin-left: 5px;">• Next: ${nextSongTitle}</span>`;
+            } else {
+                artistEl.textContent = track.artist;
+            }
+        }
 
         const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn')];
         likeBtns.forEach(btn => {
