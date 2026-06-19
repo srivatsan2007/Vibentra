@@ -44,20 +44,23 @@
                 updateBtn.addEventListener('click', () => {
                     updateBtn.textContent = 'Updating...';
                     updateBtn.disabled = true;
-                    
-                    if (newWorker) {
-                        newWorker.postMessage({ type: 'SKIP_WAITING' });
-                    }
-                    
-                    // Hide the popup immediately so it doesn't linger
-                    setTimeout(() => {
-                        updatePopup.style.display = 'none';
-                    }, 500);
+                    setTimeout(() => { updatePopup.style.display = 'none'; }, 200);
 
-                    // Safe fallback reload only if controllerchange fails for a long time
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 4000);
+                    // Bulletproof update: Unregister SW, clear caches, and force reload
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                        for (let registration of registrations) {
+                            registration.unregister();
+                        }
+                    }).then(() => {
+                        if ('caches' in window) {
+                            caches.keys().then(names => {
+                                for (let name of names) caches.delete(name);
+                            });
+                        }
+                        setTimeout(() => {
+                            window.location.href = window.location.pathname + '?v=' + new Date().getTime();
+                        }, 800);
+                    });
                 });
 
                 navigator.serviceWorker.register('../sw.js').then(reg => {
