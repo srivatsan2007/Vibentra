@@ -1598,24 +1598,24 @@ input {
     }
     
     /* Make search results display one by one vertically */
-    #searchResultsGrid {
+    #searchResultsGrid, #trendingGrid {
         display: flex !important;
         flex-direction: column !important;
         flex-wrap: nowrap !important;
         overflow-x: hidden !important;
     }
-    #searchResultsGrid .music-card {
+    #searchResultsGrid .music-card, #trendingGrid .music-card {
         width: 100% !important;
         display: flex !important;
         height: 100px !important;
         margin-bottom: 10px;
     }
-    #searchResultsGrid .card-img-wrapper {
+    #searchResultsGrid .card-img-wrapper, #trendingGrid .card-img-wrapper {
         width: 100px !important;
         height: 100px !important;
         margin-bottom: 0 !important;
     }
-    #searchResultsGrid .card-info {
+    #searchResultsGrid .card-info, #trendingGrid .card-info {
         position: static !important;
         flex: 1 !important;
         display: flex !important;
@@ -1624,11 +1624,11 @@ input {
         margin-left: 15px !important;
         text-shadow: none !important;
     }
-    #searchResultsGrid .card-info h3 {
+    #searchResultsGrid .card-info h3, #trendingGrid .card-info h3 {
         color: #e5ccb8 !important;
         font-size: 1.1rem !important;
     }
-    #searchResultsGrid .card-img-wrapper::after {
+    #searchResultsGrid .card-img-wrapper::after, #trendingGrid .card-img-wrapper::after {
         display: none !important; /* No overlay gradient needed for list items */
     }
     
