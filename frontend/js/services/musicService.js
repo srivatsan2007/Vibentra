@@ -25,31 +25,33 @@ class MusicService {
         this.setupKeyboardShortcuts();
 
         // Player Controls
-        document.getElementById('playPauseBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.togglePlayPause();
-        });
-        document.getElementById('nextBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.playNext();
-        });
-        document.getElementById('prevBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.playPrevious();
-        });
+        const handlePlayPause = (e) => { e.stopPropagation(); this.togglePlayPause(); };
+        const handleNext = (e) => { e.stopPropagation(); this.playNext(); };
+        const handlePrev = (e) => { e.stopPropagation(); this.playPrevious(); };
         
-        const shuffleBtn = document.getElementById('shuffleBtn');
-        shuffleBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.isShuffle = !this.isShuffle;
-            shuffleBtn.classList.toggle('active', this.isShuffle);
+        document.getElementById('playPauseBtn')?.addEventListener('click', handlePlayPause);
+        document.getElementById('largePlayBtn')?.addEventListener('click', handlePlayPause);
+        document.getElementById('nextBtn')?.addEventListener('click', handleNext);
+        document.getElementById('largeNextBtn')?.addEventListener('click', handleNext);
+        document.getElementById('prevBtn')?.addEventListener('click', handlePrev);
+        document.getElementById('largePrevBtn')?.addEventListener('click', handlePrev);
+        
+        const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
+        shuffleBtns.forEach(btn => {
+            btn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.isShuffle = !this.isShuffle;
+                shuffleBtns.forEach(b => b?.classList.toggle('active', this.isShuffle));
+            });
         });
 
-        const repeatBtn = document.getElementById('repeatBtn');
-        repeatBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.isRepeat = !this.isRepeat;
-            repeatBtn.classList.toggle('active', this.isRepeat);
+        const repeatBtns = [document.getElementById('repeatBtn'), document.getElementById('largeRepeatBtn')];
+        repeatBtns.forEach(btn => {
+            btn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.isRepeat = !this.isRepeat;
+                repeatBtns.forEach(b => b?.classList.toggle('active', this.isRepeat));
+            });
         });
 
         // Volume Controls
@@ -77,16 +79,18 @@ class MusicService {
         }
 
         // Progress Slider Seek
-        const progressSlider = document.getElementById('progressSlider');
-        if (progressSlider) {
-            progressSlider.addEventListener('input', (e) => {
-                e.stopPropagation();
-                if (this.audioPlayer.duration) {
-                    const newTime = (e.target.value / 100) * this.audioPlayer.duration;
-                    this.audioPlayer.currentTime = newTime;
-                }
-            });
-        }
+        const progressSliders = [document.getElementById('progressSlider'), document.getElementById('largeProgressSlider')];
+        progressSliders.forEach(slider => {
+            if (slider) {
+                slider.addEventListener('input', (e) => {
+                    e.stopPropagation();
+                    if (this.audioPlayer.duration) {
+                        const newTime = (e.target.value / 100) * this.audioPlayer.duration;
+                        this.audioPlayer.currentTime = newTime;
+                    }
+                });
+            }
+        });
 
         // Large Player Modal
         const playerLeft = document.querySelector('.player-left');
@@ -215,25 +219,44 @@ class MusicService {
         }
 
         // Like Button
-        const playerLikeBtn = document.getElementById('playerLikeBtn');
-        if (playerLikeBtn) {
-            playerLikeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (!this.currentTrack) return;
-                
-                const isNowFav = favoriteService.toggleFavorite(this.currentTrack);
-                const icon = playerLikeBtn.querySelector('i');
-                if (isNowFav) {
-                    playerLikeBtn.classList.add('active');
-                    icon.className = 'fa-solid fa-heart';
-                } else {
-                    playerLikeBtn.classList.remove('active');
-                    icon.className = 'fa-regular fa-heart';
-                }
+        const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn')];
+        likeBtns.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!this.currentTrack) return;
+                    
+                    const isNowFav = favoriteService.toggleFavorite(this.currentTrack);
+                    likeBtns.forEach(b => {
+                        if (!b) return;
+                        const icon = b.querySelector('i');
+                        if (icon) {
+                            if (isNowFav) {
+                                b.classList.add('active');
+                                icon.className = 'fa-solid fa-heart';
+                            } else {
+                                b.classList.remove('active');
+                                icon.className = 'fa-regular fa-heart';
+                            }
+                        }
+                    });
 
-                document.dispatchEvent(new CustomEvent('favoritesChanged'));
-            });
-        }
+                    document.dispatchEvent(new CustomEvent('favoritesChanged'));
+                });
+            }
+        });
+        
+        // Additional large player buttons
+        document.getElementById('largePlaylistBtn')?.addEventListener('click', (e) => {
+            if (!this.currentTrack) return;
+            this.openAddToPlaylistModal();
+        });
+        
+        document.getElementById('largeMoreBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const playerOptionsDropdown = document.getElementById('playerOptionsDropdown');
+            if (playerOptionsDropdown) playerOptionsDropdown.classList.toggle('hidden');
+        });
     }
 
     openAddToPlaylistModal() {
@@ -469,25 +492,32 @@ class MusicService {
         document.getElementById('playerImg').src = track.cover;
         document.getElementById('totalTime').textContent = track.duration || "0:00";
 
-        const playerLikeBtn = document.getElementById('playerLikeBtn');
-        const icon = playerLikeBtn?.querySelector('i');
-        if (playerLikeBtn && icon) {
-            if (favoriteService.isFavorite(track.id)) {
-                playerLikeBtn.classList.add('active');
-                icon.className = 'fa-solid fa-heart';
-            } else {
-                playerLikeBtn.classList.remove('active');
-                icon.className = 'fa-regular fa-heart';
+        const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn')];
+        likeBtns.forEach(btn => {
+            const icon = btn?.querySelector('i');
+            if (btn && icon) {
+                if (favoriteService.isFavorite(track.id)) {
+                    btn.classList.add('active');
+                    icon.className = 'fa-solid fa-heart';
+                } else {
+                    btn.classList.remove('active');
+                    icon.className = 'fa-regular fa-heart';
+                }
             }
-        }
+        });
+
+        const largeTotalTime = document.getElementById('largeTotalTime');
+        if (largeTotalTime) largeTotalTime.textContent = track.duration || "0:00";
     }
 
     updatePlayPauseUI(isPlaying) {
-        const btn = document.getElementById('playPauseBtn');
+        const btns = [document.getElementById('playPauseBtn'), document.getElementById('largePlayBtn')];
         const playerContainer = document.querySelector('.music-player');
-        if (btn) {
-            btn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
-        }
+        btns.forEach(btn => {
+            if (btn) {
+                btn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+            }
+        });
         if (playerContainer) {
             if (isPlaying) playerContainer.classList.add('playing');
             else playerContainer.classList.remove('playing');
@@ -496,20 +526,28 @@ class MusicService {
 
     updateProgressUI(isMock = false) {
         const progressSlider = document.getElementById('progressSlider');
+        const largeProgressSlider = document.getElementById('largeProgressSlider');
+        const largeProgress = document.getElementById('largeProgress');
         const currentTimeEl = document.getElementById('currentTime');
-        if (!progressSlider || !currentTimeEl) return;
+        const largeCurrTimeEl = document.getElementById('largeCurrTime');
         
         if (!isMock && this.audioPlayer.duration) {
             const percent = (this.audioPlayer.currentTime / this.audioPlayer.duration) * 100;
-            progressSlider.value = percent;
+            if (progressSlider) progressSlider.value = percent;
+            if (largeProgressSlider) largeProgressSlider.value = percent;
+            if (largeProgress) largeProgress.style.width = `${percent}%`;
             
             const mins = Math.floor(this.audioPlayer.currentTime / 60);
             const secs = Math.floor(this.audioPlayer.currentTime % 60).toString().padStart(2, '0');
-            currentTimeEl.textContent = `${mins}:${secs}`;
+            const timeStr = `${mins}:${secs}`;
+            if (currentTimeEl) currentTimeEl.textContent = timeStr;
+            if (largeCurrTimeEl) largeCurrTimeEl.textContent = timeStr;
         } else if (isMock) {
-            let currentWidth = parseFloat(progressSlider.value) || 0;
+            let currentWidth = parseFloat(progressSlider?.value || 0);
             currentWidth = (currentWidth + 1) % 100;
-            progressSlider.value = currentWidth;
+            if (progressSlider) progressSlider.value = currentWidth;
+            if (largeProgressSlider) largeProgressSlider.value = currentWidth;
+            if (largeProgress) largeProgress.style.width = `${currentWidth}%`;
         }
     }
 
