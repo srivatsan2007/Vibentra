@@ -314,6 +314,15 @@ class MusicService {
             }
             alert('Ringtone has been set successfully for this device!');
         });
+
+        // Save state when user leaves or hides the app
+        window.addEventListener('beforeunload', () => this.savePlayerState());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') this.savePlayerState();
+        });
+
+        // Restore the last played state
+        this.restorePlayerState();
     }
 
     openAddToPlaylistModal() {
@@ -459,6 +468,8 @@ class MusicService {
             // Add to history
             this.history.push(fullTrack);
 
+            this.savePlayerState();
+
             // Sync to room if we are host
             if (connectService.isHost) {
                 connectService.syncPlaybackState(fullTrack, this.isPlaying, this.audioPlayer.currentTime);
@@ -470,12 +481,20 @@ class MusicService {
     }
 
     updateMediaSession(track) {
+        // Update document title for background notification fallback
+        document.title = `${track.title} - ${track.artist || 'Unknown Artist'} | Vibentra`;
+
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: track.title,
                 artist: track.artist || 'Unknown Artist',
                 album: 'Vibentra',
                 artwork: [
+                    { src: track.cover, sizes: '96x96', type: 'image/jpeg' },
+                    { src: track.cover, sizes: '128x128', type: 'image/jpeg' },
+                    { src: track.cover, sizes: '192x192', type: 'image/jpeg' },
+                    { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
+                    { src: track.cover, sizes: '384x384', type: 'image/jpeg' },
                     { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
                 ]
             });
@@ -675,6 +694,52 @@ class MusicService {
         
         if (upcomingTracks.length === 0) {
             upNextList.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin-top: 20px;">End of queue</p>';
+        }
+    }
+
+    savePlayerState() {
+        if (!this.currentTrack) return;
+        const state = {
+            currentTrack: this.currentTrack,
+            queue: this.queue,
+            history: this.history,
+            currentTime: this.audioPlayer.currentTime,
+            isShuffle: this.isShuffle,
+            isRepeat: this.isRepeat
+        };
+        localStorage.setItem('vibentra_player_state', JSON.stringify(state));
+    }
+
+    restorePlayerState() {
+        const saved = localStorage.getItem('vibentra_player_state');
+        if (saved) {
+            try {
+                const state = JSON.parse(saved);
+                if (state.currentTrack) {
+                    this.currentTrack = state.currentTrack;
+                    this.queue = state.queue || [];
+                    this.history = state.history || [];
+                    this.isShuffle = !!state.isShuffle;
+                    this.isRepeat = !!state.isRepeat;
+
+                    // Update UI without playing immediately (browser autoplay restrictions)
+                    this.updatePlayerUI(this.currentTrack);
+                    if (this.currentTrack.streamUrl) {
+                        this.audioPlayer.src = this.currentTrack.streamUrl;
+                        this.audioPlayer.currentTime = state.currentTime || 0;
+                        this.updateProgressUI();
+                        this.updateMediaSession(this.currentTrack);
+                    }
+                    
+                    const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
+                    shuffleBtns.forEach(b => b?.classList.toggle('active', this.isShuffle));
+                    
+                    const repeatBtns = [document.getElementById('repeatBtn'), document.getElementById('largeRepeatBtn')];
+                    repeatBtns.forEach(b => b?.classList.toggle('active', this.isRepeat));
+                }
+            } catch(e) {
+                console.error("Could not restore player state", e);
+            }
         }
     }
 }
