@@ -762,24 +762,24 @@ const initHome = () => {
                     <i class="fa-solid fa-plus"></i> Create Playlist
                 </button>
             </div>
-            <div class="cards-grid">
+            <div class="playlist-list-container" style="display: flex; flex-direction: column; gap: 15px;">
         `;
         
         playlists.forEach(pl => {
             html += `
-                <div class="music-card playlist-card" data-id="${pl.id}">
-                    <div class="card-img-wrapper">
+                <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 20px; padding: 15px; width: 100%;">
+                    <div class="card-img-wrapper" style="width: 80px; height: 80px; margin-bottom: 0; flex-shrink: 0;">
                         <div style="width: 100%; height: 100%; background: linear-gradient(45deg, var(--primary), var(--secondary)); display: flex; justify-content: center; align-items: center; border-radius: 8px;">
-                            <i class="fa-solid fa-music" style="font-size: 3rem; color: rgba(255,255,255,0.5);"></i>
-                        </div>
-                        <div class="play-btn-overlay" style="display: flex; gap: 10px; flex-direction: row; align-items: center; justify-content: center; border-radius: 8px;">
-                            <button class="btn edit-pl-btn" data-id="${pl.id}" style="background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; border: none; color: white; cursor: pointer;"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn delete-pl-btn" data-id="${pl.id}" style="background: rgba(239, 68, 68, 0.8); border-radius: 50%; width: 40px; height: 40px; border: none; color: white; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+                            <i class="fa-solid fa-music" style="font-size: 2rem; color: rgba(255,255,255,0.5);"></i>
                         </div>
                     </div>
-                    <div class="card-info">
-                        <h3>${pl.name}</h3>
+                    <div class="card-info" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="margin-bottom: 5px; font-size: 1.2rem;">${pl.name}</h3>
                         <p>${pl.tracks.length} Tracks</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn edit-pl-btn" data-id="${pl.id}" style="background: rgba(255,255,255,0.1); border-radius: 50%; width: 45px; height: 45px; border: none; color: white; cursor: pointer; transition: background 0.3s;"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn delete-pl-btn" data-id="${pl.id}" style="background: rgba(239, 68, 68, 0.1); border-radius: 50%; width: 45px; height: 45px; border: none; color: #ef4444; cursor: pointer; transition: background 0.3s;"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `;

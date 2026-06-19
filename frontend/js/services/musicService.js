@@ -138,22 +138,30 @@ class MusicService {
 
         // Save to Playlist Option
         const addToPlaylistOpt = document.getElementById('addToPlaylistOpt');
+        const mobileAddToPlaylistOpt = document.getElementById('mobileAddToPlaylistOpt');
         const addToPlaylistModal = document.getElementById('addToPlaylistModal');
         const closeAddToPlaylistModal = document.getElementById('closeAddToPlaylistModal');
+        
+        const handleAddToPlaylistClick = (e, dropdownElem) => {
+            e.stopPropagation();
+            if (dropdownElem) dropdownElem.classList.add('hidden');
+            if (!this.currentTrack) {
+                alert('Play a song first to save it to a playlist!');
+                return;
+            }
+            this.openAddToPlaylistModal();
+        };
+
         if (addToPlaylistOpt && addToPlaylistModal) {
-            addToPlaylistOpt.addEventListener('click', (e) => {
-                e.stopPropagation();
-                playerOptionsDropdown.classList.add('hidden');
-                if (!this.currentTrack) {
-                    alert('Play a song first to save it to a playlist!');
-                    return;
-                }
-                this.openAddToPlaylistModal();
-            });
+            addToPlaylistOpt.addEventListener('click', (e) => handleAddToPlaylistClick(e, playerOptionsDropdown));
             
             closeAddToPlaylistModal.addEventListener('click', () => {
                 addToPlaylistModal.classList.remove('active');
             });
+        }
+
+        if (mobileAddToPlaylistOpt && addToPlaylistModal) {
+            mobileAddToPlaylistOpt.addEventListener('click', (e) => handleAddToPlaylistClick(e, mobileFabDropdown));
         }
 
         // Set as Ringtone Option
