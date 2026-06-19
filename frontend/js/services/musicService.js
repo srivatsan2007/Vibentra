@@ -19,6 +19,23 @@ class MusicService {
         
         this.audioPlayer.addEventListener('ended', () => this.handleTrackEnd());
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgressUI());
+        
+        // Sync state with OS-level events (e.g. background pause, incoming call)
+        this.audioPlayer.addEventListener('play', () => {
+            this.isPlaying = true;
+            this.updatePlayPauseUI(true);
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+        });
+
+        this.audioPlayer.addEventListener('pause', () => {
+            this.isPlaying = false;
+            this.updatePlayPauseUI(false);
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
+        });
     }
 
     initUI() {
@@ -414,6 +431,8 @@ class MusicService {
             this.currentTrack = fullTrack;
             historyService.addToHistory(this.currentTrack);
             this.updatePlayerUI(this.currentTrack);
+            
+            this.updateMediaSession(fullTrack);
 
             if (fullTrack.streamUrl) {
                 this.audioPlayer.src = fullTrack.streamUrl;
@@ -447,6 +466,32 @@ class MusicService {
 
         } catch (error) {
             console.error("Error playing track:", error);
+        }
+    }
+
+    updateMediaSession(track) {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title,
+                artist: track.artist || 'Unknown Artist',
+                album: 'Vibentra',
+                artwork: [
+                    { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
+                ]
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => {
+                this.audioPlayer.play().catch(e => console.error(e));
+            });
+            navigator.mediaSession.setActionHandler('pause', () => {
+                this.audioPlayer.pause();
+            });
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                this.playPrevious();
+            });
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                this.playNext();
+            });
         }
     }
 
