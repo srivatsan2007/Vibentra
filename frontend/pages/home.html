@@ -40,8 +40,18 @@
                 `;
                 document.body.appendChild(updatePopup);
 
-                document.getElementById('pwa-update-btn').addEventListener('click', () => {
-                    if (newWorker) newWorker.postMessage({ type: 'SKIP_WAITING' });
+                const updateBtn = document.getElementById('pwa-update-btn');
+                updateBtn.addEventListener('click', () => {
+                    updateBtn.textContent = 'Updating...';
+                    updateBtn.style.opacity = '0.7';
+                    updateBtn.disabled = true;
+                    if (newWorker) {
+                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                    // Fallback to force reload if controllerchange event fails to fire
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 1500);
                 });
 
                 navigator.serviceWorker.register('../sw.js').then(reg => {
