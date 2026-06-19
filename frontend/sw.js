@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v3';
+const CACHE_NAME = 'vibentra-cache-v4';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -24,7 +24,13 @@ self.addEventListener('install', event => {
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
-    self.skipWaiting(); // Force the waiting service worker to become the active service worker
+});
+
+// Listen for message from frontend to skip waiting and activate new version
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 // Activate Event - Clean up old caches
