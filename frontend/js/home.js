@@ -767,19 +767,19 @@ const initHome = () => {
         
         playlists.forEach(pl => {
             html += `
-                <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 20px; padding: 15px; width: 100%;">
-                    <div class="card-img-wrapper" style="width: 80px; height: 80px; margin-bottom: 0; flex-shrink: 0;">
-                        <div style="width: 100%; height: 100%; background: linear-gradient(45deg, var(--primary), var(--secondary)); display: flex; justify-content: center; align-items: center; border-radius: 8px;">
-                            <i class="fa-solid fa-music" style="font-size: 2rem; color: rgba(255,255,255,0.5);"></i>
+                <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 20px; padding: 15px; width: 100%; border-radius: 16px; background: rgba(255,255,255,0.02);">
+                    <div class="playlist-img-wrapper" style="width: 70px; height: 70px; flex-shrink: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; justify-content: center; align-items: center;">
+                            <i class="fa-solid fa-music" style="font-size: 2rem; color: rgba(255,255,255,0.8);"></i>
                         </div>
                     </div>
-                    <div class="card-info" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                        <h3 style="margin-bottom: 5px; font-size: 1.2rem;">${pl.name}</h3>
-                        <p>${pl.tracks.length} Tracks</p>
+                    <div class="playlist-info" style="flex: 1; display: flex; flex-direction: column; justify-content: center; position: static;">
+                        <h3 style="margin: 0 0 5px 0; font-size: 1.2rem; color: white;">${pl.name}</h3>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${pl.tracks.length} Tracks</p>
                     </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="btn edit-pl-btn" data-id="${pl.id}" style="background: rgba(255,255,255,0.1); border-radius: 50%; width: 45px; height: 45px; border: none; color: white; cursor: pointer; transition: background 0.3s;"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn delete-pl-btn" data-id="${pl.id}" style="background: rgba(239, 68, 68, 0.1); border-radius: 50%; width: 45px; height: 45px; border: none; color: #ef4444; cursor: pointer; transition: background 0.3s;"><i class="fa-solid fa-trash"></i></button>
+                    <div class="playlist-actions" style="display: flex; gap: 12px; align-items: center; margin-left: auto;">
+                        <button class="btn edit-pl-btn" data-id="${pl.id}" style="background: rgba(255,255,255,0.1); border-radius: 50%; width: 40px; height: 40px; border: none; color: white; cursor: pointer; transition: background 0.3s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn delete-pl-btn" data-id="${pl.id}" style="background: rgba(239, 68, 68, 0.15); border-radius: 50%; width: 40px; height: 40px; border: none; color: #ef4444; cursor: pointer; transition: background 0.3s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `;
