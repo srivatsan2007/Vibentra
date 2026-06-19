@@ -387,7 +387,7 @@
                 <input type="range" id="largeProgressSlider" min="0" max="100" value="0" style="width: 100%; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.3); border-radius: 3px; outline: none; cursor: pointer; margin: 0; position: absolute; z-index: 2; opacity: 0;">
                 <div class="progress-bar" id="largeProgressBar" style="height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; cursor: pointer; width: 100%;">
                     <div class="progress" id="largeProgress" style="height: 100%; background: white; border-radius: 3px; width: 0%; position: relative;">
-                        <div style="position: absolute; right: -6px; top: -4px; width: 14px; height: 14px; background: white; border-radius: 50%;"></div>
+                        <div style="position: absolute; right: -2px; top: -10px; width: 4px; height: 26px; background: white; border-radius: 2px;"></div>
                     </div>
                 </div>
             </div>
@@ -402,13 +402,26 @@
                 <button id="largeNextBtn" style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.1); color: white; border: none; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-forward-step"></i></button>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto; position: relative;">
                 <button id="largePlaylistBtn" style="width: 45px; height: 45px; border-radius: 8px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-music"></i></button>
                 <button id="largeSleepBtn" style="width: 45px; height: 45px; border-radius: 8px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-moon"></i></button>
                 <button id="largeLyricsBtn" style="width: 45px; height: 45px; border-radius: 8px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-align-left"></i></button>
                 <button id="largeShuffleBtn" style="width: 45px; height: 45px; border-radius: 8px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-shuffle"></i></button>
                 <button id="largeRepeatBtn" style="width: 45px; height: 45px; border-radius: 8px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-repeat"></i></button>
                 <button id="largeMoreBtn" style="width: 45px; height: 45px; border-radius: 50%; background: white; color: black; border: none; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+
+                <!-- Three Dots Dropdown -->
+                <div class="notifications-dropdown hidden" id="largePlayerOptionsDropdown" style="position: absolute; bottom: 60px; right: 0; width: 220px; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden; padding: 10px 0;">
+                    <div class="option-item" id="largeOptPlaylist" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 10px; color: white; font-family: 'Delius', cursive;">
+                        <i class="fa-solid fa-folder-plus"></i> Add to Playlist
+                    </div>
+                    <div class="option-item" id="largeOptLyrics" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 10px; color: white; font-family: 'Delius', cursive;">
+                        <i class="fa-solid fa-align-left"></i> Show Lyrics
+                    </div>
+                    <div class="option-item" id="largeOptRingtone" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 10px; color: white; font-family: 'Delius', cursive;">
+                        <i class="fa-solid fa-bell"></i> Set as Ringtone
+                    </div>
+                </div>
             </div>
         </div>
     </div>

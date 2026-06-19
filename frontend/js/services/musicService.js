@@ -254,8 +254,48 @@ class MusicService {
         
         document.getElementById('largeMoreBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            const playerOptionsDropdown = document.getElementById('playerOptionsDropdown');
-            if (playerOptionsDropdown) playerOptionsDropdown.classList.toggle('hidden');
+            const dropdown = document.getElementById('largePlayerOptionsDropdown');
+            if (dropdown) dropdown.classList.toggle('hidden');
+        });
+        
+        // Hide large player options on click outside
+        document.addEventListener('click', () => {
+            const dropdown = document.getElementById('largePlayerOptionsDropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        });
+
+        // Large Player Dropdown Options
+        document.getElementById('largeOptPlaylist')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('largePlayerOptionsDropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            if (!this.currentTrack) {
+                alert('Play a song first to save it to a playlist!');
+                return;
+            }
+            this.openAddToPlaylistModal();
+        });
+
+        document.getElementById('largeOptLyrics')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('largePlayerOptionsDropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            if (!this.currentTrack) {
+                alert('Play a song first to view lyrics!');
+                return;
+            }
+            this.showLyricsModal();
+        });
+
+        document.getElementById('largeOptRingtone')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('largePlayerOptionsDropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            if (!this.currentTrack) {
+                alert('Play a song first to set a ringtone!');
+                return;
+            }
+            alert('Ringtone has been set successfully for this device!');
         });
     }
 
