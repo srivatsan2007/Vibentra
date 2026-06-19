@@ -203,12 +203,40 @@ const initHome = () => {
     // Navigation and Dynamic Views
     const navItems = document.querySelectorAll('.nav-item[data-path]');
     const dynamicContent = document.getElementById('dynamicContent');
+    const mobileNavItems = document.querySelectorAll('.mobile-nav-item[data-target]');
+
+    // Handle Android/Mobile Back Button
+    window.addEventListener('popstate', (e) => {
+        // Check if any modal is open, if so, just close the modal and stay on page
+        const openModals = document.querySelectorAll('.large-player-modal.active');
+        if (openModals.length > 0) {
+            openModals.forEach(m => m.classList.remove('active'));
+            // Re-push the current state so the next back press works for navigation
+            const currentPath = document.querySelector('.nav-item.active')?.getAttribute('data-path') || 'home';
+            history.pushState({ path: currentPath }, '', '#' + currentPath);
+            return;
+        }
+
+        const path = e.state && e.state.path ? e.state.path : 'home';
+        
+        navItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-path') === path));
+        mobileNavItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-target') === path));
+        
+        loadView(path, false);
+    });
+
+    // Initialize state
+    if (!history.state) {
+        history.replaceState({ path: 'home' }, '', '#home');
+    }
 
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             // Update Active State
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
+            
+            mobileNavItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-target') === item.getAttribute('data-path')));
 
             if (window.innerWidth <= 768) {
                 sidebar.classList.remove('active');
@@ -220,23 +248,25 @@ const initHome = () => {
     });
 
     // Mobile Bottom Navigation
-    const mobileNavItems = document.querySelectorAll('.mobile-nav-item[data-target]');
     mobileNavItems.forEach(item => {
         item.addEventListener('click', () => {
             const path = item.getAttribute('data-target');
-            // Also sync desktop sidebar active state if needed
-            navItems.forEach(nav => {
-                if(nav.getAttribute('data-path') === path) {
-                    nav.classList.add('active');
-                } else {
-                    nav.classList.remove('active');
-                }
-            });
+            
+            mobileNavItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            // Sync desktop sidebar active state
+            navItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-path') === path));
+            
             loadView(path);
         });
     });
 
-    function loadView(path) {
+    function loadView(path, pushState = true) {
+        if (pushState) {
+            history.pushState({ path }, '', '#' + path);
+        }
+        
         switch(path) {
             case 'home':
                 renderHome();
