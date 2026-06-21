@@ -221,6 +221,22 @@ const getSongDetails = async (req, res) => {
     }
 };
 
+const downloadAudio = async (req, res) => {
+    const url = req.query.url;
+    if (!url) return res.status(400).json({ error: "Missing url" });
+    try {
+        https.get(url, (response) => {
+            res.setHeader('Content-Disposition', 'attachment; filename="Vibentra-Download.m4a"');
+            res.setHeader('Content-Type', 'audio/mp4');
+            response.pipe(res);
+        }).on('error', (err) => {
+            res.status(500).json({ error: "Download failed" });
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Download failed" });
+    }
+};
+
 module.exports = {
     searchJioSaavn,
     searchAllJioSaavn,
@@ -228,5 +244,6 @@ module.exports = {
     getPlaylistDetails,
     getLyrics,
     recognizeAudio,
-    getSongDetails
+    getSongDetails,
+    downloadAudio
 };

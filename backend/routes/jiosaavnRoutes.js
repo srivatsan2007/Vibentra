@@ -10,5 +10,6 @@ router.get('/playlist', getPlaylistDetails);
 router.get('/lyrics', getLyrics);
 router.post('/recognize', recognizeAudio);
 router.get('/song', getSongDetails);
+router.get('/download', require('../controllers/jiosaavnController').downloadAudio);
 
 module.exports = router;

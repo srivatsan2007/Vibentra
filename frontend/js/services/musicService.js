@@ -163,6 +163,27 @@ class MusicService {
             });
         }
 
+        // Swipe gestures for Player
+        const playerContainer = document.getElementById('musicPlayer');
+        if (playerContainer) {
+            let touchStartX = 0;
+            let touchEndX = 0;
+            playerContainer.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            playerContainer.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].screenX;
+                const swipeThreshold = 50;
+                if (touchEndX > touchStartX + swipeThreshold) {
+                    // Swiped right -> Next
+                    this.playNext();
+                } else if (touchEndX < touchStartX - swipeThreshold) {
+                    // Swiped left -> Previous
+                    this.playPrevious();
+                }
+            }, { passive: true });
+        }
+
         // Save to Playlist Option
         const addToPlaylistOpt = document.getElementById('addToPlaylistOpt');
         const mobileAddToPlaylistOpt = document.getElementById('mobileAddToPlaylistOpt');
@@ -420,16 +441,15 @@ class MusicService {
     }
 
     downloadRingtone(track) {
-        // Create a hidden anchor element to trigger download
+        if (!track || !track.streamUrl) return;
         const a = document.createElement('a');
-        a.href = track.streamUrl;
-        // Browsers handle cross-origin downloads differently, we use target=_blank
+        a.href = `/api/jiosaavn/download?url=${encodeURIComponent(track.streamUrl)}`;
         a.target = '_blank';
-        a.download = `${track.title} - Ringtone.mp4`;
+        a.download = `${track.title} - Vibentra.m4a`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Downloading ${track.title} for Ringtone...` }));
+        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Downloading ${track.title} directly to internal storage...` }));
     }
 
     async playContext(queue, track) {
@@ -642,11 +662,7 @@ class MusicService {
         
         const artistEl = document.getElementById('playerArtist');
         if (artistEl) {
-            if (nextSongTitle) {
-                artistEl.innerHTML = `${track.artist} <span style="color: var(--secondary); margin-left: 5px;">• Next: ${nextSongTitle}</span>`;
-            } else {
-                artistEl.textContent = track.artist;
-            }
+            artistEl.textContent = track.artist;
         }
 
         const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn')];
