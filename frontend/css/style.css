@@ -1680,13 +1680,13 @@ input {
     .now-playing-info p { color: #e5ccb8 !important; font-size: 0.75rem !important; }
     .music-player .like-btn { display: block !important; color: white !important; font-size: 1.2rem !important; }
     
-    .player-center { width: auto !important; margin: 0 !important; }
-    .player-controls { margin: 0 !important; gap: 15px !important; }
-    .play-pause-btn { background: transparent !important; color: white !important; width: auto !important; height: auto !important; font-size: 1.2rem !important; }
-    #prevBtn, #nextBtn { color: white !important; }
+    .music-player .player-center { width: auto !important; margin: 0 !important; }
+    .music-player .player-controls { margin: 0 !important; gap: 15px !important; }
+    .music-player .play-pause-btn { background: transparent !important; color: white !important; width: auto !important; height: auto !important; font-size: 1.2rem !important; }
+    .music-player #prevBtn, .music-player #nextBtn { color: white !important; }
     
     /* Hide unneeded player elements */
-    #shuffleBtn, #repeatBtn, .progress-container, .player-right { display: none !important; }
+    .music-player #shuffleBtn, .music-player #repeatBtn, .music-player .progress-container, .music-player .player-right { display: none !important; }
 
     /* Mobile Bottom Nav Bar */
     .mobile-bottom-nav {
