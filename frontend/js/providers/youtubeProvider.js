@@ -16,8 +16,8 @@ class YouTubeProvider {
         return {
             id: data.id,
             title: data.title,
-            subtitle: data.subtitle || data.artist || 'Unknown Artist',
-            image: data.image || 'images/default-artwork.png',
+            artist: data.subtitle || data.artist || 'Unknown Artist',
+            cover: data.image || data.cover || 'images/default-artwork.png',
             duration: data.duration || 0,
             has_lyrics: data.has_lyrics || false,
             providerId: this.id,
