@@ -176,11 +176,11 @@ class MusicService {
                     touchEndX = e.changedTouches[0].screenX;
                     const swipeThreshold = 50;
                     if (touchEndX > touchStartX + swipeThreshold) {
-                        // Swiped right -> Next
-                        this.playNext();
-                    } else if (touchEndX < touchStartX - swipeThreshold) {
-                        // Swiped left -> Previous
+                        // Swiped right (drag to right) -> Previous song
                         this.playPrevious();
+                    } else if (touchEndX < touchStartX - swipeThreshold) {
+                        // Swiped left (drag to left) -> Next song
+                        this.playNext();
                     }
                 }, { passive: true });
             }

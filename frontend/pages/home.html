@@ -433,18 +433,18 @@
         <button class="close-large-player" id="closeLargePlayerBtn" style="position: absolute; top: 30px; left: 30px; font-size: 1.5rem; color: white; width: auto; height: auto; background: none;"><i class="fa-solid fa-chevron-down"></i></button>
         <button class="cast-btn" style="position: absolute; top: 30px; right: 30px; font-size: 1.5rem; color: white; background: none; border: none; cursor: pointer;"><i class="fa-solid fa-cast"></i></button>
         
-        <div class="large-player-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 450px; margin: 0 auto; padding: 40px 20px 20px 20px; min-height: 100vh; overflow-y: hidden;">
-            <div class="player-header-mobile" style="text-align: center; margin-bottom: 20px; width: 100%;">
-                <p style="margin: 0; font-size: 1.2rem; font-weight: 600; color: white; font-family: 'Delius', cursive;">Now Playing</p>
-                <p style="margin: 0; font-size: 1rem; color: #e5ccb8; font-family: 'Delius', cursive;">Songs</p>
+        <div class="large-player-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 450px; margin: 0 auto; padding: 20px; height: 100vh; overflow-y: auto;">
+            <div class="player-header-mobile" style="text-align: center; margin-bottom: 10px; width: 100%;">
+                <p style="margin: 0; font-size: 1.1rem; font-weight: 600; color: white; font-family: 'Delius', cursive;">Now Playing</p>
+                <p style="margin: 0; font-size: 0.9rem; color: #e5ccb8; font-family: 'Delius', cursive;">Songs</p>
             </div>
             
-            <img src="" alt="Cover" id="largePlayerImg" style="width: 85%; max-width: 320px; aspect-ratio: 1; object-fit: cover; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;">
+            <img src="" alt="Cover" id="largePlayerImg" style="width: 80%; max-width: 300px; max-height: 40vh; aspect-ratio: 1; object-fit: cover; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px;">
             
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px;">
                 <div style="flex: 1; overflow: hidden; padding-right: 15px; text-align: left;">
-                    <h2 id="largePlayerTitle" style="margin: 0 0 5px 0; font-size: 1.6rem; font-family: 'Delius', cursive; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Title</h2>
-                    <p id="largePlayerArtist" style="margin: 0; font-size: 1.1rem; font-family: 'Delius', cursive; color: #e5ccb8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Artist</p>
+                    <h2 id="largePlayerTitle" style="margin: 0 0 5px 0; font-size: 1.4rem; font-family: 'Delius', cursive; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Title</h2>
+                    <p id="largePlayerArtist" style="margin: 0; font-size: 1rem; font-family: 'Delius', cursive; color: #e5ccb8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Artist</p>
                 </div>
                 <div style="display: flex; gap: 15px;">
                     <button id="largeDownloadBtn" style="width: 45px; height: 45px; border-radius: 12px; background: white; color: black; border: none; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-download"></i></button>
@@ -460,12 +460,12 @@
                     </div>
                 </div>
             </div>
-            <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.8rem; color: #e5ccb8; font-family: monospace; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.8rem; color: #e5ccb8; font-family: monospace; margin-bottom: 20px;">
                 <span id="largeCurrTime">0:00</span>
                 <span id="largeTotalTime">0:00</span>
             </div>
 
-            <div class="player-controls" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 40px; width: 100%;">
+            <div class="player-controls" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; width: 100%;">
                 <button id="largePrevBtn" style="width: 60px; height: 60px; border-radius: 50%; background: #2f3034; color: white; border: none; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-backward-step"></i></button>
                 <button class="play-pause-btn" id="largePlayBtn" style="width: 160px; height: 60px; border-radius: 30px; background: white; color: black; border: none; font-size: 1.8rem; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: none;"><i class="fa-solid fa-play"></i></button>
                 <button id="largeNextBtn" style="width: 60px; height: 60px; border-radius: 50%; background: #2f3034; color: white; border: none; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-forward-step"></i></button>
