@@ -1659,8 +1659,7 @@ const initHome = () => {
                     
                     // Trigger actual music service sync if we are not the host
                     if (!connectService.isHost) {
-                        // Play the track silently if needed, or handle syncing elsewhere
-                        // Real sync logic would require deep integration with MusicService
+                        musicService.remoteSync(roomData.currentTrack, roomData.isPlaying, roomData.currentTime, roomData.updatedAt);
                     }
                 }
             };

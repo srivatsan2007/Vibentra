@@ -112,6 +112,12 @@ class MusicService {
                         this.audioPlayer.currentTime = newTime;
                     }
                 });
+                slider.addEventListener('change', (e) => {
+                    if (this.audioPlayer.duration && connectService.isHost) {
+                        const newTime = (e.target.value / 100) * this.audioPlayer.duration;
+                        connectService.syncPlaybackState(this.currentTrack, this.isPlaying, newTime);
+                    }
+                });
             }
         });
 
@@ -635,6 +641,10 @@ class MusicService {
         }
         
         this.updatePlayPauseUI(this.isPlaying);
+
+        if (connectService.isHost) {
+            connectService.syncPlaybackState(this.currentTrack, this.isPlaying, this.audioPlayer.currentTime);
+        }
     }
 
     updateVolumeIcon() {
@@ -821,6 +831,57 @@ class MusicService {
             } catch(e) {
                 console.error("Could not restore player state", e);
             }
+        }
+    }
+
+    remoteSync(track, isPlaying, remoteTime, updatedAt) {
+        if (!track) return;
+
+        const timeOffset = isPlaying && updatedAt ? (Date.now() - updatedAt) / 1000 : 0;
+        const targetTime = remoteTime + timeOffset;
+
+        if (!this.currentTrack || this.currentTrack.id !== track.id) {
+            this.playSpecificTrack(track).then(() => {
+                const syncOnCanPlay = () => {
+                    this.audioPlayer.currentTime = targetTime;
+                    if (!isPlaying) {
+                        this.audioPlayer.pause();
+                        this.isPlaying = false;
+                        this.updatePlayPauseUI(false);
+                    }
+                    this.audioPlayer.removeEventListener('canplay', syncOnCanPlay);
+                };
+                this.audioPlayer.addEventListener('canplay', syncOnCanPlay);
+                
+                // Fallback in case canplay was already fired
+                setTimeout(() => {
+                    if (Math.abs(this.audioPlayer.currentTime - targetTime) > 2) {
+                        this.audioPlayer.currentTime = targetTime;
+                        if (!isPlaying) {
+                            this.audioPlayer.pause();
+                            this.isPlaying = false;
+                            this.updatePlayPauseUI(false);
+                        }
+                    }
+                }, 500);
+            });
+            return;
+        }
+
+        const timeDiff = Math.abs(this.audioPlayer.currentTime - targetTime);
+        if (timeDiff > 2) {
+            this.audioPlayer.currentTime = targetTime;
+        }
+
+        if (isPlaying !== this.isPlaying) {
+            if (isPlaying) {
+                this.audioPlayer.play().catch(e => console.error("Guest auto-play failed", e));
+                this.isPlaying = true;
+            } else {
+                this.audioPlayer.pause();
+                this.isPlaying = false;
+            }
+            this.updatePlayPauseUI(this.isPlaying);
         }
     }
 }
