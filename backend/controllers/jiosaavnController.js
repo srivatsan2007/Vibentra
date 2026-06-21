@@ -209,11 +209,24 @@ const recognizeAudio = async (req, res) => {
     }
 };
 
+const getSongDetails = async (req, res) => {
+    const id = req.query.id;
+    if (!id) return res.status(400).json({ error: "Missing id" });
+    try {
+        const json = await fetchJson(`https://www.jiosaavn.com/api.php?__call=song.getDetails&_format=json&cc=in&pids=${encodeURIComponent(id)}`);
+        if (!json || !json[id]) return res.status(404).json({ error: "Song not found" });
+        res.json(formatTrack(json[id]));
+    } catch (err) {
+        res.status(500).json({ error: "Failed to get song details" });
+    }
+};
+
 module.exports = {
     searchJioSaavn,
     searchAllJioSaavn,
     getAlbumDetails,
     getPlaylistDetails,
     getLyrics,
-    recognizeAudio
+    recognizeAudio,
+    getSongDetails
 };

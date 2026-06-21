@@ -14,11 +14,17 @@ class MusicService {
         this.isShuffle = false;
         this.isRepeat = false;
         
-        // HTML Audio element for playing streamUrl
         this.audioPlayer = new Audio();
         
         this.audioPlayer.addEventListener('ended', () => this.handleTrackEnd());
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgressUI());
+        this.audioPlayer.addEventListener('error', (e) => {
+            console.error("Audio player error:", e, this.audioPlayer.error);
+            if (this.currentTrack) {
+                document.dispatchEvent(new CustomEvent('showNotification', { detail: `Error playing track. Skipping...`, type: 'error' }));
+                setTimeout(() => this.playNext(), 1500);
+            }
+        });
         
         // Sync state with OS-level events (e.g. background pause, incoming call)
         this.audioPlayer.addEventListener('play', () => {
@@ -445,7 +451,17 @@ class MusicService {
 
             if (fullTrack.streamUrl) {
                 this.audioPlayer.src = fullTrack.streamUrl;
-                this.audioPlayer.play().catch(e => console.error("Playback prevented:", e));
+                this.audioPlayer.play().catch(e => {
+                    console.error("Playback prevented:", e);
+                    if (e.name === 'NotAllowedError') {
+                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Playback paused. Tap play to resume.`, type: 'error' }));
+                        this.isPlaying = false;
+                        this.updatePlayPauseUI(false);
+                    } else {
+                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Error playing track. Skipping...`, type: 'error' }));
+                        setTimeout(() => this.playNext(), 1500);
+                    }
+                });
                 this.isPlaying = true;
                 this.updatePlayPauseUI(true);
                 if (this.mockInterval) {
@@ -517,7 +533,7 @@ class MusicService {
     handleTrackEnd() {
         if (this.isRepeat) {
             this.audioPlayer.currentTime = 0;
-            this.audioPlayer.play();
+            this.audioPlayer.play().catch(e => console.error(e));
         } else {
             this.playNext();
         }
@@ -538,6 +554,24 @@ class MusicService {
         const nextTrack = this.queue[nextIndex];
         if (nextTrack) {
             this.playSpecificTrack(nextTrack);
+        }
+    }
+
+    preloadNextTrack() {
+        if (this.queue.length === 0) return;
+        let nextIndex = 0;
+        const currentIndex = this.queue.findIndex(t => t.id === this.currentTrack?.id);
+
+        if (this.isShuffle) {
+            nextIndex = Math.floor(Math.random() * this.queue.length);
+        } else {
+            nextIndex = currentIndex >= 0 && currentIndex < this.queue.length - 1 ? currentIndex + 1 : 0;
+        }
+
+        const nextTrack = this.queue[nextIndex];
+        if (nextTrack) {
+            // Fetch to ensure cache is hot and streamUrl is fresh
+            providerManager.getTrack(nextTrack.providerId, nextTrack.id).catch(() => {});
         }
     }
 
@@ -665,6 +699,12 @@ class MusicService {
             const timeStr = `${mins}:${secs}`;
             if (currentTimeEl) currentTimeEl.textContent = timeStr;
             if (largeCurrTimeEl) largeCurrTimeEl.textContent = timeStr;
+            
+            // Preload next track if less than 15 seconds remaining
+            if (this.audioPlayer.duration - this.audioPlayer.currentTime < 15 && this._preloadedNextTrackFor !== this.currentTrack?.id) {
+                this._preloadedNextTrackFor = this.currentTrack?.id;
+                this.preloadNextTrack();
+            }
         } else if (isMock) {
             let currentWidth = parseFloat(progressSlider?.value || 0);
             currentWidth = (currentWidth + 1) % 100;

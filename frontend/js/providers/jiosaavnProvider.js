@@ -42,7 +42,25 @@ export default class JioSaavnProvider extends ProviderInterface {
     }
 
     async getTrack(trackId) {
-        return this.trackCache.get(trackId) || null;
+        const cached = this.trackCache.get(trackId);
+        // If we have a cached version and it's less than 30 minutes old, return it instantly
+        if (cached && cached._timestamp && (Date.now() - cached._timestamp < 30 * 60 * 1000)) {
+            return cached;
+        }
+
+        // To prevent streamUrl expiration issues, fetch fresh details
+        try {
+            const response = await fetch(`${this.backendUrl}/song?id=${trackId}`);
+            if (!response.ok) throw new Error('Failed to fetch song details');
+            const data = await response.json();
+            const standardized = this.standardizeTrack(data);
+            standardized._timestamp = Date.now();
+            this.trackCache.set(standardized.id, standardized);
+            return standardized;
+        } catch (error) {
+            console.error("JioSaavn getTrack error:", error);
+            return cached || null; // Fallback to cache
+        }
     }
 
     async searchAll(query) {
