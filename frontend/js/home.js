@@ -475,14 +475,14 @@ const initHome = () => {
         loadTrendingData(storedLang);
     }
 
-    function renderSearch() {
+    function renderSearch(initialQuery = '') {
         dynamicContent.innerHTML = `
             <div class="section-header">
                 <h2>Search</h2>
             </div>
             <div class="search-container" style="max-width: 100%; margin-bottom: 2rem; position: relative;">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search for songs, artists, across all providers..." style="padding-right: 40px;">
+                <input type="text" class="search-input" id="searchInput" value="${initialQuery}" placeholder="Search for songs, artists, across all providers..." style="padding-right: 40px;">
                 <button id="voiceSearchBtn" class="btn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; color: var(--text-muted); border: none; cursor: pointer; font-size: 1.2rem; transition: color 0.3s;" title="Search by humming or singing">
                     <i class="fa-solid fa-microphone"></i>
                 </button>
@@ -506,6 +506,12 @@ const initHome = () => {
 
         const searchInput = document.getElementById('searchInput');
         let searchTimeout;
+
+        if (initialQuery) {
+            setTimeout(() => {
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 100);
+        }
         
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value;
@@ -600,6 +606,12 @@ const initHome = () => {
                             }
                         });
 
+                        card.style.cursor = 'pointer';
+                        card.addEventListener('click', () => {
+                            const currentQuery = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+                            renderRemoteCollectionDetail(album, 'album', currentQuery);
+                        });
+
                         // Save as playlist logic
                         card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
                             e.stopPropagation();
@@ -656,6 +668,12 @@ const initHome = () => {
                             } else {
                                 showNotification('Failed to load playlist tracks', 'error');
                             }
+                        });
+
+                        card.style.cursor = 'pointer';
+                        card.addEventListener('click', () => {
+                            const currentQuery = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+                            renderRemoteCollectionDetail(pl, 'playlist', currentQuery);
                         });
 
                         // Save as local playlist logic
@@ -780,6 +798,80 @@ const initHome = () => {
                 showNotification('Microphone access denied or unavailable', 'error');
             }
         });
+    }
+
+    async function renderRemoteCollectionDetail(collection, type, currentQuery = '') {
+        dynamicContent.innerHTML = `
+            <div class="section-header" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <button class="btn" id="backFromRemoteBtn" style="background: transparent; border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+            <div style="display: flex; align-items: flex-end; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+                <img src="${collection.cover}" style="width: 180px; height: 180px; border-radius: 10px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="flex: 1;">
+                    <p style="margin: 0 0 5px 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">${type === 'album' ? 'Album' : 'Playlist'}</p>
+                    <h2 style="margin: 0 0 10px 0; font-size: clamp(1.5rem, 5vw, 3rem); font-family: 'Delius', cursive;">${collection.title}</h2>
+                    <p style="margin: 0; color: var(--text-muted);">${collection.artist || 'JioSaavn'}</p>
+                    <button class="btn" id="playAllRemoteBtn" style="margin-top: 20px; background: white; color: black; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; border: none; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-play"></i> Play</button>
+                </div>
+            </div>
+            <div class="track-list" id="remoteTrackList">
+                <p style="color: var(--primary);">Loading tracks...</p>
+            </div>
+        `;
+
+        document.getElementById('backFromRemoteBtn').addEventListener('click', () => {
+            renderSearch(currentQuery);
+        });
+
+        let remoteTracks = [];
+        try {
+            if (type === 'album') {
+                remoteTracks = await providerManager.getAlbum('jiosaavn', collection.id);
+            } else {
+                remoteTracks = await providerManager.getPlaylist('jiosaavn', collection.id);
+            }
+
+            document.getElementById('playAllRemoteBtn').addEventListener('click', () => {
+                if (remoteTracks.length > 0) {
+                    musicService.playContext(remoteTracks, remoteTracks[0]);
+                }
+            });
+
+            const trackListContainer = document.getElementById('remoteTrackList');
+            if (!remoteTracks || remoteTracks.length === 0) {
+                trackListContainer.innerHTML = '<p style="color: var(--text-muted);">No tracks found.</p>';
+                return;
+            }
+
+            let html = '';
+            remoteTracks.forEach((track, index) => {
+                html += `
+                <div class="track-item" data-id="${track.id}" style="cursor: pointer; padding: 10px; border-radius: 8px; transition: background 0.2s;">
+                    <div class="track-number" style="width: 30px; text-align: center; color: var(--text-muted);">${index + 1}</div>
+                    <div class="track-info-row" style="flex: 1; display: flex; align-items: center; gap: 15px;">
+                        <img src="${track.cover}" class="track-img" alt="cover" style="width: 40px; height: 40px; border-radius: 4px;">
+                        <div class="track-details" style="display: flex; flex-direction: column;">
+                            <span style="font-weight: 500;">${track.title}</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">${track.artist}</span>
+                        </div>
+                    </div>
+                    <div class="track-album" style="flex: 1; color: var(--text-muted); font-size: 0.9rem; display: none;">${track.album || 'Single'}</div>
+                    <div class="track-duration" style="color: var(--text-muted); font-size: 0.9rem;">${track.duration}</div>
+                </div>
+                `;
+            });
+            trackListContainer.innerHTML = html;
+
+            document.querySelectorAll('#remoteTrackList .track-item').forEach((item, idx) => {
+                item.addEventListener('click', () => {
+                    musicService.playContext(remoteTracks, remoteTracks[idx]);
+                });
+            });
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById('remoteTrackList').innerHTML = '<p style="color: #ef4444;">Failed to load tracks.</p>';
+        }
     }
 
     function renderPlaylists() {
