@@ -1507,10 +1507,20 @@ const initHome = () => {
                 <div class="section-header">
                     <h2>Listening Rooms</h2>
                 </div>
-                <div class="glass-panel" style="padding: 40px; text-align: center; border-radius: 16px; margin-bottom: 2rem;">
+                <div class="glass-panel" style="padding: 40px 20px; text-align: center; border-radius: 16px; margin-bottom: 2rem;">
                     <i class="fa-solid fa-satellite-dish" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></i>
                     <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Sync & Listen Together</h3>
-                    <p style="color: var(--text-muted); margin-bottom: 30px; max-width: 400px; margin-left: auto; margin-right: auto;">Create a room to listen to music in perfect sync with your friends, or join an existing room using a code.</p>
+                    <p style="color: var(--text-muted); margin-bottom: 20px; max-width: 400px; margin-left: auto; margin-right: auto;">Create a room to listen to music in perfect sync with your friends, or join an existing room using a code.</p>
+                    
+                    <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin: 0 auto 30px auto; max-width: 450px; border: 1px solid rgba(255,255,255,0.1);">
+                        <h4 style="margin-top: 0; margin-bottom: 15px; color: var(--primary); font-family: 'Delius', cursive;"><i class="fa-solid fa-circle-info"></i> How it works:</h4>
+                        <ul style="color: var(--text-muted); margin-bottom: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 0.95rem;">
+                            <li><i class="fa-solid fa-1" style="color: var(--primary); margin-right: 10px; width: 15px;"></i> <strong>Create a Room:</strong> Generate a unique 6-letter code.</li>
+                            <li><i class="fa-solid fa-2" style="color: var(--primary); margin-right: 10px; width: 15px;"></i> <strong>Share it:</strong> Send the code to your friends.</li>
+                            <li><i class="fa-solid fa-3" style="color: var(--primary); margin-right: 10px; width: 15px;"></i> <strong>Join in:</strong> Friends enter the code below to connect.</li>
+                            <li><i class="fa-solid fa-4" style="color: var(--primary); margin-right: 10px; width: 15px;"></i> <strong>Listen:</strong> Play, pause, or skip a song to sync everyone!</li>
+                        </ul>
+                    </div>
                     
                     <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
                         <button class="btn btn-primary" id="createRoomBtn" style="padding: 12px 30px; font-size: 1.1rem;">
