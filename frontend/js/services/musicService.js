@@ -13,6 +13,7 @@ class MusicService {
         this.isPlaying = false;
         this.isShuffle = false;
         this.isRepeat = false;
+        this._isTransitioning = false;
         
         this.audioPlayer = new Audio();
         
@@ -22,12 +23,13 @@ class MusicService {
             console.error("Audio player error:", e, this.audioPlayer.error);
             if (this.currentTrack) {
                 document.dispatchEvent(new CustomEvent('showNotification', { detail: `Error playing track. Skipping...`, type: 'error' }));
-                setTimeout(() => this.playNext(), 1500);
+                this.playNext();
             }
         });
         
         // Sync state with OS-level events (e.g. background pause, incoming call)
         this.audioPlayer.addEventListener('play', () => {
+            this._isTransitioning = false;
             this.isPlaying = true;
             this.updatePlayPauseUI(true);
             if ('mediaSession' in navigator) {
@@ -36,6 +38,7 @@ class MusicService {
         });
 
         this.audioPlayer.addEventListener('pause', () => {
+            if (this._isTransitioning) return;
             this.isPlaying = false;
             this.updatePlayPauseUI(false);
             if ('mediaSession' in navigator) {
@@ -45,6 +48,11 @@ class MusicService {
     }
 
     initUI() {
+        if (this.audioPlayer && !this.audioPlayer.parentNode && typeof document !== 'undefined' && document.body) {
+            this.audioPlayer.style.display = 'none';
+            document.body.appendChild(this.audioPlayer);
+        }
+        
         this.setupKeyboardShortcuts();
 
         // Player Controls
@@ -472,9 +480,10 @@ class MusicService {
 
     async playSpecificTrack(track) {
         try {
-            // Get full track details (resolves streamUrl from cache if available)
-            const fullTrack = await providerManager.getTrack(track.providerId, track.id) || track;
+            // Only fetch if streamUrl is missing to ensure synchronous transition for background playback
+            const fullTrack = track.streamUrl ? track : (await providerManager.getTrack(track.providerId, track.id) || track);
             
+            this._isTransitioning = true;
             this.currentTrack = fullTrack;
             historyService.addToHistory(this.currentTrack);
             this.updatePlayerUI(this.currentTrack);
@@ -484,6 +493,7 @@ class MusicService {
             if (fullTrack.streamUrl) {
                 this.audioPlayer.src = fullTrack.streamUrl;
                 this.audioPlayer.play().catch(e => {
+                    this._isTransitioning = false;
                     console.error("Playback prevented:", e);
                     if (e.name === 'NotAllowedError') {
                         document.dispatchEvent(new CustomEvent('showNotification', { detail: `Playback paused. Tap play to resume.`, type: 'error' }));
@@ -577,10 +587,15 @@ class MusicService {
         let nextIndex = 0;
         const currentIndex = this.queue.findIndex(t => t.id === this.currentTrack?.id);
 
-        if (this.isShuffle) {
-            nextIndex = Math.floor(Math.random() * this.queue.length);
+        if (typeof this._nextIndexToPlay === 'number') {
+            nextIndex = this._nextIndexToPlay;
+            this._nextIndexToPlay = null;
         } else {
-            nextIndex = currentIndex >= 0 && currentIndex < this.queue.length - 1 ? currentIndex + 1 : 0;
+            if (this.isShuffle) {
+                nextIndex = Math.floor(Math.random() * this.queue.length);
+            } else {
+                nextIndex = currentIndex >= 0 && currentIndex < this.queue.length - 1 ? currentIndex + 1 : 0;
+            }
         }
 
         const nextTrack = this.queue[nextIndex];
@@ -600,10 +615,16 @@ class MusicService {
             nextIndex = currentIndex >= 0 && currentIndex < this.queue.length - 1 ? currentIndex + 1 : 0;
         }
 
+        this._nextIndexToPlay = nextIndex;
+
         const nextTrack = this.queue[nextIndex];
-        if (nextTrack) {
-            // Fetch to ensure cache is hot and streamUrl is fresh
-            providerManager.getTrack(nextTrack.providerId, nextTrack.id).catch(() => {});
+        if (nextTrack && !nextTrack.streamUrl) {
+            // Fetch to ensure cache is hot and streamUrl is fresh, then store it back in queue
+            providerManager.getTrack(nextTrack.providerId, nextTrack.id).then(fullTrack => {
+                if (fullTrack && fullTrack.streamUrl) {
+                    this.queue[nextIndex] = fullTrack;
+                }
+            }).catch(() => {});
         }
     }
 
