@@ -1,0 +1,9 @@
+{
+  "appId": "com.srivatsan.vibentra",
+  "appName": "Vibentra",
+  "webDir": "frontend",
+  "server": {
+    "url": "https://vibentra.vercel.app",
+    "cleartext": true
+  }
+}
