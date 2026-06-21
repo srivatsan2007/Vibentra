@@ -16,14 +16,31 @@ class MusicService {
         this._isTransitioning = false;
         
         this.audioPlayer = new Audio();
+        this.audioPlayer.crossOrigin = "anonymous";
+        this.audioPlayer.preload = 'auto';
+        this.audioPlayer.playsInline = true;
+        this.audioPlayer.setAttribute('playsinline', 'true');
+        this.audioPlayer.setAttribute('webkit-playsinline', 'true');
         
         this.audioPlayer.addEventListener('ended', () => this.handleTrackEnd());
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgressUI());
+        
+        // Advanced error and stall recovery for background playback
         this.audioPlayer.addEventListener('error', (e) => {
             console.error("Audio player error:", e, this.audioPlayer.error);
             if (this.currentTrack) {
                 document.dispatchEvent(new CustomEvent('showNotification', { detail: `Error playing track. Skipping...`, type: 'error' }));
-                this.playNext();
+                setTimeout(() => this.playNext(), 1000); // Small delay to prevent infinite error loops
+            }
+        });
+
+        this.audioPlayer.addEventListener('stalled', () => {
+            console.warn("Audio stream stalled. Attempting recovery...");
+            if (this.isPlaying && this.currentTrack && this.audioPlayer.currentTime > 0) {
+                const currentTime = this.audioPlayer.currentTime;
+                this.audioPlayer.load();
+                this.audioPlayer.currentTime = currentTime;
+                this.audioPlayer.play().catch(e => console.error("Recovery failed:", e));
             }
         });
         
@@ -35,6 +52,7 @@ class MusicService {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
             }
+            this.requestWakeLock();
         });
 
         this.audioPlayer.addEventListener('pause', () => {
@@ -44,7 +62,36 @@ class MusicService {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'paused';
             }
+            this.releaseWakeLock();
         });
+
+        // Wake Lock API for preventing device sleep when in foreground
+        this.wakeLock = null;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && this.isPlaying) {
+                this.requestWakeLock();
+            }
+        });
+    }
+
+    async requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator && !this.wakeLock) {
+                this.wakeLock = await navigator.wakeLock.request('screen');
+                this.wakeLock.addEventListener('release', () => {
+                    this.wakeLock = null;
+                });
+            }
+        } catch (err) {
+            console.warn(`Wake Lock error: ${err.name}, ${err.message}`);
+        }
+    }
+
+    async releaseWakeLock() {
+        if (this.wakeLock) {
+            await this.wakeLock.release().catch(() => {});
+            this.wakeLock = null;
+        }
     }
 
     initUI() {
@@ -475,6 +522,7 @@ class MusicService {
     async playContext(queue, track) {
         this.originalQueue = [...queue];
         this.queue = [...queue];
+        this._nextIndexToPlay = null;
         this.playSpecificTrack(track);
     }
 
@@ -533,8 +581,12 @@ class MusicService {
                 connectService.syncPlaybackState(fullTrack, this.isPlaying, this.audioPlayer.currentTime);
             }
 
+            // Immediately preload the next track to ensure background transition doesn't block on network
+            this.preloadNextTrack();
+
         } catch (error) {
             console.error("Error playing track:", error);
+            this._isTransitioning = false;
         }
     }
 
@@ -752,12 +804,6 @@ class MusicService {
             const timeStr = `${mins}:${secs}`;
             if (currentTimeEl) currentTimeEl.textContent = timeStr;
             if (largeCurrTimeEl) largeCurrTimeEl.textContent = timeStr;
-            
-            // Preload next track if less than 15 seconds remaining
-            if (this.audioPlayer.duration - this.audioPlayer.currentTime < 15 && this._preloadedNextTrackFor !== this.currentTrack?.id) {
-                this._preloadedNextTrackFor = this.currentTrack?.id;
-                this.preloadNextTrack();
-            }
         } else if (isMock) {
             let currentWidth = parseFloat(progressSlider?.value || 0);
             currentWidth = (currentWidth + 1) % 100;
