@@ -19,9 +19,11 @@ app.get('/', (req, res) => {
 
 // Import Routes
 const jiosaavnRoutes = require('./routes/jiosaavnRoutes');
+const youtubeRoutes = require('./routes/youtubeRoutes');
 
 // Use Routes
 app.use('/api/jiosaavn', jiosaavnRoutes);
+app.use('/api/youtube', youtubeRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
