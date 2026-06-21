@@ -36,17 +36,23 @@
                 `;
                 updatePopup.innerHTML = `
                     <span style="font-size: 0.95rem;">A new version is available!</span>
-                    <button id="pwa-update-btn" style="background: var(--primary, #7C3AED); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;">Update</button>
+                    <button id="pwa-update-btn" style="background: var(--primary, #7C3AED); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; touch-action: manipulation;">Update</button>
                 `;
                 document.body.appendChild(updatePopup);
 
                 const updateBtn = document.getElementById('pwa-update-btn');
-                updateBtn.addEventListener('click', () => {
+                const handleUpdate = (e) => {
+                    e.preventDefault();
+                    if(updateBtn.disabled) return;
                     updateBtn.textContent = 'Updating...';
                     updateBtn.disabled = true;
+                    
+                    if (newWorker) {
+                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                    
                     setTimeout(() => { updatePopup.style.display = 'none'; }, 200);
 
-                    // Bulletproof update: Unregister SW, clear caches, and force reload
                     navigator.serviceWorker.getRegistrations().then(registrations => {
                         for (let registration of registrations) {
                             registration.unregister();
@@ -59,9 +65,12 @@
                         }
                         setTimeout(() => {
                             window.location.href = window.location.pathname + '?v=' + new Date().getTime();
-                        }, 800);
+                        }, 500);
                     });
-                });
+                };
+
+                updateBtn.addEventListener('click', handleUpdate);
+                updateBtn.addEventListener('touchstart', handleUpdate, { passive: false });
 
                 navigator.serviceWorker.register('../sw.js').then(reg => {
                     reg.addEventListener('updatefound', () => {
