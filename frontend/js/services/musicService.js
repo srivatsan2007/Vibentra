@@ -163,26 +163,28 @@ class MusicService {
             });
         }
 
-        // Swipe gestures for Player
-        const playerContainer = document.getElementById('musicPlayer');
-        if (playerContainer) {
-            let touchStartX = 0;
-            let touchEndX = 0;
-            playerContainer.addEventListener('touchstart', e => {
-                touchStartX = e.changedTouches[0].screenX;
-            }, { passive: true });
-            playerContainer.addEventListener('touchend', e => {
-                touchEndX = e.changedTouches[0].screenX;
-                const swipeThreshold = 50;
-                if (touchEndX > touchStartX + swipeThreshold) {
-                    // Swiped right -> Next
-                    this.playNext();
-                } else if (touchEndX < touchStartX - swipeThreshold) {
-                    // Swiped left -> Previous
-                    this.playPrevious();
-                }
-            }, { passive: true });
-        }
+        // Swipe gestures for Mini and Large Player
+        const playerContainers = [document.getElementById('musicPlayer'), document.getElementById('largePlayerModal')];
+        playerContainers.forEach(container => {
+            if (container) {
+                let touchStartX = 0;
+                let touchEndX = 0;
+                container.addEventListener('touchstart', e => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+                container.addEventListener('touchend', e => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    const swipeThreshold = 50;
+                    if (touchEndX > touchStartX + swipeThreshold) {
+                        // Swiped right -> Next
+                        this.playNext();
+                    } else if (touchEndX < touchStartX - swipeThreshold) {
+                        // Swiped left -> Previous
+                        this.playPrevious();
+                    }
+                }, { passive: true });
+            }
+        });
 
         // Save to Playlist Option
         const addToPlaylistOpt = document.getElementById('addToPlaylistOpt');
@@ -215,6 +217,7 @@ class MusicService {
         // Set as Ringtone Option
         const downloadRingtoneOpt = document.getElementById('downloadRingtoneOpt');
         const mobileRingtoneOpt = document.getElementById('mobileRingtoneOpt');
+        const largeDownloadBtn = document.getElementById('largeDownloadBtn');
         
         const handleRingtoneClick = (e, dropdownElem) => {
             e.stopPropagation();
@@ -231,6 +234,9 @@ class MusicService {
         }
         if (mobileRingtoneOpt) {
             mobileRingtoneOpt.addEventListener('click', (e) => handleRingtoneClick(e, mobileFabDropdown));
+        }
+        if (largeDownloadBtn) {
+            largeDownloadBtn.addEventListener('click', (e) => handleRingtoneClick(e, null));
         }
 
         // Show Lyrics Option
