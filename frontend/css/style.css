@@ -816,28 +816,91 @@ input {
     align-items: center;
     margin-bottom: 2rem;
     position: sticky;
-    top: 0;
-    z-index: 100;
-    padding: 1rem 1.5rem;
+    top: 12px;
+    z-index: 500;
+    padding: 0.8rem 1.4rem;
     border-radius: 20px;
-    background: rgba(12, 16, 43, 0.72);
+    background: rgba(12, 16, 43, 0.75);
     backdrop-filter: blur(25px) saturate(180%);
     -webkit-backdrop-filter: blur(25px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mobile-logo-brand {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #FFFFFF, #06B6D4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.mobile-logo-brand i {
+    color: #06B6D4;
+    font-size: 1.2rem;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.notification-btn {
+    position: relative;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-btn:hover {
+    color: #06B6D4;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.notification-btn .badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #EC4899;
+    color: #FFFFFF;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.8);
 }
 
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     background: rgba(255, 255, 255, 0.07);
     backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.16);
-    padding: 6px 18px 6px 6px;
+    padding: 6px 16px 6px 6px;
     border-radius: 30px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
 }
 
 .user-profile:hover {
@@ -854,33 +917,101 @@ input {
     border: 2px solid #7C3AED;
 }
 
-.user-profile span {
-    font-size: 0.92rem;
+.top-username-text {
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    font-size: 0.88rem;
     font-weight: 600;
     color: #FFFFFF;
 }
 
 /* Dropdowns */
+.hidden {
+    display: none !important;
+}
+
 .notifications-dropdown {
-    background: rgba(12, 16, 43, 0.92) !important;
-    backdrop-filter: blur(35px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(35px) saturate(200%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-    border-radius: 22px !important;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 280px;
+    background: rgba(12, 16, 43, 0.94);
+    backdrop-filter: blur(35px) saturate(190%);
+    -webkit-backdrop-filter: blur(35px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    z-index: 2500;
     overflow: hidden;
+    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dropdown-header h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.dropdown-header span {
+    font-size: 0.8rem;
+    color: #38BDF8;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.dropdown-body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.empty-notif {
+    padding: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.88rem;
 }
 
 .notifications-dropdown .option-item {
-    transition: all 0.25s ease;
+    padding: 12px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     color: rgba(255, 255, 255, 0.85);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.25s ease;
 }
 
 .notifications-dropdown .option-item:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-    color: #38BDF8 !important;
-    padding-left: 24px !important;
+    background: rgba(255, 255, 255, 0.1);
+    color: #38BDF8;
+    padding-left: 24px;
+}
+
+.notifications-dropdown .logout-option {
+    color: #F87171 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 4px;
+}
+
+.notifications-dropdown .logout-option:hover {
+    background: rgba(248, 113, 113, 0.15) !important;
+    color: #FCA5A5 !important;
 }
 
 /* Glass Panels */
@@ -1494,38 +1625,95 @@ input {
         display: none !important;
     }
     
-    .mobile-bottom-nav {
+    .topbar {
+        padding: 0.6rem 1rem !important;
+        margin-bottom: 1.2rem !important;
+        border-radius: 18px !important;
+    }
+
+    .mobile-logo-brand {
         display: flex !important;
     }
 
+    .top-username-text {
+        max-width: 75px !important;
+        font-size: 0.76rem !important;
+    }
+
+    .user-profile {
+        padding: 4px 12px 4px 4px !important;
+        gap: 6px !important;
+    }
+
+    .user-profile img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
     .main-content {
-        padding: 1.2rem 1rem 170px 1rem;
+        padding: 1rem 1rem 170px 1rem !important;
+    }
+
+    .cards-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px !important;
+        overflow-x: visible !important;
+    }
+
+    .music-card {
+        min-width: 0 !important;
+        width: 100% !important;
+        padding: 12px !important;
+        border-radius: 18px !important;
+    }
+
+    .card-img-wrapper {
+        margin-bottom: 10px !important;
+        border-radius: 14px !important;
+    }
+
+    .notifications-dropdown {
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        right: 0 !important;
+        width: 240px !important;
+        max-width: calc(100vw - 32px) !important;
+        z-index: 3000 !important;
+    }
+
+    .mobile-bottom-nav {
+        display: flex !important;
+        bottom: 12px !important;
+        width: calc(100% - 24px) !important;
+        z-index: 2000 !important;
     }
 
     .music-player {
         bottom: 84px !important;
         width: calc(100% - 24px) !important;
         height: 60px !important;
-        padding: 0 12px !important;
+        padding: 0 14px !important;
         border-radius: 30px !important;
+        z-index: 1500 !important;
     }
 
     .player-left {
-        width: 60% !important;
+        width: 65% !important;
     }
 
     .now-playing-img {
-        width: 42px !important;
-        height: 42px !important;
+        width: 40px !important;
+        height: 40px !important;
         border-radius: 50% !important;
     }
 
     .now-playing-info h4 {
-        font-size: 0.85rem !important;
+        font-size: 0.82rem !important;
     }
 
     .now-playing-info p {
-        font-size: 0.72rem !important;
+        font-size: 0.7rem !important;
     }
 
     .player-center {
@@ -1533,7 +1721,7 @@ input {
     }
 
     .player-controls {
-        gap: 12px !important;
+        gap: 10px !important;
         margin-bottom: 0 !important;
     }
 
@@ -1546,9 +1734,14 @@ input {
     .progress-container, .player-right {
         display: none !important;
     }
+}
 
-    .cards-grid {
-        grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)) !important;
-        gap: 10px !important;
+@media (max-width: 480px) {
+    .top-username-text {
+        display: none !important;
+    }
+    
+    .user-profile {
+        padding: 4px !important;
     }
 }

@@ -210,40 +210,45 @@
         <main class="main-content" id="mainContent">
             <!-- Topbar -->
             <header class="topbar">
-                <button class="mobile-nav-toggle" id="mobileNavToggle">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
-                <img src="../images/vibentra-logo.jpg" alt="Vibentra Logo" class="mobile-logo" style="height: 40px; border-radius: 8px;">
+                <div class="topbar-left">
+                    <button class="mobile-nav-toggle" id="mobileNavToggle">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="mobile-logo-brand">
+                        <i class="fa-solid fa-compact-disc"></i>
+                        <span>Vibentra</span>
+                    </div>
+                </div>
                 
-                <div class="topbar-actions" style="display: flex; align-items: center; gap: 20px;">
-                    <div class="notification-btn" id="notificationBtn" style="position: relative; cursor: pointer; color: var(--text-muted); font-size: 1.2rem; transition: color 0.3s;">
+                <div class="topbar-actions">
+                    <div class="notification-btn" id="notificationBtn">
                         <i class="fa-solid fa-bell"></i>
-                        <span class="badge" id="notificationBadge" style="position: absolute; top: -5px; right: -5px; background: var(--accent); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 50%; display: none;">0</span>
+                        <span class="badge" id="notificationBadge">0</span>
                         
                         <!-- Notification Dropdown -->
-                        <div class="notifications-dropdown hidden" id="notificationsDropdown" style="position: absolute; top: 150%; right: -50px; width: 320px; background: var(--cards); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden;">
-                            <div style="padding: 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="font-size: 1rem;">Notifications</h3>
-                                <span style="font-size: 0.8rem; color: var(--primary); cursor: pointer;" id="markAllReadBtn">Mark all read</span>
+                        <div class="notifications-dropdown hidden" id="notificationsDropdown">
+                            <div class="dropdown-header">
+                                <h3>Notifications</h3>
+                                <span id="markAllReadBtn">Mark all read</span>
                             </div>
-                            <div id="notificationsList" style="max-height: 350px; overflow-y: auto;">
-                                <div style="padding: 15px; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No new notifications</div>
+                            <div id="notificationsList" class="dropdown-body">
+                                <div class="empty-notif">No new notifications</div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="user-profile" id="userProfileBtn" style="position: relative;">
+                    <div class="user-profile" id="userProfileBtn">
                         <img src="https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff" alt="Profile" id="topProfileImg">
-                        <span id="topUsername">Loading...</span>
+                        <span id="topUsername" class="top-username-text">Loading...</span>
 
                         <!-- Profile Dropdown -->
-                        <div class="notifications-dropdown hidden" id="profileDropdown" style="position: absolute; top: 130%; right: 0; width: 200px; background: var(--cards); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden; display: flex; flex-direction: column; padding: 5px 0;">
-                            <div class="option-item" data-target="profile" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-user"></i> Profile</div>
-                            <div class="option-item" data-target="favorites" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-heart"></i> Favorites</div>
-                            <div class="option-item" data-target="settings" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-gear"></i> Settings</div>
-                            <div class="option-item mobile-only-item" data-target="connect" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-users"></i> Connect</div>
-                            <div class="option-item mobile-only-item" data-target="vibe-ai" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-robot"></i> Vibe AI</div>
-                            <div class="option-item" id="dropdownLogout" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #ef4444; border-top: 1px solid var(--glass-border); margin-top: 5px;"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+                        <div class="notifications-dropdown hidden" id="profileDropdown">
+                            <div class="option-item" data-target="profile"><i class="fa-solid fa-user"></i> Profile</div>
+                            <div class="option-item" data-target="favorites"><i class="fa-solid fa-heart"></i> Favorites</div>
+                            <div class="option-item" data-target="settings"><i class="fa-solid fa-gear"></i> Settings</div>
+                            <div class="option-item mobile-only-item" data-target="connect"><i class="fa-solid fa-users"></i> Connect</div>
+                            <div class="option-item mobile-only-item" data-target="vibe-ai"><i class="fa-solid fa-robot"></i> Vibe AI</div>
+                            <div class="option-item logout-option" id="dropdownLogout"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
                         </div>
                     </div>
                 </div>
