@@ -355,6 +355,19 @@ class MusicService {
             this.showLyricsModal();
         });
 
+        // Dedicated Ringtone Studio Button on player card
+        const largeRingtoneBtn = document.getElementById('largeRingtoneBtn');
+        if (largeRingtoneBtn) {
+            largeRingtoneBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!this.currentTrack) {
+                    alert('Play a song first to set a ringtone!');
+                    return;
+                }
+                this.openRingtoneModal(this.currentTrack);
+            });
+        }
+
         document.getElementById('largeOptRingtone')?.addEventListener('click', (e) => {
             e.stopPropagation();
             const dropdown = document.getElementById('largePlayerOptionsDropdown');
@@ -363,7 +376,7 @@ class MusicService {
                 alert('Play a song first to set a ringtone!');
                 return;
             }
-            alert('Ringtone has been set successfully for this device!');
+            this.openRingtoneModal(this.currentTrack);
         });
 
         // Save state when user leaves or hides the app

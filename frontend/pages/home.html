@@ -482,9 +482,10 @@
                     <h2 id="largePlayerTitle" style="margin: 0 0 5px 0; font-size: 1.4rem; font-family: 'Delius', cursive; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Title</h2>
                     <p id="largePlayerArtist" style="margin: 0; font-size: 1rem; font-family: 'Delius', cursive; color: #e5ccb8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Artist</p>
                 </div>
-                <div style="display: flex; gap: 15px;">
-                    <button id="largeDownloadBtn" style="width: 45px; height: 45px; border-radius: 12px; background: white; color: black; border: none; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-download"></i></button>
-                    <button class="like-btn" id="largeLikeBtn" style="width: 45px; height: 45px; border-radius: 12px; background: white; color: black; border: none; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-regular fa-heart"></i></button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="largeRingtoneBtn" title="Set as Ringtone Studio" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(236, 72, 153, 0.25); color: #EC4899; border: 1px solid rgba(236, 72, 153, 0.5); font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-solid fa-bell"></i></button>
+                    <button id="largeDownloadBtn" title="Download HD Audio" style="width: 44px; height: 44px; border-radius: 12px; background: #FFFFFF; color: #0F172A; border: none; font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-solid fa-download"></i></button>
+                    <button class="like-btn" id="largeLikeBtn" title="Add to Favorites" style="width: 44px; height: 44px; border-radius: 12px; background: #FFFFFF; color: #0F172A; border: none; font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-regular fa-heart"></i></button>
                 </div>
             </div>
 
@@ -514,21 +515,21 @@
                 <button id="largeLyricsBtn" title="Lyrics" style="width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.15); font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-solid fa-align-left"></i></button>
                 <button id="largeShuffleBtn" title="Shuffle" style="width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.15); font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-solid fa-shuffle"></i></button>
                 <button id="largeRepeatBtn" title="Repeat" style="width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.15); font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-solid fa-repeat"></i></button>
-                <button id="largeMoreBtn" title="Options" style="width: 48px; height: 48px; border-radius: 50%; background: #FFFFFF; color: #0F172A; border: none; font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <button id="largeMoreBtn" title="More Options" style="width: 48px; height: 48px; border-radius: 50%; background: #FFFFFF; color: #0F172A; border: none; font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
 
                 <!-- Three Dots Dropdown -->
-                <div class="notifications-dropdown hidden" id="largePlayerOptionsDropdown" style="position: absolute; bottom: 65px; right: 0; width: 220px; background: rgba(20,20,20,0.95); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; box-shadow: 0 -10px 30px rgba(0,0,0,0.6); z-index: 1000; overflow: hidden; padding: 10px 0;">
-                    <div class="option-item" id="largeOptPlaylist" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Delius', cursive;">
-                        <i class="fa-solid fa-folder-plus" style="color: var(--secondary);"></i> Add to Playlist
+                <div class="notifications-dropdown hidden" id="largePlayerOptionsDropdown" style="position: absolute; bottom: 70px; right: 0; width: 230px; background: rgba(15,23,42,0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.2); border-radius: 18px; box-shadow: 0 -15px 40px rgba(0,0,0,0.7); z-index: 9999; overflow: hidden; padding: 8px 0;">
+                    <div class="option-item" id="largeOptRingtone" style="padding: 14px 20px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500;">
+                        <i class="fa-solid fa-bell" style="color: #EC4899; font-size: 1.1rem;"></i> Set as Ringtone Studio
                     </div>
-                    <div class="option-item" id="largeOptLyrics" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Delius', cursive;">
-                        <i class="fa-solid fa-align-left" style="color: var(--primary);"></i> Show Lyrics
+                    <div class="option-item" id="largeOptDownload" style="padding: 14px 20px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500;">
+                        <i class="fa-solid fa-download" style="color: #10B981; font-size: 1.1rem;"></i> Download Song
                     </div>
-                    <div class="option-item" id="largeOptRingtone" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Delius', cursive;">
-                        <i class="fa-solid fa-bell" style="color: #EC4899;"></i> Set as Ringtone
+                    <div class="option-item" id="largeOptPlaylist" style="padding: 14px 20px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500;">
+                        <i class="fa-solid fa-folder-plus" style="color: #06B6D4; font-size: 1.1rem;"></i> Add to Playlist
                     </div>
-                    <div class="option-item" id="largeOptDownload" style="padding: 12px 20px; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Delius', cursive;">
-                        <i class="fa-solid fa-download" style="color: #10B981;"></i> Download Song
+                    <div class="option-item" id="largeOptLyrics" style="padding: 14px 20px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 12px; color: white; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 500;">
+                        <i class="fa-solid fa-align-left" style="color: #7C3AED; font-size: 1.1rem;"></i> Show Lyrics
                     </div>
                 </div>
             </div>
