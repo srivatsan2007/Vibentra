@@ -90,6 +90,15 @@
                         updatePopup.style.display = 'flex';
                     }
                 }).catch(err => console.log('SW registration failed: ', err));
+
+                // Auto-check for updates whenever app comes into foreground
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && 'serviceWorker' in navigator) {
+                        navigator.serviceWorker.getRegistration().then(reg => {
+                            if (reg) reg.update();
+                        });
+                    }
+                });
             });
         }
 
