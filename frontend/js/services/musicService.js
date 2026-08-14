@@ -68,13 +68,20 @@ class MusicService {
             this.releaseWakeLock();
         });
 
-        // Wake Lock API for preventing device sleep when in foreground
-        this.wakeLock = null;
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && this.isPlaying) {
-                this.requestWakeLock();
-            }
-        });
+        // Capacitor Native MediaAction listener
+        if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
+            window.Capacitor.Plugins.BackgroundAudio.addListener('mediaAction', (data) => {
+                if (data?.action === 'play') {
+                    if (!this.isPlaying) this.togglePlayPause();
+                } else if (data?.action === 'pause') {
+                    if (this.isPlaying) this.togglePlayPause();
+                } else if (data?.action === 'next') {
+                    this.playNext();
+                } else if (data?.action === 'previous') {
+                    this.playPrevious();
+                }
+            });
+        }
     }
 
     async requestWakeLock() {
@@ -736,36 +743,53 @@ class MusicService {
     }
 
     updateMediaSession(track) {
-        // Update document title for background notification fallback
+        if (!track) return;
         document.title = `${track.title} - ${track.artist || 'Unknown Artist'} | Vibentra`;
 
         if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: track.title,
-                artist: track.artist || 'Unknown Artist',
-                album: 'Vibentra',
-                artwork: [
-                    { src: track.cover, sizes: '96x96', type: 'image/jpeg' },
-                    { src: track.cover, sizes: '128x128', type: 'image/jpeg' },
-                    { src: track.cover, sizes: '192x192', type: 'image/jpeg' },
-                    { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
-                    { src: track.cover, sizes: '384x384', type: 'image/jpeg' },
-                    { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
-                ]
-            });
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: track.title,
+                    artist: track.artist || 'Unknown Artist',
+                    album: 'Vibentra',
+                    artwork: [
+                        { src: track.cover, sizes: '96x96', type: 'image/jpeg' },
+                        { src: track.cover, sizes: '128x128', type: 'image/jpeg' },
+                        { src: track.cover, sizes: '192x192', type: 'image/jpeg' },
+                        { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
+                        { src: track.cover, sizes: '384x384', type: 'image/jpeg' },
+                        { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
+                    ]
+                });
 
-            navigator.mediaSession.setActionHandler('play', () => {
-                this.audioPlayer.play().catch(e => console.error(e));
-            });
-            navigator.mediaSession.setActionHandler('pause', () => {
-                this.audioPlayer.pause();
-            });
-            navigator.mediaSession.setActionHandler('previoustrack', () => {
-                this.playPrevious();
-            });
-            navigator.mediaSession.setActionHandler('nexttrack', () => {
-                this.playNext();
-            });
+                navigator.mediaSession.setActionHandler('play', () => {
+                    if (!this.isPlaying) this.togglePlayPause();
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    if (this.isPlaying) this.togglePlayPause();
+                });
+                navigator.mediaSession.setActionHandler('previoustrack', () => {
+                    this.playPrevious();
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    this.playNext();
+                });
+            } catch (e) {
+                console.warn("MediaSession error:", e);
+            }
+        }
+
+        try {
+            if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
+                window.Capacitor.Plugins.BackgroundAudio.startService({
+                    title: track.title || "Vibentra Music",
+                    artist: track.artist || "Playing...",
+                    cover: track.cover || "",
+                    isPlaying: this.isPlaying
+                });
+            }
+        } catch (e) {
+            console.warn("BackgroundAudio service error:", e);
         }
     }
 
@@ -985,6 +1009,19 @@ class MusicService {
         if (playerContainer) {
             if (isPlaying) playerContainer.classList.add('playing');
             else playerContainer.classList.remove('playing');
+        }
+
+        try {
+            if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio && this.currentTrack) {
+                window.Capacitor.Plugins.BackgroundAudio.startService({
+                    title: this.currentTrack.title || "Vibentra Music",
+                    artist: this.currentTrack.artist || "Playing...",
+                    cover: this.currentTrack.cover || "",
+                    isPlaying: isPlaying
+                });
+            }
+        } catch (e) {
+            console.warn("BackgroundAudio play/pause sync error:", e);
         }
     }
 
