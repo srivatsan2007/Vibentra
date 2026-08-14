@@ -528,30 +528,37 @@ class MusicService {
 
     async playSpecificTrack(track) {
         try {
-            // Only fetch if streamUrl is missing to ensure synchronous transition for background playback
-            const fullTrack = track.streamUrl ? track : (await providerManager.getTrack(track.providerId, track.id) || track);
-            
             this._isTransitioning = true;
+
+            // Fetch full track only if streamUrl is missing
+            let fullTrack = track;
+            if (!fullTrack.streamUrl) {
+                fullTrack = (await providerManager.getTrack(track.providerId || 'jiosaavn', track.id)) || track;
+            }
+            
             this.currentTrack = fullTrack;
             historyService.addToHistory(this.currentTrack);
             this.updatePlayerUI(this.currentTrack);
-            
             this.updateMediaSession(fullTrack);
 
             if (fullTrack.streamUrl) {
+                // Synchronously set src and initiate playback for mobile gesture retention
                 this.audioPlayer.src = fullTrack.streamUrl;
-                this.audioPlayer.play().catch(e => {
-                    this._isTransitioning = false;
-                    console.error("Playback prevented:", e);
-                    if (e.name === 'NotAllowedError') {
-                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Playback paused. Tap play to resume.`, type: 'error' }));
-                        this.isPlaying = false;
-                        this.updatePlayPauseUI(false);
-                    } else {
-                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Error playing track. Skipping...`, type: 'error' }));
-                        setTimeout(() => this.playNext(), 1500);
-                    }
-                });
+                const playPromise = this.audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => {
+                        this._isTransitioning = false;
+                        console.error("Playback prevented:", e);
+                        if (e.name === 'NotAllowedError') {
+                            // On mobile, if autoplay is blocked, prompt user once
+                            this.isPlaying = false;
+                            this.updatePlayPauseUI(false);
+                        } else {
+                            // If audio URL failed, try skipping to next track automatically
+                            setTimeout(() => this.playNext(), 1000);
+                        }
+                    });
+                }
                 this.isPlaying = true;
                 this.updatePlayPauseUI(true);
                 if (this.mockInterval) {
@@ -566,22 +573,21 @@ class MusicService {
                 this.mockInterval = setInterval(() => this.updateProgressUI(true), 1000);
             }
 
-            // Update Large Player if open
+            // Update Large Player if active
             if (document.getElementById('largePlayerModal')?.classList.contains('active')) {
                 this.renderLargePlayer();
             }
 
-            // Add to history
+            // Add to history stack
             this.history.push(fullTrack);
-
             this.savePlayerState();
 
-            // Sync to room if we are host
+            // Sync to connect room if host
             if (connectService.isHost) {
                 connectService.syncPlaybackState(fullTrack, this.isPlaying, this.audioPlayer.currentTime);
             }
 
-            // Immediately preload the next track to ensure background transition doesn't block on network
+            // Immediately preload next track's streamUrl in background for seamless auto-play
             this.preloadNextTrack();
 
         } catch (error) {
@@ -634,20 +640,18 @@ class MusicService {
     }
 
     playNext() {
-        if (this.queue.length === 0) return;
+        if (!this.queue || this.queue.length === 0) return;
 
+        const currentIndex = this.queue.findIndex(t => String(t.id) === String(this.currentTrack?.id));
         let nextIndex = 0;
-        const currentIndex = this.queue.findIndex(t => t.id === this.currentTrack?.id);
 
-        if (typeof this._nextIndexToPlay === 'number') {
-            nextIndex = this._nextIndexToPlay;
-            this._nextIndexToPlay = null;
+        if (this.isShuffle) {
+            nextIndex = Math.floor(Math.random() * this.queue.length);
+        } else if (currentIndex >= 0 && currentIndex < this.queue.length - 1) {
+            nextIndex = currentIndex + 1;
         } else {
-            if (this.isShuffle) {
-                nextIndex = Math.floor(Math.random() * this.queue.length);
-            } else {
-                nextIndex = currentIndex >= 0 && currentIndex < this.queue.length - 1 ? currentIndex + 1 : 0;
-            }
+            // End of queue: restart playlist from beginning
+            nextIndex = 0;
         }
 
         const nextTrack = this.queue[nextIndex];
@@ -657,26 +661,26 @@ class MusicService {
     }
 
     preloadNextTrack() {
-        if (this.queue.length === 0) return;
-        let nextIndex = 0;
-        const currentIndex = this.queue.findIndex(t => t.id === this.currentTrack?.id);
+        if (!this.queue || this.queue.length === 0) return;
 
+        const currentIndex = this.queue.findIndex(t => String(t.id) === String(this.currentTrack?.id));
+        if (currentIndex === -1) return;
+
+        let nextIndex = (currentIndex + 1) % this.queue.length;
         if (this.isShuffle) {
             nextIndex = Math.floor(Math.random() * this.queue.length);
-        } else {
-            nextIndex = currentIndex >= 0 && currentIndex < this.queue.length - 1 ? currentIndex + 1 : 0;
         }
 
-        this._nextIndexToPlay = nextIndex;
-
         const nextTrack = this.queue[nextIndex];
-        if (nextTrack && !nextTrack.streamUrl) {
-            // Fetch to ensure cache is hot and streamUrl is fresh, then store it back in queue
-            providerManager.getTrack(nextTrack.providerId, nextTrack.id).then(fullTrack => {
+        if (nextTrack && (!nextTrack.streamUrl || Date.now() - (nextTrack._fetchedAt || 0) > 10 * 60 * 1000)) {
+            providerManager.getTrack(nextTrack.providerId || 'jiosaavn', nextTrack.id).then(fullTrack => {
                 if (fullTrack && fullTrack.streamUrl) {
+                    fullTrack._fetchedAt = Date.now();
                     this.queue[nextIndex] = fullTrack;
+                    const origIdx = this.originalQueue.findIndex(t => String(t.id) === String(nextTrack.id));
+                    if (origIdx !== -1) this.originalQueue[origIdx] = fullTrack;
                 }
-            }).catch(() => {});
+            }).catch(err => console.warn("Failed to preload next track:", err));
         }
     }
 
