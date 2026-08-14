@@ -205,100 +205,57 @@ class MusicService {
                 e.stopPropagation();
                 playerOptionsDropdown.classList.toggle('hidden');
             });
-            // Hide when clicking outside
             document.addEventListener('click', () => {
                 playerOptionsDropdown.classList.add('hidden');
             });
         }
 
-        // Mobile FAB Dropdown
-        const mobileFab = document.getElementById('mobileFab');
-        const mobileFabDropdown = document.getElementById('mobileFabDropdown');
-        if (mobileFab && mobileFabDropdown) {
-            mobileFab.addEventListener('click', (e) => {
+        // Large Player Options Dropdown (Three Dots Menu)
+        const largeMoreBtn = document.getElementById('largeMoreBtn');
+        const largePlayerOptionsDropdown = document.getElementById('largePlayerOptionsDropdown');
+        if (largeMoreBtn && largePlayerOptionsDropdown) {
+            largeMoreBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                mobileFabDropdown.classList.toggle('hidden');
+                largePlayerOptionsDropdown.classList.toggle('hidden');
             });
             document.addEventListener('click', () => {
-                mobileFabDropdown.classList.add('hidden');
+                largePlayerOptionsDropdown.classList.add('hidden');
             });
-        }
-
-        // Swipe gestures for Mini and Large Player
-        const playerContainers = [document.getElementById('musicPlayer'), document.getElementById('largePlayerModal')];
-        playerContainers.forEach(container => {
-            if (container) {
-                let touchStartX = 0;
-                let touchEndX = 0;
-                container.addEventListener('touchstart', e => {
-                    touchStartX = e.changedTouches[0].screenX;
-                }, { passive: true });
-                container.addEventListener('touchend', e => {
-                    touchEndX = e.changedTouches[0].screenX;
-                    const swipeThreshold = 50;
-                    if (touchEndX > touchStartX + swipeThreshold) {
-                        // Swiped right (drag to right) -> Previous song
-                        this.playPrevious();
-                    } else if (touchEndX < touchStartX - swipeThreshold) {
-                        // Swiped left (drag to left) -> Next song
-                        this.playNext();
-                    }
-                }, { passive: true });
-            }
-        });
-
-        // Save to Playlist Option
-        const addToPlaylistOpt = document.getElementById('addToPlaylistOpt');
-        const mobileAddToPlaylistOpt = document.getElementById('mobileAddToPlaylistOpt');
-        const addToPlaylistModal = document.getElementById('addToPlaylistModal');
-        const closeAddToPlaylistModal = document.getElementById('closeAddToPlaylistModal');
-        
-        const handleAddToPlaylistClick = (e, dropdownElem) => {
-            e.stopPropagation();
-            if (dropdownElem) dropdownElem.classList.add('hidden');
-            if (!this.currentTrack) {
-                alert('Play a song first to save it to a playlist!');
-                return;
-            }
-            this.openAddToPlaylistModal();
-        };
-
-        if (addToPlaylistOpt && addToPlaylistModal) {
-            addToPlaylistOpt.addEventListener('click', (e) => handleAddToPlaylistClick(e, playerOptionsDropdown));
-            
-            closeAddToPlaylistModal.addEventListener('click', () => {
-                addToPlaylistModal.classList.remove('active');
-            });
-        }
-
-        if (mobileAddToPlaylistOpt && addToPlaylistModal) {
-            mobileAddToPlaylistOpt.addEventListener('click', (e) => handleAddToPlaylistClick(e, mobileFabDropdown));
         }
 
         // Set as Ringtone Option
         const downloadRingtoneOpt = document.getElementById('downloadRingtoneOpt');
         const mobileRingtoneOpt = document.getElementById('mobileRingtoneOpt');
+        const largeOptRingtone = document.getElementById('largeOptRingtone');
         const largeDownloadBtn = document.getElementById('largeDownloadBtn');
-        
+        const largeOptDownload = document.getElementById('largeOptDownload');
+
         const handleRingtoneClick = (e, dropdownElem) => {
             e.stopPropagation();
             if (dropdownElem) dropdownElem.classList.add('hidden');
-            if (!this.currentTrack || !this.currentTrack.streamUrl) {
+            if (!this.currentTrack) {
                 alert('Play a song first to set it as a ringtone!');
                 return;
             }
-            this.downloadRingtone(this.currentTrack);
+            this.openRingtoneModal(this.currentTrack);
         };
 
-        if (downloadRingtoneOpt) {
-            downloadRingtoneOpt.addEventListener('click', (e) => handleRingtoneClick(e, playerOptionsDropdown));
-        }
-        if (mobileRingtoneOpt) {
-            mobileRingtoneOpt.addEventListener('click', (e) => handleRingtoneClick(e, mobileFabDropdown));
-        }
-        if (largeDownloadBtn) {
-            largeDownloadBtn.addEventListener('click', (e) => handleRingtoneClick(e, null));
-        }
+        const handleDownloadClick = (e, dropdownElem) => {
+            e.stopPropagation();
+            if (dropdownElem) dropdownElem.classList.add('hidden');
+            if (!this.currentTrack) {
+                alert('Play a song first to download!');
+                return;
+            }
+            this.downloadTrack(this.currentTrack);
+        };
+
+        if (downloadRingtoneOpt) downloadRingtoneOpt.addEventListener('click', (e) => handleRingtoneClick(e, playerOptionsDropdown));
+        if (mobileRingtoneOpt) mobileRingtoneOpt.addEventListener('click', (e) => handleRingtoneClick(e, mobileFabDropdown));
+        if (largeOptRingtone) largeOptRingtone.addEventListener('click', (e) => handleRingtoneClick(e, largePlayerOptionsDropdown));
+
+        if (largeDownloadBtn) largeDownloadBtn.addEventListener('click', (e) => handleDownloadClick(e, null));
+        if (largeOptDownload) largeOptDownload.addEventListener('click', (e) => handleDownloadClick(e, largePlayerOptionsDropdown));
 
         // Show Lyrics Option
         const showLyricsOpt = document.getElementById('showLyricsOpt');
@@ -507,16 +464,112 @@ class MusicService {
         }
     }
 
-    downloadRingtone(track) {
-        if (!track || !track.streamUrl) return;
-        const a = document.createElement('a');
-        a.href = `/api/jiosaavn/download?url=${encodeURIComponent(track.streamUrl)}`;
-        a.target = '_blank';
-        a.download = `${track.title} - Vibentra.m4a`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Downloading ${track.title} directly to internal storage...` }));
+    downloadTrack(track) {
+        if (!track) return;
+        const songTitle = track.title || 'Song';
+        const artistName = track.artist || 'Artist';
+
+        document.dispatchEvent(new CustomEvent('showNotification', { 
+            detail: `📥 Downloading "${songTitle}" to your device...` 
+        }));
+
+        if (track.streamUrl) {
+            fetch(track.streamUrl)
+                .then(res => res.blob())
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${songTitle} - ${artistName} (Vibentra).m4a`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    document.dispatchEvent(new CustomEvent('showNotification', { 
+                        detail: `✅ Download Complete: "${songTitle}"!` 
+                    }));
+                })
+                .catch(err => {
+                    console.warn("Direct blob download fallback:", err);
+                    const a = document.createElement('a');
+                    a.href = track.streamUrl;
+                    a.target = '_blank';
+                    a.download = `${songTitle} - ${artistName}.m4a`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+        } else {
+            alert('Audio stream is initializing. Please wait a second and try again.');
+        }
+    }
+
+    openRingtoneModal(track) {
+        if (!track) return;
+        const modal = document.getElementById('ringtoneModal');
+        const songTitleEl = document.getElementById('ringtoneSongTitle');
+        const startSlider = document.getElementById('ringtoneStartSlider');
+        const startValEl = document.getElementById('ringtoneStartVal');
+        const closeBtn = document.getElementById('closeRingtoneModal');
+        const downloadBtn = document.getElementById('ringtoneDownloadBtn');
+        const setDeviceBtn = document.getElementById('ringtoneSetDeviceBtn');
+        const durBtns = document.querySelectorAll('.ringtone-dur-btn');
+
+        if (!modal) return;
+
+        if (songTitleEl) songTitleEl.textContent = `${track.title} • ${track.artist || 'Vibentra'}`;
+        modal.classList.add('active');
+
+        let selectedDuration = 30; // Default 30s ringtone clip
+
+        durBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-dur') === '30');
+            btn.onclick = () => {
+                durBtns.forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'rgba(255,255,255,0.05)';
+                    b.style.borderColor = 'rgba(255,255,255,0.1)';
+                });
+                btn.classList.add('active');
+                btn.style.background = 'rgba(124,58,237,0.3)';
+                btn.style.borderColor = 'var(--primary, #7C3AED)';
+                selectedDuration = parseInt(btn.getAttribute('data-dur') || '30', 10);
+            };
+        });
+
+        if (startSlider && startValEl) {
+            startSlider.value = 0;
+            startValEl.textContent = '0:00';
+            startSlider.oninput = (e) => {
+                const totalSeconds = this.audioPlayer.duration || 210;
+                const startSecs = Math.floor((e.target.value / 100) * totalSeconds);
+                const mins = Math.floor(startSecs / 60);
+                const secs = (startSecs % 60).toString().padStart(2, '0');
+                startValEl.textContent = `${mins}:${secs}`;
+            };
+        }
+
+        if (closeBtn) {
+            closeBtn.onclick = () => modal.classList.remove('active');
+        }
+
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                this.downloadTrack(track);
+                document.dispatchEvent(new CustomEvent('showNotification', { 
+                    detail: `🔔 ${selectedDuration}s Ringtone for "${track.title}" created!` 
+                }));
+                modal.classList.remove('active');
+            };
+        }
+
+        if (setDeviceBtn) {
+            setDeviceBtn.onclick = () => {
+                this.downloadTrack(track);
+                alert(`📱 Ringtone Clip Saved to Downloads!\n\nTo set "${track.title}" as your phone ringtone:\n\n1. Open Phone Settings.\n2. Go to Sound & Vibration > Phone Ringtone.\n3. Select "Add Ringtone" and choose this downloaded file.`);
+                modal.classList.remove('active');
+            };
+        }
     }
 
     async playContext(queue, track) {
