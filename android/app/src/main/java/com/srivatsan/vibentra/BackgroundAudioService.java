@@ -53,6 +53,24 @@ public class BackgroundAudioService extends Service {
         }
 
         mediaSession = new MediaSessionCompat(this, "VibentraMediaSession");
+        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public void onPlay() {
+                BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
+            }
+            @Override
+            public void onPause() {
+                BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+            }
+            @Override
+            public void onSkipToNext() {
+                BackgroundAudioPlugin.handleMediaAction(ACTION_NEXT);
+            }
+            @Override
+            public void onSkipToPrevious() {
+                BackgroundAudioPlugin.handleMediaAction(ACTION_PREVIOUS);
+            }
+        });
         mediaSession.setActive(true);
     }
 

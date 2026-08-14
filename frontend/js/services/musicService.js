@@ -38,12 +38,14 @@ class MusicService {
         });
 
         this.audioPlayer.addEventListener('stalled', () => {
-            console.warn("Audio stream stalled. Attempting recovery...");
-            if (this.isPlaying && this.currentTrack && this.audioPlayer.currentTime > 0) {
-                const currentTime = this.audioPlayer.currentTime;
-                this.audioPlayer.load();
-                this.audioPlayer.currentTime = currentTime;
-                this.audioPlayer.play().catch(e => console.error("Recovery failed:", e));
+            console.warn("Audio stream stalled.");
+            // Do NOT reload current track near the end of audio stream as it cancels the ended event
+            if (this.isPlaying && this.currentTrack && this.audioPlayer.duration) {
+                const timeRemaining = this.audioPlayer.duration - this.audioPlayer.currentTime;
+                if (timeRemaining > 5 && this.audioPlayer.currentTime > 2) {
+                    console.log("Attempting background audio resume...");
+                    this.audioPlayer.play().catch(e => console.warn("Stall resume warning:", e));
+                }
             }
         });
         
@@ -807,7 +809,7 @@ class MusicService {
     playNext() {
         if (!this.queue || this.queue.length === 0) return;
 
-        let nextIndex = 0;
+        let nextIndex = -1;
 
         if (this.isShuffle) {
             if (this.queue.length > 1) {
@@ -826,21 +828,18 @@ class MusicService {
         } else if (this.repeatMode === 'all') {
             nextIndex = 0;
         } else {
-            // End of queue reached and repeat is OFF
-            if (this.queue.length === 1) {
-                // If queue only has 1 track and repeat is off, stop playback at end
-                this.isPlaying = false;
-                this.updatePlayPauseUI(false);
-                this.audioPlayer.currentTime = 0;
-                this.updateProgressUI();
-                return;
-            }
-            nextIndex = 0;
+            // Repeat is OFF and end of queue reached: stop playback cleanly
+            console.log("[Vibentra Player] End of queue reached and repeat is OFF. Stopping playback.");
+            this.isPlaying = false;
+            this.updatePlayPauseUI(false);
+            this.audioPlayer.currentTime = 0;
+            this.updateProgressUI();
+            this.savePlayerState();
+            return;
         }
 
-        const nextTrack = this.queue[nextIndex];
-        if (nextTrack) {
-            this.playSpecificTrack(nextTrack, nextIndex);
+        if (nextIndex !== -1 && this.queue[nextIndex]) {
+            this.playSpecificTrack(this.queue[nextIndex], nextIndex);
         }
     }
 
