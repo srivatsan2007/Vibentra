@@ -1,4 +1,5 @@
 import JioSaavnProvider from './jiosaavnProvider.js';
+import YouTubeMusicProvider from './youtubeMusicProvider.js';
 import { db } from '../firebase-config.js';
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -7,12 +8,15 @@ class ProviderManager {
         this.providers = new Map();
         
         const jiosaavn = new JioSaavnProvider();
+        const youtube = new YouTubeMusicProvider();
 
         // Register available providers
         this.register(jiosaavn);
+        this.register(youtube);
 
-        // JioSaavn enabled by default
+        // Enable providers by default
         jiosaavn.enabled = true;
+        youtube.enabled = true;
     }
 
     register(provider) {
