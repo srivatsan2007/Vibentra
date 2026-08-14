@@ -124,6 +124,37 @@
     </script>
 </head>
 <body>
+    <!-- Ambient Liquid Glass Background System -->
+    <div class="liquid-bg-container">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+        <div class="ambient-orb orb-4"></div>
+        <div class="liquid-grid-overlay"></div>
+        
+        <div class="liquid-equalizer-bg">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        </div>
+
+        <div class="floating-notes-bg">
+            <i class="fa-solid fa-music note-1"></i>
+            <i class="fa-solid fa-note-sticky note-2"></i>
+            <i class="fa-solid fa-headphones note-3"></i>
+            <i class="fa-solid fa-compact-disc note-4"></i>
+        </div>
+    </div>
+
     <div class="app-layout">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -222,11 +253,11 @@
             <div id="dynamicContent">
                 <!-- Category Chips (Mobile) -->
                 <div class="category-chips mobile-only-chips" style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 5px;">
-                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Podcasts</div>
-                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Workout</div>
-                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Feel good</div>
-                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Romance</div>
-                    <div style="background: #261e1b; color: #d1a88a; padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-family: 'Delius', cursive;">Relax</div>
+                    <div class="glass-chip">Podcasts</div>
+                    <div class="glass-chip">Workout</div>
+                    <div class="glass-chip">Feel good</div>
+                    <div class="glass-chip">Romance</div>
+                    <div class="glass-chip">Relax</div>
                 </div>
                 
                 <!-- Welcome Banner -->
@@ -403,14 +434,14 @@
             <button class="mobile-fab" id="mobileFab">
                 <i class="fa-solid fa-ellipsis"></i>
             </button>
-            <div class="notifications-dropdown hidden" id="mobileFabDropdown" style="position: absolute; bottom: 120%; right: 0; width: 180px; background: #2a201c; border: 1px solid #3e2f28; border-radius: 12px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden; padding: 10px 0;">
-                <div class="option-item" id="mobileAddToPlaylistOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #e5ccb8; font-family: 'Delius', cursive;">
+            <div class="notifications-dropdown hidden" id="mobileFabDropdown" style="position: absolute; bottom: 120%; right: 0; width: 180px; z-index: 1000; overflow: hidden; padding: 10px 0;">
+                <div class="option-item" id="mobileAddToPlaylistOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: white;">
                     <i class="fa-solid fa-folder-plus"></i> Add to Playlist
                 </div>
-                <div class="option-item" id="mobileRingtoneOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #e5ccb8; font-family: 'Delius', cursive;">
+                <div class="option-item" id="mobileRingtoneOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: white;">
                     <i class="fa-solid fa-mobile-screen-button"></i> Set Ringtone
                 </div>
-                <div class="option-item" id="mobileLyricsOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #e5ccb8; font-family: 'Delius', cursive;">
+                <div class="option-item" id="mobileLyricsOpt" style="padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: white;">
                     <i class="fa-solid fa-align-left"></i> Lyrics
                 </div>
             </div>
