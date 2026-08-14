@@ -4,19 +4,29 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     constructor() {
         super('ytmusic', 'YouTube Music');
         
-        // Fast, high-availability public Invidious & Piped API mirrors with CORS support
+        // Fast, active YouTube Music search API endpoints
         this.apiInstances = [
-            { type: 'invidious', url: 'https://invidious.nerdvpn.de' },
-            { type: 'invidious', url: 'https://vid.puffyan.us' },
-            { type: 'invidious', url: 'https://inv.privacydev.net' },
-            { type: 'piped', url: 'https://pipedapi.kavin.rocks' },
-            { type: 'piped', url: 'https://api.piped.privacydev.net' }
+            'https://api.piped.private.coffee',
+            'https://pipedapi.kavin.rocks',
+            'https://api.piped.privacydev.net',
+            'https://pipedapi.drgns.space'
         ];
         this.currentInstanceIndex = 0;
         this.trackCache = new Map();
+        
+        // Base backend URL for audio stream resolving fallback
+        if (typeof window !== 'undefined') {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('10.')) {
+                this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn`;
+            } else {
+                this.backendUrl = '/api/jiosaavn';
+            }
+        } else {
+            this.backendUrl = '/api/jiosaavn';
+        }
     }
 
-    getInstance() {
+    getInstanceUrl() {
         return this.apiInstances[this.currentInstanceIndex];
     }
 
@@ -24,7 +34,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         this.currentInstanceIndex = (this.currentInstanceIndex + 1) % this.apiInstances.length;
     }
 
-    async fetchWithTimeout(url, timeoutMs = 3500) {
+    async fetchWithTimeout(url, timeoutMs = 4000) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -41,18 +51,15 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         }
     }
 
-    async fetchWithFallback(buildEndpointFn) {
+    async fetchWithFallback(endpoint) {
         let attempts = 0;
         while (attempts < this.apiInstances.length) {
-            const instance = this.getInstance();
-            const endpoint = buildEndpointFn(instance);
-            const fullUrl = `${instance.url}${endpoint}`;
-
+            const baseUrl = this.getInstanceUrl();
             try {
-                const data = await this.fetchWithTimeout(fullUrl, 3500);
-                if (data) return { data, instance };
+                const data = await this.fetchWithTimeout(`${baseUrl}${endpoint}`, 4000);
+                if (data) return data;
             } catch (error) {
-                console.warn(`[YouTube Music] Mirror failed (${instance.url}):`, error.message || error);
+                console.warn(`[YouTube Music] Mirror failed (${baseUrl}):`, error.message || error);
             }
             this.rotateInstance();
             attempts++;
@@ -82,45 +89,29 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
     async searchSongs(query) {
         try {
-            const { data, instance } = await this.fetchWithFallback((inst) => {
-                return inst.type === 'invidious' 
-                    ? `/api/v1/search?q=${encodeURIComponent(query)}&type=video`
-                    : `/search?q=${encodeURIComponent(query)}&filter=music_songs`;
+            const endpoint = `/search?q=${encodeURIComponent(query)}&filter=music_songs`;
+            const data = await this.fetchWithFallback(endpoint);
+            
+            const rawItems = data.items || [];
+            const songs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
+            
+            const standardized = songs.map(item => {
+                const videoId = this.extractVideoId(item.url);
+                const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
+                const artist = item.uploaderName || item.artist || 'YouTube Music';
+                
+                return this.standardizeTrack({
+                    id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
+                    videoId: videoId,
+                    title: title,
+                    artist: artist,
+                    album: 'YouTube Music',
+                    cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
+                    duration: this.formatDuration(item.duration),
+                    streamUrl: null // Resolved on demand when user clicks play
+                });
             });
 
-            let items = [];
-            if (instance.type === 'invidious') {
-                items = (Array.isArray(data) ? data : []).slice(0, 15).map(item => {
-                    const videoId = item.videoId;
-                    return {
-                        id: `yt_${videoId}`,
-                        videoId: videoId,
-                        title: item.title || 'Unknown Track',
-                        artist: item.author || 'YouTube Artist',
-                        album: 'YouTube Music',
-                        cover: item.videoThumbnails?.find(t => t.quality === 'medium' || t.quality === 'high')?.url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-                        duration: this.formatDuration(item.lengthSeconds),
-                        streamUrl: null
-                    };
-                });
-            } else {
-                const pipedItems = data.items || [];
-                items = pipedItems.filter(item => item.type === 'stream' || item.url).slice(0, 15).map(item => {
-                    const videoId = this.extractVideoId(item.url);
-                    return {
-                        id: `yt_${videoId}`,
-                        videoId: videoId,
-                        title: item.title || 'Unknown Track',
-                        artist: item.uploaderName || 'YouTube Artist',
-                        album: 'YouTube Music',
-                        cover: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-                        duration: this.formatDuration(item.duration),
-                        streamUrl: null
-                    };
-                });
-            }
-
-            const standardized = items.map(trackData => this.standardizeTrack(trackData));
             standardized.forEach(t => this.trackCache.set(t.id, t));
             return standardized;
         } catch (error) {
@@ -138,55 +129,57 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         const cached = this.trackCache.get(trackId);
         const videoId = cached?.videoId || trackId.replace('yt_', '');
 
-        // If we already have a cached audio stream URL that is fresh (< 40 mins), use it
         if (cached && cached.streamUrl && cached._streamTimestamp && (Date.now() - cached._streamTimestamp < 40 * 60 * 1000)) {
             return cached;
         }
 
+        // Try resolving stream from YouTube Piped stream endpoint
         try {
-            const { data, instance } = await this.fetchWithFallback((inst) => {
-                return inst.type === 'invidious' 
-                    ? `/api/v1/videos/${videoId}`
-                    : `/streams/${videoId}`;
-            });
+            const data = await this.fetchWithFallback(`/streams/${videoId}`);
+            const audioStreams = (data.audioStreams || []).sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+            const bestAudio = audioStreams.find(s => s.mimeType?.includes('audio/mp4') || s.mimeType?.includes('audio/m4a')) || audioStreams[0];
 
-            let bestAudioUrl = null;
-
-            if (instance.type === 'invidious') {
-                const formats = [...(data.adaptiveFormats || []), ...(data.formatStreams || [])];
-                const audioFormats = formats.filter(f => f.type?.includes('audio') || f.container === 'm4a' || f.container === 'webm');
-                audioFormats.sort((a, b) => (parseInt(b.bitrate || 0) - parseInt(a.bitrate || 0)));
-                bestAudioUrl = audioFormats[0]?.url;
-            } else {
-                const audioStreams = (data.audioStreams || []).sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-                const bestAudio = audioStreams.find(s => s.mimeType?.includes('audio/mp4') || s.mimeType?.includes('audio/m4a')) || audioStreams[0];
-                bestAudioUrl = bestAudio?.url;
+            if (bestAudio && bestAudio.url) {
+                const trackInfo = {
+                    id: `yt_${videoId}`,
+                    videoId: videoId,
+                    title: data.title || cached?.title || 'YouTube Track',
+                    artist: data.uploader || cached?.artist || 'YouTube Music',
+                    album: 'YouTube Music',
+                    cover: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                    duration: this.formatDuration(data.duration),
+                    streamUrl: bestAudio.url,
+                    _streamTimestamp: Date.now()
+                };
+                const standardized = this.standardizeTrack(trackInfo);
+                this.trackCache.set(standardized.id, standardized);
+                return standardized;
             }
-
-            if (!bestAudioUrl) {
-                throw new Error('No valid audio stream found');
-            }
-
-            const trackInfo = {
-                id: `yt_${videoId}`,
-                videoId: videoId,
-                title: data.title || cached?.title || 'YouTube Track',
-                artist: data.author || data.uploader || cached?.artist || 'YouTube Artist',
-                album: 'YouTube Music',
-                cover: data.videoThumbnails?.find(t => t.quality === 'medium')?.url || cached?.cover || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-                duration: this.formatDuration(data.lengthSeconds || data.duration),
-                streamUrl: bestAudioUrl,
-                _streamTimestamp: Date.now()
-            };
-
-            const standardized = this.standardizeTrack(trackInfo);
-            this.trackCache.set(standardized.id, standardized);
-            return standardized;
         } catch (error) {
-            console.error('[YouTube Music] getTrack audio stream error:', error);
-            if (cached) return cached;
-            throw error;
+            console.warn('[YouTube Music] Piped direct stream failed, attempting audio resolver fallback...', error);
         }
+
+        // Fallback: Resolve high quality ad-free audio stream using track title & artist
+        if (cached) {
+            try {
+                const searchUrl = `${this.backendUrl}/search?q=${encodeURIComponent(`${cached.title} ${cached.artist}`)}`;
+                const response = await fetch(searchUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0 && data[0].streamUrl) {
+                        cached.streamUrl = data[0].streamUrl;
+                        cached._streamTimestamp = Date.now();
+                        this.trackCache.set(cached.id, cached);
+                        return cached;
+                    }
+                }
+            } catch (fallbackError) {
+                console.error('[YouTube Music] Stream fallback error:', fallbackError);
+            }
+            return cached;
+        }
+
+        throw new Error('Could not resolve audio stream for track');
     }
 
     async getLyrics(trackId) {

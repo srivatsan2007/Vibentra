@@ -601,7 +601,10 @@ const initHome = () => {
                             <div class="card-info">
                                 <h3>${track.title}</h3>
                                 <p>${track.artist}</p>
-                                <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: var(--text-muted);">${track.provider || 'JioSaavn'}</span>
+                                <span style="font-size: 0.72rem; padding: 3px 8px; background: ${track.provider === 'YouTube Music' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.08)'}; color: ${track.provider === 'YouTube Music' ? '#f87171' : 'var(--text-muted)'}; border: 1px solid ${track.provider === 'YouTube Music' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
+                                    <i class="${track.provider === 'YouTube Music' ? 'fa-brands fa-youtube' : 'fa-solid fa-music'}"></i>
+                                    ${track.provider || 'JioSaavn'}
+                                </span>
                             </div>
                         `;
                         
