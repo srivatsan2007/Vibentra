@@ -1009,6 +1009,11 @@ class MusicService {
             if (isPlaying) playerContainer.classList.add('playing');
             else playerContainer.classList.remove('playing');
         }
+        const largeModal = document.getElementById('largePlayerModal');
+        if (largeModal) {
+            if (isPlaying) largeModal.classList.add('playing');
+            else largeModal.classList.remove('playing');
+        }
 
         try {
             if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio && this.currentTrack) {
@@ -1054,7 +1059,10 @@ class MusicService {
     renderLargePlayer() {
         if (!this.currentTrack) return;
         
-        document.getElementById('largePlayerImg').src = this.currentTrack.cover;
+        const imgEl = document.getElementById('largePlayerImg');
+        if (imgEl) imgEl.src = this.currentTrack.cover;
+        const ambientEl = document.getElementById('largePlayerAmbientBg');
+        if (ambientEl) ambientEl.src = this.currentTrack.cover;
         document.getElementById('largePlayerTitle').textContent = this.currentTrack.title;
         document.getElementById('largePlayerArtist').textContent = this.currentTrack.artist;
 
