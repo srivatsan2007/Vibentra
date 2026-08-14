@@ -2,8 +2,8 @@
   "appId": "com.srivatsan.vibentra",
   "appName": "Vibentra",
   "webDir": "frontend",
+  "bundledWebRuntime": false,
   "server": {
-    "url": "https://vibentra.vercel.app",
-    "cleartext": true
+    "androidScheme": "https"
   }
 }
