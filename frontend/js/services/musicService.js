@@ -13,6 +13,8 @@ class MusicService {
         this.isPlaying = false;
         this.isShuffle = false;
         this.isRepeat = false;
+        this.repeatMode = 'off'; // 'off', 'all', 'one'
+        this.currentIndex = -1;
         this._isTransitioning = false;
         
         this.audioPlayer = new Audio();
@@ -124,11 +126,35 @@ class MusicService {
         });
 
         const repeatBtns = [document.getElementById('repeatBtn'), document.getElementById('largeRepeatBtn')];
+        this.updateRepeatUI = () => {
+            repeatBtns.forEach(btn => {
+                if (!btn) return;
+                btn.classList.remove('active');
+                if (this.repeatMode === 'all') {
+                    btn.classList.add('active');
+                    btn.title = "Repeat Queue: On";
+                    btn.innerHTML = '<i class="fa-solid fa-repeat"></i>';
+                } else if (this.repeatMode === 'one') {
+                    btn.classList.add('active');
+                    btn.title = "Repeat Track: On";
+                    btn.innerHTML = '<i class="fa-solid fa-repeat"></i><span style="font-size: 0.6rem; font-weight: bold; position: absolute; margin-left: -5px; margin-top: -6px; background: var(--primary); color: white; border-radius: 50%; width: 12px; height: 12px; display: inline-flex; align-items: center; justify-content: center;">1</span>';
+                } else {
+                    btn.title = "Repeat: Off";
+                    btn.innerHTML = '<i class="fa-solid fa-repeat"></i>';
+                }
+            });
+        };
+
         repeatBtns.forEach(btn => {
             btn?.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.isRepeat = !this.isRepeat;
-                repeatBtns.forEach(b => b?.classList.toggle('active', this.isRepeat));
+                if (this.repeatMode === 'off') this.repeatMode = 'all';
+                else if (this.repeatMode === 'all') this.repeatMode = 'one';
+                else this.repeatMode = 'off';
+                
+                this.isRepeat = (this.repeatMode === 'one');
+                if (this.updateRepeatUI) this.updateRepeatUI();
+                this.savePlayerState();
             });
         });
 
@@ -586,15 +612,42 @@ class MusicService {
     }
 
     async playContext(queue, track) {
+        if (!queue || queue.length === 0) return;
         this.originalQueue = [...queue];
         this.queue = [...queue];
-        this._nextIndexToPlay = null;
-        this.playSpecificTrack(track);
+        
+        let targetIndex = -1;
+        if (track) {
+            targetIndex = this.queue.findIndex(t => String(t.id) === String(track.id));
+            if (targetIndex === -1) {
+                targetIndex = this.queue.findIndex(t => t.title === track.title && t.artist === track.artist);
+            }
+        }
+        if (targetIndex === -1) targetIndex = 0;
+
+        this.currentIndex = targetIndex;
+        await this.playSpecificTrack(this.queue[this.currentIndex], this.currentIndex);
     }
 
-    async playSpecificTrack(track) {
+    async playSpecificTrack(track, queueIndex = null) {
         try {
+            if (!track) return;
             this._isTransitioning = true;
+
+            if (queueIndex !== null && queueIndex >= 0 && queueIndex < this.queue.length) {
+                this.currentIndex = queueIndex;
+            } else if (this.queue.length > 0) {
+                const idx = this.queue.findIndex(t => String(t.id) === String(track.id) || (t.title === track.title && t.artist === track.artist));
+                if (idx !== -1) {
+                    this.currentIndex = idx;
+                } else {
+                    this.queue = [track];
+                    this.currentIndex = 0;
+                }
+            } else {
+                this.queue = [track];
+                this.currentIndex = 0;
+            }
 
             // Instant UI feedback on click
             this.currentTrack = track;
@@ -607,7 +660,17 @@ class MusicService {
                 fullTrack = (await providerManager.getTrack(track.providerId || 'jiosaavn', track.id)) || track;
             }
             
+            if (fullTrack && track) {
+                if (!fullTrack.id) fullTrack.id = track.id;
+            }
+
             this.currentTrack = fullTrack;
+
+            // Keep the queue item updated with the full track details (streamUrl, etc.)
+            if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
+                this.queue[this.currentIndex] = fullTrack;
+            }
+
             historyService.addToHistory(this.currentTrack);
             this.updatePlayerUI(this.currentTrack);
             this.updateMediaSession(fullTrack);
@@ -702,7 +765,7 @@ class MusicService {
     }
 
     handleTrackEnd() {
-        if (this.isRepeat) {
+        if (this.repeatMode === 'one') {
             this.audioPlayer.currentTime = 0;
             this.audioPlayer.play().catch(e => console.error(e));
         } else {
@@ -713,13 +776,22 @@ class MusicService {
     playNext() {
         if (!this.queue || this.queue.length === 0) return;
 
-        const currentIndex = this.queue.findIndex(t => String(t.id) === String(this.currentTrack?.id));
         let nextIndex = 0;
 
         if (this.isShuffle) {
-            nextIndex = Math.floor(Math.random() * this.queue.length);
-        } else if (currentIndex >= 0 && currentIndex < this.queue.length - 1) {
-            nextIndex = currentIndex + 1;
+            if (this.queue.length > 1) {
+                let rand;
+                let attempts = 0;
+                do {
+                    rand = Math.floor(Math.random() * this.queue.length);
+                    attempts++;
+                } while (rand === this.currentIndex && attempts < 10);
+                nextIndex = rand;
+            } else {
+                nextIndex = 0;
+            }
+        } else if (this.currentIndex >= 0 && this.currentIndex < this.queue.length - 1) {
+            nextIndex = this.currentIndex + 1;
         } else {
             // End of queue: restart playlist from beginning
             nextIndex = 0;
@@ -727,18 +799,15 @@ class MusicService {
 
         const nextTrack = this.queue[nextIndex];
         if (nextTrack) {
-            this.playSpecificTrack(nextTrack);
+            this.playSpecificTrack(nextTrack, nextIndex);
         }
     }
 
     preloadNextTrack() {
         if (!this.queue || this.queue.length === 0) return;
 
-        const currentIndex = this.queue.findIndex(t => String(t.id) === String(this.currentTrack?.id));
-        if (currentIndex === -1) return;
-
-        let nextIndex = (currentIndex + 1) % this.queue.length;
-        if (this.isShuffle) {
+        let nextIndex = (this.currentIndex >= 0 ? this.currentIndex + 1 : 1) % this.queue.length;
+        if (this.isShuffle && this.queue.length > 1) {
             nextIndex = Math.floor(Math.random() * this.queue.length);
         }
 
@@ -763,9 +832,8 @@ class MusicService {
             const prevTrack = this.history.pop();
             this.playSpecificTrack(prevTrack);
         } else if (this.queue.length > 0) {
-            const currentIndex = this.queue.findIndex(t => t.id === this.currentTrack?.id);
-            const prevIndex = currentIndex > 0 ? currentIndex - 1 : this.queue.length - 1;
-            this.playSpecificTrack(this.queue[prevIndex]);
+            let prevIndex = (this.currentIndex > 0) ? this.currentIndex - 1 : this.queue.length - 1;
+            this.playSpecificTrack(this.queue[prevIndex], prevIndex);
         }
     }
 
@@ -900,13 +968,14 @@ class MusicService {
 
         upNextList.innerHTML = '';
         
-        const currentIndex = this.queue.findIndex(t => t.id === this.currentTrack.id);
+        const currentIndex = this.currentIndex >= 0 ? this.currentIndex : this.queue.findIndex(t => String(t.id) === String(this.currentTrack.id));
         if (currentIndex === -1) return;
 
         // Show next 10 songs in the queue
         const upcomingTracks = this.queue.slice(currentIndex + 1, currentIndex + 11);
         
         upcomingTracks.forEach((track, idx) => {
+            const actualIndex = currentIndex + 1 + idx;
             const el = document.createElement('div');
             el.className = 'up-next-item';
             el.innerHTML = `
@@ -920,7 +989,7 @@ class MusicService {
                 </div>
             `;
             el.addEventListener('click', () => {
-                this.playSpecificTrack(track);
+                this.playSpecificTrack(track, actualIndex);
             });
             upNextList.appendChild(el);
         });
@@ -935,9 +1004,11 @@ class MusicService {
         const state = {
             currentTrack: this.currentTrack,
             queue: this.queue,
+            currentIndex: this.currentIndex,
             history: this.history,
             currentTime: this.audioPlayer.currentTime,
             isShuffle: this.isShuffle,
+            repeatMode: this.repeatMode,
             isRepeat: this.isRepeat
         };
         localStorage.setItem('vibentra_player_state', JSON.stringify(state));
@@ -951,9 +1022,11 @@ class MusicService {
                 if (state.currentTrack) {
                     this.currentTrack = state.currentTrack;
                     this.queue = state.queue || [];
+                    this.currentIndex = typeof state.currentIndex === 'number' ? state.currentIndex : 0;
                     this.history = state.history || [];
                     this.isShuffle = !!state.isShuffle;
-                    this.isRepeat = !!state.isRepeat;
+                    this.repeatMode = state.repeatMode || (state.isRepeat ? 'one' : 'off');
+                    this.isRepeat = (this.repeatMode === 'one');
 
                     // Update UI without playing immediately (browser autoplay restrictions)
                     this.updatePlayerUI(this.currentTrack);
@@ -967,8 +1040,7 @@ class MusicService {
                     const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
                     shuffleBtns.forEach(b => b?.classList.toggle('active', this.isShuffle));
                     
-                    const repeatBtns = [document.getElementById('repeatBtn'), document.getElementById('largeRepeatBtn')];
-                    repeatBtns.forEach(b => b?.classList.toggle('active', this.isRepeat));
+                    if (this.updateRepeatUI) this.updateRepeatUI();
                 }
             } catch(e) {
                 console.error("Could not restore player state", e);

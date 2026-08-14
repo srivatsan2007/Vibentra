@@ -1872,6 +1872,26 @@ const initHome = () => {
                     ${providersHtml}
                 </div>
             </div>
+
+            <div class="glass-panel" style="border-radius: 20px; overflow: hidden; margin-bottom: 2rem;">
+                <div style="padding: 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
+                    <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-battery-full" style="color: #10b981;"></i> Background Playback & Battery Optimization
+                    </h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">If your device closes Vibentra while playing in the background (when the screen turns off or app is minimized):</p>
+                </div>
+                <div style="padding: 24px; font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.85);">
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; margin-bottom: 15px;">
+                        <strong>📱 How to Keep Playback Active:</strong>
+                        <ol style="margin-top: 8px; padding-left: 20px; color: var(--text-muted);">
+                            <li style="margin-bottom: 6px;">Open phone <strong>Settings > Apps > Vibentra</strong>.</li>
+                            <li style="margin-bottom: 6px;">Tap <strong>Battery</strong> or <strong>Battery Saver</strong>.</li>
+                            <li style="margin-bottom: 6px;">Set Battery usage to <strong>Unrestricted / No Restrictions</strong>.</li>
+                            <li>(Xiaomi/MIUI & Vivo users): Enable <strong>Autostart</strong> in App info settings.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
         `;
 
         document.querySelectorAll('.toggle-provider-btn').forEach(btn => {
