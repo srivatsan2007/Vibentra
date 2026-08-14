@@ -121,8 +121,7 @@ class MusicService {
         shuffleBtns.forEach(btn => {
             btn?.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.isShuffle = !this.isShuffle;
-                shuffleBtns.forEach(b => b?.classList.toggle('active', this.isShuffle));
+                this.toggleShuffle();
             });
         });
 
@@ -843,16 +842,57 @@ class MusicService {
     }
 
     playPrevious() {
-        if (this.history.length > 1) {
-            // Pop current
-            this.history.pop();
-            // Get previous
-            const prevTrack = this.history.pop();
-            this.playSpecificTrack(prevTrack);
-        } else if (this.queue.length > 0) {
-            let prevIndex = (this.currentIndex > 0) ? this.currentIndex - 1 : this.queue.length - 1;
+        if (!this.queue || this.queue.length === 0) return;
+
+        if (this.audioPlayer.currentTime > 3) {
+            this.audioPlayer.currentTime = 0;
+            this.updateProgressUI();
+            return;
+        }
+
+        let prevIndex = -1;
+        if (this.currentIndex > 0) {
+            prevIndex = this.currentIndex - 1;
+        } else if (this.repeatMode === 'all') {
+            prevIndex = this.queue.length - 1;
+        } else {
+            prevIndex = 0;
+        }
+
+        if (prevIndex !== -1 && this.queue[prevIndex]) {
             this.playSpecificTrack(this.queue[prevIndex], prevIndex);
         }
+    }
+
+    toggleShuffle() {
+        this.isShuffle = !this.isShuffle;
+        const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
+        shuffleBtns.forEach(b => b?.classList.toggle('active', this.isShuffle));
+
+        if (this.isShuffle) {
+            if (this.queue.length > 1) {
+                const currentTrack = this.queue[this.currentIndex] || this.currentTrack;
+                const remaining = this.queue.filter((_, idx) => idx !== this.currentIndex);
+                for (let i = remaining.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+                }
+                this.queue = currentTrack ? [currentTrack, ...remaining] : remaining;
+                this.currentIndex = 0;
+            }
+        } else {
+            if (this.originalQueue && this.originalQueue.length > 0) {
+                this.queue = [...this.originalQueue];
+                if (this.currentTrack) {
+                    const idx = this.queue.findIndex(t => 
+                        (t.id && this.currentTrack.id && String(t.id) === String(this.currentTrack.id)) ||
+                        (t.title && this.currentTrack.title && t.title.toLowerCase().trim() === this.currentTrack.title.toLowerCase().trim())
+                    );
+                    this.currentIndex = idx !== -1 ? idx : 0;
+                }
+            }
+        }
+        this.savePlayerState();
     }
 
     togglePlayPause() {
@@ -899,16 +939,17 @@ class MusicService {
         document.getElementById('playerImg').src = track.cover;
         document.getElementById('totalTime').textContent = track.duration || "0:00";
 
-        // Next song hint for mini player
-        let nextSongTitle = "";
-        if (this.queue.length > 0) {
-            const currentIndex = this.queue.findIndex(t => t.id === track.id);
-            if (this.isShuffle) {
-                nextSongTitle = "Shuffle Mode";
-            } else if (currentIndex >= 0 && currentIndex < this.queue.length - 1) {
-                nextSongTitle = this.queue[currentIndex + 1].title;
-            }
-        }
+        const progressSlider = document.getElementById('progressSlider');
+        const largeProgressSlider = document.getElementById('largeProgressSlider');
+        const largeProgress = document.getElementById('largeProgress');
+        const currentTimeEl = document.getElementById('currentTime');
+        const largeCurrTimeEl = document.getElementById('largeCurrTime');
+        
+        if (progressSlider) progressSlider.value = 0;
+        if (largeProgressSlider) largeProgressSlider.value = 0;
+        if (largeProgress) largeProgress.style.width = '0%';
+        if (currentTimeEl) currentTimeEl.textContent = '0:00';
+        if (largeCurrTimeEl) largeCurrTimeEl.textContent = '0:00';
         
         const artistEl = document.getElementById('playerArtist');
         if (artistEl) {
