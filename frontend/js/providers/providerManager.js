@@ -64,25 +64,34 @@ class ProviderManager {
         }
     }
 
+    async withTimeout(promise, ms = 4500, fallbackValue = null) {
+        let timeoutId;
+        const timeoutPromise = new Promise((resolve) => {
+            timeoutId = setTimeout(() => resolve(fallbackValue), ms);
+        });
+        return Promise.race([
+            promise.then(res => { clearTimeout(timeoutId); return res; }),
+            timeoutPromise
+        ]);
+    }
+
     async searchSongs(query) {
         const activeProviders = this.getAllProviders().filter(p => p.enabled);
         
         try {
-            // Promise.allSettled ensures one failed provider doesn't crash the whole search
             const results = await Promise.allSettled(
-                activeProviders.map(provider => provider.searchSongs(query))
+                activeProviders.map(p => this.withTimeout(p.searchSongs(query), 4500, []))
             );
 
             let unifiedList = [];
             results.forEach((result, index) => {
-                if (result.status === 'fulfilled') {
+                if (result.status === 'fulfilled' && Array.isArray(result.value)) {
                     unifiedList = unifiedList.concat(result.value);
                 } else {
-                    console.error(`Provider ${activeProviders[index].name} failed:`, result.reason);
+                    console.error(`Provider ${activeProviders[index]?.name} failed or timed out:`, result.reason);
                 }
             });
 
-            // Optional: Shuffle or rank results to mix providers
             return unifiedList;
         } catch (error) {
             console.error("Unified search failed", error);
@@ -98,11 +107,14 @@ class ProviderManager {
 
         try {
             const results = await Promise.allSettled(
-                activeProviders.map(p => p.searchAll ? p.searchAll(query) : null).filter(Boolean)
+                activeProviders.map(p => {
+                    if (!p.searchAll) return Promise.resolve({ songs: [], albums: [], playlists: [] });
+                    return this.withTimeout(p.searchAll(query), 4500, { songs: [], albums: [], playlists: [] });
+                })
             );
 
             results.forEach(res => {
-                if (res.status === 'fulfilled') {
+                if (res.status === 'fulfilled' && res.value) {
                     if (res.value.songs) unifiedSongs = unifiedSongs.concat(res.value.songs);
                     if (res.value.albums) unifiedAlbums = unifiedAlbums.concat(res.value.albums);
                     if (res.value.playlists) unifiedPlaylists = unifiedPlaylists.concat(res.value.playlists);
