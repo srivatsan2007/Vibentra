@@ -155,21 +155,7 @@ const initHome = () => {
         });
     }
 
-    // Refresh Engine (Header Button & Mobile Touch Pull-To-Refresh)
-    const headerRefreshBtn = document.getElementById('headerRefreshBtn');
-    if (headerRefreshBtn) {
-        headerRefreshBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const icon = headerRefreshBtn.querySelector('i');
-            if (icon) icon.classList.add('fa-spin');
-            loadView(currentView);
-            showNotification('Refreshing music feed...', 'success');
-            setTimeout(() => {
-                if (icon) icon.classList.remove('fa-spin');
-            }, 800);
-        });
-    }
-
+    // Touch Pull-To-Refresh Engine
     const mainContentEl = document.getElementById('mainContent');
     if (mainContentEl) {
         let touchStartY = 0;
