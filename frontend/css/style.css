@@ -1619,6 +1619,25 @@ input {
     box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
 }
 
+/* Mobile FAB Dropdown Pops Above Three Dots */
+#mobileFabDropdown {
+    top: auto !important;
+    bottom: calc(100% + 14px) !important;
+    right: 0 !important;
+    left: auto !important;
+    width: 200px !important;
+    background: rgba(12, 16, 43, 0.96) !important;
+    backdrop-filter: blur(35px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(35px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.75), 0 0 25px rgba(124, 58, 237, 0.25) !important;
+    z-index: 3500 !important;
+    overflow: hidden !important;
+    padding: 8px 0 !important;
+}
+
 /* Responsive Rules for Mobile Viewports */
 @media (max-width: 768px) {
     .sidebar {
