@@ -155,9 +155,10 @@ const initHome = () => {
         });
     }
 
-    // Notification Dropdown Toggle
+    // Real Feature Release & App Update Notification Engine
     const notificationBtn = document.getElementById('notificationBtn');
     const notificationsDropdown = document.getElementById('notificationsDropdown');
+    const notificationBadge = document.getElementById('notificationBadge');
     
     if (notificationBtn && notificationsDropdown) {
         notificationBtn.addEventListener('click', (e) => {
@@ -165,32 +166,120 @@ const initHome = () => {
             notificationsDropdown.classList.toggle('hidden');
         });
 
-        const notifList = document.getElementById('notificationsList');
-        notifList.innerHTML = `
-            <div class="notification-item unread">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" style="width: 40px; height: 40px; border-radius: 50%;">
-                <div style="flex: 1;">
-                    <p style="font-size: 0.9rem; line-height: 1.2;"><strong>Sarah Jenkins</strong> accepted your friend request.</p>
-                    <span style="font-size: 0.75rem; color: var(--primary);">2m ago</span>
-                </div>
-            </div>
-            <div class="notification-item unread">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(6, 182, 212, 0.2); display: flex; justify-content: center; align-items: center; color: var(--secondary);">
-                    <i class="fa-solid fa-list"></i>
-                </div>
-                <div style="flex: 1;">
-                    <p style="font-size: 0.9rem; line-height: 1.2;"><strong>Alex Turner</strong> shared a playlist with you.</p>
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">1h ago</span>
-                </div>
-            </div>
-        `;
-        document.getElementById('notificationBadge').style.display = 'block';
-        document.getElementById('notificationBadge').textContent = '2';
+        const appFeatureNotifications = [
+            {
+                id: 'feat_ytmusic_2026',
+                icon: 'fa-brands fa-youtube',
+                color: '#f87171',
+                bg: 'rgba(239, 68, 68, 0.15)',
+                title: 'New: YouTube Music Provider!',
+                description: 'Search & stream 100% ad-free music from YouTube Music alongside JioSaavn.',
+                time: 'New',
+                target: 'search'
+            },
+            {
+                id: 'feat_themes_2026',
+                icon: 'fa-solid fa-palette',
+                color: '#e879f9',
+                bg: 'rgba(217, 70, 239, 0.15)',
+                title: 'Live Theme Switcher',
+                description: 'Choose between 6 dynamic liquid glass themes with persistent ambient lighting.',
+                time: 'New',
+                target: 'settings'
+            },
+            {
+                id: 'feat_mobile_fab_2026',
+                icon: 'fa-solid fa-mobile-screen-button',
+                color: '#34d399',
+                bg: 'rgba(16, 185, 129, 0.15)',
+                title: 'Mobile FAB Dropdown Menu',
+                description: 'Quickly access download, lyrics, and details from the floating action button.',
+                time: 'Updated',
+                target: 'home'
+            },
+            {
+                id: 'feat_autoplay_2026',
+                icon: 'fa-solid fa-circle-play',
+                color: '#60a5fa',
+                bg: 'rgba(59, 130, 246, 0.15)',
+                title: 'Playlist Autoplay Engine',
+                description: 'Seamless continuous track playback across playlists and album queues.',
+                time: 'Updated',
+                target: 'home'
+            }
+        ];
 
-        document.getElementById('markAllReadBtn').addEventListener('click', (e) => {
+        const renderNotifications = () => {
+            const readIds = JSON.parse(localStorage.getItem('vibentra_read_notifs') || '[]');
+            const notifList = document.getElementById('notificationsList');
+            const unreadCount = appFeatureNotifications.filter(n => !readIds.includes(n.id)).length;
+
+            if (notificationBadge) {
+                if (unreadCount > 0) {
+                    notificationBadge.style.display = 'inline-flex';
+                    notificationBadge.textContent = unreadCount.toString();
+                } else {
+                    notificationBadge.style.display = 'none';
+                }
+            }
+
+            if (notifList) {
+                if (appFeatureNotifications.length === 0) {
+                    notifList.innerHTML = '<div class="empty-notif" style="padding: 20px; text-align: center; color: var(--text-muted);">No new notifications</div>';
+                } else {
+                    notifList.innerHTML = appFeatureNotifications.map(n => {
+                        const isRead = readIds.includes(n.id);
+                        return `
+                            <div class="notification-item ${isRead ? '' : 'unread'}" data-id="${n.id}" data-target="${n.target}" style="display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--glass-border); cursor: pointer; transition: background 0.2s;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; background: ${n.bg}; color: ${n.color}; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; flex-shrink: 0;">
+                                    <i class="${n.icon}"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                        <h4 style="font-size: 0.88rem; font-weight: 700; color: #FFFFFF; margin: 0;">${n.title}</h4>
+                                        <span style="font-size: 0.7rem; color: ${n.color}; font-weight: 600;">${n.time}</span>
+                                    </div>
+                                    <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; margin: 0;">${n.description}</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Add click handlers to notification items
+                    notifList.querySelectorAll('.notification-item').forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const notifId = item.getAttribute('data-id');
+                            const targetPath = item.getAttribute('data-target');
+                            
+                            // Mark single notification as read
+                            const currentRead = JSON.parse(localStorage.getItem('vibentra_read_notifs') || '[]');
+                            if (!currentRead.includes(notifId)) {
+                                currentRead.push(notifId);
+                                localStorage.setItem('vibentra_read_notifs', JSON.stringify(currentRead));
+                            }
+                            
+                            notificationsDropdown.classList.add('hidden');
+                            renderNotifications();
+
+                            // Navigate to feature target
+                            if (targetPath) {
+                                const navItem = document.querySelector(`.nav-item[data-path="${targetPath}"]`);
+                                if (navItem) navItem.click();
+                            }
+                        });
+                    });
+                }
+            }
+        };
+
+        renderNotifications();
+
+        document.getElementById('markAllReadBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            document.querySelectorAll('.notification-item').forEach(el => el.classList.remove('unread'));
-            document.getElementById('notificationBadge').style.display = 'none';
+            const allIds = appFeatureNotifications.map(n => n.id);
+            localStorage.setItem('vibentra_read_notifs', JSON.stringify(allIds));
+            renderNotifications();
         });
 
         document.addEventListener('click', (e) => {
