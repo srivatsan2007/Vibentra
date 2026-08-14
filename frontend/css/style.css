@@ -21,11 +21,52 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--background);
     color: var(--text);
     overflow-x: hidden;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* Custom Smooth Glass Scrollbar Engine */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary, #7C3AED);
+}
+
+.main-content,
+.sidebar,
+.dropdown-body,
+.cards-grid,
+.lyrics-body,
+.modal-body {
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
 }
 
 a {
