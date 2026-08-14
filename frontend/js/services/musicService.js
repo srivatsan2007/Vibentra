@@ -530,7 +530,12 @@ class MusicService {
         try {
             this._isTransitioning = true;
 
-            // Fetch full track only if streamUrl is missing
+            // Instant UI feedback on click
+            this.currentTrack = track;
+            this.updatePlayerUI(this.currentTrack);
+            this.updatePlayPauseUI(true);
+
+            // Fetch full track if streamUrl is missing
             let fullTrack = track;
             if (!fullTrack.streamUrl) {
                 fullTrack = (await providerManager.getTrack(track.providerId || 'jiosaavn', track.id)) || track;
