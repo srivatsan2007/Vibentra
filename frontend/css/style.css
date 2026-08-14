@@ -1711,47 +1711,101 @@ input {
     .music-player {
         bottom: 84px !important;
         width: calc(100% - 24px) !important;
-        height: 60px !important;
+        height: 62px !important;
         padding: 0 14px !important;
-        border-radius: 30px !important;
+        border-radius: 32px !important;
         z-index: 1500 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
     }
 
     .player-left {
-        width: 65% !important;
+        width: auto !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        margin-right: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
     }
 
     .now-playing-img {
         width: 40px !important;
         height: 40px !important;
         border-radius: 50% !important;
+        flex-shrink: 0 !important;
     }
 
-    .now-playing-info h4 {
-        font-size: 0.82rem !important;
+    .now-playing-info {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
     }
 
-    .now-playing-info p {
-        font-size: 0.7rem !important;
+    .now-playing-info h4,
+    #playerTitle {
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        margin: 0 0 2px 0 !important;
+        color: #FFFFFF !important;
+    }
+
+    .now-playing-info p,
+    #playerArtist {
+        font-size: 0.72rem !important;
+        color: rgba(255, 255, 255, 0.65) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        margin: 0 !important;
+    }
+
+    /* Hide heart, shuffle, repeat, progress, right volume on mobile mini-player to avoid squeezing controls into text */
+    #playerLikeBtn,
+    #shuffleBtn,
+    #repeatBtn,
+    .progress-container,
+    .player-right {
+        display: none !important;
     }
 
     .player-center {
         width: auto !important;
+        flex: none !important;
+        flex-shrink: 0 !important;
     }
 
     .player-controls {
-        gap: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
         margin-bottom: 0 !important;
     }
 
-    .play-pause-btn {
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 1rem !important;
+    #prevBtn, #nextBtn {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.95rem !important;
+        background: transparent !important;
+        border: none !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+        flex-shrink: 0 !important;
     }
 
-    .progress-container, .player-right {
-        display: none !important;
+    .play-pause-btn, #playPauseBtn {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1rem !important;
+        flex-shrink: 0 !important;
     }
 }
 

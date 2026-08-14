@@ -13,12 +13,36 @@ import { connectService } from './services/connectService.js';
 const initHome = () => {
     // Apply Theme
     const themes = {
-        'default': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: '#1E293B' },
-        'ocean': { primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: '#0C4A6E' },
-        'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
-        'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
-        'cherry': { primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: '#881337' },
-        'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' }
+        'default': { 
+            primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: 'rgba(30, 41, 59, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #1A1F4C 0%, #0C102B 50%, #07091B 100%)',
+            orb1: '#7C3AED', orb2: '#06B6D4', orb3: '#EC4899', orb4: '#3B82F6'
+        },
+        'ocean': { 
+            primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: 'rgba(12, 74, 110, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #0C4A6E 0%, #082F49 50%, #031B2E 100%)',
+            orb1: '#0284C7', orb2: '#0EA5E9', orb3: '#38BDF8', orb4: '#06B6D4'
+        },
+        'forest': { 
+            primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: 'rgba(6, 95, 70, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #065F46 0%, #064E3B 50%, #022C22 100%)',
+            orb1: '#16A34A', orb2: '#22C55E', orb3: '#4ADE80', orb4: '#10B981'
+        },
+        'sunset': { 
+            primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: 'rgba(124, 45, 18, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #7C2D12 0%, #431407 50%, #270903 100%)',
+            orb1: '#EA580C', orb2: '#F97316', orb3: '#FB923C', orb4: '#EF4444'
+        },
+        'cherry': { 
+            primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: 'rgba(136, 19, 55, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #881337 0%, #4C0519 50%, #28030E 100%)',
+            orb1: '#E11D48', orb2: '#F43F5E', orb3: '#FB7185', orb4: '#DB2777'
+        },
+        'cyberpunk': { 
+            primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: 'rgba(24, 24, 27, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #27272A 0%, #09090B 50%, #000000 100%)',
+            orb1: '#D946EF', orb2: '#8B5CF6', orb3: '#06B6D4', orb4: '#F43F5E'
+        }
     };
     
     window.applyTheme = function(themeName) {
@@ -28,6 +52,18 @@ const initHome = () => {
         document.documentElement.style.setProperty('--accent', theme.accent);
         document.documentElement.style.setProperty('--background', theme.background);
         document.documentElement.style.setProperty('--cards', theme.cards);
+        
+        document.body.style.background = theme.bgGradient;
+        
+        const orb1 = document.querySelector('.orb-1');
+        if (orb1) orb1.style.background = theme.orb1;
+        const orb2 = document.querySelector('.orb-2');
+        if (orb2) orb2.style.background = theme.orb2;
+        const orb3 = document.querySelector('.orb-3');
+        if (orb3) orb3.style.background = theme.orb3;
+        const orb4 = document.querySelector('.orb-4');
+        if (orb4) orb4.style.background = theme.orb4;
+        
         localStorage.setItem('vibentra_theme', themeName);
     };
     
@@ -1702,32 +1738,42 @@ const initHome = () => {
         `).join('');
 
         const currentTheme = localStorage.getItem('vibentra_theme') || 'default';
+        const themeList = [
+            { id: 'default', name: 'Midnight Purple', color: '#7C3AED' },
+            { id: 'ocean', name: 'Ocean Blue', color: '#0284C7' },
+            { id: 'forest', name: 'Forest Green', color: '#16A34A' },
+            { id: 'sunset', name: 'Sunset Orange', color: '#EA580C' },
+            { id: 'cherry', name: 'Cherry Red', color: '#E11D48' },
+            { id: 'cyberpunk', name: 'Cyberpunk', color: '#D946EF' }
+        ];
+
+        const themeButtonsHtml = themeList.map(t => `
+            <button class="btn ${currentTheme === t.id ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="${t.id}" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: ${t.color}; box-shadow: 0 0 10px ${t.color}; display: inline-block;"></span>
+                <span>${t.name}</span>
+            </button>
+        `).join('');
 
         dynamicContent.innerHTML = `
             <div class="section-header">
                 <h2>Settings</h2>
             </div>
             
-            <div class="glass-panel" style="border-radius: 16px; overflow: hidden; margin-bottom: 2rem;">
-                <div style="padding: 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
-                    <h3>Appearance & Theme</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Customize the visual aesthetic of your Vibentra experience.</p>
+            <div class="glass-panel" style="border-radius: 20px; overflow: hidden; margin-bottom: 2rem;">
+                <div style="padding: 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
+                    <h3 style="font-size: 1.2rem;">Appearance & Theme</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Customize the visual color scheme and ambient glow of your Vibentra app.</p>
                 </div>
-                <div style="padding: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
-                        <button class="btn ${currentTheme === 'default' ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="default">Midnight Purple</button>
-                        <button class="btn ${currentTheme === 'ocean' ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="ocean">Ocean Blue</button>
-                        <button class="btn ${currentTheme === 'forest' ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="forest">Forest Green</button>
-                        <button class="btn ${currentTheme === 'sunset' ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="sunset">Sunset Orange</button>
-                        <button class="btn ${currentTheme === 'cherry' ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="cherry">Cherry Red</button>
-                        <button class="btn ${currentTheme === 'cyberpunk' ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="cyberpunk">Cyberpunk</button>
+                <div style="padding: 24px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                        ${themeButtonsHtml}
                     </div>
                 </div>
             </div>
 
-            <div class="glass-panel" style="border-radius: 16px; overflow: hidden; margin-bottom: 2rem;">
-                <div style="padding: 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
-                    <h3>Music Providers</h3>
+            <div class="glass-panel" style="border-radius: 20px; overflow: hidden; margin-bottom: 2rem;">
+                <div style="padding: 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
+                    <h3 style="font-size: 1.2rem;">Music Providers</h3>
                     <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Manage the sources where Vibentra searches for music.</p>
                 </div>
                 <div>
@@ -1750,7 +1796,9 @@ const initHome = () => {
 
         document.querySelectorAll('.theme-select-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const themeName = e.target.getAttribute('data-theme');
+                const targetBtn = e.target.closest('.theme-select-btn');
+                if (!targetBtn) return;
+                const themeName = targetBtn.getAttribute('data-theme');
                 window.applyTheme(themeName);
                 renderSettings(); // Re-render to update the active button state
                 showNotification('Theme updated successfully!');
