@@ -21,6 +21,7 @@ class MusicService {
         this.audioPlayer.crossOrigin = "anonymous";
         this.audioPlayer.preload = 'auto';
         this.audioPlayer.playsInline = true;
+        this.audioPlayer.loop = false;
         this.audioPlayer.setAttribute('playsinline', 'true');
         this.audioPlayer.setAttribute('webkit-playsinline', 'true');
         
@@ -613,15 +614,15 @@ class MusicService {
 
     async playContext(queue, track) {
         if (!queue || queue.length === 0) return;
-        this.originalQueue = [...queue];
-        this.queue = [...queue];
+        this.originalQueue = queue.map(t => ({...t}));
+        this.queue = queue.map(t => ({...t}));
         
         let targetIndex = -1;
         if (track) {
-            targetIndex = this.queue.findIndex(t => String(t.id) === String(track.id));
-            if (targetIndex === -1) {
-                targetIndex = this.queue.findIndex(t => t.title === track.title && t.artist === track.artist);
-            }
+            targetIndex = this.queue.findIndex(t => 
+                (t.id && track.id && String(t.id) === String(track.id)) ||
+                (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
+            );
         }
         if (targetIndex === -1) targetIndex = 0;
 
@@ -633,16 +634,21 @@ class MusicService {
         try {
             if (!track) return;
             this._isTransitioning = true;
+            this.audioPlayer.loop = false;
 
             if (queueIndex !== null && queueIndex >= 0 && queueIndex < this.queue.length) {
                 this.currentIndex = queueIndex;
             } else if (this.queue.length > 0) {
-                const idx = this.queue.findIndex(t => String(t.id) === String(track.id) || (t.title === track.title && t.artist === track.artist));
+                const idx = this.queue.findIndex(t => 
+                    (t.id && track.id && String(t.id) === String(track.id)) ||
+                    (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
+                );
                 if (idx !== -1) {
                     this.currentIndex = idx;
                 } else {
-                    this.queue = [track];
-                    this.currentIndex = 0;
+                    // Append track to queue instead of wiping existing queue
+                    this.queue.push(track);
+                    this.currentIndex = this.queue.length - 1;
                 }
             } else {
                 this.queue = [track];
@@ -765,10 +771,12 @@ class MusicService {
     }
 
     handleTrackEnd() {
+        this.audioPlayer.loop = false;
         if (this.repeatMode === 'one') {
             this.audioPlayer.currentTime = 0;
-            this.audioPlayer.play().catch(e => console.error(e));
+            this.audioPlayer.play().catch(e => console.error("Repeat track error:", e));
         } else {
+            console.log(`[Vibentra Player] Track ended. Current index: ${this.currentIndex}, Queue size: ${this.queue?.length}. Advancing next...`);
             this.playNext();
         }
     }
@@ -792,8 +800,18 @@ class MusicService {
             }
         } else if (this.currentIndex >= 0 && this.currentIndex < this.queue.length - 1) {
             nextIndex = this.currentIndex + 1;
+        } else if (this.repeatMode === 'all') {
+            nextIndex = 0;
         } else {
-            // End of queue: restart playlist from beginning
+            // End of queue reached and repeat is OFF
+            if (this.queue.length === 1) {
+                // If queue only has 1 track and repeat is off, stop playback at end
+                this.isPlaying = false;
+                this.updatePlayPauseUI(false);
+                this.audioPlayer.currentTime = 0;
+                this.updateProgressUI();
+                return;
+            }
             nextIndex = 0;
         }
 
