@@ -75,6 +75,15 @@ const initHome = () => {
             }
         } catch (error) {
             console.error("Error loading user data:", error);
+            const fallbackName = user.displayName || user.email?.split('@')[0] || 'User';
+            const welcomeNameEl = document.getElementById('welcomeName');
+            if (welcomeNameEl) welcomeNameEl.textContent = fallbackName;
+            
+            const topUsernameEl = document.getElementById('topUsername');
+            if (topUsernameEl) topUsernameEl.textContent = fallbackName;
+            
+            const profileUsername = document.getElementById('profileUsername');
+            if (profileUsername) profileUsername.textContent = fallbackName;
         }
     });
 

@@ -63,7 +63,13 @@ const initAuth = () => {
             showNotification('Login successful!');
             window.location.href = 'home.html';
         } catch (error) {
-            showNotification(error.message, 'error');
+            let msg = error.message;
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                msg = 'Invalid email or password.';
+            } else if (error.code === 'auth/too-many-requests') {
+                msg = 'Access temporarily disabled due to too many failed attempts.';
+            }
+            showNotification(msg, 'error');
         }
     });
 
@@ -89,20 +95,30 @@ const initAuth = () => {
                 displayName: username
             });
 
-            // Save to Firestore
-            await setDoc(doc(db, "users", user.uid), {
-                uid: user.uid,
-                username: username,
-                email: email,
-                profileImage: "",
-                bio: "",
-                createdAt: new Date().toISOString()
-            });
+            // Save to Firestore (gracefully handle permission rules if locked)
+            try {
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    username: username,
+                    email: email,
+                    profileImage: "",
+                    bio: "",
+                    createdAt: new Date().toISOString()
+                });
+            } catch (dbError) {
+                console.warn("Could not save user profile to Firestore database:", dbError);
+            }
 
             showNotification('Registration successful!');
             window.location.href = 'home.html';
         } catch (error) {
-            showNotification(error.message, 'error');
+            let msg = error.message;
+            if (error.code === 'auth/email-already-in-use') msg = 'Email is already registered.';
+            else if (error.code === 'auth/weak-password') msg = 'Password should be at least 6 characters.';
+            else if (error.code === 'permission-denied' || error.message.includes('permissions')) {
+                msg = 'Firestore permissions error. Please update rules in Firebase console.';
+            }
+            showNotification(msg, 'error');
         }
     });
 
@@ -113,20 +129,30 @@ const initAuth = () => {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
             
-            // Check if it's a new user and add to Firestore (we can just upsert)
-            await setDoc(doc(db, "users", user.uid), {
-                uid: user.uid,
-                username: user.displayName || 'Google User',
-                email: user.email,
-                profileImage: user.photoURL || "",
-                bio: "",
-                createdAt: new Date().toISOString()
-            }, { merge: true });
+            // Check if it's a new user and add to Firestore (gracefully handle permission errors)
+            try {
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    username: user.displayName || 'Google User',
+                    email: user.email,
+                    profileImage: user.photoURL || "",
+                    bio: "",
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+            } catch (dbError) {
+                console.warn("Could not sync Google user to Firestore database:", dbError);
+            }
 
             showNotification('Google Sign-in successful!');
             window.location.href = 'home.html';
         } catch (error) {
-            showNotification(error.message, 'error');
+            let msg = error.message;
+            if (error.code === 'auth/popup-closed-by-user') msg = 'Google Sign-in was cancelled.';
+            else if (error.code === 'auth/popup-blocked') msg = 'Google Sign-in popup was blocked by browser.';
+            else if (error.code === 'permission-denied' || error.message.includes('permissions')) {
+                msg = 'Firestore permissions error. Please update rules in Firebase console.';
+            }
+            showNotification(msg, 'error');
         }
     });
 
