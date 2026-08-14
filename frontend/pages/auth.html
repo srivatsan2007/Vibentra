@@ -115,56 +115,128 @@
     </script>
 </head>
 <body>
+    <!-- Liquid Glass Ambient Background & Visual Effects -->
+    <div class="liquid-bg-container">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+        <div class="ambient-orb orb-4"></div>
+        <div class="glass-grid-overlay"></div>
+        
+        <!-- Background Audio Equalizer Bars -->
+        <div class="music-wave-bg">
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+        </div>
+
+        <!-- Floating Music Elements -->
+        <div class="floating-notes-bg">
+            <i class="fa-solid fa-music note-1"></i>
+            <i class="fa-solid fa-compact-disc note-2"></i>
+            <i class="fa-solid fa-headphones note-3"></i>
+            <i class="fa-solid fa-sliders note-4"></i>
+        </div>
+    </div>
+
     <div class="auth-container">
-        <!-- Login Form -->
+        <!-- Brand Header Badge -->
+        <div class="brand-header">
+            <div class="brand-icon-wrapper">
+                <i class="fa-solid fa-waveform"></i>
+            </div>
+            <h1 class="brand-title">VIBENTRA</h1>
+            <p class="brand-subtitle">Your Liquid Sound Sanctuary</p>
+        </div>
+
+        <!-- Login Form Card -->
         <div class="glass-panel auth-card" id="loginCard">
+            <div class="card-glass-shine"></div>
             <h2>Welcome Back</h2>
+            <p class="card-subtitle">Sign in to resume your music stream</p>
+            
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" class="form-control" required placeholder="Enter your email">
+                    <label for="loginEmail">Email Address</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="loginEmail" class="form-control" required placeholder="name@example.com">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" class="form-control" required placeholder="Enter your password">
+                    <div class="input-glass-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="loginPassword" class="form-control" required placeholder="Enter your password">
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary auth-btn">Login</button>
+                <button type="submit" class="btn btn-primary auth-btn">
+                    <span>Login</span>
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                </button>
             </form>
             
             <div class="divider">OR</div>
             
             <button id="googleLoginBtn" class="btn google-btn">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                Sign in with Google
+                <span>Sign in with Google</span>
             </button>
             
             <div class="auth-links">
                 <p>Don't have an account? <a href="#" id="showRegister">Register here</a></p>
-                <p style="margin-top: 10px;"><a href="#" id="showForgotPassword">Forgot Password?</a></p>
+                <p style="margin-top: 12px;"><a href="#" id="showForgotPassword">Forgot Password?</a></p>
             </div>
         </div>
 
-        <!-- Register Form -->
+        <!-- Register Form Card -->
         <div class="glass-panel auth-card hidden" id="registerCard">
+            <div class="card-glass-shine"></div>
             <h2>Create Account</h2>
+            <p class="card-subtitle">Join Vibentra to discover & stream tunes</p>
+            
             <form id="registerForm">
                 <div class="form-group">
                     <label for="regUsername">Username</label>
-                    <input type="text" id="regUsername" class="form-control" required placeholder="Choose a username">
+                    <div class="input-glass-wrapper">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="regUsername" class="form-control" required placeholder="Choose a username">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="regEmail">Email</label>
-                    <input type="email" id="regEmail" class="form-control" required placeholder="Enter your email">
+                    <label for="regEmail">Email Address</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="regEmail" class="form-control" required placeholder="name@example.com">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="regPassword">Password</label>
-                    <input type="password" id="regPassword" class="form-control" required placeholder="Create a password">
+                    <div class="input-glass-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="regPassword" class="form-control" required placeholder="Create a password">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="regConfirmPassword">Confirm Password</label>
-                    <input type="password" id="regConfirmPassword" class="form-control" required placeholder="Confirm your password">
+                    <div class="input-glass-wrapper">
+                        <i class="fa-solid fa-shield-halved input-icon"></i>
+                        <input type="password" id="regConfirmPassword" class="form-control" required placeholder="Confirm your password">
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary auth-btn">Register</button>
+                <button type="submit" class="btn btn-primary auth-btn">
+                    <span>Create Account</span>
+                    <i class="fa-solid fa-user-plus"></i>
+                </button>
             </form>
             
             <div class="auth-links">
@@ -172,20 +244,28 @@
             </div>
         </div>
 
-        <!-- Forgot Password Form -->
+        <!-- Forgot Password Form Card -->
         <div class="glass-panel auth-card hidden" id="forgotPasswordCard">
+            <div class="card-glass-shine"></div>
             <h2>Reset Password</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; text-align: center;">Enter your email to receive a password reset link.</p>
+            <p class="card-subtitle" style="margin-bottom: 1.5rem;">Enter your email to receive a password reset link.</p>
+            
             <form id="forgotPasswordForm">
                 <div class="form-group">
-                    <label for="resetEmail">Email</label>
-                    <input type="email" id="resetEmail" class="form-control" required placeholder="Enter your email">
+                    <label for="resetEmail">Email Address</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="resetEmail" class="form-control" required placeholder="Enter your email">
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary auth-btn">Send Reset Link</button>
+                <button type="submit" class="btn btn-primary auth-btn">
+                    <span>Send Reset Link</span>
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
             </form>
             
             <div class="auth-links">
-                <p><a href="#" id="backToLogin">Back to Login</a></p>
+                <p><a href="#" id="backToLogin"><i class="fa-solid fa-arrow-left" style="margin-right: 6px;"></i>Back to Login</a></p>
             </div>
         </div>
     </div>

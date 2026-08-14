@@ -166,117 +166,538 @@ input {
     color: var(--primary);
 }
 
-/* Auth Layout */
-.auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    background: radial-gradient(circle at top right, rgba(124, 58, 237, 0.15), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.15), transparent 40%);
+/* ==========================================================================
+   LIQUID GLASS UI STYLING FOR AUTH (LOGIN / REGISTER / FORGOT PASSWORD)
+   ========================================================================== */
+
+/* Ambient Liquid Glass Canvas Container */
+.liquid-bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 20%, #0c102b 0%, #070919 60%, #03040b 100%);
 }
 
+/* Multi-colored Floating Liquid Orbs */
+.ambient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.6;
+    animation: floatOrb 18s ease-in-out infinite alternate;
+}
+
+.orb-1 {
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, #7C3AED 0%, #3B82F6 100%);
+    top: -100px;
+    left: -100px;
+    animation-duration: 22s;
+}
+
+.orb-2 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #06B6D4 0%, #2563EB 100%);
+    bottom: -150px;
+    right: -100px;
+    animation-duration: 26s;
+    animation-delay: -5s;
+}
+
+.orb-3 {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, #EC4899 0%, #8B5CF6 100%);
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.35;
+    animation-duration: 18s;
+    animation-delay: -10s;
+}
+
+.orb-4 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #3B82F6 0%, #06B6D4 100%);
+    bottom: 20%;
+    left: 10%;
+    opacity: 0.3;
+    animation-duration: 24s;
+}
+
+@keyframes floatOrb {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(60px, -40px) scale(1.1);
+    }
+    100% {
+        transform: translate(-40px, 50px) scale(0.95);
+    }
+}
+
+/* Subtle Glass Grid Texture Overlay */
+.glass-grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.7;
+}
+
+/* Audio Wave Equalizer Bars Background */
+.music-wave-bg {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 60px;
+    opacity: 0.25;
+}
+
+.wave-bar {
+    width: 4px;
+    background: linear-gradient(to top, #06B6D4, #7C3AED, #EC4899);
+    border-radius: 4px;
+    animation: liquidEqualizer 1.6s ease-in-out infinite alternate;
+}
+
+.wave-bar:nth-child(1)  { height: 20%; animation-delay: 0.1s; }
+.wave-bar:nth-child(2)  { height: 45%; animation-delay: 0.3s; }
+.wave-bar:nth-child(3)  { height: 75%; animation-delay: 0.2s; }
+.wave-bar:nth-child(4)  { height: 35%; animation-delay: 0.5s; }
+.wave-bar:nth-child(5)  { height: 90%; animation-delay: 0.4s; }
+.wave-bar:nth-child(6)  { height: 60%; animation-delay: 0.7s; }
+.wave-bar:nth-child(7)  { height: 80%; animation-delay: 0.2s; }
+.wave-bar:nth-child(8)  { height: 40%; animation-delay: 0.6s; }
+.wave-bar:nth-child(9)  { height: 100%; animation-delay: 0.3s; }
+.wave-bar:nth-child(10) { height: 50%; animation-delay: 0.8s; }
+.wave-bar:nth-child(11) { height: 70%; animation-delay: 0.5s; }
+.wave-bar:nth-child(12) { height: 30%; animation-delay: 0.1s; }
+
+@keyframes liquidEqualizer {
+    0% { height: 15%; opacity: 0.3; }
+    100% { height: 100%; opacity: 1; filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.8)); }
+}
+
+/* Floating Music Elements */
+.floating-notes-bg {
+    position: absolute;
+    inset: 0;
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.12);
+}
+
+.floating-notes-bg i {
+    position: absolute;
+    animation: floatNote 12s ease-in-out infinite alternate;
+}
+
+.note-1 { top: 15%; left: 12%; animation-delay: 0s; }
+.note-2 { top: 25%; right: 15%; animation-delay: -3s; }
+.note-3 { bottom: 25%; left: 15%; animation-delay: -6s; }
+.note-4 { bottom: 30%; right: 18%; animation-delay: -9s; }
+
+@keyframes floatNote {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0.1; }
+    100% { transform: translateY(-25px) rotate(15deg); opacity: 0.25; filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.5)); }
+}
+
+/* Auth Layout Main Container */
+.auth-container {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+/* Brand Header */
+.brand-header {
+    text-align: center;
+    margin-bottom: 1.8rem;
+    animation: glassFadeDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.4), rgba(6, 182, 212, 0.4));
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.75rem;
+    color: #06B6D4;
+    font-size: 1.6rem;
+    animation: pulseIcon 3s ease-in-out infinite alternate;
+}
+
+@keyframes pulseIcon {
+    0% { transform: scale(1); box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3); }
+    100% { transform: scale(1.06); box-shadow: 0 15px 35px rgba(6, 182, 212, 0.5), 0 0 20px rgba(236, 72, 153, 0.4); }
+}
+
+.brand-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #A5F3FC 50%, #C4B5FD 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    text-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    margin-bottom: 0.25rem;
+}
+
+.brand-subtitle {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+/* Liquid Glass Card Container */
 .auth-card {
+    position: relative;
     width: 100%;
-    max-width: 450px;
-    padding: 2.5rem;
-    border-radius: 20px;
+    max-width: 440px;
+    padding: 2.5rem 2.2rem;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(35px) saturate(190%);
+    -webkit-backdrop-filter: blur(35px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 
+        0 30px 60px -12px rgba(0, 0, 0, 0.6),
+        0 18px 36px -18px rgba(0, 0, 0, 0.7),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3),
+        0 0 40px rgba(124, 58, 237, 0.12);
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    animation: glassCardEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-glass-shine {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0.03) 40%,
+        transparent 60%
+    );
+    pointer-events: none;
+    transform: rotate(-15deg);
+}
+
+@keyframes glassCardEntrance {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .auth-card h2 {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #FFFFFF;
     text-align: center;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.5px;
 }
 
+.card-subtitle {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.88rem;
+    margin-bottom: 1.6rem;
+    font-weight: 400;
+}
+
+/* Glass Form Inputs */
 .form-group {
-    margin-bottom: 1.2rem;
-    position: relative;
+    margin-bottom: 1.25rem;
+    text-align: left;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--text-muted);
+    margin-bottom: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    letter-spacing: 0.3px;
+}
+
+.input-glass-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-glass-wrapper .input-icon {
+    position: absolute;
+    left: 16px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 1rem;
+    transition: color 0.3s ease;
+    pointer-events: none;
 }
 
 .form-control {
     width: 100%;
-    padding: 12px 16px;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    color: white;
-    font-size: 1rem;
-    transition: all 0.3s ease;
+    padding: 13px 16px 13px 44px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    font-weight: 400;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 300;
+}
+
+.form-control:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.22);
 }
 
 .form-control:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+    background: rgba(255, 255, 255, 0.09);
+    border-color: #06B6D4;
+    box-shadow: 
+        0 0 0 3px rgba(6, 182, 212, 0.25),
+        0 0 20px rgba(124, 58, 237, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2);
+    outline: none;
 }
 
+.input-glass-wrapper:focus-within .input-icon {
+    color: #06B6D4;
+}
+
+/* Liquid Gradient Submit Button */
 .auth-btn {
     width: 100%;
-    margin-top: 1rem;
+    margin-top: 0.8rem;
+    padding: 14px 20px;
+    border-radius: 14px;
     font-size: 1rem;
-}
-
-.auth-links {
-    margin-top: 1.5rem;
-    text-align: center;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
-
-.auth-links a {
-    color: var(--secondary);
-    font-weight: 500;
-}
-
-.auth-links a:hover {
-    text-decoration: underline;
-}
-
-.google-btn {
-    width: 100%;
-    margin-top: 1rem;
-    background: white;
-    color: #333;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, #7C3AED 0%, #2563EB 50%, #06B6D4 100%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+        0 10px 25px -5px rgba(124, 58, 237, 0.5),
+        0 4px 15px rgba(6, 182, 212, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
 }
 
-.google-btn:hover {
-    background: #f1f1f1;
+.auth-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    transition: left 0.6s ease;
 }
 
-.google-btn img {
-    width: 20px;
-    height: 20px;
+.auth-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 15px 35px -5px rgba(124, 58, 237, 0.7),
+        0 8px 25px rgba(6, 182, 212, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.6);
 }
 
+.auth-btn:hover::before {
+    left: 100%;
+}
+
+.auth-btn:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+/* Glass Divider */
 .divider {
     display: flex;
     align-items: center;
     text-align: center;
-    margin: 1.5rem 0;
-    color: var(--text-muted);
-    font-size: 0.8rem;
+    margin: 1.6rem 0;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
 }
 
 .divider::before, .divider::after {
     content: '';
     flex: 1;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.divider::before { margin-right: .5em; }
-.divider::after { margin-left: .5em; }
+.divider::before { margin-right: 1em; }
+.divider::after { margin-left: 1em; }
+
+/* Liquid Glass Google Sign-In Button */
+.google-btn {
+    width: 100%;
+    padding: 13px 20px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.google-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.google-btn:active {
+    transform: translateY(0) scale(0.99);
+}
+
+.google-btn img {
+    width: 20px;
+    height: 20px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Glass Navigation Links */
+.auth-links {
+    margin-top: 1.6rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.auth-links a {
+    color: #38BDF8;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.auth-links a:hover {
+    color: #A5F3FC;
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    text-decoration: none;
+}
+
+/* Toast Notifications - Liquid Glass Style */
+.notification {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    padding: 14px 22px;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    font-weight: 500;
+    z-index: 10000;
+    transform: translateX(140%) scale(0.9);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.notification.show {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+}
+
+.notification.error {
+    background: rgba(220, 38, 38, 0.25) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+    border-left: 4px solid #EF4444 !important;
+    box-shadow: 0 15px 35px rgba(239, 68, 68, 0.3), 0 0 20px rgba(220, 38, 38, 0.2) !important;
+    color: #FEE2E2 !important;
+}
+
+.notification.success {
+    background: rgba(16, 185, 129, 0.25) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    border-left: 4px solid #10B981 !important;
+    box-shadow: 0 15px 35px rgba(16, 185, 129, 0.3) !important;
+    color: #D1FAE5 !important;
+}
+
+.notification i {
+    font-size: 1.2rem;
+}
 
 /* Main App Layout */
 .app-layout {
