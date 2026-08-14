@@ -155,6 +155,94 @@ const initHome = () => {
         });
     }
 
+    // Refresh Engine (Header Button & Mobile Touch Pull-To-Refresh)
+    const headerRefreshBtn = document.getElementById('headerRefreshBtn');
+    if (headerRefreshBtn) {
+        headerRefreshBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const icon = headerRefreshBtn.querySelector('i');
+            if (icon) icon.classList.add('fa-spin');
+            loadView(currentView);
+            showNotification('Refreshing music feed...', 'success');
+            setTimeout(() => {
+                if (icon) icon.classList.remove('fa-spin');
+            }, 800);
+        });
+    }
+
+    const mainContentEl = document.getElementById('mainContent');
+    if (mainContentEl) {
+        let touchStartY = 0;
+        let touchMoveY = 0;
+        let isPulling = false;
+
+        const refreshIndicator = document.createElement('div');
+        refreshIndicator.id = 'pullToRefreshIndicator';
+        refreshIndicator.style.cssText = `
+            width: 100%; height: 0px; overflow: hidden; display: flex;
+            align-items: center; justify-content: center; background: rgba(124, 58, 237, 0.15);
+            color: white; font-size: 0.9rem; font-weight: 600; transition: height 0.2s ease, opacity 0.2s ease;
+            gap: 10px; opacity: 0; border-bottom: 1px solid var(--glass-border);
+        `;
+        refreshIndicator.innerHTML = '<i class="fa-solid fa-rotate-right" id="pullSpinner"></i> <span>Pull to refresh feed</span>';
+        mainContentEl.insertBefore(refreshIndicator, mainContentEl.firstChild);
+
+        mainContentEl.addEventListener('touchstart', (e) => {
+            if (mainContentEl.scrollTop <= 5) {
+                touchStartY = e.touches[0].clientY;
+                isPulling = true;
+            } else {
+                isPulling = false;
+            }
+        }, { passive: true });
+
+        mainContentEl.addEventListener('touchmove', (e) => {
+            if (!isPulling) return;
+            touchMoveY = e.touches[0].clientY;
+            const pullDistance = touchMoveY - touchStartY;
+            if (pullDistance > 0 && mainContentEl.scrollTop <= 5) {
+                const pullHeight = Math.min(pullDistance * 0.4, 70);
+                refreshIndicator.style.height = `${pullHeight}px`;
+                refreshIndicator.style.opacity = `${pullHeight / 70}`;
+                const textSpan = refreshIndicator.querySelector('span');
+                const spinner = refreshIndicator.querySelector('#pullSpinner');
+                if (pullHeight >= 55) {
+                    if (textSpan) textSpan.textContent = 'Release to refresh';
+                    if (spinner) spinner.style.transform = 'rotate(180deg)';
+                } else {
+                    if (textSpan) textSpan.textContent = 'Pull to refresh feed';
+                    if (spinner) spinner.style.transform = 'rotate(0deg)';
+                }
+            }
+        }, { passive: true });
+
+        mainContentEl.addEventListener('touchend', () => {
+            if (!isPulling) return;
+            isPulling = false;
+            const currentHeight = parseInt(refreshIndicator.style.height || '0');
+            if (currentHeight >= 55) {
+                refreshIndicator.style.height = '50px';
+                refreshIndicator.style.opacity = '1';
+                const textSpan = refreshIndicator.querySelector('span');
+                const spinner = refreshIndicator.querySelector('#pullSpinner');
+                if (textSpan) textSpan.textContent = 'Refreshing music feed...';
+                if (spinner) spinner.classList.add('fa-spin');
+
+                loadView(currentView);
+                showNotification('Music feed refreshed!', 'success');
+
+                setTimeout(() => {
+                    refreshIndicator.style.height = '0px';
+                    refreshIndicator.style.opacity = '0';
+                    if (spinner) spinner.classList.remove('fa-spin');
+                }, 800);
+            } else {
+                refreshIndicator.style.height = '0px';
+                refreshIndicator.style.opacity = '0';
+            }
+        }, { passive: true });
+    }
+
     // Real Feature Release & App Update Notification Engine
     const notificationBtn = document.getElementById('notificationBtn');
     const notificationsDropdown = document.getElementById('notificationsDropdown');
