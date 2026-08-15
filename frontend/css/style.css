@@ -2214,7 +2214,7 @@ input {
     margin: 40px auto 0 auto;
     padding: 10px 24px 20px 24px;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible !important;
 }
 
 /* Turntable Platter & Deck */
