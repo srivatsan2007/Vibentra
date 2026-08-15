@@ -1230,6 +1230,157 @@ input {
     text-overflow: ellipsis;
 }
 
+/* Music Card Quick Actions & Floating Dropdown System */
+.music-card {
+    position: relative;
+    user-select: none;
+}
+
+.card-img-wrapper {
+    position: relative;
+}
+
+/* Quick Action Overlay Bar on Image */
+.card-quick-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 12;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.music-card:hover .card-quick-actions,
+.music-card.menu-open .card-quick-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.card-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.card-action-btn:hover {
+    transform: scale(1.15);
+    background: var(--primary, #7C3AED);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.6);
+}
+
+.card-action-btn.like-btn.active {
+    color: #EC4899;
+    background: rgba(236, 72, 153, 0.3);
+    border-color: #EC4899;
+}
+
+.card-action-btn.like-btn.active:hover {
+    background: #EC4899;
+    color: #FFFFFF;
+}
+
+.card-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-title-row h3 {
+    flex: 1;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-menu-trigger {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.card-menu-trigger:hover,
+.music-card.menu-open .card-menu-trigger {
+    color: #38BDF8;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Glass Context Dropdown for Music Cards */
+.card-options-dropdown {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 200px;
+    background: rgba(12, 16, 43, 0.96);
+    backdrop-filter: blur(35px) saturate(190%);
+    -webkit-backdrop-filter: blur(35px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    z-index: 200;
+    overflow: hidden;
+    padding: 6px 0;
+    animation: fadeInScale 0.2s ease-out forwards;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.card-option-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.84rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.card-option-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #38BDF8;
+    padding-left: 20px;
+}
+
+.card-option-item i {
+    font-size: 0.95rem;
+    width: 16px;
+    text-align: center;
+}
+
 /* Popular Artist Card */
 .artist-card .card-img-wrapper {
     border-radius: 50%;

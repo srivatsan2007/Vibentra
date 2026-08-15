@@ -512,6 +512,188 @@ const initHome = () => {
         }
     });
 
+    // Global helper to create fully-featured music cards with working Like, Ringtone, Download, and Three Dots options
+    function createSongCard(track, contextList = []) {
+        const card = document.createElement('div');
+        card.className = 'music-card song-card';
+        card.setAttribute('data-id', track.id);
+        
+        const isFav = favoriteService.isFavorite(track.id);
+        
+        card.innerHTML = `
+            <div class="card-img-wrapper">
+                <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" alt="${track.title || 'Cover'}" loading="lazy">
+                <div class="play-btn-overlay" title="Play ${track.title || 'Song'}">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="card-quick-actions">
+                    <button class="card-action-btn like-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove Favorite' : 'Add to Favorites'}">
+                        <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                    </button>
+                    <button class="card-action-btn ringtone-btn" title="Set as Ringtone Studio">
+                        <i class="fa-solid fa-bell"></i>
+                    </button>
+                    <button class="card-action-btn download-btn" title="Download Song">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <button class="card-action-btn more-btn" title="More Options">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-info">
+                <div class="card-title-row">
+                    <h3 title="${track.title || 'Untitled Track'}">${track.title || 'Untitled Track'}</h3>
+                    <button class="card-menu-trigger" title="Song options">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                </div>
+                <p title="${track.artist || 'Unknown Artist'}">${track.artist || 'Unknown Artist'}</p>
+                ${track.provider ? `
+                    <span style="font-size: 0.72rem; padding: 3px 8px; background: ${track.provider === 'YouTube Music' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.08)'}; color: ${track.provider === 'YouTube Music' ? '#f87171' : 'var(--text-muted)'}; border: 1px solid ${track.provider === 'YouTube Music' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
+                        <i class="${track.provider === 'YouTube Music' ? 'fa-brands fa-youtube' : 'fa-solid fa-music'}"></i>
+                        ${track.provider}
+                    </span>
+                ` : ''}
+            </div>
+
+            <!-- Floating Glass Options Dropdown -->
+            <div class="card-options-dropdown hidden">
+                <div class="card-option-item opt-play">
+                    <i class="fa-solid fa-play" style="color: var(--primary, #7C3AED);"></i> Play Now
+                </div>
+                <div class="card-option-item opt-like">
+                    <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color: #EC4899;"></i> <span>${isFav ? 'Remove Favorite' : 'Add to Favorites'}</span>
+                </div>
+                <div class="card-option-item opt-ringtone">
+                    <i class="fa-solid fa-bell" style="color: #F59E0B;"></i> Set as Ringtone Studio
+                </div>
+                <div class="card-option-item opt-download">
+                    <i class="fa-solid fa-download" style="color: #10B981;"></i> Download Song
+                </div>
+                <div class="card-option-item opt-playlist">
+                    <i class="fa-solid fa-folder-plus" style="color: #06B6D4;"></i> Save to Playlist
+                </div>
+                <div class="card-option-item opt-lyrics">
+                    <i class="fa-solid fa-align-left" style="color: #8B5CF6;"></i> Show Lyrics
+                </div>
+            </div>
+        `;
+
+        // Interactive Handlers
+        const playBtn = card.querySelector('.play-btn-overlay');
+        const likeBtns = card.querySelectorAll('.like-btn, .opt-like');
+        const ringtoneBtns = card.querySelectorAll('.ringtone-btn, .opt-ringtone');
+        const downloadBtns = card.querySelectorAll('.download-btn, .opt-download');
+        const playlistBtns = card.querySelectorAll('.opt-playlist');
+        const lyricsBtns = card.querySelectorAll('.opt-lyrics');
+        const optPlayBtn = card.querySelector('.opt-play');
+        const moreBtn = card.querySelector('.more-btn');
+        const menuTrigger = card.querySelector('.card-menu-trigger');
+        const dropdown = card.querySelector('.card-options-dropdown');
+
+        const triggerPlay = (e) => {
+            e.stopPropagation();
+            dropdown.classList.add('hidden');
+            card.classList.remove('menu-open');
+            musicService.playContext(contextList.length ? contextList : [track], track);
+        };
+
+        playBtn.addEventListener('click', triggerPlay);
+        optPlayBtn?.addEventListener('click', triggerPlay);
+
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.card-action-btn') || e.target.closest('.card-menu-trigger') || e.target.closest('.card-options-dropdown')) {
+                return;
+            }
+            triggerPlay(e);
+        });
+
+        const updateLikeState = () => {
+            const currentlyFav = favoriteService.isFavorite(track.id);
+            card.querySelectorAll('.like-btn i, .opt-like i').forEach(icon => {
+                icon.className = `${currentlyFav ? 'fa-solid' : 'fa-regular'} fa-heart`;
+            });
+            const likeActionBtn = card.querySelector('.like-btn');
+            if (likeActionBtn) likeActionBtn.classList.toggle('active', currentlyFav);
+            const optLikeText = card.querySelector('.opt-like span');
+            if (optLikeText) optLikeText.textContent = currentlyFav ? 'Remove Favorite' : 'Add to Favorites';
+        };
+
+        likeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                favoriteService.toggleFavorite(track);
+                updateLikeState();
+            });
+        });
+
+        ringtoneBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.add('hidden');
+                card.classList.remove('menu-open');
+                musicService.openRingtoneModal(track);
+            });
+        });
+
+        downloadBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.add('hidden');
+                card.classList.remove('menu-open');
+                musicService.downloadTrack(track);
+            });
+        });
+
+        playlistBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.add('hidden');
+                card.classList.remove('menu-open');
+                musicService.openAddToPlaylistModal(track);
+            });
+        });
+
+        lyricsBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.add('hidden');
+                card.classList.remove('menu-open');
+                musicService.showLyricsModal(track);
+            });
+        });
+
+        const toggleMenu = (e) => {
+            e.stopPropagation();
+            const isHidden = dropdown.classList.contains('hidden');
+            
+            document.querySelectorAll('.card-options-dropdown').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('.music-card').forEach(c => c.classList.remove('menu-open'));
+
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+                card.classList.add('menu-open');
+            } else {
+                dropdown.classList.add('hidden');
+                card.classList.remove('menu-open');
+            }
+        };
+
+        moreBtn?.addEventListener('click', toggleMenu);
+        menuTrigger?.addEventListener('click', toggleMenu);
+
+        return card;
+    }
+
+    // Dismiss open dropdowns on click outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.music-card')) {
+            document.querySelectorAll('.card-options-dropdown').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('.music-card').forEach(c => c.classList.remove('menu-open'));
+        }
+    });
+
     // Views Rendering
     async function renderHome() {
         dynamicContent.innerHTML = `
@@ -557,22 +739,7 @@ const initHome = () => {
             recentGrid.innerHTML = '';
             
             history.slice(0, 5).forEach(track => {
-                const card = document.createElement('div');
-                card.className = 'music-card';
-                card.innerHTML = `
-                    <div class="card-img-wrapper">
-                        <img src="${track.cover}" alt="Cover">
-                        <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
-                    </div>
-                    <div class="card-info">
-                        <h3>${track.title}</h3>
-                        <p>${track.artist}</p>
-                    </div>
-                `;
-                card.addEventListener('click', () => {
-                    musicService.playContext(history, track);
-                });
-                recentGrid.appendChild(card);
+                recentGrid.appendChild(createSongCard(track, history));
             });
         }
 
@@ -606,22 +773,7 @@ const initHome = () => {
                 }
 
                 trendingResults.slice(0, 10).forEach(track => {
-                    const card = document.createElement('div');
-                    card.className = 'music-card';
-                    card.innerHTML = `
-                        <div class="card-img-wrapper">
-                            <img src="${track.cover}" alt="Cover">
-                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3>${track.title}</h3>
-                            <p>${track.artist}</p>
-                        </div>
-                    `;
-                    card.addEventListener('click', () => {
-                        musicService.playContext(trendingResults, track);
-                    });
-                    trendingGrid.appendChild(card);
+                    trendingGrid.appendChild(createSongCard(track, trendingResults));
                 });
 
                 // Extract and render dynamic artists
@@ -754,28 +906,7 @@ const initHome = () => {
                     grid.appendChild(header);
 
                     results.songs.forEach(track => {
-                        const card = document.createElement('div');
-                        card.className = 'music-card';
-                        card.innerHTML = `
-                            <div class="card-img-wrapper">
-                                <img src="${track.cover}" alt="Cover">
-                                <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
-                            </div>
-                            <div class="card-info">
-                                <h3>${track.title}</h3>
-                                <p>${track.artist}</p>
-                                <span style="font-size: 0.72rem; padding: 3px 8px; background: ${track.provider === 'YouTube Music' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.08)'}; color: ${track.provider === 'YouTube Music' ? '#f87171' : 'var(--text-muted)'}; border: 1px solid ${track.provider === 'YouTube Music' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
-                                    <i class="${track.provider === 'YouTube Music' ? 'fa-brands fa-youtube' : 'fa-solid fa-music'}"></i>
-                                    ${track.provider || 'JioSaavn'}
-                                </span>
-                            </div>
-                        `;
-                        
-                        card.addEventListener('click', () => {
-                            musicService.playContext(results.songs, track);
-                        });
-                        
-                        grid.appendChild(card);
+                        grid.appendChild(createSongCard(track, results.songs));
                     });
                 }
 
@@ -1417,20 +1548,7 @@ const initHome = () => {
                     const finalResults = uniqueResults.length >= 4 ? uniqueResults.slice(0, 4) : results.slice(0, 4);
                     
                     finalResults.forEach(track => {
-                        const card = document.createElement('div');
-                        card.className = 'music-card';
-                        card.innerHTML = `
-                            <div class="card-img-wrapper">
-                                <img src="${track.cover || 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=500&q=80'}" alt="${track.title}">
-                                <div class="play-btn"><i class="fa-solid fa-play"></i></div>
-                            </div>
-                            <h3>${track.title}</h3>
-                            <p>${track.artist}</p>
-                        `;
-                        card.querySelector('.play-btn').addEventListener('click', () => {
-                            musicService.playContext(results, track);
-                        });
-                        grid.appendChild(card);
+                        grid.appendChild(createSongCard(track, finalResults));
                     });
                 } catch (err) {
                     grid.innerHTML = '<p style="color: #ef4444;">Error fetching mood results.</p>';
@@ -1456,12 +1574,14 @@ const initHome = () => {
                 card1.innerHTML = `
                     <div class="card-img-wrapper">
                         <img src="${seedTrack.cover}" alt="Mix">
-                        <div class="play-btn"><i class="fa-solid fa-play"></i></div>
+                        <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
                     </div>
-                    <h3>${seedTrack.artist} Mix</h3>
-                    <p>AI Generated for You</p>
+                    <div class="card-info">
+                        <h3>${seedTrack.artist} Mix</h3>
+                        <p>AI Generated for You</p>
+                    </div>
                 `;
-                card1.querySelector('.play-btn').addEventListener('click', () => {
+                card1.querySelector('.play-btn-overlay').addEventListener('click', () => {
                     musicService.playContext(results, results[0]);
                 });
                 smartGrid.appendChild(card1);
@@ -1524,20 +1644,7 @@ const initHome = () => {
                 }
 
                 djTracks.forEach(track => {
-                    const card = document.createElement('div');
-                    card.className = 'music-card';
-                    card.innerHTML = `
-                        <div class="card-img-wrapper">
-                            <img src="${track.cover || 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=500&q=80'}" alt="${track.title}">
-                            <div class="play-btn"><i class="fa-solid fa-play"></i></div>
-                        </div>
-                        <h3 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title}</h3>
-                        <p style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.artist}</p>
-                    `;
-                    card.querySelector('.play-btn').addEventListener('click', () => {
-                        musicService.playContext(djTracks, track);
-                    });
-                    aiDjGrid.appendChild(card);
+                    aiDjGrid.appendChild(createSongCard(track, djTracks));
                 });
             } catch (error) {
                 aiDjGrid.innerHTML = '<p style="color: #ef4444;">AI DJ encountered an error.</p>';

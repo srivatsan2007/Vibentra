@@ -445,7 +445,8 @@ class MusicService {
         this.restorePlayerState();
     }
 
-    openAddToPlaylistModal() {
+    openAddToPlaylistModal(targetTrack = null) {
+        const trackToAdd = targetTrack || this.currentTrack;
         const modal = document.getElementById('addToPlaylistModal');
         const listContainer = document.getElementById('playlistSelectionList');
         if (!modal || !listContainer) return;
@@ -454,7 +455,7 @@ class MusicService {
         listContainer.innerHTML = '';
         
         if (playlists.length === 0) {
-            listContainer.innerHTML = '<p style="color: var(--text-muted);">You have no playlists yet.</p>';
+            listContainer.innerHTML = '<p style="color: var(--text-muted); padding: 10px; text-align: center;">You have no custom playlists yet.</p>';
         } else {
             playlists.forEach(pl => {
                 const btn = document.createElement('button');
@@ -462,13 +463,15 @@ class MusicService {
                 btn.style.width = '100%';
                 btn.style.justifyContent = 'flex-start';
                 btn.style.textAlign = 'left';
-                btn.style.padding = '10px 20px';
-                btn.textContent = pl.name;
+                btn.style.padding = '12px 18px';
+                btn.style.borderRadius = '12px';
+                btn.innerHTML = `<i class="fa-solid fa-folder-plus" style="margin-right: 10px; color: var(--primary);"></i> ${pl.name}`;
                 btn.addEventListener('click', () => {
-                    playlistService.addTrackToPlaylist(pl.id, this.currentTrack);
-                    modal.classList.remove('active');
-                    // Trigger a custom event to show a notification
-                    document.dispatchEvent(new CustomEvent('showNotification', { detail: `Added to ${pl.name}` }));
+                    if (trackToAdd) {
+                        playlistService.addTrackToPlaylist(pl.id, trackToAdd);
+                        modal.classList.remove('active');
+                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Added "${trackToAdd.title}" to ${pl.name}` }));
+                    }
                 });
                 listContainer.appendChild(btn);
             });
@@ -515,21 +518,22 @@ class MusicService {
         });
     }
 
-    async showLyricsModal() {
+    async showLyricsModal(targetTrack = null) {
+        const trackToFetch = targetTrack || this.currentTrack;
         const modal = document.getElementById('lyricsModal');
         const content = document.getElementById('lyricsContent');
         const title = document.getElementById('lyricsTitle');
-        if (!modal || !content) return;
+        if (!modal || !content || !trackToFetch) return;
 
-        title.textContent = `Lyrics: ${this.currentTrack.title}`;
-        content.innerHTML = '<p style="color: var(--text-muted);">Loading lyrics...</p>';
+        title.textContent = `Lyrics: ${trackToFetch.title}`;
+        content.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">Loading lyrics...</p>';
         modal.classList.add('active');
 
-        const lyrics = await providerManager.getLyrics(this.currentTrack.providerId, this.currentTrack.id);
+        const lyrics = await providerManager.getLyrics(trackToFetch.providerId, trackToFetch.id);
         if (lyrics) {
             content.textContent = lyrics;
         } else {
-            content.innerHTML = '<p style="color: var(--text-muted);">No lyrics available for this song.</p>';
+            content.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No lyrics available for this song.</p>';
         }
     }
 
