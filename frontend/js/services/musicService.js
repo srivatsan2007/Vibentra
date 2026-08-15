@@ -138,11 +138,13 @@ class MusicService {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (AudioCtx) {
                     this.keepAliveCtx = new AudioCtx();
-                    const buffer = this.keepAliveCtx.createBuffer(1, 1, 22050);
-                    const source = this.keepAliveCtx.createBufferSource();
-                    source.buffer = buffer;
-                    source.connect(this.keepAliveCtx.destination);
-                    source.start(0);
+                    this.keepAliveOsc = this.keepAliveCtx.createOscillator();
+                    this.keepAliveGain = this.keepAliveCtx.createGain();
+                    // Virtually silent continuous tone (0.0001 gain) keeps mobile OS audio mixer process active during lockscreen background playback
+                    this.keepAliveGain.gain.value = 0.0001;
+                    this.keepAliveOsc.connect(this.keepAliveGain);
+                    this.keepAliveGain.connect(this.keepAliveCtx.destination);
+                    this.keepAliveOsc.start();
                 }
             }
             if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
@@ -943,6 +945,20 @@ class MusicService {
         console.log(`[Vibentra Player] Attempting same-song recovery at ${resumeTime.toFixed(1)}s (Attempt ${this._errorRetryCount}/3)...`);
 
         try {
+            // Fast recovery: if streamUrl is already cached, re-attach and seek directly without triggering network calls
+            if (this.currentTrack.streamUrl) {
+                this.audioPlayer.src = this.currentTrack.streamUrl;
+                if (resumeTime > 1) {
+                    this.audioPlayer.currentTime = resumeTime;
+                }
+                await this.audioPlayer.play();
+                this._errorRetryCount = 0;
+                this.isPlaying = true;
+                this.updatePlayPauseUI(true);
+                console.log("[Vibentra Player] Same-song fast recovery succeeded!");
+                return;
+            }
+
             const providerId = this.currentTrack.providerId || (this.currentTrack.provider === 'YouTube Music' || this.currentTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
             const refreshedTrack = await providerManager.getTrack(providerId, this.currentTrack.id);
             
@@ -1233,11 +1249,27 @@ class MusicService {
     }
 
     updateProgressUI(isMock = false) {
-        // Watchdog: If state is playing but HTML5 audio element unexpectedly paused during background playback, auto-resume!
+        // Watchdog 1: If state is playing but HTML5 audio element unexpectedly paused during background playback, auto-resume!
         if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.src) {
             this.audioPlayer.play().catch(e => {
                 console.warn("[Vibentra Watchdog] Auto-resume play failed:", e);
             });
+        }
+
+        // Watchdog 2: If audio is playing but currentTime has been frozen for > 6 seconds mid-song, execute same-song recovery
+        if (this.isPlaying && !this._userRequestedPause && !this._isTransitioning && this.audioPlayer.src && !this.audioPlayer.paused) {
+            const now = Date.now();
+            if (this._lastProgressTime === this.audioPlayer.currentTime) {
+                if (!this._stallStartTime) this._stallStartTime = now;
+                else if (now - this._stallStartTime > 6000) {
+                    console.warn("[Vibentra Watchdog] Audio progress frozen mid-song. Executing same-song recovery...");
+                    this._stallStartTime = null;
+                    this.recoverCurrentTrack();
+                }
+            } else {
+                this._lastProgressTime = this.audioPlayer.currentTime;
+                this._stallStartTime = null;
+            }
         }
 
         const progressSlider = document.getElementById('progressSlider');
