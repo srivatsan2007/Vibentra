@@ -92,6 +92,16 @@ class MusicService {
                 }
             });
         }
+
+        // Self-healing: auto-resume audio when device network reconnects
+        if (typeof window !== 'undefined') {
+            window.addEventListener('online', () => {
+                console.log("[Vibentra Player] Network connection restored.");
+                if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.paused) {
+                    this.audioPlayer.play().catch(() => {});
+                }
+            });
+        }
     }
 
     async requestWakeLock() {
@@ -760,16 +770,33 @@ class MusicService {
                     }).catch(e => {
                         if (this._playbackRequestId !== requestId) return;
                         this._isTransitioning = false;
-                        console.error("Playback prevented in background, retrying:", e);
-                        // Retry playing in background
-                        this.audioPlayer.play().then(() => {
-                            if (this._playbackRequestId === requestId) {
-                                this.isPlaying = true;
-                                this.updatePlayPauseUI(true);
+                        console.error("Playback prevented or stream URL expired, attempting auto-refresh:", e);
+                        
+                        // Self-healing: Attempt fresh stream URL fetch if URL expired or stream broke
+                        const providerId = fullTrack.providerId || (fullTrack.provider === 'YouTube Music' || fullTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                        providerManager.getTrack(providerId, fullTrack.id).then(refreshedTrack => {
+                            if (this._playbackRequestId !== requestId) return;
+                            if (refreshedTrack && refreshedTrack.streamUrl) {
+                                this.currentTrack = refreshedTrack;
+                                if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
+                                    this.queue[this.currentIndex] = refreshedTrack;
+                                }
+                                this.audioPlayer.src = refreshedTrack.streamUrl;
+                                this.audioPlayer.load();
+                                this.audioPlayer.play().then(() => {
+                                    if (this._playbackRequestId === requestId) {
+                                        this.isPlaying = true;
+                                        this.updatePlayPauseUI(true);
+                                    }
+                                }).catch(retryErr => {
+                                    console.error("Retry play failed after stream refresh:", retryErr);
+                                    setTimeout(() => this.playNext(), 1000);
+                                });
+                            } else {
+                                setTimeout(() => this.playNext(), 1000);
                             }
-                        }).catch(err => {
+                        }).catch(() => {
                             if (this._playbackRequestId === requestId) {
-                                console.error("Retry play failed, advancing to next track:", err);
                                 setTimeout(() => this.playNext(), 1000);
                             }
                         });
@@ -844,6 +871,14 @@ class MusicService {
                 navigator.mediaSession.setActionHandler('nexttrack', () => {
                     this.playNext();
                 });
+                try {
+                    navigator.mediaSession.setActionHandler('seekto', (details) => {
+                        if (details.seekTime !== undefined && this.audioPlayer.duration) {
+                            this.audioPlayer.currentTime = details.seekTime;
+                            this.updateProgressUI();
+                        }
+                    });
+                } catch(e) {}
 
                 if ('setPositionState' in navigator.mediaSession && this.audioPlayer.duration) {
                     navigator.mediaSession.setPositionState({
