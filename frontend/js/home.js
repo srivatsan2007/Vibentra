@@ -1602,62 +1602,113 @@ const initHome = () => {
         const email = user ? user.email : 'user@example.com';
         const uid = user ? user.uid : 'guest';
         const profileUrl = window.location.origin + '/?user=' + uid;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(profileUrl)}&color=7C3AED&bgcolor=111827`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}&color=7C3AED&bgcolor=FFFFFF`;
+
+        const usernameText = document.getElementById('topUsername')?.textContent || 'User';
+        const profileImgSrc = document.getElementById('topProfileImg')?.src || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80';
 
         dynamicContent.innerHTML = `
             <div class="section-header">
                 <h2>Your Profile</h2>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 300px; gap: 30px; margin-top: 20px;">
-                <!-- Profile Settings Form -->
-                <div class="glass-panel" style="padding: 30px; border-radius: 16px;">
-                    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
-                        <img src="${document.getElementById('topProfileImg').src}" id="profileAvatar" alt="Profile" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--primary);">
-                        <div>
-                            <h2 id="profileUsername" style="font-size: 2rem;">${document.getElementById('topUsername').textContent}</h2>
-                            <p style="color: var(--text-muted);">Vibentra Member</p>
+            <div style="max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; margin-top: 10px; width: 100%;">
+                <!-- Main Profile Details Card -->
+                <div class="glass-panel" style="padding: 28px 24px; border-radius: 24px; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 28px; flex-wrap: wrap;">
+                        <div style="position: relative; flex-shrink: 0;">
+                            <img src="${profileImgSrc}" id="profileAvatar" alt="Profile" style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--primary); box-shadow: 0 0 25px rgba(124, 58, 237, 0.4); object-fit: cover; display: block;">
+                            <span style="position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; background: #10B981; border: 3px solid var(--background, #0F172A); border-radius: 50%; display: block;" title="Active Now"></span>
                         </div>
-                    </div>
-
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;">Email Address (Locked)</label>
-                        <div style="position: relative;">
-                            <i class="fa-solid fa-envelope" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                            <input type="email" value="${email}" disabled style="width: 100%; padding: 15px 15px 15px 45px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text-muted); cursor: not-allowed; outline: none;">
-                            <i class="fa-solid fa-lock" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;">Password</label>
-                        <div style="position: relative; display: flex; gap: 10px;">
-                            <div style="position: relative; flex: 1;">
-                                <i class="fa-solid fa-key" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
-                                <input type="password" id="profilePasswordInput" value="••••••••" disabled style="width: 100%; padding: 15px 15px 15px 45px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; outline: none; transition: all 0.3s;">
+                        <div style="flex: 1; min-width: 200px; overflow-wrap: anywhere; word-break: break-word;">
+                            <h2 id="profileUsername" style="font-size: 1.4rem; font-weight: 700; color: #FFFFFF; line-height: 1.35; margin-bottom: 6px;">${usernameText}</h2>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="background: rgba(124, 58, 237, 0.2); border: 1px solid rgba(124, 58, 237, 0.4); color: var(--accent, #EC4899); font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-compact-disc"></i> Vibentra Member
+                                </span>
+                                <span style="background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.3); color: var(--secondary, #06B6D4); font-size: 0.78rem; font-weight: 600; padding: 4px 12px; border-radius: 20px;">
+                                    Lossless Audio Active
+                                </span>
                             </div>
-                            <button id="enablePasswordBtn" class="btn btn-outline" style="white-space: nowrap;"><i class="fa-solid fa-pen"></i> Change</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 22px;">
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Email Address (Locked)</label>
+                        <div style="position: relative;">
+                            <i class="fa-solid fa-envelope" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                            <input type="email" value="${email}" disabled style="width: 100%; padding: 14px 44px 14px 46px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border); border-radius: 14px; color: var(--text-muted); cursor: not-allowed; outline: none; font-size: 0.95rem; text-overflow: ellipsis; overflow: hidden;">
+                            <i class="fa-solid fa-lock" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 8px;">
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Password</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <div style="position: relative; flex: 1; min-width: 200px;">
+                                <i class="fa-solid fa-key" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                                <input type="password" id="profilePasswordInput" value="••••••••" disabled style="width: 100%; padding: 14px 16px 14px 46px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border); border-radius: 14px; color: white; outline: none; transition: all 0.3s; font-size: 0.95rem;">
+                            </div>
+                            <button id="enablePasswordBtn" class="btn btn-outline" style="white-space: nowrap; border-radius: 14px; padding: 12px 20px;"><i class="fa-solid fa-pen"></i> Change</button>
                         </div>
                         <div id="passwordActions" style="display: none; margin-top: 15px; text-align: right;">
-                            <button id="cancelPasswordBtn" class="btn btn-outline" style="margin-right: 10px;">Cancel</button>
-                            <button id="savePasswordBtn" class="btn btn-primary">Save New Password</button>
+                            <button id="cancelPasswordBtn" class="btn btn-outline" style="margin-right: 10px; border-radius: 12px;">Cancel</button>
+                            <button id="savePasswordBtn" class="btn btn-primary" style="border-radius: 12px;">Save New Password</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- QR Share Panel -->
-                <div class="glass-panel" style="padding: 30px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-                    <h3 style="margin-bottom: 10px;">Share Profile</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Let others scan this QR code to view your music taste and public playlists.</p>
+                <!-- QR Share Panel (Stack Below Profile Details) -->
+                <div class="glass-panel" style="padding: 30px 24px; border-radius: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(124, 58, 237, 0.2); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 12px; border: 1px solid rgba(124, 58, 237, 0.3);">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; color: #FFFFFF;">Share Profile</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 22px; max-width: 420px; line-height: 1.45;">Let others scan this QR code to view your music taste and public playlists on Vibentra.</p>
                     
-                    <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                        <img src="${qrUrl}" alt="Profile QR Code" style="display: block; width: 150px; height: 150px;">
+                    <div style="background: #FFFFFF; padding: 16px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 14px 40px rgba(0,0,0,0.5), 0 0 30px rgba(124, 58, 237, 0.3); border: 3px solid var(--primary); display: inline-block;">
+                        <img src="${qrUrl}" alt="Profile QR Code" style="display: block; width: 170px; height: 170px; border-radius: 8px;">
                     </div>
                     
-                    <button class="btn btn-outline" style="width: 100%;"><i class="fa-solid fa-share-nodes"></i> Copy Share Link</button>
+                    <div style="display: flex; gap: 12px; width: 100%; max-width: 440px; flex-wrap: wrap;">
+                        <button id="copyShareLinkBtn" class="btn btn-primary" style="flex: 1; min-width: 180px; border-radius: 14px; padding: 13px 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fa-solid fa-copy"></i> Copy Share Link
+                        </button>
+                        <button id="downloadQrBtn" class="btn btn-outline" style="flex: 1; min-width: 180px; border-radius: 14px; padding: 13px 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fa-solid fa-download"></i> Save QR Code
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
+
+        // Copy Share Link listener
+        document.getElementById('copyShareLinkBtn')?.addEventListener('click', () => {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(profileUrl);
+                showNotification('Profile link copied to clipboard!', 'success');
+            } else {
+                const tempInput = document.createElement('input');
+                tempInput.value = profileUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showNotification('Profile link copied!', 'success');
+            }
+        });
+
+        // Download QR listener
+        document.getElementById('downloadQrBtn')?.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.href = qrUrl;
+            a.target = '_blank';
+            a.download = `Vibentra-QR-${uid}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showNotification('QR Code download started!', 'success');
+        });
 
         // Password change logic
         const passwordInput = document.getElementById('profilePasswordInput');
@@ -1679,7 +1730,7 @@ const initHome = () => {
         cancelBtn.addEventListener('click', () => {
             passwordInput.disabled = true;
             passwordInput.value = '••••••••';
-            passwordInput.style.background = 'rgba(0,0,0,0.2)';
+            passwordInput.style.background = 'rgba(0,0,0,0.25)';
             passwordInput.style.borderColor = 'var(--glass-border)';
             enableBtn.style.display = 'block';
             actionsDiv.style.display = 'none';
@@ -1688,24 +1739,24 @@ const initHome = () => {
         saveBtn.addEventListener('click', async () => {
             const newPassword = passwordInput.value;
             if (newPassword.length < 6) {
-                alert('Password must be at least 6 characters long.');
+                showNotification('Password must be at least 6 characters long.', 'error');
                 return;
             }
             
             try {
                 if (auth.currentUser) {
                     await updatePassword(auth.currentUser, newPassword);
-                    alert('Password updated successfully!');
-                    cancelBtn.click(); // Reset UI
+                    showNotification('Password updated successfully!', 'success');
+                    cancelBtn.click();
                 } else {
-                    alert('You must be logged in to change your password.');
+                    showNotification('You must be logged in to change your password.', 'error');
                 }
             } catch (error) {
                 console.error('Error updating password:', error);
                 if (error.code === 'auth/requires-recent-login') {
-                    alert('For security reasons, please log out and log back in before changing your password.');
+                    showNotification('Re-login required to update password for security.', 'error');
                 } else {
-                    alert('Failed to update password: ' + error.message);
+                    showNotification('Failed to update password: ' + error.message, 'error');
                 }
             }
         });
@@ -1892,12 +1943,12 @@ const initHome = () => {
 
     function renderSettings() {
         let providersHtml = providerManager.getAllProviders().map(p => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--glass-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--glass-border);">
                 <div>
-                    <h4 style="font-size: 1.1rem; margin-bottom: 5px;">${p.name}</h4>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);">Status: <span style="color: ${p.enabled ? '#10b981' : '#ef4444'}">${p.enabled ? 'Enabled' : 'Disabled'}</span></p>
+                    <h4 style="font-size: 1.05rem; margin-bottom: 4px; color: #FFFFFF;">${p.name}</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">Status: <span style="color: ${p.enabled ? '#10B981' : '#EF4444'}; font-weight: 600;">${p.enabled ? 'Active' : 'Disabled'}</span></p>
                 </div>
-                <button class="btn ${p.enabled ? 'btn-outline' : 'btn-primary'} toggle-provider-btn" data-id="${p.id}">
+                <button class="btn ${p.enabled ? 'btn-outline' : 'btn-primary'} toggle-provider-btn" data-id="${p.id}" style="border-radius: 12px; padding: 8px 18px; font-size: 0.88rem;">
                     ${p.enabled ? 'Disable' : 'Enable'}
                 </button>
             </div>
@@ -1914,8 +1965,8 @@ const initHome = () => {
         ];
 
         const themeButtonsHtml = themeList.map(t => `
-            <button class="btn ${currentTheme === t.id ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="${t.id}" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px;">
-                <span style="width: 12px; height: 12px; border-radius: 50%; background: ${t.color}; box-shadow: 0 0 10px ${t.color}; display: inline-block;"></span>
+            <button class="btn ${currentTheme === t.id ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="${t.id}" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; border-radius: 14px; transition: all 0.3s ease;">
+                <span style="width: 14px; height: 14px; border-radius: 50%; background: ${t.color}; box-shadow: 0 0 12px ${t.color}; display: inline-block;"></span>
                 <span>${t.name}</span>
             </button>
         `).join('');
@@ -1925,45 +1976,61 @@ const initHome = () => {
                 <h2>Settings</h2>
             </div>
             
-            <div class="glass-panel" style="border-radius: 20px; overflow: hidden; margin-bottom: 2rem;">
-                <div style="padding: 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
-                    <h3 style="font-size: 1.2rem;">Appearance & Theme</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Customize the visual color scheme and ambient glow of your Vibentra app.</p>
-                </div>
-                <div style="padding: 24px;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
-                        ${themeButtonsHtml}
+            <div style="max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; margin-top: 10px; width: 100%;">
+                <!-- Appearance & Theme Panel -->
+                <div class="glass-panel" style="border-radius: 24px; overflow: hidden; width: 100%;">
+                    <div style="padding: 22px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-palette" style="font-size: 1.3rem; color: var(--primary);"></i>
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">Appearance & Theme</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Customize visual accents and liquid glow themes.</p>
+                        </div>
+                    </div>
+                    <div style="padding: 22px 24px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;">
+                            ${themeButtonsHtml}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="glass-panel" style="border-radius: 20px; overflow: hidden; margin-bottom: 2rem;">
-                <div style="padding: 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
-                    <h3 style="font-size: 1.2rem;">Music Providers</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Manage the sources where Vibentra searches for music.</p>
-                </div>
-                <div>
-                    ${providersHtml}
-                </div>
-            </div>
-
-            <div class="glass-panel" style="border-radius: 20px; overflow: hidden; margin-bottom: 2rem;">
-                <div style="padding: 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);">
-                    <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-battery-full" style="color: #10b981;"></i> Background Playback & Battery Optimization
-                    </h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">If your device closes Vibentra while playing in the background (when the screen turns off or app is minimized):</p>
-                </div>
-                <div style="padding: 24px; font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.85);">
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; margin-bottom: 15px;">
-                        <strong>📱 How to Keep Playback Active:</strong>
-                        <ol style="margin-top: 8px; padding-left: 20px; color: var(--text-muted);">
-                            <li style="margin-bottom: 6px;">Open phone <strong>Settings > Apps > Vibentra</strong>.</li>
-                            <li style="margin-bottom: 6px;">Tap <strong>Battery</strong> or <strong>Battery Saver</strong>.</li>
-                            <li style="margin-bottom: 6px;">Set Battery usage to <strong>Unrestricted / No Restrictions</strong>.</li>
-                            <li>(Xiaomi/MIUI & Vivo users): Enable <strong>Autostart</strong> in App info settings.</li>
-                        </ol>
+                <!-- Music Providers Panel -->
+                <div class="glass-panel" style="border-radius: 24px; overflow: hidden; width: 100%;">
+                    <div style="padding: 22px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-sliders" style="font-size: 1.3rem; color: var(--secondary);"></i>
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">Music Sources</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Enable or disable music providers for search & playback.</p>
+                        </div>
                     </div>
+                    <div>
+                        ${providersHtml}
+                    </div>
+                </div>
+
+                <!-- Background Playback Guide -->
+                <div class="glass-panel" style="border-radius: 24px; overflow: hidden; width: 100%;">
+                    <div style="padding: 22px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-battery-full" style="font-size: 1.3rem; color: #10B981;"></i>
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">Background Playback & Battery Saver</h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Ensure continuous music playback when device screen is off.</p>
+                        </div>
+                    </div>
+                    <div style="padding: 22px 24px; font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.85);">
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px;">
+                            <strong style="color: #FFFFFF; display: block; margin-bottom: 6px;"><i class="fa-solid fa-mobile-screen" style="color: var(--primary); margin-right: 6px;"></i> Recommended Mobile Settings:</strong>
+                            <ol style="margin-top: 8px; padding-left: 20px; color: var(--text-muted); font-size: 0.88rem;">
+                                <li style="margin-bottom: 6px;">Go to phone <strong>Settings > Apps > Vibentra</strong>.</li>
+                                <li style="margin-bottom: 6px;">Tap <strong>Battery</strong> and select <strong>Unrestricted / No Restrictions</strong>.</li>
+                                <li>Enable <strong>Autostart</strong> (for Xiaomi/MIUI, Vivo, RealMe, Samsung devices).</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Version Badge -->
+                <div style="text-align: center; padding: 10px 0; color: var(--text-muted); font-size: 0.82rem;">
+                    <span>Vibentra Player v2.5 • High Definition Lossless Audio</span>
                 </div>
             </div>
         `;
@@ -1975,7 +2042,7 @@ const initHome = () => {
                 if (provider) {
                     await providerManager.saveProviderSettings(providerId, !provider.enabled);
                     renderSettings(); 
-                    showNotification(`${provider.name} ${provider.enabled ? 'enabled' : 'disabled'}`);
+                    showNotification(`${provider.name} ${provider.enabled ? 'enabled' : 'disabled'}`, 'info');
                 }
             });
         });
@@ -1987,7 +2054,7 @@ const initHome = () => {
                 const themeName = targetBtn.getAttribute('data-theme');
                 window.applyTheme(themeName);
                 renderSettings(); // Re-render to update the active button state
-                showNotification('Theme updated successfully!');
+                showNotification('Theme updated successfully!', 'success');
             });
         });
     }
