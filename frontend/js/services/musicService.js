@@ -18,6 +18,7 @@ class MusicService {
         this._isTransitioning = false;
         this._playbackRequestId = 0;
         this._userRequestedPause = false;
+        this._errorRetryCount = 0;
         
         this.audioPlayer = new Audio();
         this.audioPlayer.crossOrigin = "anonymous";
@@ -30,25 +31,32 @@ class MusicService {
         this.audioPlayer.addEventListener('ended', () => this.handleTrackEnd());
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgressUI());
         
-        // Advanced error and stall recovery for background playback
+        // Advanced error and stall recovery for background playback (Same-Song Recovery)
         this.audioPlayer.addEventListener('error', (e) => {
             console.error("Audio player error:", e, this.audioPlayer.error);
             if (this.currentTrack && !this._userRequestedPause) {
-                console.warn("[Vibentra Player] Audio stream error encountered. Attempting soft recovery or advancement.");
-                setTimeout(() => this.playNext(), 1000); // Small delay to prevent infinite error loops
+                console.warn("[Vibentra Player] Audio stream error encountered. Executing same-song recovery...");
+                this.recoverCurrentTrack();
             }
         });
 
         this.audioPlayer.addEventListener('stalled', () => {
             console.warn("Audio stream stalled.");
-            // Do NOT reload current track near the end of audio stream as it cancels the ended event
             if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.duration) {
                 const timeRemaining = this.audioPlayer.duration - this.audioPlayer.currentTime;
-                if (timeRemaining > 5 && this.audioPlayer.currentTime > 2) {
+                if (timeRemaining > 3 && this.audioPlayer.currentTime > 1) {
                     console.log("Attempting background audio resume...");
                     this.audioPlayer.play().catch(e => console.warn("Stall resume warning:", e));
                 }
             }
+        });
+
+        this.audioPlayer.addEventListener('playing', () => {
+            this._errorRetryCount = 0;
+            this._isTransitioning = false;
+            this.isPlaying = true;
+            this._userRequestedPause = false;
+            this.updatePlayPauseUI(true);
         });
         
         // Sync state with OS-level events (e.g. background pause, incoming call)
@@ -906,6 +914,49 @@ class MusicService {
         }
     }
 
+    async recoverCurrentTrack() {
+        if (!this.currentTrack || this._userRequestedPause) return;
+        if (this._errorRetryCount >= 3) {
+            console.warn("[Vibentra Player] Max retries reached for current track. Advancing to next track.");
+            this._errorRetryCount = 0;
+            this.playNext();
+            return;
+        }
+
+        this._errorRetryCount++;
+        const resumeTime = this.audioPlayer.currentTime || 0;
+        console.log(`[Vibentra Player] Attempting same-song recovery at ${resumeTime.toFixed(1)}s (Attempt ${this._errorRetryCount}/3)...`);
+
+        try {
+            const providerId = this.currentTrack.providerId || (this.currentTrack.provider === 'YouTube Music' || this.currentTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+            const refreshedTrack = await providerManager.getTrack(providerId, this.currentTrack.id);
+            
+            if (refreshedTrack && refreshedTrack.streamUrl) {
+                this.currentTrack.streamUrl = refreshedTrack.streamUrl;
+                if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
+                    this.queue[this.currentIndex].streamUrl = refreshedTrack.streamUrl;
+                }
+            }
+
+            if (this.currentTrack.streamUrl) {
+                this.audioPlayer.src = this.currentTrack.streamUrl;
+                if (resumeTime > 1) {
+                    this.audioPlayer.currentTime = resumeTime;
+                }
+                await this.audioPlayer.play();
+                this._errorRetryCount = 0;
+                this.isPlaying = true;
+                this.updatePlayPauseUI(true);
+                console.log("[Vibentra Player] Same-song recovery succeeded!");
+            } else {
+                throw new Error("No valid stream URL");
+            }
+        } catch (err) {
+            console.warn(`[Vibentra Player] Same-song recovery attempt ${this._errorRetryCount} failed:`, err);
+            setTimeout(() => this.recoverCurrentTrack(), 1500);
+        }
+    }
+
     handleTrackEnd() {
         this.audioPlayer.loop = false;
         console.log(`[Vibentra Player] Track ended. Current index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
@@ -1149,6 +1200,13 @@ class MusicService {
     }
 
     updateProgressUI(isMock = false) {
+        // Watchdog: If state is playing but HTML5 audio element unexpectedly paused during background playback, auto-resume!
+        if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.src) {
+            this.audioPlayer.play().catch(e => {
+                console.warn("[Vibentra Watchdog] Auto-resume play failed:", e);
+            });
+        }
+
         const progressSlider = document.getElementById('progressSlider');
         const largeProgressSlider = document.getElementById('largeProgressSlider');
         const largeProgress = document.getElementById('largeProgress');
