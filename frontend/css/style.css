@@ -1906,7 +1906,7 @@ input {
         border-radius: 14px !important;
     }
 
-    .notifications-dropdown {
+    .notifications-dropdown:not(.vinyl-options-dropdown):not(#playerOptionsDropdown):not(#mobileFabDropdown) {
         position: absolute !important;
         top: calc(100% + 8px) !important;
         right: 0 !important;
@@ -2649,20 +2649,23 @@ input {
     color: #FFFFFF;
 }
 
-.vinyl-options-dropdown {
-    position: absolute;
-    bottom: 60px;
-    right: 0;
-    width: 230px;
-    background: rgba(15, 23, 42, 0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 18px;
-    box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.7);
-    z-index: 9999;
-    overflow: hidden;
-    padding: 8px 0;
+.vinyl-options-dropdown,
+#playerOptionsDropdown,
+#mobileFabDropdown {
+    position: absolute !important;
+    bottom: calc(100% + 12px) !important;
+    top: auto !important;
+    right: 0 !important;
+    width: 230px !important;
+    background: rgba(12, 16, 43, 0.98) !important;
+    backdrop-filter: blur(35px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(35px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(124, 58, 237, 0.4) !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+    padding: 8px 0 !important;
 }
 
 /* Mobile Screen Responsiveness */
