@@ -279,6 +279,19 @@ class MusicService {
             });
         }
 
+        // Mobile FAB Options Dropdown (Floating Three Dots)
+        const mobileFab = document.getElementById('mobileFab');
+        const mobileFabDropdown = document.getElementById('mobileFabDropdown');
+        if (mobileFab && mobileFabDropdown) {
+            mobileFab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                mobileFabDropdown.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => {
+                mobileFabDropdown.classList.add('hidden');
+            });
+        }
+
         // Set as Ringtone Option
         const downloadRingtoneOpt = document.getElementById('downloadRingtoneOpt');
         const mobileRingtoneOpt = document.getElementById('mobileRingtoneOpt');
@@ -313,9 +326,29 @@ class MusicService {
         if (largeDownloadBtn) largeDownloadBtn.addEventListener('click', (e) => handleDownloadClick(e, null));
         if (largeOptDownload) largeOptDownload.addEventListener('click', (e) => handleDownloadClick(e, largePlayerOptionsDropdown));
 
+        // Save / Add to Playlist Options
+        const addToPlaylistOpt = document.getElementById('addToPlaylistOpt');
+        const mobileAddToPlaylistOpt = document.getElementById('mobileAddToPlaylistOpt');
+        const largeOptPlaylist = document.getElementById('largeOptPlaylist');
+
+        const handlePlaylistClick = (e, dropdownElem) => {
+            e.stopPropagation();
+            if (dropdownElem) dropdownElem.classList.add('hidden');
+            if (!this.currentTrack) {
+                alert('Play a song first to save it to a playlist!');
+                return;
+            }
+            this.openAddToPlaylistModal(this.currentTrack);
+        };
+
+        if (addToPlaylistOpt) addToPlaylistOpt.addEventListener('click', (e) => handlePlaylistClick(e, playerOptionsDropdown));
+        if (mobileAddToPlaylistOpt) mobileAddToPlaylistOpt.addEventListener('click', (e) => handlePlaylistClick(e, mobileFabDropdown));
+        if (largeOptPlaylist) largeOptPlaylist.addEventListener('click', (e) => handlePlaylistClick(e, largePlayerOptionsDropdown));
+
         // Show Lyrics Option
         const showLyricsOpt = document.getElementById('showLyricsOpt');
         const mobileLyricsOpt = document.getElementById('mobileLyricsOpt');
+        const largeOptLyrics = document.getElementById('largeOptLyrics');
         const lyricsModal = document.getElementById('lyricsModal');
         const closeLyricsModal = document.getElementById('closeLyricsModal');
         
@@ -326,7 +359,7 @@ class MusicService {
                 alert('Play a song first to view lyrics!');
                 return;
             }
-            this.showLyricsModal();
+            this.showLyricsModal(this.currentTrack);
         };
 
         if (showLyricsOpt && lyricsModal) {
@@ -334,6 +367,9 @@ class MusicService {
         }
         if (mobileLyricsOpt && lyricsModal) {
             mobileLyricsOpt.addEventListener('click', (e) => handleLyricsClick(e, mobileFabDropdown));
+        }
+        if (largeOptLyrics && lyricsModal) {
+            largeOptLyrics.addEventListener('click', (e) => handleLyricsClick(e, largePlayerOptionsDropdown));
         }
         
         if (closeLyricsModal) {
