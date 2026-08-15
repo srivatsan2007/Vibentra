@@ -943,18 +943,9 @@ class MusicService {
             }
         } else if (this.currentIndex >= 0 && this.currentIndex < this.queue.length - 1) {
             nextIndex = this.currentIndex + 1;
-        } else if (this.repeatMode === 'all') {
-            nextIndex = 0;
         } else {
-            // Repeat is OFF and end of queue reached: stop playback cleanly
-            console.log("[Vibentra Player] End of queue reached and repeat is OFF. Stopping playback.");
-            this.isPlaying = false;
-            this._isTransitioning = false;
-            this.updatePlayPauseUI(false);
-            this.audioPlayer.currentTime = 0;
-            this.updateProgressUI();
-            this.savePlayerState();
-            return;
+            // Continuous Playlist Playback: Wrap around to index 0 when queue end is reached
+            nextIndex = 0;
         }
 
         if (nextIndex !== -1 && this.queue[nextIndex]) {
