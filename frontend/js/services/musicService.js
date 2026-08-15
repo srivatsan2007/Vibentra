@@ -667,6 +667,11 @@ class MusicService {
         this.originalQueue = queue.map(t => ({...t}));
         this.queue = queue.map(t => ({...t}));
         
+        // Explicitly reset shuffle mode to false when user plays a playlist, guaranteeing sequential playback
+        this.isShuffle = false;
+        const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
+        shuffleBtns.forEach(b => b?.classList.remove('active'));
+
         let targetIndex = -1;
         if (track) {
             targetIndex = this.queue.findIndex(t => 
@@ -685,7 +690,10 @@ class MusicService {
         if (targetIndex === -1) targetIndex = 0;
 
         this.currentIndex = targetIndex;
-        this.preloadUpcomingTracks();
+        
+        // Asynchronously pre-fetch stream URLs for ALL tracks in the queue so lockscreen background transitions NEVER require network calls
+        this.preloadEntireQueue();
+
         await this.playSpecificTrack(this.queue[this.currentIndex], this.currentIndex);
     }
 
@@ -778,36 +786,43 @@ class MusicService {
                     }).catch(e => {
                         if (this._playbackRequestId !== requestId) return;
                         this._isTransitioning = false;
-                        console.error("Playback prevented or stream URL expired, attempting auto-refresh:", e);
+                        console.error("Playback prevented or stream URL expired, attempting lockscreen retry:", e);
                         
-                        // Self-healing: Attempt fresh stream URL fetch if URL expired or stream broke
-                        const providerId = fullTrack.providerId || (fullTrack.provider === 'YouTube Music' || fullTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
-                        providerManager.getTrack(providerId, fullTrack.id).then(refreshedTrack => {
-                            if (this._playbackRequestId !== requestId) return;
-                            if (refreshedTrack && refreshedTrack.streamUrl) {
-                                this.currentTrack = refreshedTrack;
-                                if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
-                                    this.queue[this.currentIndex] = refreshedTrack;
-                                }
-                                this.audioPlayer.src = refreshedTrack.streamUrl;
-                                this.audioPlayer.load();
-                                this.audioPlayer.play().then(() => {
-                                    if (this._playbackRequestId === requestId) {
+                        // If stream URL is already loaded in memory, retry playing directly without triggering network calls on lockscreen
+                        if (fullTrack.streamUrl) {
+                            setTimeout(() => {
+                                if (this._playbackRequestId === requestId && this.currentTrack?.id === fullTrack.id) {
+                                    this.audioPlayer.play().then(() => {
                                         this.isPlaying = true;
                                         this.updatePlayPauseUI(true);
-                                    }
-                                }).catch(retryErr => {
-                                    console.error("Retry play failed after stream refresh:", retryErr);
-                                    setTimeout(() => this.playNext(), 1000);
-                                });
-                            } else {
-                                setTimeout(() => this.playNext(), 1000);
-                            }
-                        }).catch(() => {
-                            if (this._playbackRequestId === requestId) {
-                                setTimeout(() => this.playNext(), 1000);
-                            }
-                        });
+                                    }).catch(retryErr => {
+                                        console.warn("Lockscreen play retry failed, refreshing stream URL:", retryErr);
+                                        const providerId = fullTrack.providerId || (fullTrack.provider === 'YouTube Music' || fullTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                                        providerManager.getTrack(providerId, fullTrack.id).then(refreshedTrack => {
+                                            if (this._playbackRequestId !== requestId) return;
+                                            if (refreshedTrack && refreshedTrack.streamUrl) {
+                                                this.currentTrack = refreshedTrack;
+                                                if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
+                                                    this.queue[this.currentIndex] = refreshedTrack;
+                                                }
+                                                this.audioPlayer.src = refreshedTrack.streamUrl;
+                                                this.audioPlayer.load();
+                                                this.audioPlayer.play().then(() => {
+                                                    if (this._playbackRequestId === requestId) {
+                                                        this.isPlaying = true;
+                                                        this.updatePlayPauseUI(true);
+                                                    }
+                                                }).catch(() => setTimeout(() => this.playNext(), 1000));
+                                            } else {
+                                                setTimeout(() => this.playNext(), 1000);
+                                            }
+                                        }).catch(() => setTimeout(() => this.playNext(), 1000));
+                                    });
+                                }
+                            }, 300);
+                        } else {
+                            setTimeout(() => this.playNext(), 1000);
+                        }
                     });
                 } else {
                     this._isTransitioning = false;
@@ -1006,15 +1021,33 @@ class MusicService {
         }
     }
 
+    async preloadEntireQueue() {
+        if (!this.queue || this.queue.length === 0) return;
+        for (let i = 0; i < this.queue.length; i++) {
+            const t = this.queue[i];
+            if (t && (!t.streamUrl || Date.now() - (t._fetchedAt || 0) > 10 * 60 * 1000)) {
+                try {
+                    const providerId = t.providerId || (t.provider === 'YouTube Music' || t.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                    const fullTrack = await providerManager.getTrack(providerId, t.id);
+                    if (fullTrack && fullTrack.streamUrl) {
+                        fullTrack._fetchedAt = Date.now();
+                        this.queue[i] = fullTrack;
+                        const origIdx = this.originalQueue.findIndex(orig => String(orig.id) === String(t.id));
+                        if (origIdx !== -1) this.originalQueue[origIdx] = fullTrack;
+                    }
+                } catch (err) {
+                    console.warn(`Preload entire queue failed for track ${i}:`, err);
+                }
+            }
+        }
+    }
+
     preloadUpcomingTracks() {
         if (!this.queue || this.queue.length === 0) return;
 
-        // Preload stream URLs for the next 3 tracks in queue
+        // Preload stream URLs for the next 3 tracks in queue (wrapping around queue end)
         for (let offset = 1; offset <= 3; offset++) {
-            let nextIndex = (this.currentIndex + offset);
-            if (this.repeatMode === 'all') {
-                nextIndex = nextIndex % this.queue.length;
-            }
+            let nextIndex = (this.currentIndex + offset) % this.queue.length;
             if (nextIndex < 0 || nextIndex >= this.queue.length) continue;
 
             const nextTrack = this.queue[nextIndex];
