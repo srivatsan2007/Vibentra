@@ -16,6 +16,8 @@ class MusicService {
         this.repeatMode = 'off'; // 'off', 'all', 'one'
         this.currentIndex = -1;
         this._isTransitioning = false;
+        this._playbackRequestId = 0;
+        this._userRequestedPause = false;
         
         this.audioPlayer = new Audio();
         this.audioPlayer.crossOrigin = "anonymous";
@@ -31,8 +33,8 @@ class MusicService {
         // Advanced error and stall recovery for background playback
         this.audioPlayer.addEventListener('error', (e) => {
             console.error("Audio player error:", e, this.audioPlayer.error);
-            if (this.currentTrack) {
-                document.dispatchEvent(new CustomEvent('showNotification', { detail: `Error playing track. Skipping...`, type: 'error' }));
+            if (this.currentTrack && !this._userRequestedPause) {
+                console.warn("[Vibentra Player] Audio stream error encountered. Attempting soft recovery or advancement.");
                 setTimeout(() => this.playNext(), 1000); // Small delay to prevent infinite error loops
             }
         });
@@ -40,7 +42,7 @@ class MusicService {
         this.audioPlayer.addEventListener('stalled', () => {
             console.warn("Audio stream stalled.");
             // Do NOT reload current track near the end of audio stream as it cancels the ended event
-            if (this.isPlaying && this.currentTrack && this.audioPlayer.duration) {
+            if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.duration) {
                 const timeRemaining = this.audioPlayer.duration - this.audioPlayer.currentTime;
                 if (timeRemaining > 5 && this.audioPlayer.currentTime > 2) {
                     console.log("Attempting background audio resume...");
@@ -53,6 +55,7 @@ class MusicService {
         this.audioPlayer.addEventListener('play', () => {
             this._isTransitioning = false;
             this.isPlaying = true;
+            this._userRequestedPause = false;
             this.updatePlayPauseUI(true);
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
@@ -62,12 +65,17 @@ class MusicService {
 
         this.audioPlayer.addEventListener('pause', () => {
             if (this._isTransitioning) return;
-            this.isPlaying = false;
-            this.updatePlayPauseUI(false);
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'paused';
+            // Only update state to paused if explicitly user-requested or audio actually ended
+            if (this._userRequestedPause || this.audioPlayer.ended) {
+                this.isPlaying = false;
+                this.updatePlayPauseUI(false);
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
+                this.releaseWakeLock();
+            } else {
+                console.warn("[Vibentra Player] Transient audio element pause (network buffer / OS interrupt). Maintaining isPlaying state.");
             }
-            this.releaseWakeLock();
         });
 
         // Capacitor Native MediaAction listener
@@ -644,9 +652,17 @@ class MusicService {
         let targetIndex = -1;
         if (track) {
             targetIndex = this.queue.findIndex(t => 
+                t === track ||
                 (t.id && track.id && String(t.id) === String(track.id)) ||
+                (t.trackId && track.trackId && String(t.trackId) === String(track.trackId)) ||
+                (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim() && t.artist && track.artist && t.artist.toLowerCase().trim() === track.artist.toLowerCase().trim()) ||
                 (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
             );
+        }
+        if (targetIndex === -1 && track) {
+            this.queue.push({...track});
+            this.originalQueue.push({...track});
+            targetIndex = this.queue.length - 1;
         }
         if (targetIndex === -1) targetIndex = 0;
 
@@ -661,7 +677,9 @@ class MusicService {
                 this._isTransitioning = false;
                 return;
             }
+            const requestId = ++this._playbackRequestId;
             this._isTransitioning = true;
+            this._userRequestedPause = false;
             this.audioPlayer.loop = false;
 
             // Synchronously pause current audio to prevent old track buffer replay when backgrounded
@@ -673,6 +691,7 @@ class MusicService {
                 this.currentIndex = queueIndex;
             } else if (this.queue.length > 0) {
                 const idx = this.queue.findIndex(t => 
+                    t === track ||
                     (t.id && track.id && String(t.id) === String(track.id)) ||
                     (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
                 );
@@ -696,12 +715,18 @@ class MusicService {
             let fullTrack = track;
             if (!fullTrack.streamUrl) {
                 try {
-                    fullTrack = (await providerManager.getTrack(track.providerId || 'jiosaavn', track.id)) || track;
+                    const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                    fullTrack = (await providerManager.getTrack(providerId, track.id)) || track;
                 } catch(err) {
                     console.warn("Could not fetch stream URL for track:", err);
                 }
             }
             
+            // If another playback request started while fetching stream URL, discard this obsolete load
+            if (this._playbackRequestId !== requestId) {
+                return;
+            }
+
             if (fullTrack && track) {
                 if (!fullTrack.id) fullTrack.id = track.id;
             }
@@ -729,17 +754,24 @@ class MusicService {
                 const playPromise = this.audioPlayer.play();
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
-                        this._isTransitioning = false;
+                        if (this._playbackRequestId === requestId) {
+                            this._isTransitioning = false;
+                        }
                     }).catch(e => {
+                        if (this._playbackRequestId !== requestId) return;
                         this._isTransitioning = false;
                         console.error("Playback prevented in background, retrying:", e);
                         // Retry playing in background
                         this.audioPlayer.play().then(() => {
-                            this.isPlaying = true;
-                            this.updatePlayPauseUI(true);
+                            if (this._playbackRequestId === requestId) {
+                                this.isPlaying = true;
+                                this.updatePlayPauseUI(true);
+                            }
                         }).catch(err => {
-                            console.error("Retry play failed, advancing to next track:", err);
-                            setTimeout(() => this.playNext(), 1000);
+                            if (this._playbackRequestId === requestId) {
+                                console.error("Retry play failed, advancing to next track:", err);
+                                setTimeout(() => this.playNext(), 1000);
+                            }
                         });
                     });
                 } else {
@@ -910,7 +942,8 @@ class MusicService {
 
             const nextTrack = this.queue[nextIndex];
             if (nextTrack && (!nextTrack.streamUrl || Date.now() - (nextTrack._fetchedAt || 0) > 10 * 60 * 1000)) {
-                providerManager.getTrack(nextTrack.providerId || 'jiosaavn', nextTrack.id).then(fullTrack => {
+                const providerId = nextTrack.providerId || (nextTrack.provider === 'YouTube Music' || nextTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                providerManager.getTrack(providerId, nextTrack.id).then(fullTrack => {
                     if (fullTrack && fullTrack.streamUrl) {
                         fullTrack._fetchedAt = Date.now();
                         this.queue[nextIndex] = fullTrack;
@@ -983,11 +1016,13 @@ class MusicService {
         
         if (this.currentTrack.streamUrl) {
             if (this.isPlaying) {
+                this._userRequestedPause = false;
                 this.audioPlayer.play().catch(e => {
                     console.error("Play failed", e);
                     this.isPlaying = false;
                 });
             } else {
+                this._userRequestedPause = true;
                 this.audioPlayer.pause();
             }
         } else {
