@@ -4,22 +4,34 @@ import { playlistService } from './playlistService.js';
 import { historyService } from './historyService.js';
 import { connectService } from './connectService.js';
 
+/**
+ * Authoritative Playback Controller for Vibentra
+ * Manages exact state machine, single HTML5 audio element, queue, and background audio synchronization.
+ */
 class MusicService {
     constructor() {
+        // Authoritative Playback State
         this.currentTrack = null;
         this.queue = [];
         this.originalQueue = [];
         this.history = [];
         this.isPlaying = false;
+        this.playbackState = 'IDLE'; // 'IDLE' | 'LOADING' | 'PLAYING' | 'BUFFERING' | 'PAUSED' | 'ENDED'
+        this.playbackContext = 'PLAYLIST';
         this.isShuffle = false;
         this.isRepeat = false;
-        this.repeatMode = 'off'; // 'off', 'all', 'one'
+        this.repeatMode = 'off'; // 'off' | 'all' | 'one'
         this.currentIndex = -1;
+
+        // Transition Locks and Generation Tracking
         this._isTransitioning = false;
         this._playbackRequestId = 0;
+        this._endedHandledForGeneration = 0;
         this._userRequestedPause = false;
         this._errorRetryCount = 0;
-        
+        this._uiInitialized = false;
+
+        // Single Authoritative Audio Element
         this.audioPlayer = new Audio();
         this.audioPlayer.crossOrigin = "anonymous";
         this.audioPlayer.preload = 'auto';
@@ -27,68 +39,14 @@ class MusicService {
         this.audioPlayer.loop = false;
         this.audioPlayer.setAttribute('playsinline', 'true');
         this.audioPlayer.setAttribute('webkit-playsinline', 'true');
-        
-        this.audioPlayer.addEventListener('ended', () => this.handleTrackEnd());
-        this.audioPlayer.addEventListener('timeupdate', () => this.updateProgressUI());
-        
-        // Advanced error and stall recovery for background playback (Same-Song Recovery)
-        this.audioPlayer.addEventListener('error', (e) => {
-            console.error("Audio player error:", e, this.audioPlayer.error);
-            if (this.currentTrack && !this._userRequestedPause) {
-                console.warn("[Vibentra Player] Audio stream error encountered. Executing same-song recovery...");
-                this.recoverCurrentTrack();
-            }
-        });
 
-        this.audioPlayer.addEventListener('stalled', () => {
-            console.warn("Audio stream stalled.");
-            if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.duration) {
-                const timeRemaining = this.audioPlayer.duration - this.audioPlayer.currentTime;
-                if (timeRemaining > 3 && this.audioPlayer.currentTime > 1) {
-                    console.log("Attempting background audio resume...");
-                    this.audioPlayer.play().catch(e => console.warn("Stall resume warning:", e));
-                }
-            }
-        });
-
-        this.audioPlayer.addEventListener('playing', () => {
-            this._errorRetryCount = 0;
-            this._isTransitioning = false;
-            this.isPlaying = true;
-            this._userRequestedPause = false;
-            this.updatePlayPauseUI(true);
-        });
-        
-        // Sync state with OS-level events (e.g. background pause, incoming call)
-        this.audioPlayer.addEventListener('play', () => {
-            this._isTransitioning = false;
-            this.isPlaying = true;
-            this._userRequestedPause = false;
-            this.updatePlayPauseUI(true);
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
-            this.requestWakeLock();
-        });
-
-        this.audioPlayer.addEventListener('pause', () => {
-            if (this._isTransitioning) return;
-            // Only update state to paused if explicitly user-requested or audio actually ended
-            if (this._userRequestedPause || this.audioPlayer.ended) {
-                this.isPlaying = false;
-                this.updatePlayPauseUI(false);
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'paused';
-                }
-                this.releaseWakeLock();
-            } else {
-                console.warn("[Vibentra Player] Transient audio element pause (network buffer / OS interrupt). Maintaining isPlaying state.");
-            }
-        });
+        // Controlled Event Handlers for Single HTML Audio Element
+        this.setupAudioEventListeners();
 
         // Capacitor Native MediaAction listener
         if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
             window.Capacitor.Plugins.BackgroundAudio.addListener('mediaAction', (data) => {
+                console.log(`[Vibentra Native Action] Received: ${data?.action}`);
                 if (data?.action === 'play') {
                     if (!this.isPlaying) this.togglePlayPause();
                 } else if (data?.action === 'pause') {
@@ -101,15 +59,134 @@ class MusicService {
             });
         }
 
-        // Self-healing: auto-resume audio when device network reconnects
+        // Network Reconnection Handler
         if (typeof window !== 'undefined') {
             window.addEventListener('online', () => {
                 console.log("[Vibentra Player] Network connection restored.");
                 if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.paused) {
-                    this.audioPlayer.play().catch(() => {});
+                    this.audioPlayer.play().catch(err => {
+                        console.warn("[Vibentra Player] Online auto-resume warning:", err);
+                    });
                 }
             });
         }
+    }
+
+    setupAudioEventListeners() {
+        // 1. ENDED: Authoritative track completion signal
+        this.audioPlayer.addEventListener('ended', () => {
+            console.log(`[Vibentra Event: ended] Track completed. Gen: ${this._playbackRequestId}, Track: ${this.currentTrack?.title}`);
+            if (this._endedHandledForGeneration === this._playbackRequestId || this._isTransitioning) {
+                console.log(`[Vibentra Event: ended] Transition lock active or queue advancement already handled for generation ${this._playbackRequestId}. Skipping duplicate.`);
+                return;
+            }
+            this._endedHandledForGeneration = this._playbackRequestId;
+            this.playbackState = 'ENDED';
+            this.handleTrackEnd();
+        });
+
+        // 2. TIMEUPDATE: Updates progress UI and clears buffering state when time advances
+        this.audioPlayer.addEventListener('timeupdate', () => {
+            if (this.playbackState === 'BUFFERING' && !this.audioPlayer.paused) {
+                this.playbackState = 'PLAYING';
+            }
+            this.updateProgressUI();
+        });
+
+        // 3. PLAYING: Audio samples are actively rendering
+        this.audioPlayer.addEventListener('playing', () => {
+            console.log(`[Vibentra Event: playing] Active stream for gen ${this._playbackRequestId}: ${this.currentTrack?.title}`);
+            this._errorRetryCount = 0;
+            this._isTransitioning = false;
+            this.isPlaying = true;
+            this.playbackState = 'PLAYING';
+            this._userRequestedPause = false;
+            this.updatePlayPauseUI(true);
+        });
+
+        // 4. PLAY: Playback requested/started
+        this.audioPlayer.addEventListener('play', () => {
+            console.log(`[Vibentra Event: play] Play event for gen ${this._playbackRequestId}`);
+            this._isTransitioning = false;
+            this.isPlaying = true;
+            if (this.playbackState !== 'PLAYING') {
+                this.playbackState = 'PLAYING';
+            }
+            this._userRequestedPause = false;
+            this.updatePlayPauseUI(true);
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+            this.requestWakeLock();
+        });
+
+        // 5. PAUSE: Investigates exact caller and cause of pause
+        this.audioPlayer.addEventListener('pause', () => {
+            console.log(`[Vibentra Event: pause] Audio element paused. userRequestedPause: ${this._userRequestedPause}, isTransitioning: ${this._isTransitioning}, ended: ${this.audioPlayer.ended}`);
+
+            if (this._isTransitioning) return;
+
+            if (this._userRequestedPause || this.audioPlayer.ended) {
+                this.isPlaying = false;
+                this.playbackState = 'PAUSED';
+                this.updatePlayPauseUI(false);
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
+                this.releaseWakeLock();
+            } else {
+                // Transient / unexpected audio element pause (e.g. background power save, transient OS focus ducking)
+                console.warn("[Vibentra Event: pause] Transient audio pause detected. Maintaining isPlaying state and checking auto-recovery...");
+                this.playbackState = 'BUFFERING';
+
+                const currentReq = this._playbackRequestId;
+                setTimeout(() => {
+                    if (this._playbackRequestId === currentReq && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning) {
+                        console.log("[Vibentra Event: pause] Auto-resuming transient audio pause...");
+                        this.audioPlayer.play().catch(err => {
+                            console.warn("[Vibentra Event: pause] Auto-resume failed:", err);
+                        });
+                    }
+                }, 300);
+            }
+        });
+
+        // 6. WAITING: Temporary lack of media data (buffering)
+        this.audioPlayer.addEventListener('waiting', () => {
+            console.log(`[Vibentra Event: waiting] Media buffering for ${this.currentTrack?.title}...`);
+            if (!this._userRequestedPause && !this._isTransitioning) {
+                this.playbackState = 'BUFFERING';
+            }
+        });
+
+        // 7. STALLED: Browser is trying to fetch media data, but data is temporarily not arriving
+        this.audioPlayer.addEventListener('stalled', () => {
+            console.warn(`[Vibentra Event: stalled] Media data stalled for ${this.currentTrack?.title}...`);
+            if (!this._userRequestedPause && !this._isTransitioning) {
+                this.playbackState = 'BUFFERING';
+            }
+        });
+
+        // 8. ERROR: Detailed diagnostic logging for network or decode failures
+        this.audioPlayer.addEventListener('error', () => {
+            const err = this.audioPlayer.error;
+            console.error(`[Vibentra Event: error] Diagnostics:`, {
+                code: err?.code,
+                message: err?.message,
+                networkState: this.audioPlayer.networkState,
+                readyState: this.audioPlayer.readyState,
+                currentTime: this.audioPlayer.currentTime,
+                duration: this.audioPlayer.duration,
+                src: this.audioPlayer.src,
+                trackId: this.currentTrack?.id,
+                trackTitle: this.currentTrack?.title,
+                requestId: this._playbackRequestId
+            });
+
+            if (this.currentTrack && !this._userRequestedPause && !this._isTransitioning) {
+                this.recoverCurrentTrack(this._playbackRequestId);
+            }
+        });
     }
 
     async requestWakeLock() {
@@ -140,7 +217,7 @@ class MusicService {
                     this.keepAliveCtx = new AudioCtx();
                     this.keepAliveOsc = this.keepAliveCtx.createOscillator();
                     this.keepAliveGain = this.keepAliveCtx.createGain();
-                    // Virtually silent continuous tone (0.0001 gain) keeps mobile OS audio mixer process active during lockscreen background playback
+                    // Silent tone keeps mobile OS audio mixer process active during lockscreen background playback
                     this.keepAliveGain.gain.value = 0.0001;
                     this.keepAliveOsc.connect(this.keepAliveGain);
                     this.keepAliveGain.connect(this.keepAliveCtx.destination);
@@ -160,21 +237,25 @@ class MusicService {
             this.audioPlayer.style.display = 'none';
             document.body.appendChild(this.audioPlayer);
         }
-        
+
+        // Prevent attaching duplicate listeners if initUI is called multiple times
+        if (this._uiInitialized) return;
+        this._uiInitialized = true;
+
         this.setupKeyboardShortcuts();
 
         // Player Controls
         const handlePlayPause = (e) => { e.stopPropagation(); this.togglePlayPause(); };
         const handleNext = (e) => { e.stopPropagation(); this.playNext(); };
         const handlePrev = (e) => { e.stopPropagation(); this.playPrevious(); };
-        
+
         document.getElementById('playPauseBtn')?.addEventListener('click', handlePlayPause);
         document.getElementById('largePlayBtn')?.addEventListener('click', handlePlayPause);
         document.getElementById('nextBtn')?.addEventListener('click', handleNext);
         document.getElementById('largeNextBtn')?.addEventListener('click', handleNext);
         document.getElementById('prevBtn')?.addEventListener('click', handlePrev);
         document.getElementById('largePrevBtn')?.addEventListener('click', handlePrev);
-        
+
         const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
         shuffleBtns.forEach(btn => {
             btn?.addEventListener('click', (e) => {
@@ -209,7 +290,7 @@ class MusicService {
                 if (this.repeatMode === 'off') this.repeatMode = 'all';
                 else if (this.repeatMode === 'all') this.repeatMode = 'one';
                 else this.repeatMode = 'off';
-                
+
                 this.isRepeat = (this.repeatMode === 'one');
                 if (this.updateRepeatUI) this.updateRepeatUI();
                 this.savePlayerState();
@@ -219,7 +300,6 @@ class MusicService {
         // Volume Controls
         const volumeSlider = document.getElementById('volumeSlider');
         const volumeMuteBtn = document.getElementById('volumeMuteBtn');
-        const volumeIcon = document.getElementById('volumeIcon');
 
         if (volumeSlider) {
             volumeSlider.addEventListener('input', (e) => {
@@ -307,7 +387,7 @@ class MusicService {
             });
         }
 
-        // Mobile FAB Options Dropdown (Floating Three Dots)
+        // Mobile FAB Options Dropdown
         const mobileFab = document.getElementById('mobileFab');
         const mobileFabDropdown = document.getElementById('mobileFabDropdown');
         if (mobileFab && mobileFabDropdown) {
@@ -320,7 +400,7 @@ class MusicService {
             });
         }
 
-        // Set as Ringtone Option
+        // Ringtone Options
         const downloadRingtoneOpt = document.getElementById('downloadRingtoneOpt');
         const mobileRingtoneOpt = document.getElementById('mobileRingtoneOpt');
         const largeOptRingtone = document.getElementById('largeOptRingtone');
@@ -379,7 +459,7 @@ class MusicService {
         const largeOptLyrics = document.getElementById('largeOptLyrics');
         const lyricsModal = document.getElementById('lyricsModal');
         const closeLyricsModal = document.getElementById('closeLyricsModal');
-        
+
         const handleLyricsClick = (e, dropdownElem) => {
             e.stopPropagation();
             if (dropdownElem) dropdownElem.classList.add('hidden');
@@ -390,16 +470,10 @@ class MusicService {
             this.showLyricsModal(this.currentTrack);
         };
 
-        if (showLyricsOpt && lyricsModal) {
-            showLyricsOpt.addEventListener('click', (e) => handleLyricsClick(e, playerOptionsDropdown));
-        }
-        if (mobileLyricsOpt && lyricsModal) {
-            mobileLyricsOpt.addEventListener('click', (e) => handleLyricsClick(e, mobileFabDropdown));
-        }
-        if (largeOptLyrics && lyricsModal) {
-            largeOptLyrics.addEventListener('click', (e) => handleLyricsClick(e, largePlayerOptionsDropdown));
-        }
-        
+        if (showLyricsOpt && lyricsModal) showLyricsOpt.addEventListener('click', (e) => handleLyricsClick(e, playerOptionsDropdown));
+        if (mobileLyricsOpt && lyricsModal) mobileLyricsOpt.addEventListener('click', (e) => handleLyricsClick(e, mobileFabDropdown));
+        if (largeOptLyrics && lyricsModal) largeOptLyrics.addEventListener('click', (e) => handleLyricsClick(e, largePlayerOptionsDropdown));
+
         if (closeLyricsModal) {
             closeLyricsModal.addEventListener('click', () => {
                 lyricsModal.classList.remove('active');
@@ -413,7 +487,7 @@ class MusicService {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (!this.currentTrack) return;
-                    
+
                     const isNowFav = favoriteService.toggleFavorite(this.currentTrack);
                     likeBtns.forEach(b => {
                         if (!b) return;
@@ -433,7 +507,7 @@ class MusicService {
                 });
             }
         });
-        
+
         // Additional large player buttons
         document.getElementById('largePlaylistBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -441,7 +515,6 @@ class MusicService {
             this.openAddToPlaylistModal(this.currentTrack);
         });
 
-        // Dedicated Ringtone Studio Button on player card
         const largeRingtoneBtn = document.getElementById('largeRingtoneBtn');
         if (largeRingtoneBtn) {
             largeRingtoneBtn.addEventListener('click', (e) => {
@@ -460,7 +533,7 @@ class MusicService {
             if (document.visibilityState === 'hidden') this.savePlayerState();
         });
 
-        // Restore the last played state
+        // Restore player state
         this.restorePlayerState();
     }
 
@@ -469,10 +542,10 @@ class MusicService {
         const modal = document.getElementById('addToPlaylistModal');
         const listContainer = document.getElementById('playlistSelectionList');
         if (!modal || !listContainer) return;
-        
+
         const playlists = playlistService.getPlaylists();
         listContainer.innerHTML = '';
-        
+
         if (playlists.length === 0) {
             listContainer.innerHTML = '<p style="color: var(--text-muted); padding: 10px; text-align: center;">You have no custom playlists yet.</p>';
         } else {
@@ -495,18 +568,17 @@ class MusicService {
                 listContainer.appendChild(btn);
             });
         }
-        
+
         modal.classList.add('active');
     }
 
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ignore if user is typing in an input field
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
+
             switch (e.code) {
                 case 'Space':
-                    e.preventDefault(); // Prevent scrolling
+                    e.preventDefault();
                     this.togglePlayPause();
                     break;
                 case 'ArrowRight':
@@ -612,7 +684,7 @@ class MusicService {
         if (songTitleEl) songTitleEl.textContent = `${track.title} • ${track.artist || 'Vibentra'}`;
         modal.classList.add('active');
 
-        let selectedDuration = 30; // Default 30s ringtone clip
+        let selectedDuration = 30;
 
         durBtns.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-dur') === '30');
@@ -664,11 +736,15 @@ class MusicService {
         }
     }
 
+    /**
+     * Authoritative Entry Point when user starts playback from Playlist / Search / Album / Favorites
+     */
     async playContext(queue, track) {
         if (!queue || queue.length === 0) return;
+        this.playbackContext = 'PLAYLIST';
         this.originalQueue = queue.map(t => ({...t}));
         this.queue = queue.map(t => ({...t}));
-        
+
         // Explicitly reset shuffle mode to false when user plays a playlist, guaranteeing sequential playback
         this.isShuffle = false;
         const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
@@ -680,7 +756,6 @@ class MusicService {
                 t === track ||
                 (t.id && track.id && String(t.id) === String(track.id)) ||
                 (t.trackId && track.trackId && String(t.trackId) === String(track.trackId)) ||
-                (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim() && t.artist && track.artist && t.artist.toLowerCase().trim() === track.artist.toLowerCase().trim()) ||
                 (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
             );
         }
@@ -692,176 +767,157 @@ class MusicService {
         if (targetIndex === -1) targetIndex = 0;
 
         this.currentIndex = targetIndex;
-        
-        // Asynchronously pre-fetch stream URLs for ALL tracks in the queue so lockscreen background transitions NEVER require network calls
+
+        // Asynchronously pre-fetch stream URLs for queue
         this.preloadEntireQueue();
 
         await this.playSpecificTrack(this.queue[this.currentIndex], this.currentIndex);
     }
 
+    /**
+     * Authoritative Track Playback Launcher with Generation Lock
+     */
     async playSpecificTrack(track, queueIndex = null) {
+        if (!track) {
+            this._isTransitioning = false;
+            return;
+        }
+
+        const requestId = ++this._playbackRequestId;
+        this._isTransitioning = true;
+        this._userRequestedPause = false;
+        this.playbackState = 'LOADING';
+        this.audioPlayer.loop = false;
+
+        console.log(`[Vibentra Play] Initiating playback for gen ${requestId}: "${track.title}" (Queue index: ${queueIndex})`);
+
+        // Synchronously pause current audio to prevent buffer bleeding
         try {
-            if (!track) {
-                this._isTransitioning = false;
-                return;
-            }
-            const requestId = ++this._playbackRequestId;
-            this._isTransitioning = true;
-            this._userRequestedPause = false;
-            this.audioPlayer.loop = false;
+            this.audioPlayer.pause();
+        } catch (e) {}
 
-            // Synchronously pause current audio to prevent old track buffer replay when backgrounded
-            try {
-                this.audioPlayer.pause();
-            } catch (e) {}
-
-            if (queueIndex !== null && queueIndex >= 0 && queueIndex < this.queue.length) {
-                this.currentIndex = queueIndex;
-            } else if (this.queue.length > 0) {
-                const idx = this.queue.findIndex(t => 
-                    t === track ||
-                    (t.id && track.id && String(t.id) === String(track.id)) ||
-                    (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
-                );
-                if (idx !== -1) {
-                    this.currentIndex = idx;
-                } else {
-                    this.queue.push(track);
-                    this.currentIndex = this.queue.length - 1;
-                }
+        if (queueIndex !== null && queueIndex >= 0 && queueIndex < this.queue.length) {
+            this.currentIndex = queueIndex;
+        } else if (this.queue.length > 0) {
+            const idx = this.queue.findIndex(t => 
+                t === track ||
+                (t.id && track.id && String(t.id) === String(track.id)) ||
+                (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
+            );
+            if (idx !== -1) {
+                this.currentIndex = idx;
             } else {
-                this.queue = [track];
-                this.currentIndex = 0;
+                this.queue.push(track);
+                this.currentIndex = this.queue.length - 1;
+            }
+        } else {
+            this.queue = [track];
+            this.currentIndex = 0;
+        }
+
+        // Instant UI feedback
+        this.currentTrack = track;
+        this.updatePlayerUI(this.currentTrack);
+        this.updatePlayPauseUI(true);
+
+        // Fetch full track details if streamUrl is missing
+        let fullTrack = track;
+        if (!fullTrack.streamUrl) {
+            try {
+                const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                fullTrack = (await providerManager.getTrack(providerId, track.id)) || track;
+            } catch(err) {
+                console.warn(`[Vibentra Play] Stream URL fetch warning for gen ${requestId}:`, err);
+            }
+        }
+
+        // Verify request generation is still current
+        if (this._playbackRequestId !== requestId) {
+            console.log(`[Vibentra Play] Request ${requestId} superseded by request ${this._playbackRequestId}. Aborting.`);
+            return;
+        }
+
+        if (fullTrack && track && !fullTrack.id) {
+            fullTrack.id = track.id;
+        }
+
+        this.currentTrack = fullTrack;
+
+        if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
+            this.queue[this.currentIndex] = fullTrack;
+        }
+
+        historyService.addToHistory(this.currentTrack);
+        this.updatePlayerUI(this.currentTrack);
+        this.updateMediaSession(fullTrack);
+
+        if (fullTrack.streamUrl) {
+            if (this.audioPlayer.src !== fullTrack.streamUrl) {
+                this.audioPlayer.src = fullTrack.streamUrl;
+                this.audioPlayer.load();
+            } else {
+                this.audioPlayer.currentTime = 0;
             }
 
-            // Instant UI feedback
-            this.currentTrack = track;
-            this.updatePlayerUI(this.currentTrack);
-            this.updatePlayPauseUI(true);
+            this.initKeepAliveAudio();
 
-            // Fetch full track details if streamUrl is missing
-            let fullTrack = track;
-            if (!fullTrack.streamUrl) {
-                try {
-                    const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
-                    fullTrack = (await providerManager.getTrack(providerId, track.id)) || track;
-                } catch(err) {
-                    console.warn("Could not fetch stream URL for track:", err);
-                }
-            }
-            
-            // If another playback request started while fetching stream URL, discard this obsolete load
-            if (this._playbackRequestId !== requestId) {
-                return;
-            }
-
-            if (fullTrack && track) {
-                if (!fullTrack.id) fullTrack.id = track.id;
-            }
-
-            this.currentTrack = fullTrack;
-
-            // Keep the queue item updated with the full track details (streamUrl, etc.)
-            if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
-                this.queue[this.currentIndex] = fullTrack;
-            }
-
-            historyService.addToHistory(this.currentTrack);
-            this.updatePlayerUI(this.currentTrack);
-            this.updateMediaSession(fullTrack);
-
-            if (fullTrack.streamUrl) {
-                if (this.audioPlayer.src !== fullTrack.streamUrl) {
-                    this.audioPlayer.src = fullTrack.streamUrl;
-                    this.audioPlayer.load();
-                } else {
-                    this.audioPlayer.currentTime = 0;
-                }
-
-                this.initKeepAliveAudio();
+            try {
                 const playPromise = this.audioPlayer.play();
                 if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        if (this._playbackRequestId === requestId) {
-                            this._isTransitioning = false;
-                        }
-                    }).catch(e => {
-                        if (this._playbackRequestId !== requestId) return;
-                        this._isTransitioning = false;
-                        console.error("Playback prevented or stream URL expired, attempting lockscreen retry:", e);
-                        
-                        // If stream URL is already loaded in memory, retry playing directly without triggering network calls on lockscreen
-                        if (fullTrack.streamUrl) {
-                            setTimeout(() => {
-                                if (this._playbackRequestId === requestId && this.currentTrack?.id === fullTrack.id) {
-                                    this.audioPlayer.play().then(() => {
-                                        this.isPlaying = true;
-                                        this.updatePlayPauseUI(true);
-                                    }).catch(retryErr => {
-                                        console.warn("Lockscreen play retry failed, refreshing stream URL:", retryErr);
-                                        const providerId = fullTrack.providerId || (fullTrack.provider === 'YouTube Music' || fullTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
-                                        providerManager.getTrack(providerId, fullTrack.id).then(refreshedTrack => {
-                                            if (this._playbackRequestId !== requestId) return;
-                                            if (refreshedTrack && refreshedTrack.streamUrl) {
-                                                this.currentTrack = refreshedTrack;
-                                                if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
-                                                    this.queue[this.currentIndex] = refreshedTrack;
-                                                }
-                                                this.audioPlayer.src = refreshedTrack.streamUrl;
-                                                this.audioPlayer.load();
-                                                this.audioPlayer.play().then(() => {
-                                                    if (this._playbackRequestId === requestId) {
-                                                        this.isPlaying = true;
-                                                        this.updatePlayPauseUI(true);
-                                                    }
-                                                }).catch(() => setTimeout(() => this.playNext(), 1000));
-                                            } else {
-                                                setTimeout(() => this.playNext(), 1000);
-                                            }
-                                        }).catch(() => setTimeout(() => this.playNext(), 1000));
-                                    });
-                                }
-                            }, 300);
-                        } else {
-                            setTimeout(() => this.playNext(), 1000);
-                        }
-                    });
-                } else {
-                    this._isTransitioning = false;
+                    await playPromise;
                 }
-                this.isPlaying = true;
-                this.updatePlayPauseUI(true);
-                if (this.mockInterval) {
-                    clearInterval(this.mockInterval);
-                    this.mockInterval = null;
-                }
-            } else {
-                console.warn(`No stream URL for ${fullTrack.title}. Skipping to next...`);
+
+                if (this._playbackRequestId !== requestId) return;
+
                 this._isTransitioning = false;
-                setTimeout(() => this.playNext(), 500);
+                this.isPlaying = true;
+                this.playbackState = 'PLAYING';
+                this.updatePlayPauseUI(true);
+            } catch (e) {
+                if (this._playbackRequestId !== requestId) return;
+                this._isTransitioning = false;
+                console.error(`[Vibentra Play] Play promise rejected for gen ${requestId}:`, e);
+
+                // Safe lockscreen retry for active generation
+                if (fullTrack.streamUrl) {
+                    setTimeout(async () => {
+                        if (this._playbackRequestId === requestId && this.currentTrack?.id === fullTrack.id) {
+                            try {
+                                await this.audioPlayer.play();
+                                if (this._playbackRequestId === requestId) {
+                                    this.isPlaying = true;
+                                    this.playbackState = 'PLAYING';
+                                    this.updatePlayPauseUI(true);
+                                }
+                            } catch (retryErr) {
+                                if (this._playbackRequestId !== requestId) return;
+                                console.warn(`[Vibentra Play] Retry failed for gen ${requestId}:`, retryErr);
+                                this.recoverCurrentTrack(requestId);
+                            }
+                        }
+                    }, 300);
+                }
             }
-
-            // Update Large Player if active
-            if (document.getElementById('largePlayerModal')?.classList.contains('active')) {
-                this.renderLargePlayer();
-            }
-
-            // Add to history stack
-            this.history.push(fullTrack);
-            this.savePlayerState();
-
-            // Sync to connect room if host
-            if (connectService.isHost) {
-                connectService.syncPlaybackState(fullTrack, this.isPlaying, this.audioPlayer.currentTime);
-            }
-
-            // Preload upcoming tracks in background so lockscreen transitions require 0 network delay
-            this.preloadUpcomingTracks();
-
-        } catch (error) {
-            console.error("Error playing track:", error);
+        } else {
+            console.warn(`[Vibentra Play] No stream URL for ${fullTrack.title}. Skipping safely...`);
             this._isTransitioning = false;
+            if (this._playbackRequestId === requestId) {
+                this.playNext();
+            }
         }
+
+        if (document.getElementById('largePlayerModal')?.classList.contains('active')) {
+            this.renderLargePlayer();
+        }
+
+        this.history.push(fullTrack);
+        this.savePlayerState();
+
+        if (connectService.isHost) {
+            connectService.syncPlaybackState(fullTrack, this.isPlaying, this.audioPlayer.currentTime);
+        }
+
+        this.preloadUpcomingTracks();
     }
 
     updateMediaSession(track) {
@@ -931,66 +987,69 @@ class MusicService {
         }
     }
 
-    async recoverCurrentTrack() {
-        if (!this.currentTrack || this._userRequestedPause) return;
-        if (this._errorRetryCount >= 3) {
-            console.warn("[Vibentra Player] Max retries reached for current track. Advancing to next track.");
+    /**
+     * Controlled Same-Song Stream Recovery
+     */
+    async recoverCurrentTrack(expectedRequestId = null) {
+        const currentReq = expectedRequestId || this._playbackRequestId;
+        if (this._playbackRequestId !== currentReq || !this.currentTrack || this._userRequestedPause) return;
+
+        if (this._errorRetryCount >= 2) {
+            console.warn(`[Vibentra Recovery] Max retries (2) reached for track. Advancing queue.`);
             this._errorRetryCount = 0;
-            this.playNext();
+            if (this._playbackRequestId === currentReq) {
+                this.playNext();
+            }
             return;
         }
 
         this._errorRetryCount++;
         const resumeTime = this.audioPlayer.currentTime || 0;
-        console.log(`[Vibentra Player] Attempting same-song recovery at ${resumeTime.toFixed(1)}s (Attempt ${this._errorRetryCount}/3)...`);
+        console.log(`[Vibentra Recovery] Attempting same-song recovery at ${resumeTime.toFixed(1)}s (Attempt ${this._errorRetryCount}/2 for gen ${currentReq})...`);
 
         try {
-            // Fast recovery: if streamUrl is already cached, re-attach and seek directly without triggering network calls
-            if (this.currentTrack.streamUrl) {
-                this.audioPlayer.src = this.currentTrack.streamUrl;
-                if (resumeTime > 1) {
-                    this.audioPlayer.currentTime = resumeTime;
-                }
-                await this.audioPlayer.play();
-                this._errorRetryCount = 0;
-                this.isPlaying = true;
-                this.updatePlayPauseUI(true);
-                console.log("[Vibentra Player] Same-song fast recovery succeeded!");
-                return;
-            }
-
             const providerId = this.currentTrack.providerId || (this.currentTrack.provider === 'YouTube Music' || this.currentTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
             const refreshedTrack = await providerManager.getTrack(providerId, this.currentTrack.id);
-            
+
+            if (this._playbackRequestId !== currentReq) return;
+
             if (refreshedTrack && refreshedTrack.streamUrl) {
                 this.currentTrack.streamUrl = refreshedTrack.streamUrl;
                 if (this.currentIndex >= 0 && this.currentIndex < this.queue.length) {
                     this.queue[this.currentIndex].streamUrl = refreshedTrack.streamUrl;
                 }
-            }
 
-            if (this.currentTrack.streamUrl) {
-                this.audioPlayer.src = this.currentTrack.streamUrl;
+                this.audioPlayer.src = refreshedTrack.streamUrl;
                 if (resumeTime > 1) {
                     this.audioPlayer.currentTime = resumeTime;
                 }
                 await this.audioPlayer.play();
-                this._errorRetryCount = 0;
-                this.isPlaying = true;
-                this.updatePlayPauseUI(true);
-                console.log("[Vibentra Player] Same-song recovery succeeded!");
+
+                if (this._playbackRequestId === currentReq) {
+                    this._errorRetryCount = 0;
+                    this.isPlaying = true;
+                    this.playbackState = 'PLAYING';
+                    this.updatePlayPauseUI(true);
+                    console.log("[Vibentra Recovery] Same-song recovery succeeded!");
+                }
             } else {
-                throw new Error("No valid stream URL");
+                throw new Error("No valid stream URL from provider");
             }
         } catch (err) {
-            console.warn(`[Vibentra Player] Same-song recovery attempt ${this._errorRetryCount} failed:`, err);
-            setTimeout(() => this.recoverCurrentTrack(), 1500);
+            if (this._playbackRequestId !== currentReq) return;
+            console.warn(`[Vibentra Recovery] Recovery attempt ${this._errorRetryCount} failed:`, err);
+            if (this._errorRetryCount >= 2) {
+                this.playNext();
+            }
         }
     }
 
+    /**
+     * Authoritative Normal Song Completion Handler
+     */
     handleTrackEnd() {
         this.audioPlayer.loop = false;
-        console.log(`[Vibentra Player] Track ended. Current index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
+        console.log(`[Vibentra Player] handleTrackEnd. Gen: ${this._playbackRequestId}, Index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
 
         if (this.repeatMode === 'one') {
             this.audioPlayer.currentTime = 0;
@@ -1003,6 +1062,10 @@ class MusicService {
         }
     }
 
+    /**
+     * Authoritative Sequential Queue Advancement
+     * Continuous Playlist Loop: [A, B, C, D, E] -> C -> D -> E -> A -> B -> C...
+     */
     playNext() {
         if (!this.queue || this.queue.length === 0) {
             this._isTransitioning = false;
@@ -1029,6 +1092,8 @@ class MusicService {
             // Continuous Playlist Playback: Wrap around to index 0 when queue end is reached
             nextIndex = 0;
         }
+
+        console.log(`[Vibentra playNext] Moving from index ${this.currentIndex} to index ${nextIndex} of ${this.queue.length} tracks.`);
 
         if (nextIndex !== -1 && this.queue[nextIndex]) {
             this.playSpecificTrack(this.queue[nextIndex], nextIndex);
@@ -1061,7 +1126,6 @@ class MusicService {
     preloadUpcomingTracks() {
         if (!this.queue || this.queue.length === 0) return;
 
-        // Preload stream URLs for the next 3 tracks in queue (wrapping around queue end)
         for (let offset = 1; offset <= 3; offset++) {
             let nextIndex = (this.currentIndex + offset) % this.queue.length;
             if (nextIndex < 0 || nextIndex >= this.queue.length) continue;
@@ -1093,10 +1157,8 @@ class MusicService {
         let prevIndex = -1;
         if (this.currentIndex > 0) {
             prevIndex = this.currentIndex - 1;
-        } else if (this.repeatMode === 'all') {
-            prevIndex = this.queue.length - 1;
         } else {
-            prevIndex = 0;
+            prevIndex = this.queue.length - 1;
         }
 
         if (prevIndex !== -1 && this.queue[prevIndex]) {
@@ -1137,25 +1199,28 @@ class MusicService {
 
     togglePlayPause() {
         if (!this.currentTrack) return;
-        
+
         this.isPlaying = !this.isPlaying;
-        
+
         if (this.currentTrack.streamUrl) {
             if (this.isPlaying) {
                 this._userRequestedPause = false;
+                this.playbackState = 'PLAYING';
                 this.audioPlayer.play().catch(e => {
                     console.error("Play failed", e);
                     this.isPlaying = false;
+                    this.playbackState = 'PAUSED';
                 });
             } else {
                 this._userRequestedPause = true;
+                this.playbackState = 'PAUSED';
                 this.audioPlayer.pause();
             }
         } else {
             if (!this.isPlaying && this.mockInterval) clearInterval(this.mockInterval);
             else if (this.isPlaying) this.mockInterval = setInterval(() => this.updateProgressUI(true), 1000);
         }
-        
+
         this.updatePlayPauseUI(this.isPlaying);
 
         if (connectService.isHost) {
@@ -1166,7 +1231,7 @@ class MusicService {
     updateVolumeIcon() {
         const icon = document.getElementById('volumeIcon');
         if (!icon) return;
-        
+
         if (this.audioPlayer.muted || this.audioPlayer.volume === 0) {
             icon.className = 'fa-solid fa-volume-xmark';
         } else if (this.audioPlayer.volume < 0.5) {
@@ -1186,13 +1251,13 @@ class MusicService {
         const largeProgress = document.getElementById('largeProgress');
         const currentTimeEl = document.getElementById('currentTime');
         const largeCurrTimeEl = document.getElementById('largeCurrTime');
-        
+
         if (progressSlider) progressSlider.value = 0;
         if (largeProgressSlider) largeProgressSlider.value = 0;
         if (largeProgress) largeProgress.style.width = '0%';
         if (currentTimeEl) currentTimeEl.textContent = '0:00';
         if (largeCurrTimeEl) largeCurrTimeEl.textContent = '0:00';
-        
+
         const artistEl = document.getElementById('playerArtist');
         if (artistEl) {
             artistEl.textContent = track.artist;
@@ -1249,41 +1314,18 @@ class MusicService {
     }
 
     updateProgressUI(isMock = false) {
-        // Watchdog 1: If state is playing but HTML5 audio element unexpectedly paused during background playback, auto-resume!
-        if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.src) {
-            this.audioPlayer.play().catch(e => {
-                console.warn("[Vibentra Watchdog] Auto-resume play failed:", e);
-            });
-        }
-
-        // Watchdog 2: If audio is playing but currentTime has been frozen for > 6 seconds mid-song, execute same-song recovery
-        if (this.isPlaying && !this._userRequestedPause && !this._isTransitioning && this.audioPlayer.src && !this.audioPlayer.paused) {
-            const now = Date.now();
-            if (this._lastProgressTime === this.audioPlayer.currentTime) {
-                if (!this._stallStartTime) this._stallStartTime = now;
-                else if (now - this._stallStartTime > 6000) {
-                    console.warn("[Vibentra Watchdog] Audio progress frozen mid-song. Executing same-song recovery...");
-                    this._stallStartTime = null;
-                    this.recoverCurrentTrack();
-                }
-            } else {
-                this._lastProgressTime = this.audioPlayer.currentTime;
-                this._stallStartTime = null;
-            }
-        }
-
         const progressSlider = document.getElementById('progressSlider');
         const largeProgressSlider = document.getElementById('largeProgressSlider');
         const largeProgress = document.getElementById('largeProgress');
         const currentTimeEl = document.getElementById('currentTime');
         const largeCurrTimeEl = document.getElementById('largeCurrTime');
-        
+
         if (!isMock && this.audioPlayer.duration) {
             const percent = (this.audioPlayer.currentTime / this.audioPlayer.duration) * 100;
             if (progressSlider) progressSlider.value = percent;
             if (largeProgressSlider) largeProgressSlider.value = percent;
             if (largeProgress) largeProgress.style.width = `${percent}%`;
-            
+
             const mins = Math.floor(this.audioPlayer.currentTime / 60);
             const secs = Math.floor(this.audioPlayer.currentTime % 60).toString().padStart(2, '0');
             const timeStr = `${mins}:${secs}`;
@@ -1300,7 +1342,7 @@ class MusicService {
 
     renderLargePlayer() {
         if (!this.currentTrack) return;
-        
+
         const imgEl = document.getElementById('largePlayerImg');
         if (imgEl) imgEl.src = this.currentTrack.cover;
         const ambientEl = document.getElementById('largePlayerAmbientBg');
@@ -1312,13 +1354,12 @@ class MusicService {
         if (!upNextList) return;
 
         upNextList.innerHTML = '';
-        
+
         const currentIndex = this.currentIndex >= 0 ? this.currentIndex : this.queue.findIndex(t => String(t.id) === String(this.currentTrack.id));
         if (currentIndex === -1) return;
 
-        // Show next 10 songs in the queue
         const upcomingTracks = this.queue.slice(currentIndex + 1, currentIndex + 11);
-        
+
         upcomingTracks.forEach((track, idx) => {
             const actualIndex = currentIndex + 1 + idx;
             const el = document.createElement('div');
@@ -1338,7 +1379,7 @@ class MusicService {
             });
             upNextList.appendChild(el);
         });
-        
+
         if (upcomingTracks.length === 0) {
             upNextList.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin-top: 20px;">End of queue</p>';
         }
@@ -1373,7 +1414,6 @@ class MusicService {
                     this.repeatMode = state.repeatMode || (state.isRepeat ? 'one' : 'off');
                     this.isRepeat = (this.repeatMode === 'one');
 
-                    // Update UI without playing immediately (browser autoplay restrictions)
                     this.updatePlayerUI(this.currentTrack);
                     if (this.currentTrack.streamUrl) {
                         this.audioPlayer.src = this.currentTrack.streamUrl;
@@ -1381,10 +1421,10 @@ class MusicService {
                         this.updateProgressUI();
                         this.updateMediaSession(this.currentTrack);
                     }
-                    
+
                     const shuffleBtns = [document.getElementById('shuffleBtn'), document.getElementById('largeShuffleBtn')];
                     shuffleBtns.forEach(b => b?.classList.toggle('active', this.isShuffle));
-                    
+
                     if (this.updateRepeatUI) this.updateRepeatUI();
                 }
             } catch(e) {
@@ -1404,21 +1444,24 @@ class MusicService {
                 const syncOnCanPlay = () => {
                     this.audioPlayer.currentTime = targetTime;
                     if (!isPlaying) {
+                        this._userRequestedPause = true;
                         this.audioPlayer.pause();
                         this.isPlaying = false;
+                        this.playbackState = 'PAUSED';
                         this.updatePlayPauseUI(false);
                     }
                     this.audioPlayer.removeEventListener('canplay', syncOnCanPlay);
                 };
                 this.audioPlayer.addEventListener('canplay', syncOnCanPlay);
-                
-                // Fallback in case canplay was already fired
+
                 setTimeout(() => {
                     if (Math.abs(this.audioPlayer.currentTime - targetTime) > 2) {
                         this.audioPlayer.currentTime = targetTime;
                         if (!isPlaying) {
+                            this._userRequestedPause = true;
                             this.audioPlayer.pause();
                             this.isPlaying = false;
+                            this.playbackState = 'PAUSED';
                             this.updatePlayPauseUI(false);
                         }
                     }
@@ -1434,9 +1477,13 @@ class MusicService {
 
         if (isPlaying !== this.isPlaying) {
             if (isPlaying) {
+                this._userRequestedPause = false;
+                this.playbackState = 'PLAYING';
                 this.audioPlayer.play().catch(e => console.error("Guest auto-play failed", e));
                 this.isPlaying = true;
             } else {
+                this._userRequestedPause = true;
+                this.playbackState = 'PAUSED';
                 this.audioPlayer.pause();
                 this.isPlaying = false;
             }
