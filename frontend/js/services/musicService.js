@@ -282,12 +282,6 @@ class MusicService {
         });
     }
 
-            if (this.currentTrack && !this._userRequestedPause && !this._isTransitioning) {
-                this.recoverCurrentTrack(this._playbackRequestId);
-            }
-        });
-    }
-
     async requestWakeLock() {
         try {
             if ('wakeLock' in navigator && !this.wakeLock) {
