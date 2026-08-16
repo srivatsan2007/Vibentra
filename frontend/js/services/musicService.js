@@ -72,6 +72,15 @@ class MusicService {
         }
     }
 
+    checkAndResumePlayback(eventTag = 'unknown') {
+        if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
+            console.log(`[PLAYBACK_AUTO_RESUME] Resume triggered by ${eventTag}. ReadyState: ${this.audioPlayer.readyState}, Track: "${this.currentTrack?.title}" at ${this.audioPlayer.currentTime.toFixed(1)}s`);
+            this.audioPlayer.play().catch(err => {
+                console.warn(`[PLAYBACK_AUTO_RESUME] Play failed on ${eventTag}:`, err);
+            });
+        }
+    }
+
     setupAudioEventListeners() {
         // 1. ENDED: Authoritative track completion signal
         this.audioPlayer.addEventListener('ended', () => {
@@ -85,15 +94,21 @@ class MusicService {
             this.handleTrackEnd();
         });
 
-        // 2. TIMEUPDATE: Updates progress UI and clears buffering state when time advances
+        // 2. TIMEUPDATE: Updates progress UI and auto-resumes if transiently paused while isPlaying is true
         this.audioPlayer.addEventListener('timeupdate', () => {
             if (this.playbackState === 'BUFFERING' && !this.audioPlayer.paused) {
                 this.playbackState = 'PLAYING';
             }
+            this.checkAndResumePlayback('timeupdate');
             this.updateProgressUI();
         });
 
-        // 3. PLAYING: Audio samples are actively rendering
+        // 3. PROGRESS: Fired periodically as browser downloads media buffer packets
+        this.audioPlayer.addEventListener('progress', () => {
+            this.checkAndResumePlayback('progress');
+        });
+
+        // 4. PLAYING: Audio samples are actively rendering
         this.audioPlayer.addEventListener('playing', () => {
             console.log(`[PLAYBACK_PLAYING] Active stream for gen ${this._playbackRequestId}: ${this.currentTrack?.title}, currentTime: ${this.audioPlayer.currentTime.toFixed(1)}s, duration: ${this.audioPlayer.duration}`);
             this._errorRetryCount = 0;
@@ -104,7 +119,7 @@ class MusicService {
             this.updatePlayPauseUI(true);
         });
 
-        // 4. PLAY: Playback requested/started
+        // 5. PLAY: Playback requested/started
         this.audioPlayer.addEventListener('play', () => {
             console.log(`[PLAYBACK_START] Play event for gen ${this._playbackRequestId}, track: ${this.currentTrack?.title}`);
             this._isTransitioning = false;
@@ -120,19 +135,18 @@ class MusicService {
             this.requestWakeLock();
         });
 
-        // 5. CANPLAY & CANPLAYTHROUGH: Media data buffered sufficiently
+        // 6. CANPLAY & CANPLAYTHROUGH: Media data buffered sufficiently
         this.audioPlayer.addEventListener('canplay', () => {
             console.log(`[PLAYBACK_CANPLAY] ReadyState: ${this.audioPlayer.readyState}, Track: ${this.currentTrack?.title}`);
-            if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
-                this.audioPlayer.play().catch(err => console.warn("[PLAYBACK_CANPLAY] Resume warning:", err));
-            }
+            this.checkAndResumePlayback('canplay');
         });
 
         this.audioPlayer.addEventListener('canplaythrough', () => {
             console.log(`[PLAYBACK_CANPLAYTHROUGH] ReadyState: ${this.audioPlayer.readyState}, Track: ${this.currentTrack?.title}`);
+            this.checkAndResumePlayback('canplaythrough');
         });
 
-        // 6. PAUSE: Investigates exact caller and cause of pause
+        // 7. PAUSE: Investigates exact caller and cause of pause
         this.audioPlayer.addEventListener('pause', () => {
             console.log(`[PLAYBACK_PAUSE] Audio element paused. userRequestedPause: ${this._userRequestedPause}, isTransitioning: ${this._isTransitioning}, ended: ${this.audioPlayer.ended}`);
 
@@ -147,23 +161,31 @@ class MusicService {
                 }
                 this.releaseWakeLock();
             } else {
-                // Transient / unexpected audio element pause (e.g. background power save, transient OS focus ducking)
-                console.warn("[PLAYBACK_BUFFER] Transient audio pause detected. Maintaining isPlaying state and checking auto-recovery...");
+                // Transient / unexpected audio element pause (e.g. background power save, packet arrival delay)
+                console.warn("[PLAYBACK_BUFFER] Transient audio pause detected. Maintaining isPlaying state and scheduling multi-phase data checks...");
                 this.playbackState = 'BUFFERING';
 
                 const currentReq = this._playbackRequestId;
-                setTimeout(() => {
-                    if (this._playbackRequestId === currentReq && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
-                        console.log("[PLAYBACK_BUFFER] Auto-resuming transient audio pause...");
-                        this.audioPlayer.play().catch(err => {
-                            console.warn("[PLAYBACK_BUFFER] Auto-resume failed:", err);
-                        });
-                    }
-                }, 300);
+                const delays = [300, 800, 1800, 3500];
+                delays.forEach(delay => {
+                    setTimeout(() => {
+                        if (this._playbackRequestId === currentReq && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning) {
+                            if (this.audioPlayer.readyState >= 2) {
+                                console.log(`[PLAYBACK_BUFFER] Auto-resuming transient audio pause at +${delay}ms...`);
+                                this.audioPlayer.play().catch(err => {
+                                    console.warn(`[PLAYBACK_BUFFER] Auto-resume failed at +${delay}ms:`, err);
+                                });
+                            } else if (delay === 3500 && this.currentTrack) {
+                                console.warn(`[PLAYBACK_BUFFER] Stream stalled for >3.5s at readyState ${this.audioPlayer.readyState}. Initiating non-destructive recovery...`);
+                                this.recoverCurrentTrack(currentReq);
+                            }
+                        }
+                    }, delay);
+                });
             }
         });
 
-        // 7. WAITING: Temporary lack of media data (buffering)
+        // 8. WAITING: Temporary lack of media data (buffering)
         this.audioPlayer.addEventListener('waiting', () => {
             console.log(`[PLAYBACK_WAITING] Media buffering for ${this.currentTrack?.title}, readyState: ${this.audioPlayer.readyState}, networkState: ${this.audioPlayer.networkState}`);
             if (!this._userRequestedPause && !this._isTransitioning) {
@@ -171,7 +193,7 @@ class MusicService {
             }
         });
 
-        // 8. STALLED: Browser is trying to fetch media data, but data is temporarily not arriving
+        // 9. STALLED: Browser is trying to fetch media data, but data is temporarily not arriving
         this.audioPlayer.addEventListener('stalled', () => {
             console.warn(`[PLAYBACK_STALLED] Media data stalled for ${this.currentTrack?.title}, readyState: ${this.audioPlayer.readyState}`);
             if (!this._userRequestedPause && !this._isTransitioning) {
@@ -179,7 +201,7 @@ class MusicService {
             }
         });
 
-        // 9. ERROR: Detailed diagnostic logging for network or decode failures
+        // 10. ERROR: Detailed diagnostic logging for network or decode failures
         this.audioPlayer.addEventListener('error', () => {
             const err = this.audioPlayer.error;
             console.error(`[PLAYBACK_ERROR] Diagnostics:`, {
