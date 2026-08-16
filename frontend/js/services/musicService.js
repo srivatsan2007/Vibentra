@@ -395,17 +395,23 @@ class MusicService {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
                 this.keepAliveCtx = new AudioCtx();
-                const buffer = this.keepAliveCtx.createBuffer(1, this.keepAliveCtx.sampleRate, this.keepAliveCtx.sampleRate);
+                const sampleRate = this.keepAliveCtx.sampleRate || 44100;
+                const buffer = this.keepAliveCtx.createBuffer(1, sampleRate * 2, sampleRate);
+                const data = buffer.getChannelData(0);
+                // Active non-zero PCM samples prevent Chromium from classifying tab as silent audio and suspending background JS execution on screen off
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = (Math.random() * 2 - 1) * 0.00005;
+                }
                 const source = this.keepAliveCtx.createBufferSource();
                 source.buffer = buffer;
                 source.loop = true;
                 const gain = this.keepAliveCtx.createGain();
-                gain.gain.value = 0.0001; // Silent keepalive prevents OS audio pipeline shutdown
+                gain.gain.value = 0.01;
                 source.connect(gain);
                 gain.connect(this.keepAliveCtx.destination);
                 source.start(0);
                 this.keepAliveSource = source;
-                console.log("[KEEPALIVE_AUDIO] WebAudio background thread keepalive initialized.");
+                console.log("[KEEPALIVE_AUDIO] WebAudio active PCM keepalive initialized for screen-off execution.");
             }
             if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
                 this.keepAliveCtx.resume().catch(() => {});

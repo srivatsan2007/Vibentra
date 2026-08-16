@@ -13,48 +13,48 @@ import { connectService } from './services/connectService.js';
 const initHome = () => {
     // Apply Theme
     const themes = {
-        'default': { 
+        'default': {
             primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: 'rgba(30, 41, 59, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #1A1F4C 0%, #0C102B 50%, #07091B 100%)',
             orb1: '#7C3AED', orb2: '#06B6D4', orb3: '#EC4899', orb4: '#3B82F6'
         },
-        'ocean': { 
+        'ocean': {
             primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: 'rgba(12, 74, 110, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #0C4A6E 0%, #082F49 50%, #031B2E 100%)',
             orb1: '#0284C7', orb2: '#0EA5E9', orb3: '#38BDF8', orb4: '#06B6D4'
         },
-        'forest': { 
+        'forest': {
             primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: 'rgba(6, 95, 70, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #065F46 0%, #064E3B 50%, #022C22 100%)',
             orb1: '#16A34A', orb2: '#22C55E', orb3: '#4ADE80', orb4: '#10B981'
         },
-        'sunset': { 
+        'sunset': {
             primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: 'rgba(124, 45, 18, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #7C2D12 0%, #431407 50%, #270903 100%)',
             orb1: '#EA580C', orb2: '#F97316', orb3: '#FB923C', orb4: '#EF4444'
         },
-        'cherry': { 
+        'cherry': {
             primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: 'rgba(136, 19, 55, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #881337 0%, #4C0519 50%, #28030E 100%)',
             orb1: '#E11D48', orb2: '#F43F5E', orb3: '#FB7185', orb4: '#DB2777'
         },
-        'cyberpunk': { 
+        'cyberpunk': {
             primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: 'rgba(24, 24, 27, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #27272A 0%, #09090B 50%, #000000 100%)',
             orb1: '#D946EF', orb2: '#8B5CF6', orb3: '#06B6D4', orb4: '#F43F5E'
         }
     };
-    
-    window.applyTheme = function(themeName) {
+
+    window.applyTheme = function (themeName) {
         const theme = themes[themeName] || themes['default'];
         document.documentElement.style.setProperty('--primary', theme.primary);
         document.documentElement.style.setProperty('--secondary', theme.secondary);
         document.documentElement.style.setProperty('--accent', theme.accent);
         document.documentElement.style.setProperty('--background', theme.background);
         document.documentElement.style.setProperty('--cards', theme.cards);
-        
+
         document.body.style.background = theme.bgGradient;
-        
+
         const orb1 = document.querySelector('.orb-1');
         if (orb1) orb1.style.background = theme.orb1;
         const orb2 = document.querySelector('.orb-2');
@@ -63,10 +63,10 @@ const initHome = () => {
         if (orb3) orb3.style.background = theme.orb3;
         const orb4 = document.querySelector('.orb-4');
         if (orb4) orb4.style.background = theme.orb4;
-        
+
         localStorage.setItem('vibentra_theme', themeName);
     };
-    
+
     const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
     window.applyTheme(savedTheme);
 
@@ -85,27 +85,27 @@ const initHome = () => {
                 const userData = userDoc.data();
                 const welcomeNameEl = document.getElementById('welcomeName');
                 if (welcomeNameEl) welcomeNameEl.textContent = userData.username;
-                
+
                 const topUsernameEl = document.getElementById('topUsername');
                 if (topUsernameEl) topUsernameEl.textContent = userData.username;
-                
+
                 const profileUsername = document.getElementById('profileUsername');
                 if (profileUsername) profileUsername.textContent = userData.username;
 
                 if (userData.profileImage) {
                     const topProfileImg = document.getElementById('topProfileImg');
                     if (topProfileImg) topProfileImg.src = userData.profileImage;
-                    
+
                     const profileAvatar = document.getElementById('profileAvatar');
                     if (profileAvatar) profileAvatar.src = userData.profileImage;
                 }
             } else {
                 const welcomeNameEl = document.getElementById('welcomeName');
                 if (welcomeNameEl) welcomeNameEl.textContent = user.displayName || 'User';
-                
+
                 const topUsernameEl = document.getElementById('topUsername');
                 if (topUsernameEl) topUsernameEl.textContent = user.displayName || 'User';
-                
+
                 const profileUsername = document.getElementById('profileUsername');
                 if (profileUsername) profileUsername.textContent = user.displayName || 'User';
             }
@@ -114,10 +114,10 @@ const initHome = () => {
             const fallbackName = user.displayName || user.email?.split('@')[0] || 'User';
             const welcomeNameEl = document.getElementById('welcomeName');
             if (welcomeNameEl) welcomeNameEl.textContent = fallbackName;
-            
+
             const topUsernameEl = document.getElementById('topUsername');
             if (topUsernameEl) topUsernameEl.textContent = fallbackName;
-            
+
             const profileUsername = document.getElementById('profileUsername');
             if (profileUsername) profileUsername.textContent = fallbackName;
         }
@@ -233,7 +233,7 @@ const initHome = () => {
     const notificationBtn = document.getElementById('notificationBtn');
     const notificationsDropdown = document.getElementById('notificationsDropdown');
     const notificationBadge = document.getElementById('notificationBadge');
-    
+
     if (notificationBtn && notificationsDropdown) {
         notificationBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -325,14 +325,14 @@ const initHome = () => {
                             e.stopPropagation();
                             const notifId = item.getAttribute('data-id');
                             const targetPath = item.getAttribute('data-target');
-                            
+
                             // Mark single notification as read
                             const currentRead = JSON.parse(localStorage.getItem('vibentra_read_notifs') || '[]');
                             if (!currentRead.includes(notifId)) {
                                 currentRead.push(notifId);
                                 localStorage.setItem('vibentra_read_notifs', JSON.stringify(currentRead));
                             }
-                            
+
                             notificationsDropdown.classList.add('hidden');
                             renderNotifications();
 
@@ -366,7 +366,7 @@ const initHome = () => {
     // Profile Dropdown Toggle
     const userProfileBtn = document.getElementById('userProfileBtn');
     const profileDropdown = document.getElementById('profileDropdown');
-    
+
     if (userProfileBtn && profileDropdown) {
         userProfileBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -380,7 +380,7 @@ const initHome = () => {
                 e.stopPropagation();
                 const target = item.getAttribute('data-target');
                 profileDropdown.classList.add('hidden');
-                
+
                 // Simulate click on the actual nav-item to reuse existing logic
                 const navItem = document.querySelector(`.nav-item[data-path="${target}"]`);
                 if (navItem) navItem.click();
@@ -426,10 +426,10 @@ const initHome = () => {
         }
 
         const path = e.state && e.state.path ? e.state.path : 'home';
-        
+
         navItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-path') === path));
         mobileNavItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-target') === path));
-        
+
         loadView(path, false);
     });
 
@@ -443,7 +443,7 @@ const initHome = () => {
             // Update Active State
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
-            
+
             mobileNavItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-target') === item.getAttribute('data-path')));
 
             if (window.innerWidth <= 768) {
@@ -459,13 +459,13 @@ const initHome = () => {
     mobileNavItems.forEach(item => {
         item.addEventListener('click', () => {
             const path = item.getAttribute('data-target');
-            
+
             mobileNavItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
 
             // Sync desktop sidebar active state
             navItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-path') === path));
-            
+
             loadView(path);
         });
     });
@@ -474,8 +474,8 @@ const initHome = () => {
         if (pushState) {
             history.pushState({ path }, '', '#' + path);
         }
-        
-        switch(path) {
+
+        switch (path) {
             case 'home':
                 renderHome();
                 break;
@@ -517,9 +517,9 @@ const initHome = () => {
         const card = document.createElement('div');
         card.className = 'music-card song-card';
         card.setAttribute('data-id', track.id);
-        
+
         const isFav = favoriteService.isFavorite(track.id);
-        
+
         card.innerHTML = `
             <div class="card-img-wrapper">
                 <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" alt="${track.title || 'Cover'}" loading="lazy">
@@ -667,7 +667,7 @@ const initHome = () => {
         const toggleMenu = (e) => {
             e.stopPropagation();
             const isHidden = dropdown.classList.contains('hidden');
-            
+
             document.querySelectorAll('.card-options-dropdown').forEach(d => d.classList.add('hidden'));
             document.querySelectorAll('.music-card').forEach(c => c.classList.remove('menu-open'));
 
@@ -737,7 +737,7 @@ const initHome = () => {
             document.getElementById('homeRecentSection').style.display = 'block';
             const recentGrid = document.getElementById('homeRecentGrid');
             recentGrid.innerHTML = '';
-            
+
             history.slice(0, 5).forEach(track => {
                 recentGrid.appendChild(createSongCard(track, history));
             });
@@ -754,17 +754,17 @@ const initHome = () => {
                 'Hindi': 'latest hindi bollywood top hits 2026'
             };
             const searchQuery = queryMap[language] || 'trending hits';
-            
+
             const trendingGrid = document.getElementById('homeTrendingGrid');
             const artistsGrid = document.getElementById('homeArtistsGrid');
-            
+
             if (trendingGrid) trendingGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>';
             if (artistsGrid) artistsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading artists...</p>';
 
             try {
                 const trendingResults = await searchService.searchSongs(searchQuery);
                 if (!document.getElementById('homeTrendingGrid')) return; // Check if still on home
-                
+
                 trendingGrid.innerHTML = '';
                 if (trendingResults.length === 0) {
                     trendingGrid.innerHTML = '<p style="color: var(--text-muted);">No trending songs found.</p>';
@@ -785,7 +785,7 @@ const initHome = () => {
                         }
                     });
                     const topArtists = Array.from(artistNames).filter(a => a.length > 0 && a.toLowerCase() !== 'unknown').slice(0, 4);
-                    
+
                     artistsGrid.innerHTML = '';
                     topArtists.forEach(artistName => {
                         const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(artistName)}&background=random&color=fff&size=150&font-size=0.33`;
@@ -819,7 +819,7 @@ const initHome = () => {
                     if (topArtists.length === 0) artistsGrid.innerHTML = '<p style="color: var(--text-muted);">No artists found.</p>';
                 }
 
-            } catch(e) {
+            } catch (e) {
                 if (trendingGrid) trendingGrid.innerHTML = '<p style="color: var(--text-muted);">Failed to load trending songs.</p>';
                 if (artistsGrid) artistsGrid.innerHTML = '<p style="color: var(--text-muted);">Failed to load artists.</p>';
             }
@@ -872,31 +872,31 @@ const initHome = () => {
                 searchInput.dispatchEvent(new Event('input', { bubbles: true }));
             }, 100);
         }
-        
+
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value;
             clearTimeout(searchTimeout);
-            
+
             if (!query.trim()) {
                 document.getElementById('searchResultsGrid').innerHTML = '<p style="color: var(--text-muted); grid-column: 1 / -1;">Search for music across Spotify, Deezer, and Local Database.</p>';
                 return;
             }
 
             document.getElementById('searchResultsGrid').innerHTML = '<p style="color: var(--primary); grid-column: 1 / -1;">Searching providers...</p>';
-            
+
             searchTimeout = setTimeout(async () => {
                 const results = await searchService.searchAll(query);
-                
+
                 const grid = document.getElementById('searchResultsGrid');
                 grid.innerHTML = '';
 
-                if ((!results.songs || results.songs.length === 0) && 
-                    (!results.albums || results.albums.length === 0) && 
+                if ((!results.songs || results.songs.length === 0) &&
+                    (!results.albums || results.albums.length === 0) &&
                     (!results.playlists || results.playlists.length === 0)) {
                     grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1 / -1;">No results found.</p>';
                     return;
                 }
-                
+
                 // Render Songs
                 if (results.songs && results.songs.length > 0) {
                     const header = document.createElement('h3');
@@ -935,7 +935,7 @@ const initHome = () => {
                                 <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: var(--text-muted);">Album</span>
                             </div>
                         `;
-                        
+
                         // Play album logic
                         card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
                             e.stopPropagation();
@@ -999,7 +999,7 @@ const initHome = () => {
                                 <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: var(--text-muted);">Playlist</span>
                             </div>
                         `;
-                        
+
                         // Play playlist logic
                         card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
                             e.stopPropagation();
@@ -1046,9 +1046,9 @@ const initHome = () => {
                 const genre = e.target.getAttribute('data-genre');
                 const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
                 const searchQuery = `${storedLang} ${genre}`;
-                
+
                 searchInput.value = searchQuery;
-                
+
                 // Trigger the input event to run the search
                 const event = new Event('input', { bubbles: true });
                 searchInput.dispatchEvent(event);
@@ -1084,7 +1084,7 @@ const initHome = () => {
 
                 mediaRecorder.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    
+
                     // Stop all tracks to release mic
                     stream.getTracks().forEach(track => track.stop());
 
@@ -1093,9 +1093,9 @@ const initHome = () => {
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = async () => {
                         const base64Audio = reader.result;
-                        
+
                         showNotification('Recognizing song...', 'success');
-                        
+
                         try {
                             const response = await fetch('http://localhost:5000/api/jiosaavn/recognize', {
                                 method: 'POST',
@@ -1104,9 +1104,9 @@ const initHome = () => {
                                 },
                                 body: JSON.stringify({ audioData: base64Audio })
                             });
-                            
+
                             const data = await response.json();
-                            
+
                             if (data.success && data.track) {
                                 showNotification('Song recognized!');
                                 searchInput.value = data.track.title;
@@ -1127,7 +1127,7 @@ const initHome = () => {
                 voiceSearchBtn.style.color = '#ef4444'; // Red to indicate recording
                 voiceSearchBtn.querySelector('i').classList.add('fa-beat-fade');
                 showNotification('Listening... Sing or hum a song!', 'success');
-                
+
                 // Auto stop after 5 seconds
                 setTimeout(() => {
                     if (isRecording) {
@@ -1218,7 +1218,7 @@ const initHome = () => {
 
     function renderPlaylists() {
         const playlists = playlistService.getPlaylists();
-        
+
         let html = `
             <div class="section-header">
                 <h2>Your Playlists</h2>
@@ -1228,7 +1228,7 @@ const initHome = () => {
             </div>
             <div class="playlist-list-container" style="display: flex; flex-direction: column; gap: 15px;">
         `;
-        
+
         playlists.forEach(pl => {
             html += `
                 <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 20px; padding: 15px; width: 100%; border-radius: 16px; background: rgba(255,255,255,0.02);">
@@ -1248,7 +1248,7 @@ const initHome = () => {
                 </div>
             `;
         });
-        
+
         html += `</div>`;
         dynamicContent.innerHTML = html;
 
@@ -1298,7 +1298,7 @@ const initHome = () => {
     function renderPlaylistDetail(id) {
         const pl = playlistService.getPlaylist(id);
         if (!pl) return;
-        
+
         let html = `
             <div class="section-header" style="display: flex; align-items: center; gap: 15px;">
                 <button class="btn btn-outline" id="backToPlaylistsBtn" style="border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-arrow-left"></i></button>
@@ -1309,7 +1309,7 @@ const initHome = () => {
             </div>
             <div class="track-list" id="playlistDetailTrackList">
         `;
-        
+
         if (pl.tracks.length === 0) {
             html += `<p style="color: var(--text-muted);">No tracks in this playlist yet. Add some from the player!</p>`;
         } else {
@@ -1331,7 +1331,7 @@ const initHome = () => {
                 `;
             });
         }
-        
+
         html += `</div>`;
         dynamicContent.innerHTML = html;
 
@@ -1342,7 +1342,7 @@ const initHome = () => {
 
         document.querySelectorAll('#playlistDetailTrackList .track-item').forEach((item, idx) => {
             item.addEventListener('click', (e) => {
-                if (e.target.closest('.remove-from-pl-btn')) return; 
+                if (e.target.closest('.remove-from-pl-btn')) return;
                 musicService.playContext(pl.tracks, pl.tracks[idx]);
             });
         });
@@ -1366,7 +1366,7 @@ const initHome = () => {
             </div>
             <div class="track-list" id="favoritesTrackList">
         `;
-        
+
         if (favs.length === 0) {
             html += `<p style="color: var(--text-muted);">No favorite songs yet. Start liking some tracks!</p>`;
         } else {
@@ -1388,7 +1388,7 @@ const initHome = () => {
                 `;
             });
         }
-        
+
         html += `</div>`;
         dynamicContent.innerHTML = html;
 
@@ -1409,7 +1409,7 @@ const initHome = () => {
                 if (track) {
                     favoriteService.toggleFavorite(track);
                     renderFavorites(); // Re-render to remove it
-                    
+
                     // Update main player heart icon if it's currently playing
                     if (musicService.currentTrack && musicService.currentTrack.id === trackId) {
                         const icon = document.querySelector('#playerLikeBtn i');
@@ -1490,7 +1490,7 @@ const initHome = () => {
                 artistCounts[t.artist] = (artistCounts[t.artist] || 0) + 1;
             });
             const topArtist = Object.keys(artistCounts).reduce((a, b) => artistCounts[a] > artistCounts[b] ? a : b);
-            
+
             analyticsContainer.innerHTML = `
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; flex: 1; min-width: 200px; text-align: center;">
                     <h4 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Top Artist (Recent)</h4>
@@ -1513,10 +1513,10 @@ const initHome = () => {
                 // Highlight active button
                 document.querySelectorAll('.mood-btn').forEach(b => b.classList.replace('btn-primary', 'btn-outline'));
                 e.target.classList.replace('btn-outline', 'btn-primary');
-                
+
                 const rawMood = e.target.getAttribute('data-mood');
                 const userLang = localStorage.getItem('vibentra_language') || 'english';
-                
+
                 // Map moods to better JioSaavn search queries
                 let searchKeyword = rawMood;
                 if (rawMood.includes("Happy")) searchKeyword = "Happy";
@@ -1526,14 +1526,14 @@ const initHome = () => {
                 if (rawMood.includes("Late Night")) searchKeyword = "Late Night";
 
                 const moodQuery = `${userLang} ${searchKeyword}`;
-                
+
                 const grid = document.getElementById('moodResultsGrid');
                 grid.innerHTML = '<p style="color: var(--text-muted);">Finding the perfect vibe...</p>';
-                
+
                 try {
                     const results = await providerManager.searchSongs(moodQuery);
                     grid.innerHTML = '';
-                    
+
                     // Filter out duplicate covers to ensure variety
                     const uniqueResults = [];
                     const seenCovers = new Set();
@@ -1543,10 +1543,10 @@ const initHome = () => {
                             uniqueResults.push(t);
                         }
                     }
-                    
+
                     // Display top 4 varied mood matches
                     const finalResults = uniqueResults.length >= 4 ? uniqueResults.slice(0, 4) : results.slice(0, 4);
-                    
+
                     finalResults.forEach(track => {
                         grid.appendChild(createSongCard(track, finalResults));
                     });
@@ -1562,12 +1562,12 @@ const initHome = () => {
             // Pick a random track from history to seed the smart mix
             const seedTrack = history[Math.floor(Math.random() * history.length)];
             const userLang = localStorage.getItem('vibentra_language') || 'english';
-            
+
             try {
                 // Fetch recommended/similar tracks by doing a broad search on the artist + "radio" + language
                 const results = await providerManager.searchSongs(`${seedTrack.artist} Best Hits ${userLang}`);
                 smartGrid.innerHTML = '';
-                
+
                 // Card 1: Artist Radio
                 const card1 = document.createElement('div');
                 card1.className = 'music-card';
@@ -1603,29 +1603,29 @@ const initHome = () => {
             if (!prompt) return;
 
             aiDjGrid.innerHTML = '<p style="color: var(--text-muted);">AI is analyzing your prompt and digging through the database...</p>';
-            
+
             // Extract keywords manually for a simple NLP simulation
             let searchKeywords = prompt.toLowerCase()
                 .replace(/create a|give me|play songs similar to|playlist|songs/g, '')
                 .replace(/late-night|late night/g, 'Late Night')
                 .replace(/-/g, ' ')
                 .trim();
-                
+
             // Inject language preference to ensure regional hits
             const userLang = localStorage.getItem('vibentra_language') || 'tamil';
-            
+
             // JioSaavn specifically struggles with "Anirudh" + mood. We map it to his full name.
             if (searchKeywords.includes('anirudh')) {
                 searchKeywords = searchKeywords.replace(/anirudh/g, 'Anirudh Ravichander');
             }
-            
+
             // Build the final optimized query
             const optimizedQuery = `${searchKeywords} ${userLang}`;
-            
+
             try {
                 const results = await providerManager.searchSongs(optimizedQuery);
                 aiDjGrid.innerHTML = '';
-                
+
                 // Filter out duplicate covers to ensure variety
                 const uniqueResults = [];
                 const seenCovers = new Set();
@@ -1635,7 +1635,7 @@ const initHome = () => {
                         uniqueResults.push(t);
                     }
                 }
-                
+
                 // Render top 8
                 const djTracks = uniqueResults.slice(0, 8);
                 if (djTracks.length === 0) {
@@ -1659,7 +1659,7 @@ const initHome = () => {
         // 5. Vibentra Wrapped Logic
         const wrappedBtn = document.getElementById('generateWrappedBtn');
         const wrappedResults = document.getElementById('wrappedResults');
-        
+
         wrappedBtn.addEventListener('click', () => {
             if (history.length === 0) {
                 wrappedResults.style.display = 'block';
@@ -1676,7 +1676,7 @@ const initHome = () => {
                 artistCounts[t.artist] = (artistCounts[t.artist] || 0) + 1;
             });
             const topArtist = Object.keys(artistCounts).reduce((a, b) => artistCounts[a] > artistCounts[b] ? a : b);
-            
+
             // Calculate total minutes (fake estimation based on average 3 mins per track stored in history)
             const totalMinutes = history.length * 3;
 
@@ -1849,7 +1849,7 @@ const initHome = () => {
                 showNotification('Password must be at least 6 characters long.', 'error');
                 return;
             }
-            
+
             try {
                 if (auth.currentUser) {
                     await updatePassword(auth.currentUser, newPassword);
@@ -2013,7 +2013,7 @@ const initHome = () => {
                         </div>
                     `).join('');
                 }
-                
+
                 const trackDiv = document.getElementById('roomCurrentTrack');
                 if (trackDiv && roomData.currentTrack) {
                     const track = roomData.currentTrack;
@@ -2025,7 +2025,7 @@ const initHome = () => {
                             <i class="fa-solid ${roomData.isPlaying ? 'fa-volume-high' : 'fa-pause'}"></i> ${roomData.isPlaying ? 'Playing in Sync' : 'Paused'}
                         </p>
                     `;
-                    
+
                     // Trigger actual music service sync if we are not the host
                     if (!connectService.isHost) {
                         musicService.remoteSync(roomData.currentTrack, roomData.isPlaying, roomData.currentTime, roomData.updatedAt);
@@ -2150,7 +2150,7 @@ const initHome = () => {
                 const provider = providerManager.getProvider(providerId);
                 if (provider) {
                     await providerManager.saveProviderSettings(providerId, !provider.enabled);
-                    renderSettings(); 
+                    renderSettings();
                     showNotification(`${provider.name} ${provider.enabled ? 'enabled' : 'disabled'}`, 'info');
                 }
             });
@@ -2187,12 +2187,12 @@ const initHome = () => {
             const id = document.getElementById('editingPlaylistId').value;
             const name = document.getElementById('playlistNameInput').value;
             const desc = document.getElementById('playlistDescInput').value;
-            
+
             if (!name.trim()) {
                 showNotification('Playlist name cannot be empty', 'error');
                 return;
             }
-            
+
             if (id) {
                 playlistService.editPlaylist(id, name, desc);
                 showNotification('Playlist updated successfully!');
@@ -2200,7 +2200,7 @@ const initHome = () => {
                 playlistService.createPlaylist(name, desc);
                 showNotification('Playlist created successfully!');
             }
-            
+
             playlistModal.classList.remove('active');
             if (document.querySelector('#openCreatePlaylistBtn')) {
                 loadView('playlists');

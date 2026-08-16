@@ -67,6 +67,12 @@ public class MainActivity extends BridgeActivity {
         keepWebViewActive();
     }
 
+    @Override
+    public void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        keepWebViewActive();
+    }
+
     private void keepWebViewActive() {
         try {
             WebView webView = getBridge() != null ? getBridge().getWebView() : null;
