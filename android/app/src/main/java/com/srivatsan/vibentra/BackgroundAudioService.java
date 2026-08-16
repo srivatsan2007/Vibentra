@@ -15,6 +15,7 @@ import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -43,6 +44,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     public static final String ACTION_STOP = "com.srivatsan.vibentra.ACTION_STOP";
 
     private PowerManager.WakeLock wakeLock;
+    private WifiManager.WifiLock wifiLock;
     private MediaSessionCompat mediaSession;
     private AudioManager audioManager;
     private AudioFocusRequest audioFocusRequest;
@@ -104,6 +106,20 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             if (powerManager != null) {
                 wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "vibentra:BackgroundAudioWakeLock");
                 wakeLock.setReferenceCounted(false);
+            }
+
+            try {
+                WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wifiManager != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_LOW_LATENCY, "vibentra:BackgroundWifiLock");
+                    } else {
+                        wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "vibentra:BackgroundWifiLock");
+                    }
+                    wifiLock.setReferenceCounted(false);
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "WifiLock creation warning", t);
             }
 
             audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -260,11 +276,23 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                         Log.d(TAG, "WAKE_LOCK_ACQUIRED");
                     } catch (Throwable t) {}
                 }
+                if (wifiLock != null && !wifiLock.isHeld()) {
+                    try {
+                        wifiLock.acquire();
+                        Log.d(TAG, "WIFI_LOCK_ACQUIRED");
+                    } catch (Throwable t) {}
+                }
             } else {
                 if (wakeLock != null && wakeLock.isHeld()) {
                     try {
                         wakeLock.release();
                         Log.d(TAG, "WAKE_LOCK_RELEASED");
+                    } catch (Throwable t) {}
+                }
+                if (wifiLock != null && wifiLock.isHeld()) {
+                    try {
+                        wifiLock.release();
+                        Log.d(TAG, "WIFI_LOCK_RELEASED");
                     } catch (Throwable t) {}
                 }
             }
@@ -422,6 +450,12 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             try {
                 wakeLock.release();
                 Log.d(TAG, "WAKE_LOCK_RELEASED");
+            } catch (Throwable t) {}
+        }
+        if (wifiLock != null && wifiLock.isHeld()) {
+            try {
+                wifiLock.release();
+                Log.d(TAG, "WIFI_LOCK_RELEASED");
             } catch (Throwable t) {}
         }
         if (mediaSession != null) {
