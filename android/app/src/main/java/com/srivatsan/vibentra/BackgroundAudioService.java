@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ServiceInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
@@ -53,10 +54,14 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     private final BroadcastReceiver noisyReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
-                if (isPlaying) {
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+            try {
+                if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                    if (isPlaying) {
+                        BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+                    }
                 }
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
         }
     };
@@ -64,17 +69,21 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     private final BroadcastReceiver callReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
-            if (TelephonyManager.EXTRA_STATE_RINGING.equals(state) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state)) {
-                if (isPlaying) {
-                    resumeOnFocusGain = true;
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+            try {
+                String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+                if (TelephonyManager.EXTRA_STATE_RINGING.equals(state) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state)) {
+                    if (isPlaying) {
+                        resumeOnFocusGain = true;
+                        BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+                    }
+                } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
+                    if (resumeOnFocusGain) {
+                        resumeOnFocusGain = false;
+                        BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
+                    }
                 }
-            } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
-                if (resumeOnFocusGain) {
-                    resumeOnFocusGain = false;
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
-                }
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
         }
     };
@@ -82,43 +91,51 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     @Override
     public void onCreate() {
         super.onCreate();
-        createNotificationChannel();
-
-        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        if (powerManager != null) {
-            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "vibentra:BackgroundAudioWakeLock");
-            wakeLock.setReferenceCounted(false);
-        }
-
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        requestAudioFocus();
-
-        mediaSession = new MediaSessionCompat(this, "VibentraMediaSession");
-        mediaSession.setCallback(new MediaSessionCompat.Callback() {
-            @Override
-            public void onPlay() {
-                BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
-            }
-            @Override
-            public void onPause() {
-                BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
-            }
-            @Override
-            public void onSkipToNext() {
-                BackgroundAudioPlugin.handleMediaAction(ACTION_NEXT);
-            }
-            @Override
-            public void onSkipToPrevious() {
-                BackgroundAudioPlugin.handleMediaAction(ACTION_PREVIOUS);
-            }
-        });
-        mediaSession.setActive(true);
-
         try {
-            registerReceiver(noisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
-            registerReceiver(callReceiver, new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED));
-        } catch (Exception e) {
-            e.printStackTrace();
+            createNotificationChannel();
+
+            PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (powerManager != null) {
+                wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "vibentra:BackgroundAudioWakeLock");
+                wakeLock.setReferenceCounted(false);
+            }
+
+            audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            requestAudioFocus();
+
+            mediaSession = new MediaSessionCompat(this, "VibentraMediaSession");
+            mediaSession.setCallback(new MediaSessionCompat.Callback() {
+                @Override
+                public void onPlay() {
+                    BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
+                }
+                @Override
+                public void onPause() {
+                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+                }
+                @Override
+                public void onSkipToNext() {
+                    BackgroundAudioPlugin.handleMediaAction(ACTION_NEXT);
+                }
+                @Override
+                public void onSkipToPrevious() {
+                    BackgroundAudioPlugin.handleMediaAction(ACTION_PREVIOUS);
+                }
+                @Override
+                public void onStop() {
+                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+                }
+            });
+            mediaSession.setActive(true);
+
+            try {
+                registerReceiver(noisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+                registerReceiver(callReceiver, new IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED));
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 
@@ -139,7 +156,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             } else {
                 audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
@@ -152,94 +169,133 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             } else {
                 audioManager.abandonAudioFocus(this);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
     @Override
     public void onAudioFocusChange(int focusChange) {
-        switch (focusChange) {
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                if (isPlaying) {
-                    resumeOnFocusGain = true;
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
-                }
-                break;
+        try {
+            switch (focusChange) {
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                    if (isPlaying) {
+                        resumeOnFocusGain = true;
+                        BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+                    }
+                    break;
 
-            case AudioManager.AUDIOFOCUS_LOSS:
-                resumeOnFocusGain = false;
-                if (isPlaying) {
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
-                }
-                break;
-
-            case AudioManager.AUDIOFOCUS_GAIN:
-                if (resumeOnFocusGain) {
+                case AudioManager.AUDIOFOCUS_LOSS:
                     resumeOnFocusGain = false;
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
-                }
-                break;
+                    if (isPlaying) {
+                        BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+                    }
+                    break;
+
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    if (resumeOnFocusGain) {
+                        resumeOnFocusGain = false;
+                        BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
+                    }
+                    break;
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && intent.getAction() != null) {
-            String action = intent.getAction();
-            if (action.equals(ACTION_PLAY) || action.equals(ACTION_PAUSE) || 
-                action.equals(ACTION_NEXT) || action.equals(ACTION_PREVIOUS)) {
-                
-                BackgroundAudioPlugin.handleMediaAction(action);
-            } else if (action.equals(ACTION_STOP)) {
-                stopSelf();
-                return START_NOT_STICKY;
+        try {
+            if (intent != null && intent.getAction() != null) {
+                String action = intent.getAction();
+                if (action.equals(ACTION_PLAY) || action.equals(ACTION_PAUSE) || 
+                    action.equals(ACTION_NEXT) || action.equals(ACTION_PREVIOUS)) {
+                    
+                    BackgroundAudioPlugin.handleMediaAction(action);
+                } else if (action.equals(ACTION_STOP)) {
+                    stopSelf();
+                    return START_NOT_STICKY;
+                }
             }
+
+            if (intent != null) {
+                String title = intent.getStringExtra("title");
+                String artist = intent.getStringExtra("artist");
+                String cover = intent.getStringExtra("cover");
+                boolean playing = intent.getBooleanExtra("isPlaying", true);
+
+                if (title != null) currentTitle = title;
+                if (artist != null) currentArtist = artist;
+                if (playing != this.isPlaying) this.isPlaying = playing;
+
+                if (cover != null && !cover.equals(currentCoverUrl)) {
+                    currentCoverUrl = cover;
+                    fetchCoverBitmap(cover);
+                }
+            }
+
+            if (this.isPlaying) {
+                requestAudioFocus();
+                if (wakeLock != null && !wakeLock.isHeld()) {
+                    try {
+                        wakeLock.acquire(10 * 60 * 60 * 1000L /* 10 hours max */);
+                    } catch (Throwable t) {}
+                }
+            } else {
+                if (wakeLock != null && wakeLock.isHeld()) {
+                    try {
+                        wakeLock.release();
+                    } catch (Throwable t) {}
+                }
+            }
+
+            updateMediaSessionState();
+            Notification notification = buildNotification();
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
-
-        if (intent != null) {
-            String title = intent.getStringExtra("title");
-            String artist = intent.getStringExtra("artist");
-            String cover = intent.getStringExtra("cover");
-            boolean playing = intent.getBooleanExtra("isPlaying", true);
-
-            if (title != null) currentTitle = title;
-            if (artist != null) currentArtist = artist;
-            if (playing != this.isPlaying) this.isPlaying = playing;
-
-            if (cover != null && !cover.equals(currentCoverUrl)) {
-                currentCoverUrl = cover;
-                fetchCoverBitmap(cover);
-            }
-        }
-
-        if (this.isPlaying) {
-            requestAudioFocus();
-            if (wakeLock != null && !wakeLock.isHeld()) {
-                wakeLock.acquire(10 * 60 * 60 * 1000L /* 10 hours max */);
-            }
-        } else {
-            if (wakeLock != null && wakeLock.isHeld()) {
-                wakeLock.release();
-            }
-        }
-
-        updateMediaSessionState();
-        Notification notification = buildNotification();
-        startForeground(NOTIFICATION_ID, notification);
 
         return START_STICKY;
     }
 
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        try {
+            // Keep background foreground service running even if activity task is removed from recent apps
+            if (isPlaying) {
+                Notification notification = buildNotification();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                } else {
+                    startForeground(NOTIFICATION_ID, notification);
+                }
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
     private void updateMediaSessionState() {
         if (mediaSession == null) return;
-        int state = isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
-        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE |
-                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
-                .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f);
-        mediaSession.setPlaybackState(stateBuilder.build());
+        try {
+            int state = isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
+            PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
+                    .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE |
+                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
+                    .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f);
+            mediaSession.setPlaybackState(stateBuilder.build());
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 
     private Notification buildNotification() {
@@ -295,9 +351,15 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 URL url = new URL(urlStr);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setDoInput(true);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
                 conn.connect();
                 InputStream input = conn.getInputStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(input);
+
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inSampleSize = 2; // Downsample bitmap to avoid OutOfMemoryError
+                Bitmap bitmap = BitmapFactory.decodeStream(input, null, options);
+
                 if (bitmap != null) {
                     coverBitmap = bitmap;
                     Notification notification = buildNotification();
@@ -306,8 +368,9 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                         nm.notify(NOTIFICATION_ID, notification);
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Throwable t) {
+                // Catch all exceptions AND OutOfMemoryErrors to prevent process termination
+                t.printStackTrace();
             }
         }).start();
     }
@@ -335,13 +398,17 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         try {
             unregisterReceiver(noisyReceiver);
             unregisterReceiver(callReceiver);
-        } catch (Exception e) {}
+        } catch (Throwable e) {}
         abandonAudioFocus();
         if (wakeLock != null && wakeLock.isHeld()) {
-            wakeLock.release();
+            try {
+                wakeLock.release();
+            } catch (Throwable t) {}
         }
         if (mediaSession != null) {
-            mediaSession.release();
+            try {
+                mediaSession.release();
+            } catch (Throwable t) {}
         }
         super.onDestroy();
     }
@@ -352,4 +419,3 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         return null;
     }
 }
-

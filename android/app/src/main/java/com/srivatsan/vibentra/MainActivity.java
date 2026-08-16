@@ -20,16 +20,32 @@ public class MainActivity extends BridgeActivity {
         setupWebViewSettings();
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Prevent Chromium WebView from freezing JS timers during background audio playback
+        try {
+            WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+            if (webView != null) {
+                webView.onResume();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void setupWebViewSettings() {
         try {
             WebView webView = getBridge() != null ? getBridge().getWebView() : null;
             if (webView != null) {
                 WebSettings settings = webView.getSettings();
                 settings.setMediaPlaybackRequiresUserGesture(false);
+                settings.setJavaScriptEnabled(true);
+                settings.setDomStorageEnabled(true);
+                settings.setDatabaseEnabled(true);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 }
-
