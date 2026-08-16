@@ -30,6 +30,8 @@ class MusicService {
         this._userRequestedPause = false;
         this._errorRetryCount = 0;
         this._uiInitialized = false;
+        this._isPlayPending = false;
+        this._transientTimers = [];
 
         // Single Authoritative Audio Element
         this.audioPlayer = new Audio();
@@ -64,20 +66,45 @@ class MusicService {
             window.addEventListener('online', () => {
                 console.log("[PLAYBACK_ONLINE] Network connection restored.");
                 if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.paused && this.audioPlayer.readyState >= 2) {
-                    this.audioPlayer.play().catch(err => {
-                        console.warn("[PLAYBACK_ONLINE] Online auto-resume warning:", err);
-                    });
+                    this.safePlay('online_reconnect');
                 }
             });
         }
     }
 
+    clearTransientTimers() {
+        if (this._transientTimers && this._transientTimers.length > 0) {
+            this._transientTimers.forEach(id => clearTimeout(id));
+            this._transientTimers = [];
+        }
+    }
+
+    async safePlay(triggerTag = 'unknown') {
+        if (this._isPlayPending) {
+            console.log(`[PLAYBACK_SAFE_PLAY] Play request ignored (${triggerTag}): play operation already pending.`);
+            return;
+        }
+        if (!this.audioPlayer.paused) {
+            return;
+        }
+        this._isPlayPending = true;
+        try {
+            await this.audioPlayer.play();
+        } catch (err) {
+            console.warn(`[PLAYBACK_SAFE_PLAY] Play failed (${triggerTag}):`, err);
+            throw err;
+        } finally {
+            this._isPlayPending = false;
+        }
+    }
+
     checkAndResumePlayback(eventTag = 'unknown') {
+        // NEVER auto-resume on timeupdate. timeupdate fires continuously while advancing.
+        if (eventTag === 'timeupdate') return;
+
         if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
             console.log(`[PLAYBACK_AUTO_RESUME] Resume triggered by ${eventTag}. ReadyState: ${this.audioPlayer.readyState}, Track: "${this.currentTrack?.title}" at ${this.audioPlayer.currentTime.toFixed(1)}s`);
-            this.audioPlayer.play().catch(err => {
-                console.warn(`[PLAYBACK_AUTO_RESUME] Play failed on ${eventTag}:`, err);
-            });
+            this.safePlay(eventTag).catch(() => {});
         }
     }
 
@@ -85,6 +112,7 @@ class MusicService {
         // 1. ENDED: Authoritative track completion signal
         this.audioPlayer.addEventListener('ended', () => {
             console.log(`[PLAYBACK_ENDED] Track completed. Gen: ${this._playbackRequestId}, Track: ${this.currentTrack?.title}`);
+            this.clearTransientTimers();
             if (this._endedHandledForGeneration === this._playbackRequestId || this._isTransitioning) {
                 console.log(`[PLAYBACK_ENDED] Transition lock active or queue advancement already handled for generation ${this._playbackRequestId}. Skipping duplicate.`);
                 return;
@@ -94,12 +122,11 @@ class MusicService {
             this.handleTrackEnd();
         });
 
-        // 2. TIMEUPDATE: Updates progress UI and auto-resumes if transiently paused while isPlaying is true
+        // 2. TIMEUPDATE: Updates progress UI without triggering play thrashing
         this.audioPlayer.addEventListener('timeupdate', () => {
             if (this.playbackState === 'BUFFERING' && !this.audioPlayer.paused) {
                 this.playbackState = 'PLAYING';
             }
-            this.checkAndResumePlayback('timeupdate');
             this.updateProgressUI();
         });
 
@@ -111,6 +138,7 @@ class MusicService {
         // 4. PLAYING: Audio samples are actively rendering
         this.audioPlayer.addEventListener('playing', () => {
             console.log(`[PLAYBACK_PLAYING] Active stream for gen ${this._playbackRequestId}: ${this.currentTrack?.title}, currentTime: ${this.audioPlayer.currentTime.toFixed(1)}s, duration: ${this.audioPlayer.duration}`);
+            this.clearTransientTimers();
             this._errorRetryCount = 0;
             this._isTransitioning = false;
             this.isPlaying = true;
@@ -122,6 +150,7 @@ class MusicService {
         // 5. PLAY: Playback requested/started
         this.audioPlayer.addEventListener('play', () => {
             console.log(`[PLAYBACK_START] Play event for gen ${this._playbackRequestId}, track: ${this.currentTrack?.title}`);
+            this.clearTransientTimers();
             this._isTransitioning = false;
             this.isPlaying = true;
             if (this.playbackState !== 'PLAYING') {
@@ -153,6 +182,7 @@ class MusicService {
             if (this._isTransitioning) return;
 
             if (this._userRequestedPause || this.audioPlayer.ended) {
+                this.clearTransientTimers();
                 this.isPlaying = false;
                 this.playbackState = 'PAUSED';
                 this.updatePlayPauseUI(false);
@@ -165,14 +195,15 @@ class MusicService {
                 console.warn("[PLAYBACK_BUFFER] Transient audio pause detected. Maintaining isPlaying state and scheduling multi-phase data checks...");
                 this.playbackState = 'BUFFERING';
 
+                this.clearTransientTimers();
                 const currentReq = this._playbackRequestId;
                 const delays = [300, 800, 1800, 3500];
                 delays.forEach(delay => {
-                    setTimeout(() => {
+                    const timerId = setTimeout(() => {
                         if (this._playbackRequestId === currentReq && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning) {
                             if (this.audioPlayer.readyState >= 2) {
                                 console.log(`[PLAYBACK_BUFFER] Auto-resuming transient audio pause at +${delay}ms...`);
-                                this.audioPlayer.play().catch(err => {
+                                this.safePlay(`transient_pause_+${delay}ms`).catch(err => {
                                     console.warn(`[PLAYBACK_BUFFER] Auto-resume failed at +${delay}ms:`, err);
                                 });
                             } else if (delay === 3500 && this.currentTrack) {
@@ -181,6 +212,7 @@ class MusicService {
                             }
                         }
                     }, delay);
+                    this._transientTimers.push(timerId);
                 });
             }
         });
@@ -800,6 +832,7 @@ class MusicService {
         }
 
         const requestId = ++this._playbackRequestId;
+        this.clearTransientTimers();
         this._isTransitioning = true;
         this._userRequestedPause = false;
         this.playbackState = 'LOADING';
@@ -875,13 +908,8 @@ class MusicService {
                 this.audioPlayer.currentTime = 0;
             }
 
-            this.initKeepAliveAudio();
-
             try {
-                const playPromise = this.audioPlayer.play();
-                if (playPromise !== undefined) {
-                    await playPromise;
-                }
+                await this.safePlay('playSpecificTrack');
 
                 if (this._playbackRequestId !== requestId) return;
 
@@ -899,7 +927,7 @@ class MusicService {
                     setTimeout(async () => {
                         if (this._playbackRequestId === requestId && this.currentTrack?.id === fullTrack.id) {
                             try {
-                                await this.audioPlayer.play();
+                                await this.safePlay('playSpecificTrack_retry');
                                 if (this._playbackRequestId === requestId) {
                                     this.isPlaying = true;
                                     this.playbackState = 'PLAYING';
@@ -1244,14 +1272,16 @@ class MusicService {
 
         if (this.currentTrack.streamUrl) {
             if (this.isPlaying) {
+                this.clearTransientTimers();
                 this._userRequestedPause = false;
                 this.playbackState = 'PLAYING';
-                this.audioPlayer.play().catch(e => {
+                this.safePlay('togglePlayPause').catch(e => {
                     console.error("Play failed", e);
                     this.isPlaying = false;
                     this.playbackState = 'PAUSED';
                 });
             } else {
+                this.clearTransientTimers();
                 this._userRequestedPause = true;
                 this.playbackState = 'PAUSED';
                 this.audioPlayer.pause();
