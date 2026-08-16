@@ -55,6 +55,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     private boolean isPlaying = false;
     private boolean resumeOnFocusGain = false;
     private boolean wasPlayingBeforeCall = false;
+    private boolean isCallActive = false;
     private Bitmap coverBitmap = null;
 
     private final BroadcastReceiver noisyReceiver = new BroadcastReceiver() {
@@ -80,18 +81,18 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
                 Log.d(TAG, "PHONE_STATE_CHANGED: " + state);
                 if (TelephonyManager.EXTRA_STATE_RINGING.equals(state) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state)) {
-                    Log.d(TAG, "PHONE_CALL_ACTIVE: Incoming/Active call detected. Pausing audio...");
-                    if (isPlaying || resumeOnFocusGain) {
+                    Log.d(TAG, "PHONE_CALL_ACTIVE: Incoming/Active call detected. Pausing audio and locking playback...");
+                    isCallActive = true;
+                    if (isPlaying || wasPlayingBeforeCall) {
                         wasPlayingBeforeCall = true;
-                        resumeOnFocusGain = true;
                         isPlaying = false;
-                        BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                     }
+                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                 } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
-                    Log.d(TAG, "PHONE_CALL_ENDED: Call ended. Resuming audio...");
-                    if (wasPlayingBeforeCall || resumeOnFocusGain) {
+                    Log.d(TAG, "PHONE_CALL_ENDED: Call ended. Unlocking playback and resuming audio...");
+                    isCallActive = false;
+                    if (wasPlayingBeforeCall) {
                         wasPlayingBeforeCall = false;
-                        resumeOnFocusGain = false;
                         isPlaying = true;
                         BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
                     }
@@ -232,6 +233,10 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                     break;
 
                 case AudioManager.AUDIOFOCUS_GAIN:
+                    if (isCallActive) {
+                        Log.d(TAG, "AUDIOFOCUS_GAIN ignored because phone call is still active.");
+                        break;
+                    }
                     if (resumeOnFocusGain) {
                         resumeOnFocusGain = false;
                         BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
