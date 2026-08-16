@@ -27,6 +27,15 @@ public class MainActivity extends BridgeActivity {
         }
     };
 
+    private final android.os.Handler webViewActiveHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable keepActiveRunnable = new Runnable() {
+        @Override
+        public void run() {
+            keepWebViewActive();
+            webViewActiveHandler.postDelayed(this, 3000);
+        }
+    };
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(BackgroundAudioPlugin.class);
@@ -41,6 +50,8 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             Log.w(TAG, "Screen state receiver registration warning", e);
         }
+
+        webViewActiveHandler.post(keepActiveRunnable);
     }
 
     @Override
