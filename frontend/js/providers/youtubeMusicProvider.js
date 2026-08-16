@@ -149,7 +149,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         const cached = this.trackCache.get(trackId);
         const videoId = cached?.videoId || trackId.replace('yt_', '');
 
-        if (cached && cached.streamUrl && cached._streamTimestamp && (Date.now() - cached._streamTimestamp < 40 * 60 * 1000)) {
+        if (cached && cached.streamUrl && cached._streamTimestamp && (Date.now() - cached._streamTimestamp < 2.5 * 60 * 1000)) {
             return cached;
         }
 

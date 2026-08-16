@@ -43,8 +43,8 @@ export default class JioSaavnProvider extends ProviderInterface {
 
     async getTrack(trackId) {
         const cached = this.trackCache.get(trackId);
-        // If we have a cached version and it's less than 30 minutes old, return it instantly
-        if (cached && cached._timestamp && (Date.now() - cached._timestamp < 30 * 60 * 1000)) {
+        // If cached version is fresh (less than 2.5 minutes old), return it to avoid unnecessary refetches. Otherwise fetch a fresh CDN URL.
+        if (cached && cached.streamUrl && cached._timestamp && (Date.now() - cached._timestamp < 2.5 * 60 * 1000)) {
             return cached;
         }
 

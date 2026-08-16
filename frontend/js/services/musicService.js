@@ -147,8 +147,9 @@ class MusicService {
             const currentGen = this._playbackGeneration;
             console.log(`[TRACK_END] Gen ${currentGen}: Track finished. Title: "${this.currentTrack?.title}"`);
             this.clearTransientTimers();
-            if (this._endedHandledForGeneration === currentGen || this._isTransitioning) {
-                console.log(`[TRACK_END] Ignored duplicate ended signal for gen ${currentGen} (transitioning: ${this._isTransitioning}).`);
+            this._isTransitioning = false;
+            if (this._endedHandledForGeneration === currentGen) {
+                console.log(`[TRACK_END] Ignored duplicate ended signal for gen ${currentGen}.`);
                 return;
             }
             this._endedHandledForGeneration = currentGen;
@@ -156,12 +157,26 @@ class MusicService {
             this.handleTrackEnd(currentGen);
         });
 
-        // 2. TIMEUPDATE: Updates progress UI without touching playback state
+        // 2. TIMEUPDATE: Updates progress UI and acts as end-of-track fallback watchdog
         this.audioPlayer.addEventListener('timeupdate', () => {
             if (this.playbackState === 'BUFFERING' && !this.audioPlayer.paused) {
                 this.playbackState = 'PLAYING';
             }
             this.updateProgressUI();
+
+            // Fallback watchdog for streams where browser fails to emit 'ended' event
+            const currentGen = this._playbackGeneration;
+            if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.duration > 0) {
+                if (this.audioPlayer.ended || (this.audioPlayer.duration - this.audioPlayer.currentTime <= 0.35)) {
+                    if (this._endedHandledForGeneration !== currentGen) {
+                        console.log(`[TRACK_END_WATCHDOG] Gen ${currentGen}: Near EOF detected (${this.audioPlayer.currentTime.toFixed(1)}s / ${this.audioPlayer.duration.toFixed(1)}s). Triggering completion.`);
+                        this._isTransitioning = false;
+                        this._endedHandledForGeneration = currentGen;
+                        this.playbackState = 'ENDED';
+                        this.handleTrackEnd(currentGen);
+                    }
+                }
+            }
         });
 
         // 3. PROGRESS: Fired periodically as browser downloads media buffer packets
@@ -218,7 +233,7 @@ class MusicService {
 
             if (this._isTransitioning) return;
 
-            if (this._userRequestedPause || this.audioPlayer.ended) {
+            if (this._userRequestedPause) {
                 this.clearTransientTimers();
                 this.isPlaying = false;
                 this.playbackState = 'PAUSED';
@@ -227,21 +242,34 @@ class MusicService {
                     navigator.mediaSession.playbackState = 'paused';
                 }
                 this.releaseWakeLock();
+            } else if (this.audioPlayer.ended || this.playbackState === 'ENDED') {
+                // Natural track completion - allow handleTrackEnd to control next song transition
+                console.log(`[PLAYBACK_PAUSE] Natural track end pause for gen ${currentGen}.`);
             } else {
                 console.log(`[TRACK_BUFFERING] Gen ${currentGen}: Unexpected pause detected. Setting state to BUFFERING...`);
                 this.playbackState = 'BUFFERING';
 
                 this.clearTransientTimers();
-                const timerId = setTimeout(() => {
+                let retryCount = 0;
+                const attemptAutoResume = () => {
                     if (this._playbackGeneration === currentGen && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning) {
                         if (this.audioPlayer.readyState >= 2) {
                             console.log(`[TRACK_BUFFERING] Gen ${currentGen}: Auto-resuming after pause...`);
                             this.safePlay('transient_pause_recovery').catch(err => {
                                 console.warn(`[TRACK_BUFFERING] Gen ${currentGen}: Auto-resume failed:`, err);
                             });
+                        } else if (retryCount < 6) {
+                            retryCount++;
+                            console.log(`[TRACK_BUFFERING] Gen ${currentGen}: Buffer retry ${retryCount}/6 (readyState: ${this.audioPlayer.readyState})...`);
+                            const timerId = setTimeout(attemptAutoResume, 750);
+                            this._transientTimers.push(timerId);
+                        } else {
+                            console.warn(`[TRACK_BUFFERING] Gen ${currentGen}: Buffer stalled for > 4.5s. Triggering automatic stream recovery...`);
+                            this.recoverCurrentTrack(currentGen);
                         }
                     }
-                }, 500);
+                };
+                const timerId = setTimeout(attemptAutoResume, 400);
                 this._transientTimers.push(timerId);
             }
         });
@@ -303,8 +331,29 @@ class MusicService {
     }
 
     initKeepAliveAudio() {
-        // Native Android BackgroundAudioService manages CPU wakefulness and process priority natively.
-        // No redundant WebAudio oscillator needed to avoid buffer underrun mixing stutter.
+        try {
+            if (!this.keepAliveCtx && typeof window !== 'undefined') {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                this.keepAliveCtx = new AudioCtx();
+                const buffer = this.keepAliveCtx.createBuffer(1, this.keepAliveCtx.sampleRate, this.keepAliveCtx.sampleRate);
+                const source = this.keepAliveCtx.createBufferSource();
+                source.buffer = buffer;
+                source.loop = true;
+                const gain = this.keepAliveCtx.createGain();
+                gain.gain.value = 0.0001; // Silent keepalive prevents OS audio pipeline shutdown
+                source.connect(gain);
+                gain.connect(this.keepAliveCtx.destination);
+                source.start(0);
+                this.keepAliveSource = source;
+                console.log("[KEEPALIVE_AUDIO] WebAudio background thread keepalive initialized.");
+            }
+            if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
+                this.keepAliveCtx.resume().catch(() => {});
+            }
+        } catch (e) {
+            console.warn("KeepAlive audio init error:", e);
+        }
     }
 
     initUI() {
@@ -896,12 +945,17 @@ class MusicService {
         this.updatePlayerUI(this.currentTrack);
         this.updatePlayPauseUI(true);
 
-        // Fetch full track details if streamUrl is missing
+        // Keep WebAudio thread active for smooth background track switches
+        this.initKeepAliveAudio();
+
+        // Fetch full track details if streamUrl is missing or older than 2.5 minutes to avoid CDN link expiration stutter
         let fullTrack = track;
-        if (!fullTrack.streamUrl) {
+        const isExpired = !fullTrack.streamUrl || !fullTrack._fetchedAt || (Date.now() - fullTrack._fetchedAt > 2.5 * 60 * 1000);
+        if (isExpired) {
             try {
-                const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' || (track.id && String(track.id).startsWith('yt_')) ? 'ytmusic' : 'jiosaavn');
                 fullTrack = (await providerManager.getTrack(providerId, track.id)) || track;
+                fullTrack._fetchedAt = Date.now();
             } catch(err) {
                 console.warn(`[PLAYBACK_ERROR] Stream URL fetch warning for gen ${requestId}:`, err);
             }
@@ -1206,9 +1260,9 @@ class MusicService {
         if (!this.queue || this.queue.length === 0) return;
         for (let i = 0; i < this.queue.length; i++) {
             const t = this.queue[i];
-            if (t && (!t.streamUrl || Date.now() - (t._fetchedAt || 0) > 10 * 60 * 1000)) {
+            if (t && (!t.streamUrl || !t._fetchedAt || Date.now() - t._fetchedAt > 2.5 * 60 * 1000)) {
                 try {
-                    const providerId = t.providerId || (t.provider === 'YouTube Music' || t.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+                    const providerId = t.providerId || (t.provider === 'YouTube Music' || t.provider === 'ytmusic' || (t.id && String(t.id).startsWith('yt_')) ? 'ytmusic' : 'jiosaavn');
                     const fullTrack = await providerManager.getTrack(providerId, t.id);
                     if (fullTrack && fullTrack.streamUrl) {
                         fullTrack._fetchedAt = Date.now();
@@ -1231,8 +1285,8 @@ class MusicService {
             if (nextIndex < 0 || nextIndex >= this.queue.length) continue;
 
             const nextTrack = this.queue[nextIndex];
-            if (nextTrack && (!nextTrack.streamUrl || Date.now() - (nextTrack._fetchedAt || 0) > 10 * 60 * 1000)) {
-                const providerId = nextTrack.providerId || (nextTrack.provider === 'YouTube Music' || nextTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
+            if (nextTrack && (!nextTrack.streamUrl || !nextTrack._fetchedAt || Date.now() - nextTrack._fetchedAt > 2.5 * 60 * 1000)) {
+                const providerId = nextTrack.providerId || (nextTrack.provider === 'YouTube Music' || nextTrack.provider === 'ytmusic' || (nextTrack.id && String(nextTrack.id).startsWith('yt_')) ? 'ytmusic' : 'jiosaavn');
                 providerManager.getTrack(providerId, nextTrack.id).then(fullTrack => {
                     if (fullTrack && fullTrack.streamUrl) {
                         fullTrack._fetchedAt = Date.now();
