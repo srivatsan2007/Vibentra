@@ -81,19 +81,21 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
                 Log.d(TAG, "PHONE_STATE_CHANGED: " + state);
                 if (TelephonyManager.EXTRA_STATE_RINGING.equals(state) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state)) {
-                    Log.d(TAG, "PHONE_CALL_ACTIVE: Incoming/Active call detected. Pausing audio and locking playback...");
+                    Log.d(TAG, "PHONE_CALL_ACTIVE: Incoming/Active call detected. Abandoning audio focus and pausing playback...");
                     isCallActive = true;
                     if (isPlaying || wasPlayingBeforeCall) {
                         wasPlayingBeforeCall = true;
                         isPlaying = false;
                     }
+                    abandonAudioFocus();
                     BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                 } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
-                    Log.d(TAG, "PHONE_CALL_ENDED: Call ended. Unlocking playback and resuming audio...");
+                    Log.d(TAG, "PHONE_CALL_ENDED: Call ended. Re-requesting audio focus and resuming playback...");
                     isCallActive = false;
                     if (wasPlayingBeforeCall) {
                         wasPlayingBeforeCall = false;
                         isPlaying = true;
+                        requestAudioFocus();
                         BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
                     }
                 }
