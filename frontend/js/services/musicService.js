@@ -146,7 +146,7 @@ class MusicService {
 
         if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
             console.log(`[PLAYBACK_AUTO_RESUME] Resume triggered by ${eventTag}. ReadyState: ${this.audioPlayer.readyState}, Track: "${this.currentTrack?.title}" at ${this.audioPlayer.currentTime.toFixed(1)}s`);
-            this.safePlay(eventTag).catch(() => {});
+            this.safePlay(eventTag).catch(() => { });
         }
     }
 
@@ -186,7 +186,7 @@ class MusicService {
                 console.warn(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Stream frozen at ${currentPos.toFixed(1)}s (${this._stallCount}/3)`);
 
                 if (this._stallCount === 2) {
-                    this.safePlay('heartbeat_stall_recovery').catch(() => {});
+                    this.safePlay('heartbeat_stall_recovery').catch(() => { });
                 } else if (this._stallCount >= 3) {
                     console.error(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Severe stream stall detected. Fetching fresh CDN stream...`);
                     this._stallCount = 0;
@@ -384,7 +384,7 @@ class MusicService {
 
     async releaseWakeLock() {
         if (this.wakeLock) {
-            await this.wakeLock.release().catch(() => {});
+            await this.wakeLock.release().catch(() => { });
             this.wakeLock = null;
         }
     }
@@ -414,7 +414,7 @@ class MusicService {
                 console.log("[KEEPALIVE_AUDIO] WebAudio active PCM keepalive initialized for screen-off execution.");
             }
             if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
-                this.keepAliveCtx.resume().catch(() => {});
+                this.keepAliveCtx.resume().catch(() => { });
             }
         } catch (e) {
             console.warn("KeepAlive audio init error:", e);
@@ -822,8 +822,8 @@ class MusicService {
         const songTitle = track.title || 'Song';
         const artistName = track.artist || 'Artist';
 
-        document.dispatchEvent(new CustomEvent('showNotification', { 
-            detail: `📥 Downloading "${songTitle}" to your device...` 
+        document.dispatchEvent(new CustomEvent('showNotification', {
+            detail: `📥 Downloading "${songTitle}" to your device...`
         }));
 
         if (track.streamUrl) {
@@ -838,8 +838,8 @@ class MusicService {
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                    document.dispatchEvent(new CustomEvent('showNotification', { 
-                        detail: `✅ Download Complete: "${songTitle}"!` 
+                    document.dispatchEvent(new CustomEvent('showNotification', {
+                        detail: `✅ Download Complete: "${songTitle}"!`
                     }));
                 })
                 .catch(err => {
@@ -909,8 +909,8 @@ class MusicService {
         if (downloadBtn) {
             downloadBtn.onclick = () => {
                 this.downloadTrack(track);
-                document.dispatchEvent(new CustomEvent('showNotification', { 
-                    detail: `🔔 ${selectedDuration}s Ringtone for "${track.title}" created!` 
+                document.dispatchEvent(new CustomEvent('showNotification', {
+                    detail: `🔔 ${selectedDuration}s Ringtone for "${track.title}" created!`
                 }));
                 modal.classList.remove('active');
             };
@@ -931,8 +931,8 @@ class MusicService {
     async playContext(queue, track) {
         if (!queue || queue.length === 0) return;
         this.playbackContext = 'PLAYLIST';
-        this.originalQueue = queue.map(t => ({...t}));
-        this.queue = queue.map(t => ({...t}));
+        this.originalQueue = queue.map(t => ({ ...t }));
+        this.queue = queue.map(t => ({ ...t }));
 
         // Explicitly reset shuffle mode to false when user plays a playlist, guaranteeing sequential playback
         this.isShuffle = false;
@@ -941,7 +941,7 @@ class MusicService {
 
         let targetIndex = -1;
         if (track) {
-            targetIndex = this.queue.findIndex(t => 
+            targetIndex = this.queue.findIndex(t =>
                 t === track ||
                 (t.id && track.id && String(t.id) === String(track.id)) ||
                 (t.trackId && track.trackId && String(t.trackId) === String(track.trackId)) ||
@@ -949,8 +949,8 @@ class MusicService {
             );
         }
         if (targetIndex === -1 && track) {
-            this.queue.push({...track});
-            this.originalQueue.push({...track});
+            this.queue.push({ ...track });
+            this.originalQueue.push({ ...track });
             targetIndex = this.queue.length - 1;
         }
         if (targetIndex === -1) targetIndex = 0;
@@ -984,12 +984,12 @@ class MusicService {
         // Synchronously pause current audio to prevent buffer bleeding
         try {
             this.audioPlayer.pause();
-        } catch (e) {}
+        } catch (e) { }
 
         if (queueIndex !== null && queueIndex >= 0 && queueIndex < this.queue.length) {
             this.currentIndex = queueIndex;
         } else if (this.queue.length > 0) {
-            const idx = this.queue.findIndex(t => 
+            const idx = this.queue.findIndex(t =>
                 t === track ||
                 (t.id && track.id && String(t.id) === String(track.id)) ||
                 (t.title && track.title && t.title.toLowerCase().trim() === track.title.toLowerCase().trim())
@@ -1021,7 +1021,7 @@ class MusicService {
                 const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' || (track.id && String(track.id).startsWith('yt_')) ? 'ytmusic' : 'jiosaavn');
                 fullTrack = (await providerManager.getTrack(providerId, track.id)) || track;
                 fullTrack._fetchedAt = Date.now();
-            } catch(err) {
+            } catch (err) {
                 console.warn(`[PLAYBACK_ERROR] Stream URL fetch warning for gen ${requestId}:`, err);
             }
         }
@@ -1149,7 +1149,7 @@ class MusicService {
                             this.updateProgressUI();
                         }
                     });
-                } catch(e) {}
+                } catch (e) { }
 
                 if ('setPositionState' in navigator.mediaSession && this.audioPlayer.duration) {
                     navigator.mediaSession.setPositionState({
@@ -1407,7 +1407,7 @@ class MusicService {
             if (this.originalQueue && this.originalQueue.length > 0) {
                 this.queue = [...this.originalQueue];
                 if (this.currentTrack) {
-                    const idx = this.queue.findIndex(t => 
+                    const idx = this.queue.findIndex(t =>
                         (t.id && this.currentTrack.id && String(t.id) === String(this.currentTrack.id)) ||
                         (t.title && this.currentTrack.title && t.title.toLowerCase().trim() === this.currentTrack.title.toLowerCase().trim())
                     );
@@ -1650,7 +1650,7 @@ class MusicService {
 
                     if (this.updateRepeatUI) this.updateRepeatUI();
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error("Could not restore player state", e);
             }
         }
