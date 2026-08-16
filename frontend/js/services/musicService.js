@@ -151,18 +151,26 @@ class MusicService {
     }
 
     checkPlaybackHeartbeat() {
-        if (!this.isPlaying || this._userRequestedPause || this._isTransitioning || !this.currentTrack) {
+        const currentGen = this._playbackGeneration;
+        if (!this.isPlaying || this._userRequestedPause || this._isTransitioning || !this.currentTrack || this.playbackState === 'ENDED' || this._endedHandledForGeneration === currentGen) {
             this._lastPosition = 0;
             this._stallCount = 0;
             return;
         }
 
-        const currentGen = this._playbackGeneration;
         const currentPos = this.audioPlayer.currentTime || 0;
+        const duration = this.audioPlayer.duration || 0;
 
-        // 1. Recover if audio element is unexpectedly paused while state is playing
+        // Ignore heartbeat checks near the end of track (within 2 seconds of EOF) to allow handleTrackEnd to execute transition
+        if (duration > 0 && (duration - currentPos <= 2.0)) {
+            this._lastPosition = 0;
+            this._stallCount = 0;
+            return;
+        }
+
+        // 1. Recover if audio element is unexpectedly paused mid-track while state is playing
         if (this.audioPlayer.paused && !this.audioPlayer.ended) {
-            console.warn(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Audio unexpectedly paused. Triggering resume...`);
+            console.warn(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Audio unexpectedly paused mid-track. Triggering resume...`);
             this.safePlay('heartbeat_auto_resume').catch(() => {
                 if (this.audioPlayer.readyState < 2) {
                     this.recoverCurrentTrack(currentGen);
@@ -172,7 +180,7 @@ class MusicService {
         }
 
         // 2. Detect frozen playback position mid-track (buffering/stream stall)
-        if (this.audioPlayer.duration && currentPos > 0 && currentPos < (this.audioPlayer.duration - 1)) {
+        if (duration > 0 && currentPos > 0 && currentPos < (duration - 2)) {
             if (Math.abs(currentPos - this._lastPosition) < 0.1) {
                 this._stallCount++;
                 console.warn(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Stream frozen at ${currentPos.toFixed(1)}s (${this._stallCount}/3)`);
