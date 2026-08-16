@@ -52,7 +52,7 @@ class MusicService {
                 } else if (data?.action === 'pause') {
                     if (this.isPlaying) this.togglePlayPause();
                 } else if (data?.action === 'next') {
-                    this.playNext();
+                    this.playNext(false);
                 } else if (data?.action === 'previous') {
                     this.playPrevious();
                 }
@@ -240,7 +240,7 @@ class MusicService {
 
         // Player Controls
         const handlePlayPause = (e) => { e.stopPropagation(); this.togglePlayPause(); };
-        const handleNext = (e) => { e.stopPropagation(); this.playNext(); };
+        const handleNext = (e) => { e.stopPropagation(); this.playNext(false); };
         const handlePrev = (e) => { e.stopPropagation(); this.playPrevious(); };
 
         document.getElementById('playPauseBtn')?.addEventListener('click', handlePlayPause);
@@ -576,7 +576,7 @@ class MusicService {
                     this.togglePlayPause();
                     break;
                 case 'ArrowRight':
-                    this.playNext();
+                    this.playNext(false);
                     break;
                 case 'ArrowLeft':
                     this.playPrevious();
@@ -896,7 +896,7 @@ class MusicService {
             console.warn(`[PLAYBACK_ERROR] No stream URL for ${fullTrack.title}. Skipping safely...`);
             this._isTransitioning = false;
             if (this._playbackRequestId === requestId) {
-                this.playNext();
+                this.playNext(true);
             }
         }
 
@@ -944,7 +944,7 @@ class MusicService {
                     this.playPrevious();
                 });
                 navigator.mediaSession.setActionHandler('nexttrack', () => {
-                    this.playNext();
+                    this.playNext(false);
                 });
                 try {
                     navigator.mediaSession.setActionHandler('seekto', (details) => {
@@ -992,7 +992,7 @@ class MusicService {
             console.warn(`[PLAYBACK_ERROR] Max retries (2) reached for track. Advancing queue.`);
             this._errorRetryCount = 0;
             if (this._playbackRequestId === currentReq) {
-                this.playNext();
+                this.playNext(true);
             }
             return;
         }
@@ -1033,7 +1033,7 @@ class MusicService {
             if (this._playbackRequestId !== currentReq) return;
             console.warn(`[PLAYBACK_ERROR] Recovery attempt ${this._errorRetryCount} failed:`, err);
             if (this._errorRetryCount >= 2) {
-                this.playNext();
+                this.playNext(true);
             }
         }
     }
@@ -1052,15 +1052,18 @@ class MusicService {
                 playPromise.catch(e => console.error("Repeat track error:", e));
             }
         } else {
-            this.playNext();
+            this.playNext(true);
         }
     }
 
     /**
      * Authoritative Sequential Queue Advancement
-     * Continuous Playlist Loop: [A, B, C, D, E] -> C -> D -> E -> A -> B -> C...
+     * Strictly respects Repeat Modes:
+     * - 'off': 0 -> 1 -> 2 -> 3 -> STOP at end of queue
+     * - 'all': 0 -> 1 -> 2 -> 3 -> 0 -> 1 (Infinite Loop)
+     * - 'one': 1 -> 1 -> 1... (Handled in handleTrackEnd)
      */
-    playNext() {
+    playNext(isAutomatic = true) {
         if (!this.queue || this.queue.length === 0) {
             this._isTransitioning = false;
             return;
@@ -1083,11 +1086,30 @@ class MusicService {
         } else if (this.currentIndex >= 0 && this.currentIndex < this.queue.length - 1) {
             nextIndex = this.currentIndex + 1;
         } else {
-            // Continuous Playlist Playback: Wrap around to index 0 when queue end is reached
-            nextIndex = 0;
+            // End of queue reached (this.currentIndex === this.queue.length - 1)
+            if (this.repeatMode === 'all') {
+                nextIndex = 0; // Continuous playlist loop
+            } else if (this.repeatMode === 'off') {
+                if (isAutomatic) {
+                    console.log(`[QUEUE_NEXT] End of queue reached with Repeat OFF. Stopping playback cleanly at index ${this.currentIndex} of ${this.queue.length} tracks.`);
+                    this._isTransitioning = false;
+                    this.isPlaying = false;
+                    this.playbackState = 'PAUSED';
+                    this.updatePlayPauseUI(false);
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.playbackState = 'paused';
+                    }
+                    this.releaseWakeLock();
+                    return;
+                } else {
+                    nextIndex = 0; // Manual user click at queue end loops to start
+                }
+            } else {
+                nextIndex = 0;
+            }
         }
 
-        console.log(`[PLAYBACK_START] playNext moving from index ${this.currentIndex} to index ${nextIndex} of ${this.queue.length} tracks.`);
+        console.log(`[QUEUE_NEXT] currentIndex=${this.currentIndex}, queueLength=${this.queue.length}, repeatMode=${this.repeatMode}, shuffleMode=${this.isShuffle}, isAutomatic=${isAutomatic}, nextIndex=${nextIndex}, nextTrack="${this.queue[nextIndex]?.title}"`);
 
         if (nextIndex !== -1 && this.queue[nextIndex]) {
             this.playSpecificTrack(this.queue[nextIndex], nextIndex);
@@ -1154,6 +1176,8 @@ class MusicService {
         } else {
             prevIndex = this.queue.length - 1;
         }
+
+        console.log(`[QUEUE_PREV] currentIndex=${this.currentIndex}, queueLength=${this.queue.length}, prevIndex=${prevIndex}, prevTrack="${this.queue[prevIndex]?.title}"`);
 
         if (prevIndex !== -1 && this.queue[prevIndex]) {
             this.playSpecificTrack(this.queue[prevIndex], prevIndex);
