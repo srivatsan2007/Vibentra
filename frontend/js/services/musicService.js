@@ -25,7 +25,7 @@ class MusicService {
 
         // Transition Locks and Generation Tracking
         this._isTransitioning = false;
-        this._playbackRequestId = 0;
+        this._playbackGeneration = 0;
         this._endedHandledForGeneration = 0;
         this._userRequestedPause = false;
         this._errorRetryCount = 0;
@@ -72,6 +72,14 @@ class MusicService {
         }
     }
 
+    get _playbackRequestId() {
+        return this._playbackGeneration;
+    }
+
+    set _playbackRequestId(val) {
+        this._playbackGeneration = val;
+    }
+
     clearTransientTimers() {
         if (this._transientTimers && this._transientTimers.length > 0) {
             this._transientTimers.forEach(id => clearTimeout(id));
@@ -79,19 +87,44 @@ class MusicService {
         }
     }
 
+    logPlayRequest(triggerTag) {
+        console.log(`[PLAY_REQUEST]`, {
+            timestamp: new Date().toISOString(),
+            trigger: triggerTag,
+            generationId: this._playbackGeneration,
+            currentTrack: this.currentTrack?.title || 'None',
+            currentIndex: this.currentIndex,
+            currentTime: (this.audioPlayer.currentTime || 0).toFixed(2),
+            paused: this.audioPlayer.paused,
+            readyState: this.audioPlayer.readyState,
+            isPlaying: this.isPlaying,
+            transitionState: this._isTransitioning
+        });
+    }
+
     async safePlay(triggerTag = 'unknown') {
+        this.logPlayRequest(triggerTag);
+
         if (this._isPlayPending) {
-            console.log(`[PLAYBACK_SAFE_PLAY] Play request ignored (${triggerTag}): play operation already pending.`);
+            console.log(`[PLAY_REQUEST] Ignored (${triggerTag}): play operation already pending for gen ${this._playbackGeneration}.`);
             return;
         }
         if (!this.audioPlayer.paused) {
+            console.log(`[PLAY_REQUEST] Ignored (${triggerTag}): audio element is already playing.`);
             return;
         }
+
+        const currentGen = this._playbackGeneration;
         this._isPlayPending = true;
         try {
             await this.audioPlayer.play();
+            if (this._playbackGeneration === currentGen) {
+                console.log(`[TRACK_PLAYING] Gen ${currentGen}: Playback active for "${this.currentTrack?.title}"`);
+            }
         } catch (err) {
-            console.warn(`[PLAYBACK_SAFE_PLAY] Play failed (${triggerTag}):`, err);
+            if (this._playbackGeneration === currentGen) {
+                console.warn(`[PLAY_REQUEST] Play failed (${triggerTag}) for gen ${currentGen}:`, err);
+            }
             throw err;
         } finally {
             this._isPlayPending = false;
@@ -111,18 +144,19 @@ class MusicService {
     setupAudioEventListeners() {
         // 1. ENDED: Authoritative track completion signal
         this.audioPlayer.addEventListener('ended', () => {
-            console.log(`[PLAYBACK_ENDED] Track completed. Gen: ${this._playbackRequestId}, Track: ${this.currentTrack?.title}`);
+            const currentGen = this._playbackGeneration;
+            console.log(`[TRACK_END] Gen ${currentGen}: Track finished. Title: "${this.currentTrack?.title}"`);
             this.clearTransientTimers();
-            if (this._endedHandledForGeneration === this._playbackRequestId || this._isTransitioning) {
-                console.log(`[PLAYBACK_ENDED] Transition lock active or queue advancement already handled for generation ${this._playbackRequestId}. Skipping duplicate.`);
+            if (this._endedHandledForGeneration === currentGen || this._isTransitioning) {
+                console.log(`[TRACK_END] Ignored duplicate ended signal for gen ${currentGen} (transitioning: ${this._isTransitioning}).`);
                 return;
             }
-            this._endedHandledForGeneration = this._playbackRequestId;
+            this._endedHandledForGeneration = currentGen;
             this.playbackState = 'ENDED';
-            this.handleTrackEnd();
+            this.handleTrackEnd(currentGen);
         });
 
-        // 2. TIMEUPDATE: Updates progress UI without triggering play thrashing
+        // 2. TIMEUPDATE: Updates progress UI without touching playback state
         this.audioPlayer.addEventListener('timeupdate', () => {
             if (this.playbackState === 'BUFFERING' && !this.audioPlayer.paused) {
                 this.playbackState = 'PLAYING';
@@ -137,7 +171,8 @@ class MusicService {
 
         // 4. PLAYING: Audio samples are actively rendering
         this.audioPlayer.addEventListener('playing', () => {
-            console.log(`[PLAYBACK_PLAYING] Active stream for gen ${this._playbackRequestId}: ${this.currentTrack?.title}, currentTime: ${this.audioPlayer.currentTime.toFixed(1)}s, duration: ${this.audioPlayer.duration}`);
+            const currentGen = this._playbackGeneration;
+            console.log(`[TRACK_PLAYING] Gen ${currentGen}: Rendering audio for "${this.currentTrack?.title}" at ${this.audioPlayer.currentTime.toFixed(1)}s`);
             this.clearTransientTimers();
             this._errorRetryCount = 0;
             this._isTransitioning = false;
@@ -149,7 +184,8 @@ class MusicService {
 
         // 5. PLAY: Playback requested/started
         this.audioPlayer.addEventListener('play', () => {
-            console.log(`[PLAYBACK_START] Play event for gen ${this._playbackRequestId}, track: ${this.currentTrack?.title}`);
+            const currentGen = this._playbackGeneration;
+            console.log(`[TRACK_STARTED] Gen ${currentGen}: Play event fired for "${this.currentTrack?.title}"`);
             this.clearTransientTimers();
             this._isTransitioning = false;
             this.isPlaying = true;
@@ -166,18 +202,19 @@ class MusicService {
 
         // 6. CANPLAY & CANPLAYTHROUGH: Media data buffered sufficiently
         this.audioPlayer.addEventListener('canplay', () => {
-            console.log(`[PLAYBACK_CANPLAY] ReadyState: ${this.audioPlayer.readyState}, Track: ${this.currentTrack?.title}`);
+            console.log(`[PLAYBACK_CANPLAY] Gen ${this._playbackGeneration}: readyState ${this.audioPlayer.readyState}`);
             this.checkAndResumePlayback('canplay');
         });
 
         this.audioPlayer.addEventListener('canplaythrough', () => {
-            console.log(`[PLAYBACK_CANPLAYTHROUGH] ReadyState: ${this.audioPlayer.readyState}, Track: ${this.currentTrack?.title}`);
+            console.log(`[PLAYBACK_CANPLAYTHROUGH] Gen ${this._playbackGeneration}: readyState ${this.audioPlayer.readyState}`);
             this.checkAndResumePlayback('canplaythrough');
         });
 
-        // 7. PAUSE: Investigates exact caller and cause of pause
+        // 7. PAUSE: State machine pause handler
         this.audioPlayer.addEventListener('pause', () => {
-            console.log(`[PLAYBACK_PAUSE] Audio element paused. userRequestedPause: ${this._userRequestedPause}, isTransitioning: ${this._isTransitioning}, ended: ${this.audioPlayer.ended}`);
+            const currentGen = this._playbackGeneration;
+            console.log(`[PLAYBACK_PAUSE] Gen ${currentGen}: Audio element paused. userRequestedPause: ${this._userRequestedPause}, isTransitioning: ${this._isTransitioning}, ended: ${this.audioPlayer.ended}`);
 
             if (this._isTransitioning) return;
 
@@ -191,63 +228,59 @@ class MusicService {
                 }
                 this.releaseWakeLock();
             } else {
-                // Transient / unexpected audio element pause (e.g. background power save, packet arrival delay)
-                console.warn("[PLAYBACK_BUFFER] Transient audio pause detected. Maintaining isPlaying state and scheduling multi-phase data checks...");
+                console.log(`[TRACK_BUFFERING] Gen ${currentGen}: Unexpected pause detected. Setting state to BUFFERING...`);
                 this.playbackState = 'BUFFERING';
 
                 this.clearTransientTimers();
-                const currentReq = this._playbackRequestId;
-                const delays = [300, 800, 1800, 3500];
-                delays.forEach(delay => {
-                    const timerId = setTimeout(() => {
-                        if (this._playbackRequestId === currentReq && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning) {
-                            if (this.audioPlayer.readyState >= 2) {
-                                console.log(`[PLAYBACK_BUFFER] Auto-resuming transient audio pause at +${delay}ms...`);
-                                this.safePlay(`transient_pause_+${delay}ms`).catch(err => {
-                                    console.warn(`[PLAYBACK_BUFFER] Auto-resume failed at +${delay}ms:`, err);
-                                });
-                            } else if (delay === 3500 && this.currentTrack) {
-                                console.warn(`[PLAYBACK_BUFFER] Stream stalled for >3.5s at readyState ${this.audioPlayer.readyState}. Initiating non-destructive recovery...`);
-                                this.recoverCurrentTrack(currentReq);
-                            }
+                const timerId = setTimeout(() => {
+                    if (this._playbackGeneration === currentGen && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning) {
+                        if (this.audioPlayer.readyState >= 2) {
+                            console.log(`[TRACK_BUFFERING] Gen ${currentGen}: Auto-resuming after pause...`);
+                            this.safePlay('transient_pause_recovery').catch(err => {
+                                console.warn(`[TRACK_BUFFERING] Gen ${currentGen}: Auto-resume failed:`, err);
+                            });
                         }
-                    }, delay);
-                    this._transientTimers.push(timerId);
-                });
+                    }
+                }, 500);
+                this._transientTimers.push(timerId);
             }
         });
 
-        // 8. WAITING: Temporary lack of media data (buffering)
+        // 8. WAITING: Temporary lack of media data
         this.audioPlayer.addEventListener('waiting', () => {
-            console.log(`[PLAYBACK_WAITING] Media buffering for ${this.currentTrack?.title}, readyState: ${this.audioPlayer.readyState}, networkState: ${this.audioPlayer.networkState}`);
+            const currentGen = this._playbackGeneration;
+            console.log(`[TRACK_BUFFERING] Gen ${currentGen}: Media waiting for data, readyState: ${this.audioPlayer.readyState}`);
             if (!this._userRequestedPause && !this._isTransitioning) {
                 this.playbackState = 'BUFFERING';
             }
         });
 
-        // 9. STALLED: Browser is trying to fetch media data, but data is temporarily not arriving
+        // 9. STALLED: Browser fetching stalled
         this.audioPlayer.addEventListener('stalled', () => {
-            console.warn(`[PLAYBACK_STALLED] Media data stalled for ${this.currentTrack?.title}, readyState: ${this.audioPlayer.readyState}`);
+            const currentGen = this._playbackGeneration;
+            console.log(`[TRACK_BUFFERING] Gen ${currentGen}: Media data stalled, readyState: ${this.audioPlayer.readyState}`);
             if (!this._userRequestedPause && !this._isTransitioning) {
                 this.playbackState = 'BUFFERING';
             }
         });
 
-        // 10. ERROR: Detailed diagnostic logging for network or decode failures
+        // 10. ERROR: Diagnostic logging for network or decode failures
         this.audioPlayer.addEventListener('error', () => {
+            const currentGen = this._playbackGeneration;
             const err = this.audioPlayer.error;
-            console.error(`[PLAYBACK_ERROR] Diagnostics:`, {
+            console.error(`[PLAYBACK_ERROR] Gen ${currentGen} Diagnostics:`, {
                 code: err?.code,
                 message: err?.message,
-                networkState: this.audioPlayer.networkState,
                 readyState: this.audioPlayer.readyState,
                 currentTime: this.audioPlayer.currentTime,
-                duration: this.audioPlayer.duration,
-                src: this.audioPlayer.src,
-                trackId: this.currentTrack?.id,
-                trackTitle: this.currentTrack?.title,
-                requestId: this._playbackRequestId
+                src: this.audioPlayer.src
             });
+
+            if (this.currentTrack && !this._userRequestedPause && !this._isTransitioning) {
+                this.recoverCurrentTrack(currentGen);
+            }
+        });
+    }
 
             if (this.currentTrack && !this._userRequestedPause && !this._isTransitioning) {
                 this.recoverCurrentTrack(this._playbackRequestId);
@@ -1091,16 +1124,19 @@ class MusicService {
     /**
      * Authoritative Normal Song Completion Handler
      */
-    handleTrackEnd() {
+    handleTrackEnd(expectedGen = null) {
+        const currentGen = expectedGen || this._playbackGeneration;
+        if (currentGen !== this._playbackGeneration) {
+            console.log(`[TRACK_END] Ignored stale handleTrackEnd call for gen ${currentGen} (current gen: ${this._playbackGeneration}).`);
+            return;
+        }
+
         this.audioPlayer.loop = false;
-        console.log(`[PLAYBACK_ENDED] handleTrackEnd. Gen: ${this._playbackRequestId}, Index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
+        console.log(`[TRACK_END] Gen ${currentGen}: Processing completion. Index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
 
         if (this.repeatMode === 'one') {
             this.audioPlayer.currentTime = 0;
-            const playPromise = this.audioPlayer.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(e => console.error("Repeat track error:", e));
-            }
+            this.safePlay('repeat_one').catch(e => console.error("Repeat ONE play error:", e));
         } else {
             this.playNext(true);
         }
@@ -1133,35 +1169,39 @@ class MusicService {
             } else {
                 nextIndex = 0;
             }
-        } else if (this.currentIndex >= 0 && this.currentIndex < this.queue.length - 1) {
-            nextIndex = this.currentIndex + 1;
         } else {
-            // End of queue reached (this.currentIndex === this.queue.length - 1)
-            if (this.repeatMode === 'all') {
-                nextIndex = 0; // Continuous playlist loop
-            } else if (this.repeatMode === 'off') {
-                if (isAutomatic) {
-                    console.log(`[QUEUE_NEXT] End of queue reached with Repeat OFF. Stopping playback cleanly at index ${this.currentIndex} of ${this.queue.length} tracks.`);
-                    this._isTransitioning = false;
-                    this.isPlaying = false;
-                    this.playbackState = 'PAUSED';
-                    this.updatePlayPauseUI(false);
-                    if ('mediaSession' in navigator) {
-                        navigator.mediaSession.playbackState = 'paused';
-                    }
-                    this.releaseWakeLock();
-                    return;
-                } else {
-                    nextIndex = 0; // Manual user click at queue end loops to start
-                }
+            const validCurrentIndex = (this.currentIndex >= 0 && this.currentIndex < this.queue.length) ? this.currentIndex : 0;
+
+            if (validCurrentIndex < this.queue.length - 1) {
+                nextIndex = validCurrentIndex + 1;
             } else {
-                nextIndex = 0;
+                // Reached end of queue (validCurrentIndex === queue.length - 1)
+                if (this.repeatMode === 'all') {
+                    nextIndex = 0;
+                } else if (this.repeatMode === 'off') {
+                    if (isAutomatic) {
+                        console.log(`[TRACK_TRANSITION] Reached end of queue with Repeat OFF (index ${validCurrentIndex} of ${this.queue.length}). Stopping playback.`);
+                        this._isTransitioning = false;
+                        this.isPlaying = false;
+                        this.playbackState = 'PAUSED';
+                        this.updatePlayPauseUI(false);
+                        if ('mediaSession' in navigator) {
+                            navigator.mediaSession.playbackState = 'paused';
+                        }
+                        this.releaseWakeLock();
+                        return;
+                    } else {
+                        nextIndex = 0;
+                    }
+                } else {
+                    nextIndex = 0;
+                }
             }
         }
 
-        console.log(`[QUEUE_NEXT] currentIndex=${this.currentIndex}, queueLength=${this.queue.length}, repeatMode=${this.repeatMode}, shuffleMode=${this.isShuffle}, isAutomatic=${isAutomatic}, nextIndex=${nextIndex}, nextTrack="${this.queue[nextIndex]?.title}"`);
+        console.log(`[TRACK_TRANSITION] Gen ${this._playbackGeneration}: Advancing queue from index ${this.currentIndex} to ${nextIndex} ("${this.queue[nextIndex]?.title}") [Automatic: ${isAutomatic}, Repeat: ${this.repeatMode}]`);
 
-        if (nextIndex !== -1 && this.queue[nextIndex]) {
+        if (nextIndex >= 0 && nextIndex < this.queue.length) {
             this.playSpecificTrack(this.queue[nextIndex], nextIndex);
         } else {
             this._isTransitioning = false;
