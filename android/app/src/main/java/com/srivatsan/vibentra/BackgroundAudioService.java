@@ -54,6 +54,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     private String currentCoverUrl = "";
     private boolean isPlaying = false;
     private boolean resumeOnFocusGain = false;
+    private boolean wasPlayingBeforeCall = false;
     private Bitmap coverBitmap = null;
 
     private final BroadcastReceiver noisyReceiver = new BroadcastReceiver() {
@@ -79,13 +80,19 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
                 Log.d(TAG, "PHONE_STATE_CHANGED: " + state);
                 if (TelephonyManager.EXTRA_STATE_RINGING.equals(state) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state)) {
-                    if (isPlaying) {
+                    Log.d(TAG, "PHONE_CALL_ACTIVE: Incoming/Active call detected. Pausing audio...");
+                    if (isPlaying || resumeOnFocusGain) {
+                        wasPlayingBeforeCall = true;
                         resumeOnFocusGain = true;
+                        isPlaying = false;
                         BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                     }
                 } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
-                    if (resumeOnFocusGain) {
+                    Log.d(TAG, "PHONE_CALL_ENDED: Call ended. Resuming audio...");
+                    if (wasPlayingBeforeCall || resumeOnFocusGain) {
+                        wasPlayingBeforeCall = false;
                         resumeOnFocusGain = false;
+                        isPlaying = true;
                         BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
                     }
                 }
