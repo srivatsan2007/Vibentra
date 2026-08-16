@@ -21,6 +21,7 @@ import android.os.PowerManager;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
@@ -30,6 +31,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class BackgroundAudioService extends Service implements AudioManager.OnAudioFocusChangeListener {
+    private static final String TAG = "VibentraBackgroundService";
+
     public static final String CHANNEL_ID = "vibentra_media_channel";
     public static final int NOTIFICATION_ID = 8881;
 
@@ -56,6 +59,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         public void onReceive(Context context, Intent intent) {
             try {
                 if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                    Log.d(TAG, "AUDIO_BECOMING_NOISY: Headset unplugged, pausing audio.");
                     if (isPlaying) {
                         BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                     }
@@ -71,6 +75,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         public void onReceive(Context context, Intent intent) {
             try {
                 String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+                Log.d(TAG, "PHONE_STATE_CHANGED: " + state);
                 if (TelephonyManager.EXTRA_STATE_RINGING.equals(state) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state)) {
                     if (isPlaying) {
                         resumeOnFocusGain = true;
@@ -91,6 +96,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "SERVICE_CREATED");
         try {
             createNotificationChannel();
 
@@ -107,26 +113,32 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             mediaSession.setCallback(new MediaSessionCompat.Callback() {
                 @Override
                 public void onPlay() {
+                    Log.d(TAG, "MEDIA_SESSION_ACTION: onPlay");
                     BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
                 }
                 @Override
                 public void onPause() {
+                    Log.d(TAG, "MEDIA_SESSION_ACTION: onPause");
                     BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                 }
                 @Override
                 public void onSkipToNext() {
+                    Log.d(TAG, "MEDIA_SESSION_ACTION: onSkipToNext");
                     BackgroundAudioPlugin.handleMediaAction(ACTION_NEXT);
                 }
                 @Override
                 public void onSkipToPrevious() {
+                    Log.d(TAG, "MEDIA_SESSION_ACTION: onSkipToPrevious");
                     BackgroundAudioPlugin.handleMediaAction(ACTION_PREVIOUS);
                 }
                 @Override
                 public void onStop() {
+                    Log.d(TAG, "MEDIA_SESSION_ACTION: onStop");
                     BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                 }
             });
             mediaSession.setActive(true);
+            Log.d(TAG, "MEDIA_SESSION_ACTIVE: VibentraMediaSession active.");
 
             try {
                 registerReceiver(noisyReceiver, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
@@ -156,6 +168,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             } else {
                 audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
             }
+            Log.d(TAG, "AUDIO_FOCUS_REQUESTED");
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -169,6 +182,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             } else {
                 audioManager.abandonAudioFocus(this);
             }
+            Log.d(TAG, "AUDIO_FOCUS_ABANDONED");
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -177,6 +191,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     @Override
     public void onAudioFocusChange(int focusChange) {
         try {
+            Log.d(TAG, "AUDIO_FOCUS_CHANGE: " + focusChange);
             switch (focusChange) {
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
@@ -207,6 +222,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "SERVICE_STARTED with intent action: " + (intent != null ? intent.getAction() : "null"));
         try {
             if (intent != null && intent.getAction() != null) {
                 String action = intent.getAction();
@@ -241,12 +257,14 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 if (wakeLock != null && !wakeLock.isHeld()) {
                     try {
                         wakeLock.acquire(10 * 60 * 60 * 1000L /* 10 hours max */);
+                        Log.d(TAG, "WAKE_LOCK_ACQUIRED");
                     } catch (Throwable t) {}
                 }
             } else {
                 if (wakeLock != null && wakeLock.isHeld()) {
                     try {
                         wakeLock.release();
+                        Log.d(TAG, "WAKE_LOCK_RELEASED");
                     } catch (Throwable t) {}
                 }
             }
@@ -269,8 +287,8 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
+        Log.d(TAG, "TASK_REMOVED: Ensuring foreground media playback service remains active.");
         try {
-            // Keep background foreground service running even if activity task is removed from recent apps
             if (isPlaying) {
                 Notification notification = buildNotification();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -369,7 +387,6 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                     }
                 }
             } catch (Throwable t) {
-                // Catch all exceptions AND OutOfMemoryErrors to prevent process termination
                 t.printStackTrace();
             }
         }).start();
@@ -395,6 +412,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
 
     @Override
     public void onDestroy() {
+        Log.d(TAG, "SERVICE_DESTROYED");
         try {
             unregisterReceiver(noisyReceiver);
             unregisterReceiver(callReceiver);
@@ -403,6 +421,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         if (wakeLock != null && wakeLock.isHeld()) {
             try {
                 wakeLock.release();
+                Log.d(TAG, "WAKE_LOCK_RELEASED");
             } catch (Throwable t) {}
         }
         if (mediaSession != null) {

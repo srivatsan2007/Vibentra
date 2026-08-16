@@ -62,10 +62,10 @@ class MusicService {
         // Network Reconnection Handler
         if (typeof window !== 'undefined') {
             window.addEventListener('online', () => {
-                console.log("[Vibentra Player] Network connection restored.");
-                if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.paused) {
+                console.log("[PLAYBACK_ONLINE] Network connection restored.");
+                if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.paused && this.audioPlayer.readyState >= 2) {
                     this.audioPlayer.play().catch(err => {
-                        console.warn("[Vibentra Player] Online auto-resume warning:", err);
+                        console.warn("[PLAYBACK_ONLINE] Online auto-resume warning:", err);
                     });
                 }
             });
@@ -75,9 +75,9 @@ class MusicService {
     setupAudioEventListeners() {
         // 1. ENDED: Authoritative track completion signal
         this.audioPlayer.addEventListener('ended', () => {
-            console.log(`[Vibentra Event: ended] Track completed. Gen: ${this._playbackRequestId}, Track: ${this.currentTrack?.title}`);
+            console.log(`[PLAYBACK_ENDED] Track completed. Gen: ${this._playbackRequestId}, Track: ${this.currentTrack?.title}`);
             if (this._endedHandledForGeneration === this._playbackRequestId || this._isTransitioning) {
-                console.log(`[Vibentra Event: ended] Transition lock active or queue advancement already handled for generation ${this._playbackRequestId}. Skipping duplicate.`);
+                console.log(`[PLAYBACK_ENDED] Transition lock active or queue advancement already handled for generation ${this._playbackRequestId}. Skipping duplicate.`);
                 return;
             }
             this._endedHandledForGeneration = this._playbackRequestId;
@@ -95,7 +95,7 @@ class MusicService {
 
         // 3. PLAYING: Audio samples are actively rendering
         this.audioPlayer.addEventListener('playing', () => {
-            console.log(`[Vibentra Event: playing] Active stream for gen ${this._playbackRequestId}: ${this.currentTrack?.title}`);
+            console.log(`[PLAYBACK_PLAYING] Active stream for gen ${this._playbackRequestId}: ${this.currentTrack?.title}, currentTime: ${this.audioPlayer.currentTime.toFixed(1)}s, duration: ${this.audioPlayer.duration}`);
             this._errorRetryCount = 0;
             this._isTransitioning = false;
             this.isPlaying = true;
@@ -106,7 +106,7 @@ class MusicService {
 
         // 4. PLAY: Playback requested/started
         this.audioPlayer.addEventListener('play', () => {
-            console.log(`[Vibentra Event: play] Play event for gen ${this._playbackRequestId}`);
+            console.log(`[PLAYBACK_START] Play event for gen ${this._playbackRequestId}, track: ${this.currentTrack?.title}`);
             this._isTransitioning = false;
             this.isPlaying = true;
             if (this.playbackState !== 'PLAYING') {
@@ -120,9 +120,21 @@ class MusicService {
             this.requestWakeLock();
         });
 
-        // 5. PAUSE: Investigates exact caller and cause of pause
+        // 5. CANPLAY & CANPLAYTHROUGH: Media data buffered sufficiently
+        this.audioPlayer.addEventListener('canplay', () => {
+            console.log(`[PLAYBACK_CANPLAY] ReadyState: ${this.audioPlayer.readyState}, Track: ${this.currentTrack?.title}`);
+            if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
+                this.audioPlayer.play().catch(err => console.warn("[PLAYBACK_CANPLAY] Resume warning:", err));
+            }
+        });
+
+        this.audioPlayer.addEventListener('canplaythrough', () => {
+            console.log(`[PLAYBACK_CANPLAYTHROUGH] ReadyState: ${this.audioPlayer.readyState}, Track: ${this.currentTrack?.title}`);
+        });
+
+        // 6. PAUSE: Investigates exact caller and cause of pause
         this.audioPlayer.addEventListener('pause', () => {
-            console.log(`[Vibentra Event: pause] Audio element paused. userRequestedPause: ${this._userRequestedPause}, isTransitioning: ${this._isTransitioning}, ended: ${this.audioPlayer.ended}`);
+            console.log(`[PLAYBACK_PAUSE] Audio element paused. userRequestedPause: ${this._userRequestedPause}, isTransitioning: ${this._isTransitioning}, ended: ${this.audioPlayer.ended}`);
 
             if (this._isTransitioning) return;
 
@@ -136,41 +148,41 @@ class MusicService {
                 this.releaseWakeLock();
             } else {
                 // Transient / unexpected audio element pause (e.g. background power save, transient OS focus ducking)
-                console.warn("[Vibentra Event: pause] Transient audio pause detected. Maintaining isPlaying state and checking auto-recovery...");
+                console.warn("[PLAYBACK_BUFFER] Transient audio pause detected. Maintaining isPlaying state and checking auto-recovery...");
                 this.playbackState = 'BUFFERING';
 
                 const currentReq = this._playbackRequestId;
                 setTimeout(() => {
-                    if (this._playbackRequestId === currentReq && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning) {
-                        console.log("[Vibentra Event: pause] Auto-resuming transient audio pause...");
+                    if (this._playbackRequestId === currentReq && this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
+                        console.log("[PLAYBACK_BUFFER] Auto-resuming transient audio pause...");
                         this.audioPlayer.play().catch(err => {
-                            console.warn("[Vibentra Event: pause] Auto-resume failed:", err);
+                            console.warn("[PLAYBACK_BUFFER] Auto-resume failed:", err);
                         });
                     }
                 }, 300);
             }
         });
 
-        // 6. WAITING: Temporary lack of media data (buffering)
+        // 7. WAITING: Temporary lack of media data (buffering)
         this.audioPlayer.addEventListener('waiting', () => {
-            console.log(`[Vibentra Event: waiting] Media buffering for ${this.currentTrack?.title}...`);
+            console.log(`[PLAYBACK_WAITING] Media buffering for ${this.currentTrack?.title}, readyState: ${this.audioPlayer.readyState}, networkState: ${this.audioPlayer.networkState}`);
             if (!this._userRequestedPause && !this._isTransitioning) {
                 this.playbackState = 'BUFFERING';
             }
         });
 
-        // 7. STALLED: Browser is trying to fetch media data, but data is temporarily not arriving
+        // 8. STALLED: Browser is trying to fetch media data, but data is temporarily not arriving
         this.audioPlayer.addEventListener('stalled', () => {
-            console.warn(`[Vibentra Event: stalled] Media data stalled for ${this.currentTrack?.title}...`);
+            console.warn(`[PLAYBACK_STALLED] Media data stalled for ${this.currentTrack?.title}, readyState: ${this.audioPlayer.readyState}`);
             if (!this._userRequestedPause && !this._isTransitioning) {
                 this.playbackState = 'BUFFERING';
             }
         });
 
-        // 8. ERROR: Detailed diagnostic logging for network or decode failures
+        // 9. ERROR: Detailed diagnostic logging for network or decode failures
         this.audioPlayer.addEventListener('error', () => {
             const err = this.audioPlayer.error;
-            console.error(`[Vibentra Event: error] Diagnostics:`, {
+            console.error(`[PLAYBACK_ERROR] Diagnostics:`, {
                 code: err?.code,
                 message: err?.message,
                 networkState: this.audioPlayer.networkState,
@@ -198,7 +210,7 @@ class MusicService {
                 });
             }
         } catch (err) {
-            console.warn(`Wake Lock error: ${err.name}, ${err.message}`);
+            console.warn(`Wake Lock warning: ${err.name}, ${err.message}`);
         }
     }
 
@@ -210,26 +222,8 @@ class MusicService {
     }
 
     initKeepAliveAudio() {
-        try {
-            if (!this.keepAliveCtx) {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) {
-                    this.keepAliveCtx = new AudioCtx();
-                    this.keepAliveOsc = this.keepAliveCtx.createOscillator();
-                    this.keepAliveGain = this.keepAliveCtx.createGain();
-                    // Silent tone keeps mobile OS audio mixer process active during lockscreen background playback
-                    this.keepAliveGain.gain.value = 0.0001;
-                    this.keepAliveOsc.connect(this.keepAliveGain);
-                    this.keepAliveGain.connect(this.keepAliveCtx.destination);
-                    this.keepAliveOsc.start();
-                }
-            }
-            if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
-                this.keepAliveCtx.resume().catch(() => {});
-            }
-        } catch (e) {
-            console.warn("KeepAlive audio warning:", e);
-        }
+        // Native Android BackgroundAudioService manages CPU wakefulness and process priority natively.
+        // No redundant WebAudio oscillator needed to avoid buffer underrun mixing stutter.
     }
 
     initUI() {
@@ -789,7 +783,7 @@ class MusicService {
         this.playbackState = 'LOADING';
         this.audioPlayer.loop = false;
 
-        console.log(`[Vibentra Play] Initiating playback for gen ${requestId}: "${track.title}" (Queue index: ${queueIndex})`);
+        console.log(`[PLAYBACK_START] Initiating playback for gen ${requestId}: "${track.title}" (Queue index: ${queueIndex})`);
 
         // Synchronously pause current audio to prevent buffer bleeding
         try {
@@ -827,13 +821,13 @@ class MusicService {
                 const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
                 fullTrack = (await providerManager.getTrack(providerId, track.id)) || track;
             } catch(err) {
-                console.warn(`[Vibentra Play] Stream URL fetch warning for gen ${requestId}:`, err);
+                console.warn(`[PLAYBACK_ERROR] Stream URL fetch warning for gen ${requestId}:`, err);
             }
         }
 
         // Verify request generation is still current
         if (this._playbackRequestId !== requestId) {
-            console.log(`[Vibentra Play] Request ${requestId} superseded by request ${this._playbackRequestId}. Aborting.`);
+            console.log(`[PLAYBACK_START] Request ${requestId} superseded by request ${this._playbackRequestId}. Aborting.`);
             return;
         }
 
@@ -876,7 +870,7 @@ class MusicService {
             } catch (e) {
                 if (this._playbackRequestId !== requestId) return;
                 this._isTransitioning = false;
-                console.error(`[Vibentra Play] Play promise rejected for gen ${requestId}:`, e);
+                console.error(`[PLAYBACK_ERROR] Play promise rejected for gen ${requestId}:`, e);
 
                 // Safe lockscreen retry for active generation
                 if (fullTrack.streamUrl) {
@@ -891,7 +885,7 @@ class MusicService {
                                 }
                             } catch (retryErr) {
                                 if (this._playbackRequestId !== requestId) return;
-                                console.warn(`[Vibentra Play] Retry failed for gen ${requestId}:`, retryErr);
+                                console.warn(`[PLAYBACK_ERROR] Retry failed for gen ${requestId}:`, retryErr);
                                 this.recoverCurrentTrack(requestId);
                             }
                         }
@@ -899,7 +893,7 @@ class MusicService {
                 }
             }
         } else {
-            console.warn(`[Vibentra Play] No stream URL for ${fullTrack.title}. Skipping safely...`);
+            console.warn(`[PLAYBACK_ERROR] No stream URL for ${fullTrack.title}. Skipping safely...`);
             this._isTransitioning = false;
             if (this._playbackRequestId === requestId) {
                 this.playNext();
@@ -969,7 +963,7 @@ class MusicService {
                     });
                 }
             } catch (e) {
-                console.warn("MediaSession error:", e);
+                console.warn("MediaSession warning:", e);
             }
         }
 
@@ -983,7 +977,7 @@ class MusicService {
                 });
             }
         } catch (e) {
-            console.warn("BackgroundAudio service error:", e);
+            console.warn("BackgroundAudio service warning:", e);
         }
     }
 
@@ -995,7 +989,7 @@ class MusicService {
         if (this._playbackRequestId !== currentReq || !this.currentTrack || this._userRequestedPause) return;
 
         if (this._errorRetryCount >= 2) {
-            console.warn(`[Vibentra Recovery] Max retries (2) reached for track. Advancing queue.`);
+            console.warn(`[PLAYBACK_ERROR] Max retries (2) reached for track. Advancing queue.`);
             this._errorRetryCount = 0;
             if (this._playbackRequestId === currentReq) {
                 this.playNext();
@@ -1005,7 +999,7 @@ class MusicService {
 
         this._errorRetryCount++;
         const resumeTime = this.audioPlayer.currentTime || 0;
-        console.log(`[Vibentra Recovery] Attempting same-song recovery at ${resumeTime.toFixed(1)}s (Attempt ${this._errorRetryCount}/2 for gen ${currentReq})...`);
+        console.log(`[PLAYBACK_ERROR] Attempting same-song recovery at ${resumeTime.toFixed(1)}s (Attempt ${this._errorRetryCount}/2 for gen ${currentReq})...`);
 
         try {
             const providerId = this.currentTrack.providerId || (this.currentTrack.provider === 'YouTube Music' || this.currentTrack.provider === 'ytmusic' ? 'ytmusic' : 'jiosaavn');
@@ -1030,14 +1024,14 @@ class MusicService {
                     this.isPlaying = true;
                     this.playbackState = 'PLAYING';
                     this.updatePlayPauseUI(true);
-                    console.log("[Vibentra Recovery] Same-song recovery succeeded!");
+                    console.log("[PLAYBACK_PLAYING] Same-song recovery succeeded!");
                 }
             } else {
                 throw new Error("No valid stream URL from provider");
             }
         } catch (err) {
             if (this._playbackRequestId !== currentReq) return;
-            console.warn(`[Vibentra Recovery] Recovery attempt ${this._errorRetryCount} failed:`, err);
+            console.warn(`[PLAYBACK_ERROR] Recovery attempt ${this._errorRetryCount} failed:`, err);
             if (this._errorRetryCount >= 2) {
                 this.playNext();
             }
@@ -1049,7 +1043,7 @@ class MusicService {
      */
     handleTrackEnd() {
         this.audioPlayer.loop = false;
-        console.log(`[Vibentra Player] handleTrackEnd. Gen: ${this._playbackRequestId}, Index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
+        console.log(`[PLAYBACK_ENDED] handleTrackEnd. Gen: ${this._playbackRequestId}, Index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
 
         if (this.repeatMode === 'one') {
             this.audioPlayer.currentTime = 0;
@@ -1093,7 +1087,7 @@ class MusicService {
             nextIndex = 0;
         }
 
-        console.log(`[Vibentra playNext] Moving from index ${this.currentIndex} to index ${nextIndex} of ${this.queue.length} tracks.`);
+        console.log(`[PLAYBACK_START] playNext moving from index ${this.currentIndex} to index ${nextIndex} of ${this.queue.length} tracks.`);
 
         if (nextIndex !== -1 && this.queue[nextIndex]) {
             this.playSpecificTrack(this.queue[nextIndex], nextIndex);
@@ -1309,7 +1303,7 @@ class MusicService {
                 });
             }
         } catch (e) {
-            console.warn("BackgroundAudio play/pause sync error:", e);
+            console.warn("BackgroundAudio play/pause sync warning:", e);
         }
     }
 
