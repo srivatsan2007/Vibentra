@@ -35,7 +35,6 @@ class MusicService {
 
         // Single Authoritative Audio Element
         this.audioPlayer = new Audio();
-        this.audioPlayer.crossOrigin = "anonymous";
         this.audioPlayer.preload = 'auto';
         this.audioPlayer.playsInline = true;
         this.audioPlayer.loop = false;
@@ -44,6 +43,16 @@ class MusicService {
 
         // Controlled Event Handlers for Single HTML Audio Element
         this.setupAudioEventListeners();
+
+        // Heartbeat Watchdog tracking
+        this._lastPosition = 0;
+        this._stallCount = 0;
+
+        if (typeof window !== 'undefined') {
+            setInterval(() => {
+                this.checkPlaybackHeartbeat();
+            }, 2500);
+        }
 
         // Capacitor Native MediaAction listener
         if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
@@ -139,6 +148,48 @@ class MusicService {
             console.log(`[PLAYBACK_AUTO_RESUME] Resume triggered by ${eventTag}. ReadyState: ${this.audioPlayer.readyState}, Track: "${this.currentTrack?.title}" at ${this.audioPlayer.currentTime.toFixed(1)}s`);
             this.safePlay(eventTag).catch(() => {});
         }
+    }
+
+    checkPlaybackHeartbeat() {
+        if (!this.isPlaying || this._userRequestedPause || this._isTransitioning || !this.currentTrack) {
+            this._lastPosition = 0;
+            this._stallCount = 0;
+            return;
+        }
+
+        const currentGen = this._playbackGeneration;
+        const currentPos = this.audioPlayer.currentTime || 0;
+
+        // 1. Recover if audio element is unexpectedly paused while state is playing
+        if (this.audioPlayer.paused && !this.audioPlayer.ended) {
+            console.warn(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Audio unexpectedly paused. Triggering resume...`);
+            this.safePlay('heartbeat_auto_resume').catch(() => {
+                if (this.audioPlayer.readyState < 2) {
+                    this.recoverCurrentTrack(currentGen);
+                }
+            });
+            return;
+        }
+
+        // 2. Detect frozen playback position mid-track (buffering/stream stall)
+        if (this.audioPlayer.duration && currentPos > 0 && currentPos < (this.audioPlayer.duration - 1)) {
+            if (Math.abs(currentPos - this._lastPosition) < 0.1) {
+                this._stallCount++;
+                console.warn(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Stream frozen at ${currentPos.toFixed(1)}s (${this._stallCount}/3)`);
+
+                if (this._stallCount === 2) {
+                    this.safePlay('heartbeat_stall_recovery').catch(() => {});
+                } else if (this._stallCount >= 3) {
+                    console.error(`[HEARTBEAT_WATCHDOG] Gen ${currentGen}: Severe stream stall detected. Fetching fresh CDN stream...`);
+                    this._stallCount = 0;
+                    this.recoverCurrentTrack(currentGen);
+                }
+            } else {
+                this._stallCount = 0;
+            }
+        }
+
+        this._lastPosition = currentPos;
     }
 
     setupAudioEventListeners() {
