@@ -6,22 +6,6 @@
       "destination": "/backend/server.js"
     },
     {
-      "source": "/portfolio/(.*)",
-      "destination": "/Portfolio/$1"
-    },
-    {
-      "source": "/portfolio",
-      "destination": "/Portfolio/index.html"
-    },
-    {
-      "source": "/Portfolio/(.*)",
-      "destination": "/Portfolio/$1"
-    },
-    {
-      "source": "/Portfolio",
-      "destination": "/Portfolio/index.html"
-    },
-    {
       "source": "/(.*)",
       "destination": "/frontend/$1"
     }
