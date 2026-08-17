@@ -1518,17 +1518,41 @@ const initHome = () => {
         document.getElementById('headerEditPlBtn')?.addEventListener('click', openEditModal);
         document.getElementById('chipEditBtn')?.addEventListener('click', openEditModal);
 
-        // Play All
-        document.getElementById('playAllPlBtn')?.addEventListener('click', () => {
-            if (pl.tracks.length === 0) return;
-            musicService.playContext(pl.tracks, pl.tracks[0]);
-        });
+        // Play All / Toggle Play-Pause
+        const playAllBtn = document.getElementById('playAllPlBtn');
+        if (playAllBtn) {
+            const isPlayingThisPl = musicService.currentTrack && pl.tracks.some(t => String(t.id) === String(musicService.currentTrack.id));
+            if (isPlayingThisPl && musicService.isPlaying) {
+                playAllBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            } else {
+                playAllBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            }
+
+            playAllBtn.addEventListener('click', () => {
+                if (pl.tracks.length === 0) {
+                    showNotification('No songs in playlist to play', 'info');
+                    return;
+                }
+                const isCurrentPlayingInPl = musicService.currentTrack && pl.tracks.some(t => String(t.id) === String(musicService.currentTrack.id));
+                if (isCurrentPlayingInPl) {
+                    musicService.togglePlayPause();
+                    playAllBtn.innerHTML = musicService.isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+                } else {
+                    musicService.playContext(pl.tracks, pl.tracks[0]);
+                    playAllBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                }
+            });
+        }
 
         // Shuffle
         document.getElementById('shufflePlBtn')?.addEventListener('click', () => {
-            if (pl.tracks.length === 0) return;
+            if (pl.tracks.length === 0) {
+                showNotification('No songs in playlist to shuffle', 'info');
+                return;
+            }
             const shuffled = [...pl.tracks].sort(() => Math.random() - 0.5);
             musicService.playContext(shuffled, shuffled[0]);
+            if (playAllBtn) playAllBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
             showNotification('Shuffling playlist playback', 'info');
         });
 
@@ -1548,6 +1572,8 @@ const initHome = () => {
         const triggerAddSongs = () => {
             const searchNav = document.querySelector('.nav-item[data-path="search"]');
             if (searchNav) searchNav.click();
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.focus();
             showNotification('Search songs to add to your playlist!', 'info');
         };
         document.getElementById('addSongsPlBtn')?.addEventListener('click', triggerAddSongs);
@@ -1562,6 +1588,25 @@ const initHome = () => {
                 showNotification('Playlist link copied to clipboard!', 'success');
             } else {
                 showNotification('Playlist sharing link ready!', 'info');
+            }
+        });
+
+        // More Options Dropdown Button (...)
+        document.getElementById('morePlOptionsBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const option = prompt(`Playlist Options for "${pl.name}":\n\n1. Edit Name & Description\n2. Download All Songs\n3. Shuffle Play\n4. Delete Playlist\n\nEnter option number (1-4):`);
+            if (option === '1') {
+                openEditModal();
+            } else if (option === '2') {
+                document.getElementById('downloadAllPlBtn')?.click();
+            } else if (option === '3') {
+                document.getElementById('shufflePlBtn')?.click();
+            } else if (option === '4') {
+                if (confirm(`Are you sure you want to delete playlist "${pl.name}"?`)) {
+                    playlistService.deletePlaylist(pl.id);
+                    renderPlaylists();
+                    showNotification('Playlist deleted', 'info');
+                }
             }
         });
 
@@ -1591,14 +1636,30 @@ const initHome = () => {
             });
         });
 
-        // Remove track option
+        // Track Options / Remove Button (⋮)
         document.querySelectorAll('.remove-from-pl-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const trackId = btn.getAttribute('data-id');
-                playlistService.removeTrackFromPlaylist(pl.id, trackId);
-                renderPlaylistDetail(pl.id);
-                showNotification('Track removed from playlist', 'info');
+                const track = pl.tracks.find(t => String(t.id) === String(trackId));
+                if (!track) return;
+
+                const choice = prompt(`Track Options: "${track.title}"\n\n1. ▶ Play Now\n2. 🔔 Set as Ringtone Studio\n3. ⬇ Download Track\n4. 📜 View Lyrics\n5. ➕ Add to another Playlist\n6. 🗑 Remove from Playlist\n\nEnter option (1-6):`);
+                if (choice === '1') {
+                    musicService.playContext(pl.tracks, track);
+                } else if (choice === '2') {
+                    musicService.openRingtoneModal(track);
+                } else if (choice === '3') {
+                    musicService.downloadTrack(track);
+                } else if (choice === '4') {
+                    musicService.showLyricsModal(track);
+                } else if (choice === '5') {
+                    musicService.openAddToPlaylistModal(track);
+                } else if (choice === '6') {
+                    playlistService.removeTrackFromPlaylist(pl.id, trackId);
+                    renderPlaylistDetail(pl.id);
+                    showNotification('Track removed from playlist', 'info');
+                }
             });
         });
     }
