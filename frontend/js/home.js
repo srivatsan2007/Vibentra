@@ -181,6 +181,38 @@ const initHome = () => {
         let touchMoveY = 0;
         let isPulling = false;
 
+        // Fullscreen Mode Handler
+        const triggerFullScreenMode = () => {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const docEl = document.documentElement;
+                if (docEl.requestFullscreen) {
+                    docEl.requestFullscreen().catch(() => {});
+                } else if (docEl.webkitRequestFullscreen) {
+                    docEl.webkitRequestFullscreen().catch(() => {});
+                }
+            }
+        };
+
+        const fullScreenToggleBtn = document.getElementById('fullScreenToggleBtn');
+        if (fullScreenToggleBtn) {
+            fullScreenToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                    triggerFullScreenMode();
+                    fullScreenToggleBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+                    showNotification('Entered Fullscreen Mode', 'info');
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen().catch(() => {});
+                    }
+                    fullScreenToggleBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+                    showNotification('Exited Fullscreen Mode', 'info');
+                }
+            });
+        }
+
         const refreshIndicator = document.createElement('div');
         refreshIndicator.id = 'pullToRefreshIndicator';
         refreshIndicator.style.cssText = `
