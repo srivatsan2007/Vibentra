@@ -108,9 +108,16 @@
             'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
             'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
             'cherry': { primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: '#881337' },
-            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' }
+            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' },
+            'india': { primary: '#F97316', secondary: '#10B981', accent: '#3B82F6', background: '#0B132B', cards: 'rgba(15, 23, 42, 0.7)' }
         };
-        const theme = themes[savedTheme] || themes['default'];
+        let theme = themes[savedTheme] || themes['default'];
+        if (savedTheme === 'custom') {
+            try {
+                const customObj = JSON.parse(localStorage.getItem('vibentra_custom_theme'));
+                if (customObj && customObj.primary) theme = customObj;
+            } catch(e) {}
+        }
         document.documentElement.style.setProperty('--primary', theme.primary);
         document.documentElement.style.setProperty('--secondary', theme.secondary);
         document.documentElement.style.setProperty('--accent', theme.accent);

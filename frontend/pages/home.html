@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Vibentra">
     <meta name="theme-color" content="#0F172A">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png" type="image/png">
+    <link rel="apple-touch-icon" href="../images/icon-512.png">
+    <link rel="icon" href="../images/icon-192.png" type="image/png">
     <link rel="stylesheet" id="mainCss" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -126,9 +126,16 @@
             'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
             'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
             'cherry': { primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: '#881337' },
-            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' }
+            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' },
+            'india': { primary: '#F97316', secondary: '#10B981', accent: '#3B82F6', background: '#0B132B', cards: 'rgba(15, 23, 42, 0.7)' }
         };
-        const theme = themes[savedTheme] || themes['default'];
+        let theme = themes[savedTheme] || themes['default'];
+        if (savedTheme === 'custom') {
+            try {
+                const customObj = JSON.parse(localStorage.getItem('vibentra_custom_theme'));
+                if (customObj && customObj.primary) theme = customObj;
+            } catch(e) {}
+        }
         document.documentElement.style.setProperty('--primary', theme.primary);
         document.documentElement.style.setProperty('--secondary', theme.secondary);
         document.documentElement.style.setProperty('--accent', theme.accent);
@@ -172,7 +179,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <i class="fa-solid fa-music"></i>
+                <img src="../images/icon-192.png" alt="Vibentra Logo" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
                 <span>Vibentra</span>
             </div>
             
@@ -228,7 +235,7 @@
                         <i class="fa-solid fa-bars"></i>
                     </button>
                     <div class="mobile-logo-brand">
-                        <i class="fa-solid fa-compact-disc"></i>
+                        <img src="../images/icon-192.png" alt="Vibentra Logo" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover;">
                         <span>Vibentra</span>
                     </div>
                 </div>

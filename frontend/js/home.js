@@ -42,29 +42,48 @@ const initHome = () => {
             primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: 'rgba(24, 24, 27, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #27272A 0%, #09090B 50%, #000000 100%)',
             orb1: '#D946EF', orb2: '#8B5CF6', orb3: '#06B6D4', orb4: '#F43F5E'
+        },
+        'india': {
+            primary: '#F97316', secondary: '#10B981', accent: '#3B82F6', background: '#0B132B', cards: 'rgba(15, 23, 42, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #1E1B4B 0%, #0B132B 50%, #020617 100%)',
+            orb1: '#F97316', orb2: '#10B981', orb3: '#3B82F6', orb4: '#F97316'
         }
     };
 
-    window.applyTheme = function (themeName) {
-        const theme = themes[themeName] || themes['default'];
+    window.applyTheme = function (themeName, customObj = null) {
+        let theme;
+        if (themeName === 'custom') {
+            const savedCustom = customObj || JSON.parse(localStorage.getItem('vibentra_custom_theme') || 'null');
+            if (savedCustom && savedCustom.primary) {
+                theme = savedCustom;
+            } else {
+                theme = themes['default'];
+            }
+        } else {
+            theme = themes[themeName] || themes['default'];
+        }
+
         document.documentElement.style.setProperty('--primary', theme.primary);
         document.documentElement.style.setProperty('--secondary', theme.secondary);
         document.documentElement.style.setProperty('--accent', theme.accent);
         document.documentElement.style.setProperty('--background', theme.background);
         document.documentElement.style.setProperty('--cards', theme.cards);
 
-        document.body.style.background = theme.bgGradient;
+        document.body.style.background = theme.bgGradient || `radial-gradient(circle at 20% 20%, ${theme.primary}33 0%, ${theme.background} 60%, #000000 100%)`;
 
         const orb1 = document.querySelector('.orb-1');
-        if (orb1) orb1.style.background = theme.orb1;
+        if (orb1) orb1.style.background = theme.orb1 || theme.primary;
         const orb2 = document.querySelector('.orb-2');
-        if (orb2) orb2.style.background = theme.orb2;
+        if (orb2) orb2.style.background = theme.orb2 || theme.secondary;
         const orb3 = document.querySelector('.orb-3');
-        if (orb3) orb3.style.background = theme.orb3;
+        if (orb3) orb3.style.background = theme.orb3 || theme.accent;
         const orb4 = document.querySelector('.orb-4');
-        if (orb4) orb4.style.background = theme.orb4;
+        if (orb4) orb4.style.background = theme.orb4 || theme.primary;
 
         localStorage.setItem('vibentra_theme', themeName);
+        if (themeName === 'custom' && customObj) {
+            localStorage.setItem('vibentra_custom_theme', JSON.stringify(customObj));
+        }
     };
 
     const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
@@ -1216,34 +1235,55 @@ const initHome = () => {
         }
     }
 
+    function renderMosaicCover(tracks) {
+        const validCovers = (tracks || []).map(t => t.cover).filter(c => !!c);
+        if (validCovers.length >= 4) {
+            return `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; width: 100%; height: 100%;">
+                    <img src="${validCovers[0]}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${validCovers[1]}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${validCovers[2]}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${validCovers[3]}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            `;
+        } else if (validCovers.length > 0) {
+            return `<img src="${validCovers[0]}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+            return `
+                <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; justify-content: center; align-items: center;">
+                    <i class="fa-solid fa-music" style="font-size: 2.2rem; color: rgba(255,255,255,0.75);"></i>
+                </div>
+            `;
+        }
+    }
+
     function renderPlaylists() {
         const playlists = playlistService.getPlaylists();
 
         let html = `
-            <div class="section-header">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Your Playlists</h2>
-                <button class="btn btn-primary" id="openCreatePlaylistBtn">
+                <button class="btn btn-primary" id="openCreatePlaylistBtn" style="border-radius: 20px; padding: 10px 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-plus"></i> Create Playlist
                 </button>
             </div>
-            <div class="playlist-list-container" style="display: flex; flex-direction: column; gap: 15px;">
+            <div class="playlist-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
         `;
 
         playlists.forEach(pl => {
             html += `
-                <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 20px; padding: 15px; width: 100%; border-radius: 16px; background: rgba(255,255,255,0.02);">
-                    <div class="playlist-img-wrapper" style="width: 70px; height: 70px; flex-shrink: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-                        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; justify-content: center; align-items: center;">
-                            <i class="fa-solid fa-music" style="font-size: 2rem; color: rgba(255,255,255,0.8);"></i>
-                        </div>
+                <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 16px; padding: 14px; width: 100%; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); transition: all 0.3s ease; cursor: pointer;">
+                    <div class="playlist-img-wrapper" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.4); background: rgba(255,255,255,0.05);">
+                        ${renderMosaicCover(pl.tracks)}
                     </div>
-                    <div class="playlist-info" style="flex: 1; display: flex; flex-direction: column; justify-content: center; position: static;">
-                        <h3 style="margin: 0 0 5px 0; font-size: 1.2rem; color: white;">${pl.name}</h3>
-                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">${pl.tracks.length} Tracks</p>
+                    <div class="playlist-info" style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.name}</h3>
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.description || 'Custom Playlist'}</p>
+                        <span style="font-size: 0.78rem; color: var(--primary); font-weight: 600; margin-top: 4px;">${pl.tracks.length} ${pl.tracks.length === 1 ? 'Track' : 'Tracks'}</span>
                     </div>
-                    <div class="playlist-actions" style="display: flex; gap: 12px; align-items: center; margin-left: auto;">
-                        <button class="btn edit-pl-btn" data-id="${pl.id}" style="background: rgba(255,255,255,0.1); border-radius: 50%; width: 40px; height: 40px; border: none; color: white; cursor: pointer; transition: background 0.3s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn delete-pl-btn" data-id="${pl.id}" style="background: rgba(239, 68, 68, 0.15); border-radius: 50%; width: 40px; height: 40px; border: none; color: #ef4444; cursor: pointer; transition: background 0.3s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-trash"></i></button>
+                    <div class="playlist-actions" style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
+                        <button class="btn edit-pl-btn" data-id="${pl.id}" title="Edit Playlist" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 36px; height: 36px; border: none; color: white; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-pen" style="font-size: 0.85rem;"></i></button>
+                        <button class="btn delete-pl-btn" data-id="${pl.id}" title="Delete Playlist" style="background: rgba(239, 68, 68, 0.15); border-radius: 50%; width: 36px; height: 36px; border: none; color: #ef4444; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-trash" style="font-size: 0.85rem;"></i></button>
                     </div>
                 </div>
             `;
@@ -1253,7 +1293,7 @@ const initHome = () => {
         dynamicContent.innerHTML = html;
 
         // Add Event Listeners
-        document.getElementById('openCreatePlaylistBtn').addEventListener('click', () => {
+        document.getElementById('openCreatePlaylistBtn')?.addEventListener('click', () => {
             document.getElementById('playlistModalTitle').textContent = 'Create Playlist';
             document.getElementById('editingPlaylistId').value = '';
             document.getElementById('playlistNameInput').value = '';
@@ -1299,61 +1339,266 @@ const initHome = () => {
         const pl = playlistService.getPlaylist(id);
         if (!pl) return;
 
+        // Calculate Total Duration
+        let totalSeconds = 0;
+        (pl.tracks || []).forEach(t => {
+            if (t.duration) {
+                const parts = t.duration.split(':');
+                if (parts.length === 2) {
+                    totalSeconds += (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
+                }
+            } else {
+                totalSeconds += 210;
+            }
+        });
+        let durationText = '';
+        if (totalSeconds >= 3600) {
+            const hrs = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            durationText = `${hrs}h ${mins}m`;
+        } else {
+            const mins = Math.floor(totalSeconds / 60);
+            durationText = `${mins} mins`;
+        }
+
+        // Creator metadata
+        const username = document.getElementById('welcomeName')?.textContent || 'User';
+        const topAvatar = document.getElementById('topProfileImg');
+        const avatarSrc = topAvatar && topAvatar.src && !topAvatar.src.includes('ui-avatars') ? topAvatar.src : null;
+        const avatarInitial = username.charAt(0).toUpperCase();
+
         let html = `
-            <div class="section-header" style="display: flex; align-items: center; gap: 15px;">
-                <button class="btn btn-outline" id="backToPlaylistsBtn" style="border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-arrow-left"></i></button>
-                <div>
-                    <h2 style="margin-bottom: 5px;">${pl.name}</h2>
-                    <p style="color: var(--text-muted); font-size: 0.9rem;">${pl.description || 'Custom Playlist'} • ${pl.tracks.length} Tracks</p>
+            <div class="spotify-playlist-view" style="max-width: 850px; margin: 0 auto; padding-bottom: 90px;">
+                <!-- Top Back Header -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                    <button class="btn btn-outline" id="backToPlaylistsBtn" style="border-radius: 50%; width: 42px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer;">
+                        <i class="fa-solid fa-chevron-left" style="font-size: 1.1rem;"></i>
+                    </button>
                 </div>
-            </div>
-            <div class="track-list" id="playlistDetailTrackList">
+
+                <!-- Hero Section (Spotify Style Collage & Meta) -->
+                <div style="display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 24px;">
+                    <!-- Cover Art Collage -->
+                    <div class="playlist-cover-mosaic" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 14px 35px rgba(0,0,0,0.6); background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
+                        ${renderMosaicCover(pl.tracks)}
+                    </div>
+
+                    <!-- Title & Creator Info -->
+                    <div style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <h1 style="font-size: 2.2rem; font-weight: 800; color: #FFFFFF; margin: 0; line-height: 1.1; letter-spacing: -0.5px;">${pl.name}</h1>
+                            <button id="headerEditPlBtn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid var(--glass-border); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; backdrop-filter: blur(10px); transition: background 0.2s;">
+                                Edit
+                            </button>
+                        </div>
+                        
+                        ${pl.description ? `<p style="color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0;">${pl.description}</p>` : ''}
+
+                        <!-- Creator Avatar & Name -->
+                        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: #FFFFFF; margin-top: 4px;">
+                            <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: white; overflow: hidden; flex-shrink: 0;">
+                                ${avatarSrc ? `<img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span>${avatarInitial}</span>`}
+                            </div>
+                            <span style="font-weight: 700;">${username}</span>
+                        </div>
+
+                        <!-- Duration & Track Count Meta -->
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+                            <i class="fa-solid fa-earth-americas" style="font-size: 0.85rem;"></i>
+                            <span>${pl.tracks.length} ${pl.tracks.length === 1 ? 'song' : 'songs'} • ${durationText}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spotify Action Bar -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px;">
+                    <!-- Left Quick Control Icons -->
+                    <div style="display: flex; align-items: center; gap: 18px;">
+                        <!-- Download All Icon Button -->
+                        <button id="downloadAllPlBtn" title="Download all songs in playlist" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-regular fa-circle-down"></i>
+                        </button>
+                        
+                        <!-- Add Collaborator / Add Songs Button -->
+                        <button id="addSongsPlBtn" title="Add songs to playlist" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </button>
+
+                        <!-- Share Playlist Button -->
+                        <button id="sharePlBtn" title="Share playlist link" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                        </button>
+
+                        <!-- More Options Button -->
+                        <button id="morePlOptionsBtn" title="Playlist options" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </button>
+                    </div>
+
+                    <!-- Right Play Control Icons -->
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <!-- Shuffle Button -->
+                        <button id="shufflePlBtn" title="Shuffle Play" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; transition: color 0.2s;">
+                            <i class="fa-solid fa-shuffle"></i>
+                        </button>
+
+                        <!-- Giant Green Play Button -->
+                        <button id="playAllPlBtn" title="Play All" style="width: 54px; height: 54px; border-radius: 50%; background: #1DB954; color: #000000; border: none; font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(29, 185, 84, 0.4); transition: transform 0.2s, background 0.2s; padding-left: 3px;">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter & Action Pill Buttons -->
+                <div style="display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px;">
+                    <button id="chipAddSongsBtn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <i class="fa-solid fa-plus"></i> Add
+                    </button>
+                    <button id="chipSortBtn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <i class="fa-solid fa-arrow-down-up-between"></i> Sort
+                    </button>
+                    <button id="chipEditBtn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <i class="fa-solid fa-pen"></i> Edit
+                    </button>
+                </div>
+
+                <!-- Track List -->
+                <div id="playlistDetailTrackList" style="display: flex; flex-direction: column; gap: 4px;">
         `;
 
         if (pl.tracks.length === 0) {
-            html += `<p style="color: var(--text-muted);">No tracks in this playlist yet. Add some from the player!</p>`;
+            html += `
+                <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px dashed var(--glass-border);">
+                    <i class="fa-solid fa-music" style="font-size: 2.5rem; opacity: 0.4; margin-bottom: 12px; display: block;"></i>
+                    <p style="margin: 0 0 12px 0; font-size: 0.95rem;">No tracks in this playlist yet.</p>
+                    <button class="btn btn-primary" id="emptyAddSongsBtn" style="border-radius: 20px; padding: 8px 18px; font-size: 0.85rem;">Find songs to add</button>
+                </div>
+            `;
         } else {
             pl.tracks.forEach((track, index) => {
                 html += `
-                <div class="track-item" data-id="${track.id}" style="cursor: pointer;">
-                    <div class="track-number">${index + 1}</div>
-                    <div class="track-info-row">
-                        <img src="${track.cover}" class="track-img" alt="cover">
-                        <div class="track-details">
-                            <span style="font-weight: 500;">${track.title}</span>
-                            <span style="font-size: 0.8rem; color: var(--text-muted);">${track.artist}</span>
-                        </div>
+                <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative;">
+                    <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${track.artist || 'Unknown Artist'}
+                        </p>
                     </div>
-                    <div class="track-album">${track.album || 'Single'}</div>
-                    <div class="track-duration">${track.duration}</div>
-                    <button class="btn remove-from-pl-btn" data-id="${track.id}" style="background: transparent; color: var(--text-muted); border: none; cursor: pointer; padding: 5px; margin-left: 10px;"><i class="fa-solid fa-xmark"></i></button>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted); margin-right: 6px;">${track.duration || ''}</span>
+                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Remove track from playlist" style="background: none; border: none; color: var(--text-muted); font-size: 1.1rem; padding: 8px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s, color 0.2s;">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                    </div>
                 </div>
                 `;
             });
         }
 
-        html += `</div>`;
+        html += `
+                </div>
+            </div>
+        `;
         dynamicContent.innerHTML = html;
 
-        // Event Listeners
-        document.getElementById('backToPlaylistsBtn').addEventListener('click', () => {
+        // Add Listeners
+        document.getElementById('backToPlaylistsBtn')?.addEventListener('click', () => {
             renderPlaylists();
         });
 
-        document.querySelectorAll('#playlistDetailTrackList .track-item').forEach((item, idx) => {
-            item.addEventListener('click', (e) => {
+        // Edit handlers
+        const openEditModal = () => {
+            document.getElementById('playlistModalTitle').textContent = 'Edit Playlist';
+            document.getElementById('editingPlaylistId').value = pl.id;
+            document.getElementById('playlistNameInput').value = pl.name;
+            document.getElementById('playlistDescInput').value = pl.description || '';
+            document.getElementById('playlistModal').classList.add('active');
+        };
+        document.getElementById('headerEditPlBtn')?.addEventListener('click', openEditModal);
+        document.getElementById('chipEditBtn')?.addEventListener('click', openEditModal);
+
+        // Play All
+        document.getElementById('playAllPlBtn')?.addEventListener('click', () => {
+            if (pl.tracks.length === 0) return;
+            musicService.playContext(pl.tracks, pl.tracks[0]);
+        });
+
+        // Shuffle
+        document.getElementById('shufflePlBtn')?.addEventListener('click', () => {
+            if (pl.tracks.length === 0) return;
+            const shuffled = [...pl.tracks].sort(() => Math.random() - 0.5);
+            musicService.playContext(shuffled, shuffled[0]);
+            showNotification('Shuffling playlist playback', 'info');
+        });
+
+        // Download All
+        document.getElementById('downloadAllPlBtn')?.addEventListener('click', async () => {
+            if (pl.tracks.length === 0) {
+                showNotification('No songs to download in this playlist', 'info');
+                return;
+            }
+            showNotification(`Downloading ${pl.tracks.length} songs from playlist...`, 'info');
+            for (let i = 0; i < pl.tracks.length; i++) {
+                await musicService.downloadTrack(pl.tracks[i]);
+            }
+        });
+
+        // Add Songs
+        const triggerAddSongs = () => {
+            const searchNav = document.querySelector('.nav-item[data-path="search"]');
+            if (searchNav) searchNav.click();
+            showNotification('Search songs to add to your playlist!', 'info');
+        };
+        document.getElementById('addSongsPlBtn')?.addEventListener('click', triggerAddSongs);
+        document.getElementById('chipAddSongsBtn')?.addEventListener('click', triggerAddSongs);
+        document.getElementById('emptyAddSongsBtn')?.addEventListener('click', triggerAddSongs);
+
+        // Share Playlist
+        document.getElementById('sharePlBtn')?.addEventListener('click', () => {
+            const shareUrl = window.location.origin + window.location.pathname + '#playlists';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareUrl);
+                showNotification('Playlist link copied to clipboard!', 'success');
+            } else {
+                showNotification('Playlist sharing link ready!', 'info');
+            }
+        });
+
+        // Sort Playlist
+        let isSorted = false;
+        document.getElementById('chipSortBtn')?.addEventListener('click', () => {
+            if (!isSorted) {
+                pl.tracks.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                isSorted = true;
+                showNotification('Sorted tracks alphabetically (A-Z)', 'info');
+            } else {
+                renderPlaylistDetail(pl.id);
+                showNotification('Reset playlist order', 'info');
+                return;
+            }
+            renderPlaylistDetail(pl.id);
+        });
+
+        // Track Row Click -> Play Track
+        document.querySelectorAll('.spotify-track-row').forEach(row => {
+            row.addEventListener('click', (e) => {
                 if (e.target.closest('.remove-from-pl-btn')) return;
-                musicService.playContext(pl.tracks, pl.tracks[idx]);
+                const idx = parseInt(row.getAttribute('data-index'));
+                if (!isNaN(idx) && pl.tracks[idx]) {
+                    musicService.playContext(pl.tracks, pl.tracks[idx]);
+                }
             });
         });
 
+        // Remove track option
         document.querySelectorAll('.remove-from-pl-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const trackId = btn.getAttribute('data-id');
                 playlistService.removeTrackFromPlaylist(pl.id, trackId);
-                renderPlaylistDetail(pl.id); // Re-render
-                showNotification('Track removed from playlist');
+                renderPlaylistDetail(pl.id);
+                showNotification('Track removed from playlist', 'info');
             });
         });
     }
@@ -2062,13 +2307,25 @@ const initHome = () => {
         `).join('');
 
         const currentTheme = localStorage.getItem('vibentra_theme') || 'default';
+        const defaultCustomTheme = {
+            primary: '#7C3AED',
+            secondary: '#06B6D4',
+            accent: '#EC4899',
+            background: '#0F172A',
+            cards: 'rgba(30, 41, 59, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #1A1F4C 0%, #0C102B 50%, #07091B 100%)',
+            orb1: '#7C3AED', orb2: '#06B6D4', orb3: '#EC4899', orb4: '#3B82F6'
+        };
+        const savedCustomTheme = JSON.parse(localStorage.getItem('vibentra_custom_theme') || 'null') || defaultCustomTheme;
+
         const themeList = [
             { id: 'default', name: 'Midnight Purple', color: '#7C3AED' },
             { id: 'ocean', name: 'Ocean Blue', color: '#0284C7' },
             { id: 'forest', name: 'Forest Green', color: '#16A34A' },
             { id: 'sunset', name: 'Sunset Orange', color: '#EA580C' },
             { id: 'cherry', name: 'Cherry Red', color: '#E11D48' },
-            { id: 'cyberpunk', name: 'Cyberpunk', color: '#D946EF' }
+            { id: 'cyberpunk', name: 'Cyberpunk', color: '#D946EF' },
+            { id: 'india', name: 'Vibentra Tricolor', color: '#F97316' }
         ];
 
         const themeButtonsHtml = themeList.map(t => `
@@ -2090,12 +2347,66 @@ const initHome = () => {
                         <i class="fa-solid fa-palette" style="font-size: 1.3rem; color: var(--primary);"></i>
                         <div>
                             <h3 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">Appearance & Theme</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Customize visual accents and liquid glow themes.</p>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Choose a preset or create your own custom theme color scheme.</p>
                         </div>
                     </div>
                     <div style="padding: 22px 24px;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;">
+                        <label style="display: block; font-size: 0.88rem; font-weight: 700; color: #FFFFFF; margin-bottom: 12px;">Preset Color Themes</label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 24px;">
                             ${themeButtonsHtml}
+                        </div>
+
+                        <!-- Custom Theme Studio -->
+                        <div style="padding-top: 20px; border-top: 1px solid var(--glass-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                                <h4 style="font-size: 1rem; font-weight: 700; color: #FFFFFF; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent);"></i> Custom Theme Studio
+                                </h4>
+                                <span class="badge" style="background: ${currentTheme === 'custom' ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem;">
+                                    ${currentTheme === 'custom' ? 'Active' : 'Custom'}
+                                </span>
+                            </div>
+                            <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 18px;">Pick your custom colors to build a unique visual theme.</p>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Primary Accent</label>
+                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                        <input type="color" id="customPrimary" value="${savedCustomTheme.primary}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+                                        <span id="hexPrimary" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.primary}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Secondary Glow</label>
+                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                        <input type="color" id="customSecondary" value="${savedCustomTheme.secondary}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+                                        <span id="hexSecondary" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.secondary}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Highlight Accent</label>
+                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                        <input type="color" id="customAccent" value="${savedCustomTheme.accent}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+                                        <span id="hexAccent" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.accent}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Dark Background</label>
+                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                        <input type="color" id="customBg" value="${savedCustomTheme.background}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+                                        <span id="hexBg" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.background}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <button id="applyCustomThemeBtn" class="btn btn-primary" style="flex: 1; min-width: 180px; padding: 12px 20px; border-radius: 12px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-paintbrush"></i> Apply Custom Theme
+                                </button>
+                                <button id="resetThemeBtn" class="btn btn-outline" style="padding: 12px 20px; border-radius: 12px; color: var(--text-muted);">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2138,7 +2449,7 @@ const initHome = () => {
                 <!-- App Version Badge -->
                 <div style="text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 0.85rem;">
                     <span style="display: inline-flex; align-items: center; gap: 8px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); padding: 6px 14px; border-radius: 20px; color: #FFFFFF; font-weight: 600;">
-                        <i class="fa-solid fa-code-commit" style="color: var(--primary);"></i> Vibentra Build: 0cfaab6 (v1.1.2)
+                        <i class="fa-solid fa-code-commit" style="color: var(--primary);"></i> Vibentra Build: 0cfaab6 (v1.1.3)
                     </span>
                 </div>
             </div>
@@ -2162,10 +2473,77 @@ const initHome = () => {
                 if (!targetBtn) return;
                 const themeName = targetBtn.getAttribute('data-theme');
                 window.applyTheme(themeName);
-                renderSettings(); // Re-render to update the active button state
+                renderSettings(); // Re-render to update active state
                 showNotification('Theme updated successfully!', 'success');
             });
         });
+
+        // Custom Theme Studio Listeners
+        const customPrimary = document.getElementById('customPrimary');
+        const customSecondary = document.getElementById('customSecondary');
+        const customAccent = document.getElementById('customAccent');
+        const customBg = document.getElementById('customBg');
+
+        const hexPrimary = document.getElementById('hexPrimary');
+        const hexSecondary = document.getElementById('hexSecondary');
+        const hexAccent = document.getElementById('hexAccent');
+        const hexBg = document.getElementById('hexBg');
+
+        const getCustomThemeData = () => {
+            const p = customPrimary.value;
+            const s = customSecondary.value;
+            const a = customAccent.value;
+            const bg = customBg.value;
+            return {
+                primary: p,
+                secondary: s,
+                accent: a,
+                background: bg,
+                cards: 'rgba(255, 255, 255, 0.08)',
+                bgGradient: `radial-gradient(circle at 20% 20%, ${p}44 0%, ${bg} 65%, #000000 100%)`,
+                orb1: p,
+                orb2: s,
+                orb3: a,
+                orb4: p
+            };
+        };
+
+        const updateHexLabels = () => {
+            if (hexPrimary) hexPrimary.textContent = customPrimary.value.toUpperCase();
+            if (hexSecondary) hexSecondary.textContent = customSecondary.value.toUpperCase();
+            if (hexAccent) hexAccent.textContent = customAccent.value.toUpperCase();
+            if (hexBg) hexBg.textContent = customBg.value.toUpperCase();
+        };
+
+        [customPrimary, customSecondary, customAccent, customBg].forEach(input => {
+            if (input) {
+                input.addEventListener('input', () => {
+                    updateHexLabels();
+                    const customObj = getCustomThemeData();
+                    window.applyTheme('custom', customObj);
+                });
+            }
+        });
+
+        const applyCustomThemeBtn = document.getElementById('applyCustomThemeBtn');
+        if (applyCustomThemeBtn) {
+            applyCustomThemeBtn.addEventListener('click', () => {
+                const customObj = getCustomThemeData();
+                window.applyTheme('custom', customObj);
+                renderSettings();
+                showNotification('Custom theme applied & saved!', 'success');
+            });
+        }
+
+        const resetThemeBtn = document.getElementById('resetThemeBtn');
+        if (resetThemeBtn) {
+            resetThemeBtn.addEventListener('click', () => {
+                localStorage.removeItem('vibentra_custom_theme');
+                window.applyTheme('default');
+                renderSettings();
+                showNotification('Theme reset to Default Midnight Purple', 'info');
+            });
+        }
     }
 
     // Initial Load
