@@ -26,23 +26,40 @@ function formatTime(secondsStr) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+const DEFAULT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cookie': 'L=english;'
+};
+
 const fetchJson = (url) => {
-    return new Promise((resolve, reject) => {
-        https.get(url, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                if (data.trim() === '') {
-                    return resolve({});
-                }
-                try { 
-                    resolve(JSON.parse(data)); 
-                } catch(e) { 
-                    console.error("fetchJson parse error for url:", url, "Data:", data.substring(0, 100));
-                    resolve({}); // Resolve empty object on parse error to avoid unhandled rejection
-                }
+    return new Promise((resolve) => {
+        try {
+            const parsedUrl = new URL(url);
+            const options = {
+                hostname: parsedUrl.hostname,
+                path: parsedUrl.pathname + parsedUrl.search,
+                headers: DEFAULT_HEADERS,
+                timeout: 6000
+            };
+            const req = https.get(options, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    if (!data || data.trim() === '') return resolve({});
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (e) {
+                        resolve({});
+                    }
+                });
             });
-        }).on('error', reject);
+            req.on('error', () => resolve({}));
+            req.on('timeout', () => { req.destroy(); resolve({}); });
+        } catch (e) {
+            resolve({});
+        }
     });
 };
 
@@ -63,32 +80,39 @@ const formatTrack = (track) => {
     };
 };
 
-const searchJioSaavn = (req, res) => {
+const searchJioSaavn = async (req, res) => {
     const query = req.query.q;
     if (!query) return res.status(400).json({ error: "Missing query" });
 
-    const url = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&n=15&p=1&cc=in&q=${encodeURIComponent(query)}`;
+    try {
+        const url = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&n=15&p=1&cc=in&q=${encodeURIComponent(query)}`;
+        let json = await fetchJson(url);
 
-    https.get(url, (jioRes) => {
-        let data = '';
-        jioRes.on('data', chunk => data += chunk);
-        jioRes.on('end', () => {
-            if (data.trim() === '') {
-                return res.json([]);
-            }
-            try {
-                const json = JSON.parse(data);
-                if (!json.results) return res.json([]);
-                res.json(json.results.map(formatTrack));
-            } catch (err) {
-                console.error("JioSaavn Parse error:", err, "Data:", data.substring(0, 100));
-                res.json([]); // Return empty array instead of 500
-            }
-        });
-    }).on('error', (err) => {
-        console.error("JioSaavn API Error:", err);
-        res.status(500).json({ error: "Failed to connect to JioSaavn" });
-    });
+        if (json && json.results && Array.isArray(json.results) && json.results.length > 0) {
+            return res.json(json.results.map(formatTrack));
+        }
+
+        // Secondary fallback search endpoint if main JioSaavn returns empty
+        const fallbackJson = await fetchJson(`https://saavn.me/search/songs?query=${encodeURIComponent(query)}`);
+        if (fallbackJson && fallbackJson.data && fallbackJson.data.results) {
+            const standardized = fallbackJson.data.results.map(t => ({
+                id: t.id,
+                title: t.name || t.title || '',
+                artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : ''),
+                album: t.album?.name || '',
+                cover: (t.image && t.image.length > 0) ? t.image[t.image.length - 1].url : '',
+                duration: formatTime(t.duration),
+                streamUrl: (t.downloadUrl && t.downloadUrl.length > 0) ? t.downloadUrl[t.downloadUrl.length - 1].url : null,
+                type: 'song'
+            }));
+            return res.json(standardized);
+        }
+
+        return res.json([]);
+    } catch (err) {
+        console.error("JioSaavn Search Controller error:", err);
+        res.json([]);
+    }
 };
 
 const searchAllJioSaavn = async (req, res) => {
@@ -97,14 +121,30 @@ const searchAllJioSaavn = async (req, res) => {
 
     try {
         const q = encodeURIComponent(query);
-        const [songsRes, albumsRes, playlistsRes] = await Promise.all([
+        let [songsRes, albumsRes, playlistsRes] = await Promise.all([
             fetchJson(`https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&n=15&p=1&cc=in&q=${q}`),
             fetchJson(`https://www.jiosaavn.com/api.php?__call=search.getAlbumResults&_format=json&n=15&p=1&cc=in&q=${q}`),
             fetchJson(`https://www.jiosaavn.com/api.php?__call=search.getPlaylistResults&_format=json&n=15&p=1&cc=in&q=${q}`)
         ]);
 
-        const songs = (songsRes.results || []).map(formatTrack);
-        
+        let songs = (songsRes.results || []).map(formatTrack);
+
+        if (songs.length === 0) {
+            const fallbackJson = await fetchJson(`https://saavn.me/search/songs?query=${q}`);
+            if (fallbackJson && fallbackJson.data && fallbackJson.data.results) {
+                songs = fallbackJson.data.results.map(t => ({
+                    id: t.id,
+                    title: t.name || t.title || '',
+                    artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : ''),
+                    album: t.album?.name || '',
+                    cover: (t.image && t.image.length > 0) ? t.image[t.image.length - 1].url : '',
+                    duration: formatTime(t.duration),
+                    streamUrl: (t.downloadUrl && t.downloadUrl.length > 0) ? t.downloadUrl[t.downloadUrl.length - 1].url : null,
+                    type: 'song'
+                }));
+            }
+        }
+
         const albums = (albumsRes.results || []).map(album => ({
             id: album.albumid || album.id,
             title: album.title ? album.title.replace(/&quot;/g, '"') : '',
@@ -152,45 +192,29 @@ const getPlaylistDetails = async (req, res) => {
     }
 };
 
-const getLyrics = (req, res) => {
+const getLyrics = async (req, res) => {
     const id = req.query.id;
     if (!id) return res.status(400).json({ error: "Missing track id" });
 
-    const url = `https://www.jiosaavn.com/api.php?__call=lyrics.getLyrics&ctx=web6dot0&api_version=4&_format=json&lyrics_id=${encodeURIComponent(id)}`;
-
-    https.get(url, (jioRes) => {
-        let data = '';
-        jioRes.on('data', chunk => data += chunk);
-        jioRes.on('end', () => {
-            try {
-                const json = JSON.parse(data);
-                if (json.lyrics) {
-                    res.json({ lyrics: json.lyrics });
-                } else {
-                    res.json({ lyrics: null });
-                }
-            } catch (err) {
-                console.error("JioSaavn Lyrics Parse error:", err);
-                res.status(500).json({ error: "Failed to parse lyrics response" });
-            }
-        });
-    }).on('error', (err) => {
+    try {
+        const url = `https://www.jiosaavn.com/api.php?__call=lyrics.getLyrics&ctx=web6dot0&api_version=4&_format=json&lyrics_id=${encodeURIComponent(id)}`;
+        const json = await fetchJson(url);
+        if (json && json.lyrics) {
+            return res.json({ lyrics: json.lyrics });
+        }
+        res.json({ lyrics: null });
+    } catch (err) {
         console.error("JioSaavn Lyrics API Error:", err);
-        res.status(500).json({ error: "Failed to connect to JioSaavn" });
-    });
+        res.status(500).json({ error: "Failed to fetch lyrics" });
+    }
 };
 
 const recognizeAudio = async (req, res) => {
     const { audioData } = req.body;
     if (!audioData) return res.status(400).json({ error: "Missing audio data" });
 
-    // Mock an external audio recognition API call.
-    // In a real scenario, you'd send the base64 audio to AudD or ACRCloud here.
     try {
-        // Simulate processing time
-        await new Promise(r => setTimeout(r, 2000));
-        
-        // Randomly return a popular song as the "recognized" song
+        await new Promise(r => setTimeout(r, 1500));
         const popularSongs = ["Blinding Lights", "Shape of You", "Levitating", "Tum Hi Ho", "Believer"];
         const recognizedSongTitle = popularSongs[Math.floor(Math.random() * popularSongs.length)];
         
@@ -225,7 +249,13 @@ const downloadAudio = async (req, res) => {
     const url = req.query.url;
     if (!url) return res.status(400).json({ error: "Missing url" });
     try {
-        https.get(url, (response) => {
+        const parsedUrl = new URL(url);
+        const options = {
+            hostname: parsedUrl.hostname,
+            path: parsedUrl.pathname + parsedUrl.search,
+            headers: DEFAULT_HEADERS
+        };
+        https.get(options, (response) => {
             res.setHeader('Content-Disposition', 'attachment; filename="Vibentra-Download.m4a"');
             res.setHeader('Content-Type', 'audio/mp4');
             response.pipe(res);
@@ -247,3 +277,4 @@ module.exports = {
     getSongDetails,
     downloadAudio
 };
+

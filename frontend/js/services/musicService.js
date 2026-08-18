@@ -1047,6 +1047,7 @@ class MusicService {
         this.updateMediaSession(fullTrack);
 
         if (fullTrack.streamUrl) {
+            this._consecutiveStreamErrors = 0;
             if (this.audioPlayer.src !== fullTrack.streamUrl) {
                 this.audioPlayer.src = fullTrack.streamUrl;
                 this.audioPlayer.load();
@@ -1091,6 +1092,20 @@ class MusicService {
         } else {
             console.warn(`[PLAYBACK_ERROR] No stream URL for ${fullTrack.title}. Skipping safely...`);
             this._isTransitioning = false;
+            this._consecutiveStreamErrors = (this._consecutiveStreamErrors || 0) + 1;
+
+            if (this._consecutiveStreamErrors >= 3) {
+                console.warn(`[PLAYBACK_ERROR] Stopped fast-forwarding loop: 3 consecutive tracks lacked stream URLs.`);
+                this._consecutiveStreamErrors = 0;
+                this.isPlaying = false;
+                this.playbackState = 'PAUSED';
+                this.updatePlayPauseUI(false);
+                document.dispatchEvent(new CustomEvent('showNotification', {
+                    detail: '⚠️ Stream resolution failed. Please check connection.'
+                }));
+                return;
+            }
+
             if (this._playbackRequestId === requestId) {
                 this.playNext(true);
             }

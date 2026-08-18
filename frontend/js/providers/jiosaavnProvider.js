@@ -3,24 +3,70 @@ import ProviderInterface from './providerInterface.js';
 export default class JioSaavnProvider extends ProviderInterface {
     constructor() {
         super('jiosaavn', 'JioSaavn API');
-        // Use relative URL for Vercel, localhost for development
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('10.')) {
-            this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn`;
+        if (typeof window !== 'undefined') {
+            if (window.location.protocol === 'file:' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
+                this.backendUrl = 'https://vibentra.vercel.app/api/jiosaavn';
+            } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('10.')) {
+                this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn`;
+            } else {
+                this.backendUrl = '/api/jiosaavn';
+            }
         } else {
             this.backendUrl = '/api/jiosaavn';
         }
         this.trackCache = new Map();
     }
 
+    async safeFetch(endpointPath) {
+        const urlsToTry = [
+            `${this.backendUrl}${endpointPath}`,
+            `https://vibentra.vercel.app/api/jiosaavn${endpointPath}`
+        ];
+        
+        for (let url of urlsToTry) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (response.ok) {
+                    return await response.json();
+                }
+            } catch (e) {
+                console.warn(`JioSaavn fetch failed for ${url}:`, e.message || e);
+            }
+        }
+        return null;
+    }
+
     async searchSongs(query) {
         try {
-            const url = `${this.backendUrl}/search?q=${encodeURIComponent(query)}`;
-            const response = await fetch(url);
+            const endpoint = `/search?q=${encodeURIComponent(query)}`;
+            let data = await this.safeFetch(endpoint);
             
-            if (!response.ok) throw new Error('Network response was not ok');
-            
-            const data = await response.json();
-            
+            // Client-side fallback if backend fails completely
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                try {
+                    const fallbackRes = await fetch(`https://saavn.me/search/songs?query=${encodeURIComponent(query)}`);
+                    if (fallbackRes.ok) {
+                        const fallbackJson = await fallbackRes.json();
+                        if (fallbackJson && fallbackJson.data && fallbackJson.data.results) {
+                            data = fallbackJson.data.results.map(t => ({
+                                id: t.id,
+                                title: t.name || t.title || '',
+                                artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : ''),
+                                album: t.album?.name || '',
+                                cover: (t.image && t.image.length > 0) ? t.image[t.image.length - 1].url : '',
+                                duration: `${Math.floor((t.duration || 0) / 60)}:${((t.duration || 0) % 60).toString().padStart(2, '0')}`,
+                                streamUrl: (t.downloadUrl && t.downloadUrl.length > 0) ? t.downloadUrl[t.downloadUrl.length - 1].url : null
+                            }));
+                        }
+                    }
+                } catch (e) { }
+            }
+
+            if (!data || !Array.isArray(data)) return [];
+
             const standardized = data.map(t => this.standardizeTrack({
                 id: t.id,
                 title: t.title,
@@ -31,7 +77,6 @@ export default class JioSaavnProvider extends ProviderInterface {
                 streamUrl: t.streamUrl
             }));
             
-            // Cache the results so getTrack can find them instantly
             standardized.forEach(t => this.trackCache.set(t.id, t));
             return standardized;
 
@@ -43,33 +88,35 @@ export default class JioSaavnProvider extends ProviderInterface {
 
     async getTrack(trackId) {
         const cached = this.trackCache.get(trackId);
-        // If cached version is fresh (less than 2.5 minutes old), return it to avoid unnecessary refetches. Otherwise fetch a fresh CDN URL.
         if (cached && cached.streamUrl && cached._timestamp && (Date.now() - cached._timestamp < 2.5 * 60 * 1000)) {
             return cached;
         }
 
-        // To prevent streamUrl expiration issues, fetch fresh details
         try {
-            const response = await fetch(`${this.backendUrl}/song?id=${trackId}`);
-            if (!response.ok) throw new Error('Failed to fetch song details');
-            const data = await response.json();
-            const standardized = this.standardizeTrack(data);
-            standardized._timestamp = Date.now();
-            this.trackCache.set(standardized.id, standardized);
-            return standardized;
+            const data = await this.safeFetch(`/song?id=${trackId}`);
+            if (data && data.id) {
+                const standardized = this.standardizeTrack(data);
+                standardized._timestamp = Date.now();
+                this.trackCache.set(standardized.id, standardized);
+                return standardized;
+            }
+            return cached || null;
         } catch (error) {
             console.error("JioSaavn getTrack error:", error);
-            return cached || null; // Fallback to cache
+            return cached || null;
         }
     }
 
     async searchAll(query) {
         try {
-            const url = `${this.backendUrl}/search/all?q=${encodeURIComponent(query)}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
+            const endpoint = `/search/all?q=${encodeURIComponent(query)}`;
+            let data = await this.safeFetch(endpoint);
             
+            if (!data || (!data.songs && !data.albums && !data.playlists)) {
+                const songs = await this.searchSongs(query);
+                data = { songs, albums: [], playlists: [] };
+            }
+
             if (data.songs) {
                 data.songs = data.songs.map(t => this.standardizeTrack(t));
                 data.songs.forEach(t => this.trackCache.set(t.id, t));
@@ -83,9 +130,8 @@ export default class JioSaavnProvider extends ProviderInterface {
 
     async getAlbum(albumId) {
         try {
-            const response = await fetch(`${this.backendUrl}/album?id=${albumId}`);
-            if (!response.ok) return [];
-            const data = await response.json();
+            const data = await this.safeFetch(`/album?id=${albumId}`);
+            if (!data || !Array.isArray(data)) return [];
             const standardized = data.map(t => this.standardizeTrack(t));
             standardized.forEach(t => this.trackCache.set(t.id, t));
             return standardized;
@@ -97,9 +143,8 @@ export default class JioSaavnProvider extends ProviderInterface {
 
     async getPlaylist(playlistId) {
         try {
-            const response = await fetch(`${this.backendUrl}/playlist?id=${playlistId}`);
-            if (!response.ok) return [];
-            const data = await response.json();
+            const data = await this.safeFetch(`/playlist?id=${playlistId}`);
+            if (!data || !Array.isArray(data)) return [];
             const standardized = data.map(t => this.standardizeTrack(t));
             standardized.forEach(t => this.trackCache.set(t.id, t));
             return standardized;
@@ -113,11 +158,8 @@ export default class JioSaavnProvider extends ProviderInterface {
 
     async getLyrics(trackId) {
         try {
-            const response = await fetch(`${this.backendUrl}/lyrics?id=${trackId}`);
-            if (!response.ok) return null;
-            const data = await response.json();
-            if (data.lyrics) {
-                // Some APIs return lyrics with <br> tags, replace them with newlines
+            const data = await this.safeFetch(`/lyrics?id=${trackId}`);
+            if (data && data.lyrics) {
                 return data.lyrics.replace(/<br\s*\/?>/gi, '\n');
             }
             return null;
@@ -127,3 +169,4 @@ export default class JioSaavnProvider extends ProviderInterface {
         }
     }
 }
+

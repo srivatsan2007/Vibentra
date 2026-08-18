@@ -8,15 +8,16 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         this.apiInstances = [
             'https://api.piped.private.coffee',
             'https://pipedapi.kavin.rocks',
-            'https://api.piped.privacydev.net',
-            'https://pipedapi.drgns.space'
+            'https://pipedapi.drgns.space',
+            'https://api.piped.privacydev.net'
         ];
         this.currentInstanceIndex = 0;
         this.trackCache = new Map();
         
-        // Base backend URL for ultra-fast audio stream resolving
         if (typeof window !== 'undefined') {
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('10.')) {
+            if (window.location.protocol === 'file:' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
+                this.backendUrl = 'https://vibentra.vercel.app/api/jiosaavn';
+            } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('10.')) {
                 this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn`;
             } else {
                 this.backendUrl = '/api/jiosaavn';
@@ -34,7 +35,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         this.currentInstanceIndex = (this.currentInstanceIndex + 1) % this.apiInstances.length;
     }
 
-    async fetchWithTimeout(url, timeoutMs = 2000) {
+    async fetchWithTimeout(url, timeoutMs = 2500) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -56,7 +57,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         while (attempts < this.apiInstances.length) {
             const baseUrl = this.getInstanceUrl();
             try {
-                const data = await this.fetchWithTimeout(`${baseUrl}${endpoint}`, 2000);
+                const data = await this.fetchWithTimeout(`${baseUrl}${endpoint}`, 2500);
                 if (data) return data;
             } catch (error) {
                 console.warn(`[YouTube Music] Mirror failed (${baseUrl}):`, error.message || error);
@@ -90,15 +91,24 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     async prefetchTrackStream(track) {
         if (!track || track.streamUrl) return;
         try {
-            const searchUrl = `${this.backendUrl}/search?q=${encodeURIComponent(`${track.title} ${track.artist}`)}`;
-            const res = await fetch(searchUrl);
-            if (res.ok) {
-                const data = await res.json();
-                if (data && data.length > 0 && data[0].streamUrl) {
-                    track.streamUrl = data[0].streamUrl;
-                    track._streamTimestamp = Date.now();
-                    this.trackCache.set(track.id, track);
-                }
+            const query = encodeURIComponent(`${track.title} ${track.artist}`);
+            const urlsToTry = [
+                `${this.backendUrl}/search?q=${query}`,
+                `https://vibentra.vercel.app/api/jiosaavn/search?q=${query}`
+            ];
+            for (let u of urlsToTry) {
+                try {
+                    const res = await fetch(u);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.length > 0 && data[0].streamUrl) {
+                            track.streamUrl = data[0].streamUrl;
+                            track._streamTimestamp = Date.now();
+                            this.trackCache.set(track.id, track);
+                            break;
+                        }
+                    }
+                } catch (e) { }
             }
         } catch (e) {}
     }
@@ -157,22 +167,28 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
         // Concurrent ultra-fast audio stream resolution
         const resolveBackendStream = async () => {
-            try {
-                const searchUrl = `${this.backendUrl}/search?q=${encodeURIComponent(titleArtist)}`;
-                const response = await fetch(searchUrl);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.length > 0 && data[0].streamUrl) {
-                        return data[0].streamUrl;
+            const query = encodeURIComponent(titleArtist);
+            const urlsToTry = [
+                `${this.backendUrl}/search?q=${query}`,
+                `https://vibentra.vercel.app/api/jiosaavn/search?q=${query}`
+            ];
+            for (let u of urlsToTry) {
+                try {
+                    const response = await fetch(u);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.length > 0 && data[0].streamUrl) {
+                            return data[0].streamUrl;
+                        }
                     }
-                }
-            } catch(e) {}
+                } catch (e) { }
+            }
             return null;
         };
 
         const resolvePipedStream = async () => {
             try {
-                const data = await this.fetchWithTimeout(`${this.getInstanceUrl()}/streams/${videoId}`, 1800);
+                const data = await this.fetchWithTimeout(`${this.getInstanceUrl()}/streams/${videoId}`, 2500);
                 const audioStreams = (data.audioStreams || []).sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
                 const bestAudio = audioStreams.find(s => s.mimeType?.includes('audio/mp4') || s.mimeType?.includes('audio/m4a')) || audioStreams[0];
                 return bestAudio?.url || null;
@@ -186,7 +202,22 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             resolvePipedStream()
         ]);
 
-        const chosenStream = fastStream || pipedStream;
+        let chosenStream = fastStream || pipedStream;
+
+        if (!chosenStream && titleArtist) {
+            try {
+                const fallbackRes = await fetch(`https://saavn.me/search/songs?query=${encodeURIComponent(titleArtist)}`);
+                if (fallbackRes.ok) {
+                    const fallbackJson = await fallbackRes.json();
+                    if (fallbackJson?.data?.results?.length > 0) {
+                        const first = fallbackJson.data.results[0];
+                        if (first.downloadUrl && first.downloadUrl.length > 0) {
+                            chosenStream = first.downloadUrl[first.downloadUrl.length - 1].url;
+                        }
+                    }
+                }
+            } catch (e) { }
+        }
 
         if (chosenStream && cached) {
             cached.streamUrl = chosenStream;
@@ -195,11 +226,13 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             return cached;
         }
 
-        if (cached) return cached;
-        throw new Error('Could not resolve audio stream for YouTube Music track');
+        if (cached && cached.streamUrl) return cached;
+
+        throw new Error(`Could not resolve audio stream for YouTube Music track: ${titleArtist}`);
     }
 
     async getLyrics(trackId) {
         return null;
     }
 }
+

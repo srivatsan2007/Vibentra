@@ -35,5 +35,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    console.log("Vibentra Portfolio v1.1.4 Initialized.");
+    console.log("Vibentra Portfolio v1.1.5 Initialized.");
 });
