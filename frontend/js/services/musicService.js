@@ -1184,7 +1184,7 @@ class MusicService {
                     title: track.title || "Vibentra Music",
                     artist: track.artist || "Playing...",
                     cover: track.cover || "",
-                    isPlaying: this.isPlaying
+                    isPlaying: this.isPlaying || this._isTransitioning
                 });
             }
         } catch (e) {

@@ -284,31 +284,20 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
 
             if (this.isPlaying) {
                 requestAudioFocus();
-                if (wakeLock != null && !wakeLock.isHeld()) {
-                    try {
-                        wakeLock.acquire(10 * 60 * 60 * 1000L /* 10 hours max */);
-                        Log.d(TAG, "WAKE_LOCK_ACQUIRED");
-                    } catch (Throwable t) {}
-                }
-                if (wifiLock != null && !wifiLock.isHeld()) {
-                    try {
-                        wifiLock.acquire();
-                        Log.d(TAG, "WIFI_LOCK_ACQUIRED");
-                    } catch (Throwable t) {}
-                }
-            } else {
-                if (wakeLock != null && wakeLock.isHeld()) {
-                    try {
-                        wakeLock.release();
-                        Log.d(TAG, "WAKE_LOCK_RELEASED");
-                    } catch (Throwable t) {}
-                }
-                if (wifiLock != null && wifiLock.isHeld()) {
-                    try {
-                        wifiLock.release();
-                        Log.d(TAG, "WIFI_LOCK_RELEASED");
-                    } catch (Throwable t) {}
-                }
+            }
+
+            // Always maintain partial WakeLock and WifiLock while foreground service is active to prevent CPU sleep during track transitions
+            if (wakeLock != null && !wakeLock.isHeld()) {
+                try {
+                    wakeLock.acquire(10 * 60 * 60 * 1000L /* 10 hours max */);
+                    Log.d(TAG, "WAKE_LOCK_ACQUIRED");
+                } catch (Throwable t) {}
+            }
+            if (wifiLock != null && !wifiLock.isHeld()) {
+                try {
+                    wifiLock.acquire();
+                    Log.d(TAG, "WIFI_LOCK_ACQUIRED");
+                } catch (Throwable t) {}
             }
 
             updateMediaSessionState();
@@ -331,13 +320,11 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         super.onTaskRemoved(rootIntent);
         Log.d(TAG, "TASK_REMOVED: Ensuring foreground media playback service remains active.");
         try {
-            if (isPlaying) {
-                Notification notification = buildNotification();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-                } else {
-                    startForeground(NOTIFICATION_ID, notification);
-                }
+            Notification notification = buildNotification();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
             }
         } catch (Throwable t) {
             t.printStackTrace();
