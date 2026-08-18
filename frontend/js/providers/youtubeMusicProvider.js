@@ -170,15 +170,19 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             const query = encodeURIComponent(titleArtist);
             const urlsToTry = [
                 `${this.backendUrl}/search?q=${query}`,
-                `https://vibentra.vercel.app/api/jiosaavn/search?q=${query}`
+                `https://vibentra.vercel.app/api/jiosaavn/search?q=${query}`,
+                `https://jiosaavn-api-v3.vercel.app/search?q=${query}`
             ];
             for (let u of urlsToTry) {
                 try {
                     const response = await fetch(u);
                     if (response.ok) {
                         const data = await response.json();
-                        if (data && data.length > 0 && data[0].streamUrl) {
-                            return data[0].streamUrl;
+                        const resultsList = Array.isArray(data) ? data : (data?.data?.results || data?.results || []);
+                        if (resultsList && resultsList.length > 0) {
+                            const first = resultsList[0];
+                            const sUrl = first.streamUrl || (first.downloadUrl && first.downloadUrl.length > 0 ? (typeof first.downloadUrl === 'string' ? first.downloadUrl : first.downloadUrl[first.downloadUrl.length - 1].url) : null);
+                            if (sUrl) return sUrl;
                         }
                     }
                 } catch (e) { }
@@ -205,18 +209,27 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         let chosenStream = fastStream || pipedStream;
 
         if (!chosenStream && titleArtist) {
-            try {
-                const fallbackRes = await fetch(`https://saavn.me/search/songs?query=${encodeURIComponent(titleArtist)}`);
-                if (fallbackRes.ok) {
-                    const fallbackJson = await fallbackRes.json();
-                    if (fallbackJson?.data?.results?.length > 0) {
-                        const first = fallbackJson.data.results[0];
-                        if (first.downloadUrl && first.downloadUrl.length > 0) {
-                            chosenStream = first.downloadUrl[first.downloadUrl.length - 1].url;
+            const fallbackApis = [
+                `https://jiosaavn-api-v3.vercel.app/search?q=${encodeURIComponent(titleArtist)}`,
+                `https://saavn.me/search/songs?query=${encodeURIComponent(titleArtist)}`
+            ];
+            for (let api of fallbackApis) {
+                try {
+                    const fallbackRes = await fetch(api);
+                    if (fallbackRes.ok) {
+                        const fallbackJson = await fallbackRes.json();
+                        const resultsList = Array.isArray(fallbackJson) ? fallbackJson : (fallbackJson?.data?.results || fallbackJson?.results || []);
+                        if (resultsList && resultsList.length > 0) {
+                            const first = resultsList[0];
+                            const sUrl = first.streamUrl || (first.downloadUrl && first.downloadUrl.length > 0 ? (typeof first.downloadUrl === 'string' ? first.downloadUrl : first.downloadUrl[first.downloadUrl.length - 1].url) : null);
+                            if (sUrl) {
+                                chosenStream = sUrl;
+                                break;
+                            }
                         }
                     }
-                }
-            } catch (e) { }
+                } catch (e) { }
+            }
         }
 
         if (chosenStream && cached) {
@@ -227,6 +240,14 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         }
 
         if (cached && cached.streamUrl) return cached;
+
+        // Final fail-safe: if cached exists, assign resolved chosenStream or fallback stream
+        if (cached) {
+            if (chosenStream) {
+                cached.streamUrl = chosenStream;
+                return cached;
+            }
+        }
 
         throw new Error(`Could not resolve audio stream for YouTube Music track: ${titleArtist}`);
     }

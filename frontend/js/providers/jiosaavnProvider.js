@@ -20,7 +20,8 @@ export default class JioSaavnProvider extends ProviderInterface {
     async safeFetch(endpointPath) {
         const urlsToTry = Array.from(new Set([
             `${this.backendUrl}${endpointPath}`,
-            `https://vibentra.vercel.app/api/jiosaavn${endpointPath}`
+            `https://vibentra.vercel.app/api/jiosaavn${endpointPath}`,
+            `https://jiosaavn-api-v3.vercel.app${endpointPath}`
         ]));
         
         for (let url of urlsToTry) {
@@ -30,7 +31,10 @@ export default class JioSaavnProvider extends ProviderInterface {
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 if (response.ok) {
-                    return await response.json();
+                    const data = await response.json();
+                    if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
+                        return data;
+                    }
                 }
             } catch (e) {
                 console.warn(`JioSaavn fetch failed for ${url}:`, e.message || e);
@@ -46,23 +50,31 @@ export default class JioSaavnProvider extends ProviderInterface {
             
             // Client-side fallback if backend fails completely
             if (!data || !Array.isArray(data) || data.length === 0) {
-                try {
-                    const fallbackRes = await fetch(`https://saavn.me/search/songs?query=${encodeURIComponent(query)}`);
-                    if (fallbackRes.ok) {
-                        const fallbackJson = await fallbackRes.json();
-                        if (fallbackJson && fallbackJson.data && fallbackJson.data.results) {
-                            data = fallbackJson.data.results.map(t => ({
-                                id: t.id,
-                                title: t.name || t.title || '',
-                                artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : ''),
-                                album: t.album?.name || '',
-                                cover: (t.image && t.image.length > 0) ? t.image[t.image.length - 1].url : '',
-                                duration: `${Math.floor((t.duration || 0) / 60)}:${((t.duration || 0) % 60).toString().padStart(2, '0')}`,
-                                streamUrl: (t.downloadUrl && t.downloadUrl.length > 0) ? t.downloadUrl[t.downloadUrl.length - 1].url : null
-                            }));
+                const fallbackApis = [
+                    `https://jiosaavn-api-v3.vercel.app/search?q=${encodeURIComponent(query)}`,
+                    `https://saavn.me/search/songs?query=${encodeURIComponent(query)}`
+                ];
+                for (let api of fallbackApis) {
+                    try {
+                        const fallbackRes = await fetch(api);
+                        if (fallbackRes.ok) {
+                            const fallbackJson = await fallbackRes.json();
+                            let rawList = Array.isArray(fallbackJson) ? fallbackJson : (fallbackJson?.data?.results || fallbackJson?.results || []);
+                            if (rawList && rawList.length > 0) {
+                                data = rawList.map(t => ({
+                                    id: t.id,
+                                    title: t.name || t.title || '',
+                                    artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : '') || t.artist || '',
+                                    album: t.album?.name || t.album || '',
+                                    cover: (t.image && t.image.length > 0) ? (typeof t.image === 'string' ? t.image : t.image[t.image.length - 1].url) : (t.cover || ''),
+                                    duration: typeof t.duration === 'number' ? `${Math.floor(t.duration / 60)}:${(t.duration % 60).toString().padStart(2, '0')}` : (t.duration || '3:30'),
+                                    streamUrl: (t.downloadUrl && t.downloadUrl.length > 0) ? (typeof t.downloadUrl === 'string' ? t.downloadUrl : t.downloadUrl[t.downloadUrl.length - 1].url) : (t.streamUrl || null)
+                                }));
+                                break;
+                            }
                         }
-                    }
-                } catch (e) { }
+                    } catch (e) { }
+                }
             }
 
             if (!data || !Array.isArray(data)) return [];
