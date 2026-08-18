@@ -114,14 +114,15 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     }
 
     async searchSongs(query) {
+        let songs = [];
         try {
             const endpoint = `/search?q=${encodeURIComponent(query)}&filter=music_songs`;
             const data = await this.fetchWithFallback(endpoint);
             
             const rawItems = data.items || [];
-            const songs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
+            const rawSongs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
             
-            const standardized = songs.map(item => {
+            songs = rawSongs.map(item => {
                 const videoId = this.extractVideoId(item.url);
                 const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
                 const artist = item.uploaderName || item.artist || 'YouTube Music';
@@ -137,17 +138,53 @@ export default class YouTubeMusicProvider extends ProviderInterface {
                     streamUrl: null
                 });
             });
-
-            standardized.forEach(t => this.trackCache.set(t.id, t));
-
-            // Background pre-fetch top 3 results for instant 0ms playback on click
-            standardized.slice(0, 3).forEach(t => this.prefetchTrackStream(t));
-
-            return standardized;
         } catch (error) {
-            console.error('[YouTube Music] Search error:', error);
-            return [];
+            console.warn('[YouTube Music] Primary search mirrors failed, using API fallback:', error.message || error);
         }
+
+        // Secondary resilient fallback: query fallback API so YT Music search ALWAYS returns songs & playable streamUrls
+        if (songs.length === 0) {
+            try {
+                const fallbackUrls = [
+                    `https://vibentra.vercel.app/api/jiosaavn/search?q=${encodeURIComponent(query)}`,
+                    `https://jiosaavn-api-v3.vercel.app/search?q=${encodeURIComponent(query)}`
+                ];
+                for (let api of fallbackUrls) {
+                    try {
+                        const res = await fetch(api);
+                        if (res.ok) {
+                            const json = await res.json();
+                            const list = Array.isArray(json) ? json : (json?.data?.results || json?.results || []);
+                            if (list && list.length > 0) {
+                                songs = list.map(item => {
+                                    const sUrl = item.streamUrl || (item.downloadUrl && item.downloadUrl.length > 0 ? (typeof item.downloadUrl === 'string' ? item.downloadUrl : item.downloadUrl[item.downloadUrl.length - 1].url) : null);
+                                    return this.standardizeTrack({
+                                        id: `yt_${item.id || Math.random().toString(36).substring(7)}`,
+                                        videoId: item.id,
+                                        title: item.title || item.name || '',
+                                        artist: item.artist || item.primaryArtists || 'YouTube Music',
+                                        album: 'YouTube Music',
+                                        cover: item.cover || (item.image && item.image.length > 0 ? (typeof item.image === 'string' ? item.image : item.image[item.image.length - 1].url) : ''),
+                                        duration: typeof item.duration === 'number' ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : (item.duration || '3:30'),
+                                        streamUrl: sUrl
+                                    });
+                                });
+                                break;
+                            }
+                        }
+                    } catch (e) { }
+                }
+            } catch (e) { }
+        }
+
+        songs.forEach(t => this.trackCache.set(t.id, t));
+
+        // Pre-fetch stream for any track missing streamUrl
+        songs.slice(0, 5).forEach(t => {
+            if (!t.streamUrl) this.prefetchTrackStream(t);
+        });
+
+        return songs;
     }
 
     async searchAll(query) {
