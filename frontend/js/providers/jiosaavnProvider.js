@@ -18,15 +18,15 @@ export default class JioSaavnProvider extends ProviderInterface {
     }
 
     async safeFetch(endpointPath) {
-        const urlsToTry = [
+        const urlsToTry = Array.from(new Set([
             `${this.backendUrl}${endpointPath}`,
             `https://vibentra.vercel.app/api/jiosaavn${endpointPath}`
-        ];
+        ]));
         
         for (let url of urlsToTry) {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 if (response.ok) {
