@@ -515,6 +515,7 @@ class MusicService {
             if (slider) {
                 slider.addEventListener('input', (e) => {
                     e.stopPropagation();
+                    slider.style.setProperty('--progress-percent', `${e.target.value}%`);
                     if (this.audioPlayer.duration) {
                         const newTime = (e.target.value / 100) * this.audioPlayer.duration;
                         this.audioPlayer.currentTime = newTime;
@@ -1512,7 +1513,10 @@ class MusicService {
         const currentTimeEl = document.getElementById('currentTime');
         const largeCurrTimeEl = document.getElementById('largeCurrTime');
 
-        if (progressSlider) progressSlider.value = 0;
+        if (progressSlider) {
+            progressSlider.value = 0;
+            progressSlider.style.setProperty('--progress-percent', '0%');
+        }
         if (largeProgressSlider) largeProgressSlider.value = 0;
         if (largeProgress) largeProgress.style.width = '0%';
         if (currentTimeEl) currentTimeEl.textContent = '0:00';
@@ -1603,7 +1607,10 @@ class MusicService {
 
         if (!isMock && this.audioPlayer.duration) {
             const percent = (this.audioPlayer.currentTime / this.audioPlayer.duration) * 100;
-            if (progressSlider) progressSlider.value = percent;
+            if (progressSlider) {
+                progressSlider.value = percent;
+                progressSlider.style.setProperty('--progress-percent', `${percent}%`);
+            }
             if (largeProgressSlider) largeProgressSlider.value = percent;
             if (largeProgress) largeProgress.style.width = `${percent}%`;
 
@@ -1615,7 +1622,10 @@ class MusicService {
         } else if (isMock) {
             let currentWidth = parseFloat(progressSlider?.value || 0);
             currentWidth = (currentWidth + 1) % 100;
-            if (progressSlider) progressSlider.value = currentWidth;
+            if (progressSlider) {
+                progressSlider.value = currentWidth;
+                progressSlider.style.setProperty('--progress-percent', `${currentWidth}%`);
+            }
             if (largeProgressSlider) largeProgressSlider.value = currentWidth;
             if (largeProgress) largeProgress.style.width = `${currentWidth}%`;
         }
