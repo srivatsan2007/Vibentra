@@ -887,226 +887,448 @@ const initHome = () => {
     }
 
     function renderSearch(initialQuery = '') {
-        dynamicContent.innerHTML = `
-            <div class="section-header">
-                <h2>Search</h2>
-            </div>
-            <div class="search-container" style="max-width: 100%; margin-bottom: 2rem; position: relative;">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" class="search-input" id="searchInput" value="${initialQuery}" placeholder="Search for songs, artists, across all providers..." style="padding-right: 40px;">
-                <button id="voiceSearchBtn" class="btn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; color: var(--text-muted); border: none; cursor: pointer; font-size: 1.2rem; transition: color 0.3s;" title="Search by humming or singing">
-                    <i class="fa-solid fa-microphone"></i>
-                </button>
-            </div>
-            
-            <div style="margin-bottom: 1rem;">
-                <h3 style="font-size: 1.1rem; margin-bottom: 10px; color: var(--text-muted);">Quick Filters</h3>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="searchFiltersContainer">
-                    <button class="btn btn-outline filter-btn" data-genre="romance">Romance</button>
-                    <button class="btn btn-outline filter-btn" data-genre="devotional songs">Devotional</button>
-                    <button class="btn btn-outline filter-btn" data-genre="love">Love</button>
-                    <button class="btn btn-outline filter-btn" data-genre="happy">Happy</button>
-                    <button class="btn btn-outline filter-btn" data-genre="sad songs">Sad</button>
-                </div>
-            </div>
+        const topGenres = [
+            { id: 'dance', title: 'Dance/\nElectronic', color: '#27856A', query: 'Dance Electronic', img: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&q=80' },
+            { id: 'indie', title: 'Indie', color: '#6082B6', query: 'Indie Hits', img: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&q=80' },
+            { id: 'pop', title: 'Pop', color: '#148A08', query: 'Pop Hits', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80' },
+            { id: 'hiphop', title: 'Hip-Hop', color: '#BA5D07', query: 'Hip Hop Rap', img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&q=80' }
+        ];
 
-            <div class="cards-grid" id="searchResultsGrid">
-                <p style="color: var(--text-muted); grid-column: 1 / -1;">Search for music, or select a quick filter above.</p>
+        const browseAllGenres = [
+            { id: 'mood', title: 'Mood', color: '#509BF5', query: 'Feel Good Mood', img: 'https://images.unsplash.com/photo-1499417265504-37060e8d5144?w=300&q=80' },
+            { id: 'rnb', title: 'R&B', color: '#B02897', query: 'R&B Soul', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&q=80' },
+            { id: 'rock', title: 'Rock', color: '#E61E32', query: 'Rock Hits', img: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=300&q=80' },
+            { id: 'focus', title: 'Focus', color: '#477D95', query: 'Focus Study Lofi', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80' },
+            { id: 'devotional', title: 'Devotional', color: '#E59700', query: 'Devotional Songs', img: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=300&q=80' },
+            { id: 'romance', title: 'Romance', color: '#DC148C', query: 'Romance Love Songs', img: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&q=80' },
+            { id: 'party', title: 'Party', color: '#AF2896', query: 'Party Anthems', img: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300&q=80' },
+            { id: 'workout', title: 'Workout', color: '#1E3264', query: 'Workout Gym Energy', img: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=300&q=80' },
+            { id: 'trending', title: 'Trending', color: '#8400E7', query: 'Top Trending Hits', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80' },
+            { id: 'chill', title: 'Chill', color: '#006450', query: 'Chill Acoustic Vibes', img: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&q=80' }
+        ];
+
+        // Storage for Recent Searches
+        const getRecentSearches = () => {
+            try {
+                return JSON.parse(localStorage.getItem('vibentra_recent_searches')) || [];
+            } catch {
+                return [];
+            }
+        };
+
+        const saveRecentSearch = (queryStr) => {
+            if (!queryStr || !queryStr.trim()) return;
+            let list = getRecentSearches();
+            list = list.filter(q => q.toLowerCase() !== queryStr.toLowerCase().trim());
+            list.unshift(queryStr.trim());
+            if (list.length > 8) list = list.slice(0, 8);
+            localStorage.setItem('vibentra_recent_searches', JSON.stringify(list));
+        };
+
+        const removeRecentSearch = (queryStr) => {
+            let list = getRecentSearches();
+            list = list.filter(q => q !== queryStr);
+            localStorage.setItem('vibentra_recent_searches', JSON.stringify(list));
+        };
+
+        dynamicContent.innerHTML = `
+            <div class="spotify-search-page">
+                <h1 class="spotify-search-title">Search</h1>
+                
+                <div class="spotify-search-bar-container">
+                    <i class="fa-solid fa-magnifying-glass spotify-search-icon"></i>
+                    <input type="text" class="spotify-search-input" id="searchInput" value="${initialQuery}" placeholder="Artists, songs, or podcasts" autocomplete="off">
+                    <button id="spotifyClearBtn" class="spotify-clear-btn" style="display: none;" title="Clear search">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <button id="voiceSearchBtn" class="spotify-voice-btn" title="Search by singing or humming">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
+
+                <div id="searchDynamicContainer">
+                    <!-- Genre browse & recent searches view initialized below -->
+                </div>
             </div>
         `;
 
         const searchInput = document.getElementById('searchInput');
-        let searchTimeout;
+        const clearBtn = document.getElementById('spotifyClearBtn');
+        const dynamicContainer = document.getElementById('searchDynamicContainer');
+        let activeFilter = 'all'; // 'all', 'songs', 'artists', 'albums', 'playlists'
+        let currentResults = null;
+        let searchDebounce;
 
-        if (initialQuery) {
-            setTimeout(() => {
-                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }, 100);
-        }
+        // Render Home Browse / Genre Grid State
+        const renderDefaultBrowseState = () => {
+            const recent = getRecentSearches();
+            let recentHtml = '';
+            if (recent.length > 0) {
+                recentHtml = `
+                    <div class="spotify-recent-searches">
+                        <div class="spotify-recent-header">
+                            <span class="spotify-recent-title">Recent searches</span>
+                            <button class="spotify-recent-clear-all" id="clearAllRecentBtn">Clear all</button>
+                        </div>
+                        <div class="spotify-recent-list">
+                            ${recent.map(item => `
+                                <div class="spotify-recent-item" data-query="${item}">
+                                    <span>${item}</span>
+                                    <i class="fa-solid fa-xmark spotify-recent-remove" data-remove="${item}"></i>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
 
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value;
-            clearTimeout(searchTimeout);
+            dynamicContainer.innerHTML = `
+                ${recentHtml}
 
-            if (!query.trim()) {
-                document.getElementById('searchResultsGrid').innerHTML = '<p style="color: var(--text-muted); grid-column: 1 / -1;">Search for music across Spotify, Deezer, and Local Database.</p>';
+                <div class="spotify-genre-section">
+                    <h2 class="spotify-genre-section-title">Your top genres</h2>
+                    <div class="spotify-genre-grid">
+                        ${topGenres.map(g => `
+                            <div class="spotify-genre-card" style="background: ${g.color};" data-query="${g.query}">
+                                <span class="spotify-genre-title">${g.title.replace('\n', '<br>')}</span>
+                                <img src="${g.img}" class="spotify-genre-img" alt="${g.title}" loading="lazy">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="spotify-genre-section">
+                    <h2 class="spotify-genre-section-title">Browse all</h2>
+                    <div class="spotify-genre-grid">
+                        ${browseAllGenres.map(g => `
+                            <div class="spotify-genre-card" style="background: ${g.color};" data-query="${g.query}">
+                                <span class="spotify-genre-title">${g.title}</span>
+                                <img src="${g.img}" class="spotify-genre-img" alt="${g.title}" loading="lazy">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Recent search item clicks
+            document.querySelectorAll('.spotify-recent-item').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    if (e.target.closest('.spotify-recent-remove')) return;
+                    const q = el.getAttribute('data-query');
+                    searchInput.value = q;
+                    triggerSearch(q);
+                });
+            });
+
+            // Recent remove button clicks
+            document.querySelectorAll('.spotify-recent-remove').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const targetQ = el.getAttribute('data-remove');
+                    removeRecentSearch(targetQ);
+                    renderDefaultBrowseState();
+                });
+            });
+
+            document.getElementById('clearAllRecentBtn')?.addEventListener('click', () => {
+                localStorage.removeItem('vibentra_recent_searches');
+                renderDefaultBrowseState();
+            });
+
+            // Genre card click triggers search
+            document.querySelectorAll('.spotify-genre-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const q = card.getAttribute('data-query');
+                    const lang = localStorage.getItem('vibentra_lang_pref') || 'English';
+                    const fullQuery = lang !== 'English' ? `${lang} ${q}` : q;
+                    searchInput.value = fullQuery;
+                    triggerSearch(fullQuery);
+                });
+            });
+        };
+
+        // Render Active Search Results View
+        const renderResultsView = (results, filter = 'all') => {
+            activeFilter = filter;
+            if (!results) return;
+
+            const hasSongs = results.songs && results.songs.length > 0;
+            const hasAlbums = results.albums && results.albums.length > 0;
+            const hasPlaylists = results.playlists && results.playlists.length > 0;
+
+            if (!hasSongs && !hasAlbums && !hasPlaylists) {
+                dynamicContainer.innerHTML = `
+                    <div style="text-align: center; padding: 50px 20px; color: rgba(255,255,255,0.6);">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 2.5rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                        <h3>No results found for "${searchInput.value}"</h3>
+                        <p style="font-size: 0.9rem; margin-top: 5px;">Please check spelling or try another keyword.</p>
+                    </div>
+                `;
                 return;
             }
 
-            document.getElementById('searchResultsGrid').innerHTML = '<p style="color: var(--primary); grid-column: 1 / -1;">Searching providers...</p>';
+            let html = `
+                <div class="spotify-filter-chips">
+                    <button class="spotify-chip ${filter === 'all' ? 'active' : ''}" data-filter="all">All</button>
+                    ${hasSongs ? `<button class="spotify-chip ${filter === 'songs' ? 'active' : ''}" data-filter="songs">Songs</button>` : ''}
+                    ${hasAlbums ? `<button class="spotify-chip ${filter === 'albums' ? 'active' : ''}" data-filter="albums">Albums</button>` : ''}
+                    ${hasPlaylists ? `<button class="spotify-chip ${filter === 'playlists' ? 'active' : ''}" data-filter="playlists">Playlists</button>` : ''}
+                </div>
+                <div id="resultsContentArea"></div>
+            `;
 
-            searchTimeout = setTimeout(async () => {
-                const results = await searchService.searchAll(query);
+            dynamicContainer.innerHTML = html;
 
-                const grid = document.getElementById('searchResultsGrid');
-                grid.innerHTML = '';
-
-                if ((!results.songs || results.songs.length === 0) &&
-                    (!results.albums || results.albums.length === 0) &&
-                    (!results.playlists || results.playlists.length === 0)) {
-                    grid.innerHTML = '<p style="color: var(--text-muted); grid-column: 1 / -1;">No results found.</p>';
-                    return;
-                }
-
-                // Render Songs
-                if (results.songs && results.songs.length > 0) {
-                    const header = document.createElement('h3');
-                    header.style.gridColumn = '1 / -1';
-                    header.style.marginTop = '10px';
-                    header.textContent = 'Songs';
-                    grid.appendChild(header);
-
-                    results.songs.forEach(track => {
-                        grid.appendChild(createSongCard(track, results.songs));
-                    });
-                }
-
-                // Render Albums
-                if (results.albums && results.albums.length > 0) {
-                    const header = document.createElement('h3');
-                    header.style.gridColumn = '1 / -1';
-                    header.style.marginTop = '20px';
-                    header.textContent = 'Albums';
-                    grid.appendChild(header);
-
-                    results.albums.forEach(album => {
-                        const card = document.createElement('div');
-                        card.className = 'music-card';
-                        card.innerHTML = `
-                            <div class="card-img-wrapper" style="position: relative;">
-                                <img src="${album.cover}" alt="Cover">
-                                <div class="play-btn-overlay"><i class="fa-solid fa-folder-open"></i></div>
-                                <button class="save-to-playlist-btn" title="Save as local playlist" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-                            </div>
-                            <div class="card-info">
-                                <h3>${album.title}</h3>
-                                <p>${album.artist}</p>
-                                <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: var(--text-muted);">Album</span>
-                            </div>
-                        `;
-
-                        // Play album logic
-                        card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            showNotification('Loading album...');
-                            const albumTracks = await providerManager.getAlbum('jiosaavn', album.id);
-                            if (albumTracks && albumTracks.length > 0) {
-                                musicService.playContext(albumTracks, albumTracks[0]);
-                            } else {
-                                showNotification('Failed to load album tracks', 'error');
-                            }
-                        });
-
-                        card.style.cursor = 'pointer';
-                        card.addEventListener('click', () => {
-                            const currentQuery = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
-                            renderRemoteCollectionDetail(album, 'album', currentQuery);
-                        });
-
-                        // Save as playlist logic
-                        card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            showNotification(`Saving '${album.title}' to your playlists...`);
-                            const albumTracks = await providerManager.getAlbum('jiosaavn', album.id);
-                            if (albumTracks && albumTracks.length > 0) {
-                                const newPl = playlistService.createPlaylist(album.title, `Saved Album: ${album.artist}`);
-                                albumTracks.forEach(track => {
-                                    playlistService.addTrackToPlaylist(newPl.id, track);
-                                });
-                                showNotification(`Saved '${album.title}' as a new playlist!`);
-                            } else {
-                                showNotification('Failed to load album tracks for saving', 'error');
-                            }
-                        });
-
-                        grid.appendChild(card);
-                    });
-                }
-
-                // Render Playlists
-                if (results.playlists && results.playlists.length > 0) {
-                    const header = document.createElement('h3');
-                    header.style.gridColumn = '1 / -1';
-                    header.style.marginTop = '20px';
-                    header.textContent = 'JioSaavn Playlists';
-                    grid.appendChild(header);
-
-                    results.playlists.forEach(pl => {
-                        const card = document.createElement('div');
-                        card.className = 'music-card';
-                        card.innerHTML = `
-                            <div class="card-img-wrapper" style="position: relative;">
-                                <img src="${pl.cover}" alt="Cover">
-                                <div class="play-btn-overlay"><i class="fa-solid fa-folder-open"></i></div>
-                                <button class="save-to-playlist-btn" title="Save as local playlist" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-                            </div>
-                            <div class="card-info">
-                                <h3>${pl.title}</h3>
-                                <p>${pl.artist}</p>
-                                <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: var(--text-muted);">Playlist</span>
-                            </div>
-                        `;
-
-                        // Play playlist logic
-                        card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            showNotification('Loading playlist...');
-                            const plTracks = await providerManager.getPlaylist('jiosaavn', pl.id);
-                            if (plTracks && plTracks.length > 0) {
-                                musicService.playContext(plTracks, plTracks[0]);
-                            } else {
-                                showNotification('Failed to load playlist tracks', 'error');
-                            }
-                        });
-
-                        card.style.cursor = 'pointer';
-                        card.addEventListener('click', () => {
-                            const currentQuery = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
-                            renderRemoteCollectionDetail(pl, 'playlist', currentQuery);
-                        });
-
-                        // Save as local playlist logic
-                        card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
-                            e.stopPropagation();
-                            showNotification(`Saving '${pl.title}' to your playlists...`);
-                            const plTracks = await providerManager.getPlaylist('jiosaavn', pl.id);
-                            if (plTracks && plTracks.length > 0) {
-                                const newPl = playlistService.createPlaylist(pl.title, `Saved JioSaavn Playlist`);
-                                plTracks.forEach(track => {
-                                    playlistService.addTrackToPlaylist(newPl.id, track);
-                                });
-                                showNotification(`Saved '${pl.title}' as a new playlist!`);
-                            } else {
-                                showNotification('Failed to load playlist tracks for saving', 'error');
-                            }
-                        });
-
-                        grid.appendChild(card);
-                    });
-                }
-            }, 500);
-        });
-
-        // Quick Filters Logic
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const genre = e.target.getAttribute('data-genre');
-                const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
-                const searchQuery = `${storedLang} ${genre}`;
-
-                searchInput.value = searchQuery;
-
-                // Trigger the input event to run the search
-                const event = new Event('input', { bubbles: true });
-                searchInput.dispatchEvent(event);
+            // Bind Filter Chips
+            document.querySelectorAll('.spotify-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const f = chip.getAttribute('data-filter');
+                    renderResultsView(results, f);
+                });
             });
+
+            const contentArea = document.getElementById('resultsContentArea');
+            contentArea.innerHTML = '';
+
+            // Filter: ALL
+            if (filter === 'all') {
+                // Top Result Card (Song #1)
+                if (hasSongs) {
+                    const topTrack = results.songs[0];
+                    const topCard = document.createElement('div');
+                    topCard.className = 'spotify-top-result-card';
+                    topCard.innerHTML = `
+                        <img src="${topTrack.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" class="spotify-top-result-img" alt="${topTrack.title}">
+                        <div>
+                            <h2 class="spotify-top-result-title">${topTrack.title}</h2>
+                            <div class="spotify-top-result-sub">
+                                <span class="spotify-badge">Song</span>
+                                <span>${topTrack.artist || 'Unknown Artist'}</span>
+                            </div>
+                        </div>
+                        <div class="spotify-top-result-play-btn" title="Play ${topTrack.title}">
+                            <i class="fa-solid fa-play"></i>
+                        </div>
+                    `;
+                    topCard.addEventListener('click', () => {
+                        musicService.playContext(results.songs, topTrack);
+                    });
+                    contentArea.appendChild(topCard);
+
+                    // Songs Grid
+                    const songsSection = document.createElement('div');
+                    songsSection.style.marginBottom = '30px';
+                    songsSection.innerHTML = `<h2 class="spotify-genre-section-title">Songs</h2>`;
+                    const songsGrid = document.createElement('div');
+                    songsGrid.className = 'cards-grid';
+                    results.songs.slice(0, 6).forEach(track => {
+                        songsGrid.appendChild(createSongCard(track, results.songs));
+                    });
+                    songsSection.appendChild(songsGrid);
+                    contentArea.appendChild(songsSection);
+                }
+
+                // Albums Grid
+                if (hasAlbums) {
+                    const albumSec = document.createElement('div');
+                    albumSec.style.marginBottom = '30px';
+                    albumSec.innerHTML = `<h2 class="spotify-genre-section-title">Albums</h2>`;
+                    const albumGrid = document.createElement('div');
+                    albumGrid.className = 'cards-grid';
+                    results.albums.slice(0, 4).forEach(album => {
+                        albumGrid.appendChild(createAlbumCard(album));
+                    });
+                    albumSec.appendChild(albumGrid);
+                    contentArea.appendChild(albumSec);
+                }
+
+                // Playlists Grid
+                if (hasPlaylists) {
+                    const plSec = document.createElement('div');
+                    plSec.style.marginBottom = '30px';
+                    plSec.innerHTML = `<h2 class="spotify-genre-section-title">Playlists</h2>`;
+                    const plGrid = document.createElement('div');
+                    plGrid.className = 'cards-grid';
+                    results.playlists.slice(0, 4).forEach(pl => {
+                        plGrid.appendChild(createPlaylistCard(pl));
+                    });
+                    plSec.appendChild(plGrid);
+                    contentArea.appendChild(plSec);
+                }
+
+            } else if (filter === 'songs') {
+                const songsSection = document.createElement('div');
+                songsSection.innerHTML = `<h2 class="spotify-genre-section-title">All Songs</h2>`;
+                const songsGrid = document.createElement('div');
+                songsGrid.className = 'cards-grid';
+                results.songs.forEach(track => {
+                    songsGrid.appendChild(createSongCard(track, results.songs));
+                });
+                songsSection.appendChild(songsGrid);
+                contentArea.appendChild(songsSection);
+
+            } else if (filter === 'albums') {
+                const albumSec = document.createElement('div');
+                albumSec.innerHTML = `<h2 class="spotify-genre-section-title">All Albums</h2>`;
+                const albumGrid = document.createElement('div');
+                albumGrid.className = 'cards-grid';
+                results.albums.forEach(album => {
+                    albumGrid.appendChild(createAlbumCard(album));
+                });
+                albumSec.appendChild(albumGrid);
+                contentArea.appendChild(albumSec);
+
+            } else if (filter === 'playlists') {
+                const plSec = document.createElement('div');
+                plSec.innerHTML = `<h2 class="spotify-genre-section-title">All Playlists</h2>`;
+                const plGrid = document.createElement('div');
+                plGrid.className = 'cards-grid';
+                results.playlists.forEach(pl => {
+                    plGrid.appendChild(createPlaylistCard(pl));
+                });
+                plSec.appendChild(plGrid);
+                contentArea.appendChild(plSec);
+            }
+        };
+
+        // Helper to create Album Card
+        const createAlbumCard = (album) => {
+            const card = document.createElement('div');
+            card.className = 'music-card';
+            card.innerHTML = `
+                <div class="card-img-wrapper" style="position: relative;">
+                    <img src="${album.cover}" alt="Cover" loading="lazy">
+                    <div class="play-btn-overlay" title="Play Album"><i class="fa-solid fa-folder-open"></i></div>
+                    <button class="save-to-playlist-btn" title="Save as local playlist" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div class="card-info">
+                    <h3>${album.title}</h3>
+                    <p>${album.artist}</p>
+                    <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: rgba(255,255,255,0.6);">Album</span>
+                </div>
+            `;
+            card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                showNotification('Loading album...');
+                const albumTracks = await providerManager.getAlbum('jiosaavn', album.id);
+                if (albumTracks && albumTracks.length > 0) {
+                    musicService.playContext(albumTracks, albumTracks[0]);
+                } else {
+                    showNotification('Failed to load album tracks', 'error');
+                }
+            });
+            card.addEventListener('click', () => {
+                renderRemoteCollectionDetail(album, 'album', searchInput.value);
+            });
+            card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                showNotification(`Saving '${album.title}' to your playlists...`);
+                const albumTracks = await providerManager.getAlbum('jiosaavn', album.id);
+                if (albumTracks && albumTracks.length > 0) {
+                    const newPl = playlistService.createPlaylist(album.title, `Saved Album: ${album.artist}`);
+                    albumTracks.forEach(track => playlistService.addTrackToPlaylist(newPl.id, track));
+                    showNotification(`Saved '${album.title}' as a new playlist!`);
+                } else {
+                    showNotification('Failed to load album tracks for saving', 'error');
+                }
+            });
+            return card;
+        };
+
+        // Helper to create Playlist Card
+        const createPlaylistCard = (pl) => {
+            const card = document.createElement('div');
+            card.className = 'music-card';
+            card.innerHTML = `
+                <div class="card-img-wrapper" style="position: relative;">
+                    <img src="${pl.cover}" alt="Cover" loading="lazy">
+                    <div class="play-btn-overlay" title="Play Playlist"><i class="fa-solid fa-folder-open"></i></div>
+                    <button class="save-to-playlist-btn" title="Save as local playlist" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div class="card-info">
+                    <h3>${pl.title}</h3>
+                    <p>${pl.artist || 'JioSaavn'}</p>
+                    <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: rgba(255,255,255,0.6);">Playlist</span>
+                </div>
+            `;
+            card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                showNotification('Loading playlist...');
+                const plTracks = await providerManager.getPlaylist('jiosaavn', pl.id);
+                if (plTracks && plTracks.length > 0) {
+                    musicService.playContext(plTracks, plTracks[0]);
+                } else {
+                    showNotification('Failed to load playlist tracks', 'error');
+                }
+            });
+            card.addEventListener('click', () => {
+                renderRemoteCollectionDetail(pl, 'playlist', searchInput.value);
+            });
+            card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                showNotification(`Saving '${pl.title}' to your playlists...`);
+                const plTracks = await providerManager.getPlaylist('jiosaavn', pl.id);
+                if (plTracks && plTracks.length > 0) {
+                    const newPl = playlistService.createPlaylist(pl.title, `Saved JioSaavn Playlist`);
+                    plTracks.forEach(track => playlistService.addTrackToPlaylist(newPl.id, track));
+                    showNotification(`Saved '${pl.title}' as a new playlist!`);
+                } else {
+                    showNotification('Failed to load playlist tracks for saving', 'error');
+                }
+            });
+            return card;
+        };
+
+        // Execution of Search Query
+        const triggerSearch = async (query) => {
+            const cleanQuery = query ? query.trim() : '';
+            if (!cleanQuery) {
+                clearBtn.style.display = 'none';
+                renderDefaultBrowseState();
+                return;
+            }
+
+            clearBtn.style.display = 'flex';
+            dynamicContainer.innerHTML = `
+                <div style="padding: 40px 0; text-align: center; color: rgba(255,255,255,0.7);">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: #1DB954; margin-bottom: 12px;"></i>
+                    <p style="font-size: 0.95rem; font-weight: 600;">Searching across YouTube Music & JioSaavn...</p>
+                </div>
+            `;
+
+            saveRecentSearch(cleanQuery);
+            currentResults = await searchService.searchAll(cleanQuery);
+            renderResultsView(currentResults, 'all');
+        };
+
+        // Event Listeners for Search Bar
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            clearBtn.style.display = val ? 'flex' : 'none';
+            clearTimeout(searchDebounce);
+
+            if (!val.trim()) {
+                renderDefaultBrowseState();
+                return;
+            }
+
+            searchDebounce = setTimeout(() => {
+                triggerSearch(val);
+            }, 450);
         });
 
-        // Voice Search Logic
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            searchInput.focus();
+            renderDefaultBrowseState();
+        });
+
+        // Voice Search Microphone logic
         const voiceSearchBtn = document.getElementById('voiceSearchBtn');
         let isRecording = false;
         let mediaRecorder;
@@ -1114,11 +1336,9 @@ const initHome = () => {
 
         voiceSearchBtn.addEventListener('click', async () => {
             if (isRecording) {
-                // Stop recording
                 mediaRecorder.stop();
                 isRecording = false;
-                voiceSearchBtn.style.color = 'var(--text-muted)';
-                voiceSearchBtn.querySelector('i').classList.remove('fa-beat-fade');
+                voiceSearchBtn.classList.remove('recording');
                 return;
             }
 
@@ -1128,41 +1348,31 @@ const initHome = () => {
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) {
-                        audioChunks.push(e.data);
-                    }
+                    if (e.data.size > 0) audioChunks.push(e.data);
                 };
 
                 mediaRecorder.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-
-                    // Stop all tracks to release mic
                     stream.getTracks().forEach(track => track.stop());
 
-                    // Convert to base64
                     const reader = new FileReader();
                     reader.readAsDataURL(audioBlob);
                     reader.onloadend = async () => {
                         const base64Audio = reader.result;
-
-                        showNotification('Recognizing song...', 'success');
+                        showNotification('Recognizing audio...', 'success');
 
                         try {
                             const response = await fetch('http://localhost:5000/api/jiosaavn/recognize', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
+                                headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ audioData: base64Audio })
                             });
-
                             const data = await response.json();
 
                             if (data.success && data.track) {
                                 showNotification('Song recognized!');
                                 searchInput.value = data.track.title;
-                                const event = new Event('input', { bubbles: true });
-                                searchInput.dispatchEvent(event);
+                                triggerSearch(data.track.title);
                             } else {
                                 showNotification('Could not recognize the song', 'error');
                             }
@@ -1172,18 +1382,13 @@ const initHome = () => {
                     };
                 };
 
-                // Start recording
                 mediaRecorder.start();
                 isRecording = true;
-                voiceSearchBtn.style.color = '#ef4444'; // Red to indicate recording
-                voiceSearchBtn.querySelector('i').classList.add('fa-beat-fade');
+                voiceSearchBtn.classList.add('recording');
                 showNotification('Listening... Sing or hum a song!', 'success');
 
-                // Auto stop after 5 seconds
                 setTimeout(() => {
-                    if (isRecording) {
-                        voiceSearchBtn.click();
-                    }
+                    if (isRecording) voiceSearchBtn.click();
                 }, 5000);
 
             } catch (err) {
@@ -1191,7 +1396,15 @@ const initHome = () => {
                 showNotification('Microphone access denied or unavailable', 'error');
             }
         });
+
+        // Initialize state
+        if (initialQuery) {
+            triggerSearch(initialQuery);
+        } else {
+            renderDefaultBrowseState();
+        }
     }
+
 
     async function renderRemoteCollectionDetail(collection, type, currentQuery = '') {
         dynamicContent.innerHTML = `
@@ -1232,38 +1445,20 @@ const initHome = () => {
 
             const trackListContainer = document.getElementById('remoteTrackList');
             if (!remoteTracks || remoteTracks.length === 0) {
-                trackListContainer.innerHTML = '<p style="color: var(--text-muted);">No tracks found.</p>';
+                trackListContainer.innerHTML = '<p style="color: var(--text-muted);">No tracks found in this collection.</p>';
                 return;
             }
 
-            let html = '';
-            remoteTracks.forEach((track, index) => {
-                html += `
-                <div class="track-item" data-id="${track.id}" style="cursor: pointer; padding: 10px; border-radius: 8px; transition: background 0.2s;">
-                    <div class="track-number" style="width: 30px; text-align: center; color: var(--text-muted);">${index + 1}</div>
-                    <div class="track-info-row" style="flex: 1; display: flex; align-items: center; gap: 15px;">
-                        <img src="${track.cover}" class="track-img" alt="cover" style="width: 40px; height: 40px; border-radius: 4px;">
-                        <div class="track-details" style="display: flex; flex-direction: column;">
-                            <span style="font-weight: 500;">${track.title}</span>
-                            <span style="font-size: 0.8rem; color: var(--text-muted);">${track.artist}</span>
-                        </div>
-                    </div>
-                    <div class="track-album" style="flex: 1; color: var(--text-muted); font-size: 0.9rem; display: none;">${track.album || 'Single'}</div>
-                    <div class="track-duration" style="color: var(--text-muted); font-size: 0.9rem;">${track.duration}</div>
-                </div>
-                `;
-            });
-            trackListContainer.innerHTML = html;
+            trackListContainer.className = 'cards-grid';
+            trackListContainer.innerHTML = '';
 
-            document.querySelectorAll('#remoteTrackList .track-item').forEach((item, idx) => {
-                item.addEventListener('click', () => {
-                    musicService.playContext(remoteTracks, remoteTracks[idx]);
-                });
+            remoteTracks.forEach(track => {
+                trackListContainer.appendChild(createSongCard(track, remoteTracks));
             });
 
         } catch (error) {
             console.error(error);
-            document.getElementById('remoteTrackList').innerHTML = '<p style="color: #ef4444;">Failed to load tracks.</p>';
+            document.getElementById('remoteTrackList').innerHTML = '<p style="color: #ef4444;">Failed to load collection tracks.</p>';
         }
     }
 
