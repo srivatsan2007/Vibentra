@@ -1523,7 +1523,28 @@ class MusicService {
             artistEl.textContent = track.artist || 'Unknown Artist';
         }
 
-        const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn')];
+        // Desktop Right Now-Playing Sidebar Sync
+        const desktopRightSongTitle = document.getElementById('desktopRightSongTitle');
+        const desktopRightArtist = document.getElementById('desktopRightArtist');
+        const desktopRightImg = document.getElementById('desktopRightImg');
+        const desktopArtistImg = document.getElementById('desktopArtistImg');
+        const desktopArtistName = document.getElementById('desktopArtistName');
+        const desktopRightLikeBtn = document.getElementById('desktopRightLikeBtn');
+
+        if (desktopRightSongTitle) desktopRightSongTitle.textContent = track.title || 'Untitled Track';
+        if (desktopRightArtist) desktopRightArtist.textContent = track.artist || 'Unknown Artist';
+        if (desktopRightImg) desktopRightImg.src = safeCover;
+        if (desktopArtistImg) desktopArtistImg.src = safeCover;
+        if (desktopArtistName) desktopArtistName.textContent = track.artist || 'Featured Artist';
+
+        if (desktopRightLikeBtn) {
+            const icon = desktopRightLikeBtn.querySelector('i');
+            const isFav = favoriteService.isFavorite(track.id);
+            if (icon) icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            desktopRightLikeBtn.classList.toggle('active', isFav);
+        }
+
+        const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn'), document.getElementById('desktopRightLikeBtn')];
         likeBtns.forEach(btn => {
             const icon = btn?.querySelector('i');
             if (btn && icon) {

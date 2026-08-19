@@ -161,6 +161,40 @@ const initHome = () => {
         }
     });
 
+    // Desktop Search & Home Topbar Navigation
+    const desktopSearchInput = document.getElementById('desktopSearchInput');
+    const desktopHomeBtn = document.getElementById('desktopHomeBtn');
+    const desktopBrowseBtn = document.getElementById('desktopBrowseBtn');
+
+    if (desktopHomeBtn) {
+        desktopHomeBtn.addEventListener('click', () => {
+            loadView('home');
+        });
+    }
+
+    if (desktopBrowseBtn) {
+        desktopBrowseBtn.addEventListener('click', () => {
+            loadView('search');
+        });
+    }
+
+    if (desktopSearchInput) {
+        desktopSearchInput.addEventListener('focus', () => {
+            if (currentView !== 'search') {
+                loadView('search');
+            }
+        });
+
+        desktopSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            const mobileSearchInput = document.getElementById('searchInput');
+            if (mobileSearchInput) {
+                mobileSearchInput.value = query;
+                mobileSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+    }
+
     // Logout
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
@@ -747,17 +781,51 @@ const initHome = () => {
 
     // Views Rendering
     async function renderHome() {
+        const quickItems = [
+            { title: 'Karuppu All Songs (Tamil)', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80', query: 'Karuppu Tamil' },
+            { title: 'Gentleman', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&q=80', query: 'Gentleman AR Rahman' },
+            { title: 'Rajinimurugan (OST)', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80', query: 'Rajinimurugan Imman' },
+            { title: 'Jana Nayagan (Tamil)', cover: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&q=80', query: 'Jana Nayagan' },
+            { title: 'Karuppu (Original Motion Picture)', cover: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&q=80', query: 'Karuppu Soundtrack' },
+            { title: 'Ayyappan Tamil Hits', cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80', query: 'Ayyappan Tamil' },
+            { title: 'Maan Karate (OST)', cover: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&q=80', query: 'Maan Karate Anirudh' },
+            { title: 'Unnikrishnan Best Hits', cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&q=80', query: 'Unnikrishnan Tamil' }
+        ];
+
+        let quickHtml = '';
+        quickItems.forEach(item => {
+            quickHtml += `
+                <div class="spotify-quick-card" data-query="${item.query}">
+                    <img src="${item.cover}" alt="cover">
+                    <span>${item.title}</span>
+                    <button class="spotify-quick-play-btn"><i class="fa-solid fa-play"></i></button>
+                </div>
+            `;
+        });
+
         dynamicContent.innerHTML = `
-            <div class="welcome-banner">
+            <!-- Spotify Filter Chips (Desktop View) -->
+            <div class="spotify-filter-chips desktop-only-el" style="margin-bottom: 20px;">
+                <button class="chip active">All</button>
+                <button class="chip">Music</button>
+                <button class="chip">Podcasts</button>
+            </div>
+
+            <!-- Spotify 2-Column Quick Grid (Desktop View) -->
+            <div class="spotify-quick-grid desktop-only-el">
+                ${quickHtml}
+            </div>
+
+            <div class="welcome-banner" style="margin-bottom: 20px;">
                 <div>
-                    <h1 style="font-size: 2.5rem; margin-bottom: 10px;">Good evening</h1>
+                    <h1 style="font-size: 2.2rem; margin-bottom: 6px;">Good evening</h1>
                     <p style="opacity: 0.8;">Ready for some new tunes?</p>
                 </div>
             </div>
 
             <div id="homeRecentSection" style="display: none;">
                 <div class="section-header">
-                    <h2>Recently Played</h2>
+                    <h2>Jump back in</h2>
                 </div>
                 <div class="cards-grid" id="homeRecentGrid">
                 </div>
@@ -782,6 +850,24 @@ const initHome = () => {
                 <p style="color: var(--primary); padding: 20px;">Loading artists...</p>
             </div>
         `;
+
+        // Bind Quick Grid Click Handlers
+        document.querySelectorAll('.spotify-quick-card').forEach(card => {
+            card.addEventListener('click', async () => {
+                const query = card.getAttribute('data-query');
+                const searchNavBtn = document.querySelector('.nav-item[data-path="search"]');
+                if (searchNavBtn) {
+                    searchNavBtn.click();
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('searchInput');
+                        if (searchInput) {
+                            searchInput.value = query;
+                            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }, 50);
+                }
+            });
+        });
 
         const history = historyService.getHistory();
         if (history.length > 0) {

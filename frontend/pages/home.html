@@ -210,6 +210,15 @@
                 </li>
             </ul>
 
+            <!-- Library Promo Box (Desktop) -->
+            <div class="spotify-sidebar-promo desktop-only-el">
+                <div class="promo-content">
+                    <h4>Import your music</h4>
+                    <p>Bring your playlists, songs and artists from other apps.</p>
+                    <button class="btn-import-lib" id="importLibBtn">Import library</button>
+                </div>
+            </div>
+
             <ul class="nav-menu sidebar-bottom">
                 <li class="nav-item" data-path="profile">
                     <i class="fa-solid fa-user"></i>
@@ -237,6 +246,21 @@
                     <div class="mobile-logo-brand">
                         <img src="../images/vibentra-logo.png" alt="Vibentra Logo" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover;">
                         <span>Vibentra</span>
+                    </div>
+                </div>
+
+                <!-- Spotify Centered Desktop Search Pill Bar -->
+                <div class="spotify-desktop-search-container desktop-only-el">
+                    <button class="spotify-desktop-home-btn" id="desktopHomeBtn" title="Home">
+                        <i class="fa-solid fa-house"></i>
+                    </button>
+                    <div class="spotify-desktop-search-pill">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="desktopSearchInput" placeholder="What do you want to play?" autocomplete="off">
+                        <div class="spotify-search-pill-divider"></div>
+                        <button class="spotify-search-browse-btn" id="desktopBrowseBtn" title="Browse">
+                            <i class="fa-solid fa-folder-closed"></i>
+                        </button>
                     </div>
                 </div>
                 
@@ -391,6 +415,44 @@
 
             </div>
         </main>
+
+        <!-- Right Sidebar (Spotify Desktop Now Playing View) -->
+        <aside class="now-playing-sidebar desktop-only-el" id="nowPlayingSidebar">
+            <div class="now-playing-header">
+                <h3 id="desktopRightTitle">Now Playing</h3>
+                <div class="now-playing-header-actions">
+                    <button id="desktopRightOptionsBtn" title="More Options"><i class="fa-solid fa-ellipsis"></i></button>
+                </div>
+            </div>
+            
+            <div class="now-playing-artwork-box">
+                <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" id="desktopRightImg" alt="Now Playing Cover">
+            </div>
+
+            <div class="now-playing-meta">
+                <div class="now-playing-meta-info">
+                    <h2 id="desktopRightSongTitle">Select a Song</h2>
+                    <p id="desktopRightArtist">Vibentra Player</p>
+                </div>
+                <div class="now-playing-meta-btns">
+                    <button class="like-btn" id="desktopRightLikeBtn" title="Add to Favorites">
+                        <i class="fa-regular fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- About The Artist Card -->
+            <div class="spotify-artist-card">
+                <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: #FFFFFF; font-weight: 700;">About the artist</h4>
+                <div class="spotify-artist-hero">
+                    <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80" id="desktopArtistImg" alt="Artist Avatar">
+                    <div class="spotify-artist-info">
+                        <h3 id="desktopArtistName" style="font-size: 1.1rem; color: #FFFFFF; margin-bottom: 4px;">Featured Artist</h3>
+                        <p id="desktopArtistListeners" style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Popular Music Creator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <!-- Music Player UI -->
