@@ -538,7 +538,7 @@
         </div>
     </div>
 
-    <!-- Large Player Modal (Vinyl Turntable Edition) -->
+    <!-- Large Player Modal (Spotify Premium x YouTube Music Edition) -->
     <div class="large-player-modal" id="largePlayerModal">
         <!-- Ambient Blurred Background Layer -->
         <div class="vinyl-ambient-container">
@@ -552,7 +552,7 @@
                 <i class="fa-solid fa-chevron-down"></i>
             </button>
             <div class="vinyl-header-title">
-                <span class="vinyl-badge"><i class="fa-solid fa-compact-disc"></i> NOW PLAYING</span>
+                <span class="vinyl-badge"><i class="fa-solid fa-compact-disc"></i> PLAYING FROM ALBUM</span>
             </div>
             <button class="cast-btn" title="Cast Audio">
                 <i class="fa-solid fa-cast"></i>
@@ -560,28 +560,12 @@
         </div>
 
         <div class="large-player-content vinyl-player-container">
-            <!-- Vinyl Turntable Unit -->
-            <div class="turntable-unit">
-                <div class="turntable-deck">
-                    <!-- Tonearm System -->
-                    <div class="turntable-tonearm">
-                        <div class="tonearm-base"></div>
-                        <div class="tonearm-rod"></div>
-                        <div class="tonearm-head"></div>
-                    </div>
-
-                    <!-- Vinyl Record Disc -->
-                    <div class="vinyl-record" id="vinylRecord">
-                        <!-- Center Label & Dynamic Album Artwork -->
-                        <div class="vinyl-center-label">
-                            <img src="" alt="Album Cover" id="largePlayerImg" class="vinyl-album-art">
-                            <div class="vinyl-spindle"></div>
-                        </div>
-                    </div>
-                </div>
+            <!-- Spotify Premium Hero Album Card -->
+            <div class="spotify-hero-artwork-wrapper">
+                <img src="" alt="Album Cover" id="largePlayerImg" class="spotify-hero-album-art">
             </div>
 
-            <!-- Track Meta Info -->
+            <!-- Track Meta Info & Heart Toggle -->
             <div class="vinyl-track-info">
                 <div class="vinyl-meta-text">
                     <h2 id="largePlayerTitle" class="vinyl-title">Track Title</h2>
@@ -589,12 +573,6 @@
                 </div>
                 <!-- Quick Actions -->
                 <div class="vinyl-quick-actions">
-                    <button id="largeRingtoneBtn" class="vinyl-action-btn ringtone" title="Set as Ringtone Studio">
-                        <i class="fa-solid fa-bell"></i>
-                    </button>
-                    <button id="largeDownloadBtn" class="vinyl-action-btn download" title="Download HD Audio">
-                        <i class="fa-solid fa-download"></i>
-                    </button>
                     <button class="like-btn vinyl-action-btn favorite" id="largeLikeBtn" title="Add to Favorites">
                         <i class="fa-regular fa-heart"></i>
                     </button>
