@@ -843,20 +843,31 @@ const initHome = () => {
     // Views Rendering
     async function renderHome() {
         dynamicContent.innerHTML = `
-            <!-- Spotify Filter Chips (Desktop View) -->
-            <div class="spotify-filter-chips desktop-only-el" style="margin-bottom: 20px;">
-                <button class="chip active">All</button>
-                <button class="chip">Music</button>
-                <button class="chip">Podcasts</button>
+            <!-- Sticky Filter Chips (YouTube Music & Spotify Hybrid) -->
+            <div class="mobile-filter-chips-wrapper" id="homeFilterChips">
+                <button class="mobile-filter-chip active" data-filter="all">All</button>
+                <button class="mobile-filter-chip" data-filter="music">Music</button>
+                <button class="mobile-filter-chip" data-filter="podcasts">Podcasts</button>
+                <button class="mobile-filter-chip" data-filter="chill">Chill</button>
+                <button class="mobile-filter-chip" data-filter="workout">Workout</button>
+                <button class="mobile-filter-chip" data-filter="tamil">Tamil Hits</button>
             </div>
 
-            <!-- Spotify 2-Column Quick Grid (Desktop View - Dynamic) -->
-            <div class="spotify-quick-grid desktop-only-el" id="desktopQuickGrid">
+            <!-- Spotify 2-Column Quick Grid (Mobile & Desktop) -->
+            <div class="spotify-quick-grid" id="desktopQuickGrid">
+            </div>
+
+            <!-- YouTube Music Quick Tune Mix Hero Banner -->
+            <div class="hero-mix-card" id="heroMixCard">
+                <div class="mix-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> QUICK TUNE MIX</div>
+                <h2>Your Daily Radio Mix</h2>
+                <p>Non-stop music stream powered by YouTube Music & JioSaavn</p>
+                <button class="btn-play-mix" id="homePlayMixBtn"><i class="fa-solid fa-play"></i> Play Mix</button>
             </div>
 
             <div class="welcome-banner" style="margin-bottom: 20px;">
                 <div>
-                    <h1 style="font-size: 2.2rem; margin-bottom: 6px;">Good evening</h1>
+                    <h1 style="font-size: 2rem; margin-bottom: 6px;">Good evening</h1>
                     <p style="opacity: 0.8;">Ready for some new tunes?</p>
                 </div>
             </div>
@@ -865,19 +876,19 @@ const initHome = () => {
                 <div class="section-header">
                     <h2>Jump back in</h2>
                 </div>
-                <div class="cards-grid" id="homeRecentGrid">
+                <div class="cards-grid horizontal-shelf" id="homeRecentGrid">
                 </div>
             </div>
 
             <div class="section-header">
-                <h2>Trending Now</h2>
+                <h2>Top Charts Today</h2>
                 <select id="langPrefSelect" style="background: var(--cards); color: white; border: 1px solid var(--glass-border); padding: 5px 10px; border-radius: 8px; outline: none; cursor: pointer;">
                     <option value="English">English</option>
                     <option value="Tamil">Tamil</option>
                     <option value="Hindi">Hindi</option>
                 </select>
             </div>
-            <div class="cards-grid" id="homeTrendingGrid">
+            <div class="cards-grid horizontal-shelf" id="homeTrendingGrid">
                 <p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>
             </div>
 
@@ -885,17 +896,40 @@ const initHome = () => {
                 <h2>Latest Albums & New Releases</h2>
                 <span style="font-size: 0.8rem; color: var(--text-muted);">YouTube Music & JioSaavn</span>
             </div>
-            <div class="cards-grid" id="homeLatestAlbumsGrid">
+            <div class="cards-grid horizontal-shelf" id="homeLatestAlbumsGrid">
                 <p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>
             </div>
 
             <div class="section-header" style="margin-top: 2rem;">
                 <h2>Popular Artists</h2>
             </div>
-            <div class="cards-grid" id="homeArtistsGrid">
+            <div class="cards-grid horizontal-shelf" id="homeArtistsGrid">
                 <p style="color: var(--primary); padding: 20px;">Loading artists...</p>
             </div>
         `;
+
+        // Handle YTM Filter Chips
+        const filterChips = document.querySelectorAll('#homeFilterChips .mobile-filter-chip');
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                filterChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const filterType = chip.getAttribute('data-filter');
+                if (filterType === 'all' || filterType === 'music') {
+                    loadTrendingData(localStorage.getItem('vibentra_lang_pref') || 'English');
+                } else if (filterType === 'tamil') {
+                    loadTrendingData('Tamil');
+                } else {
+                    searchService.searchSongs(`${filterType} songs 2026`).then(res => {
+                        const trendingGrid = document.getElementById('homeTrendingGrid');
+                        if (trendingGrid && res.length > 0) {
+                            trendingGrid.innerHTML = '';
+                            res.slice(0, 10).forEach(track => trendingGrid.appendChild(createSongCard(track, res)));
+                        }
+                    });
+                }
+            });
+        });
 
         const renderDesktopQuickGrid = (trendingSongs = []) => {
             const container = document.getElementById('desktopQuickGrid');
@@ -950,7 +984,7 @@ const initHome = () => {
             const recentGrid = document.getElementById('homeRecentGrid');
             recentGrid.innerHTML = '';
 
-            history.slice(0, 5).forEach(track => {
+            history.slice(0, 6).forEach(track => {
                 recentGrid.appendChild(createSongCard(track, history));
             });
         }
@@ -958,6 +992,8 @@ const initHome = () => {
         const langPrefSelect = document.getElementById('langPrefSelect');
         const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
         langPrefSelect.value = storedLang;
+
+        let activeTrendingTracks = [];
 
         const loadTrendingData = async (language) => {
             const queryMap = {
@@ -997,7 +1033,9 @@ const initHome = () => {
                 const trendingResults = await searchService.searchSongs(searchQuery);
                 if (!document.getElementById('homeTrendingGrid')) return; // Check if still on home
 
-                // Dynamically update Desktop Quick Grid with real live trending songs
+                activeTrendingTracks = trendingResults;
+
+                // Dynamically update Desktop & Mobile Quick Grid with real live trending songs
                 renderDesktopQuickGrid(trendingResults);
 
                 trendingGrid.innerHTML = '';
@@ -1007,9 +1045,30 @@ const initHome = () => {
                     return;
                 }
 
-                trendingResults.slice(0, 10).forEach(track => {
-                    trendingGrid.appendChild(createSongCard(track, trendingResults));
+                trendingResults.slice(0, 10).forEach((track, index) => {
+                    const card = createSongCard(track, trendingResults);
+                    if (index < 5) {
+                        card.classList.add('ranked-chart-card');
+                        const imgWrapper = card.querySelector('.card-img-wrapper');
+                        if (imgWrapper) {
+                            const badge = document.createElement('div');
+                            badge.className = 'ranked-badge';
+                            badge.textContent = `${index + 1}`;
+                            imgWrapper.appendChild(badge);
+                        }
+                    }
+                    trendingGrid.appendChild(card);
                 });
+
+                // Hook up Play Mix button
+                const playMixBtn = document.getElementById('homePlayMixBtn');
+                if (playMixBtn) {
+                    playMixBtn.onclick = () => {
+                        if (activeTrendingTracks.length > 0) {
+                            musicService.playContext(activeTrendingTracks, activeTrendingTracks[0]);
+                        }
+                    };
+                }
 
                 // Extract and render dynamic artists
                 if (artistsGrid) {

@@ -3826,5 +3826,246 @@ input {
     }
 }
 
+/* ==========================================================================
+   MOBILE SPOTIFY PREMIUM x YOUTUBE MUSIC REDESIGN (< 1024px)
+   ========================================================================== */
+@media (max-width: 1023px) {
+    /* Floating Glass Mini Player Dock */
+    .music-player {
+        position: fixed !important;
+        bottom: 74px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: calc(100% - 24px) !important;
+        height: 62px !important;
+        border-radius: 28px !important;
+        background: rgba(18, 18, 26, 0.92) !important;
+        backdrop-filter: blur(25px) !important;
+        -webkit-backdrop-filter: blur(25px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
+        z-index: 999 !important;
+        padding: 0 16px !important;
+        margin: 0 !important;
+    }
+
+    /* Floating Glass Bottom Navigation Bar */
+    .mobile-bottom-nav {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 8px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: calc(100% - 24px) !important;
+        height: 58px !important;
+        border-radius: 28px !important;
+        background: rgba(15, 23, 42, 0.94) !important;
+        backdrop-filter: blur(25px) !important;
+        -webkit-backdrop-filter: blur(25px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+        z-index: 1000 !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        padding: 0 10px !important;
+    }
+
+    .mobile-bottom-nav .nav-items-container {
+        display: flex !important;
+        width: 100% !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+    }
+
+    .mobile-nav-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 3px !important;
+        color: rgba(255, 255, 255, 0.6) !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        padding: 6px 16px !important;
+        border-radius: 20px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .mobile-nav-item i {
+        font-size: 1.15rem !important;
+    }
+
+    .mobile-nav-item.active {
+        color: #1DB954 !important;
+        background: rgba(29, 185, 84, 0.12) !important;
+    }
+
+    /* Sticky YTM Filter Chips Row */
+    .mobile-filter-chips-wrapper {
+        display: flex !important;
+        overflow-x: auto !important;
+        gap: 8px !important;
+        padding: 4px 0 14px 0 !important;
+        margin-bottom: 12px !important;
+        scrollbar-width: none !important;
+    }
+    .mobile-filter-chips-wrapper::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .mobile-filter-chip {
+        flex: 0 0 auto !important;
+        padding: 8px 16px !important;
+        border-radius: 20px !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #FFFFFF !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        white-space: nowrap !important;
+    }
+
+    .mobile-filter-chip.active {
+        background: #1DB954 !important;
+        color: #000000 !important;
+        border-color: #1DB954 !important;
+        box-shadow: 0 0 12px rgba(29, 185, 84, 0.4) !important;
+    }
+
+    /* Spotify 2-Column Micro Grid on Mobile */
+    .spotify-quick-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        margin-bottom: 24px !important;
+    }
+
+    .spotify-quick-card {
+        height: 54px !important;
+        border-radius: 8px !important;
+        background: rgba(255, 255, 255, 0.07) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        padding-right: 8px !important;
+        overflow: hidden !important;
+    }
+
+    .spotify-quick-card img {
+        width: 54px !important;
+        height: 54px !important;
+        object-fit: cover !important;
+    }
+
+    .spotify-quick-card span {
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        margin-left: 10px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100px !important;
+    }
+
+    /* YouTube Music Hero Mix Card */
+    .hero-mix-card {
+        position: relative;
+        width: 100%;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(6, 182, 212, 0.25));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+    }
+
+    .hero-mix-card .mix-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #38BDF8;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .hero-mix-card h2 {
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+        color: #FFFFFF;
+    }
+
+    .hero-mix-card p {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 16px;
+    }
+
+    .hero-mix-card .btn-play-mix {
+        background: #1DB954;
+        color: #000000;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 22px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(29, 185, 84, 0.4);
+        transition: transform 0.2s ease;
+    }
+
+    .hero-mix-card .btn-play-mix:active {
+        transform: scale(0.96);
+    }
+
+    /* Touch Horizontal Shelf Carousels for Mobile */
+    .cards-grid.horizontal-shelf {
+        display: flex !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        gap: 14px !important;
+        padding-bottom: 12px !important;
+        scrollbar-width: none !important;
+    }
+    .cards-grid.horizontal-shelf::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .cards-grid.horizontal-shelf .music-card {
+        flex: 0 0 145px !important;
+        width: 145px !important;
+        scroll-snap-align: start !important;
+    }
+
+    /* Ranked Top Chart Badges */
+    .ranked-chart-card .card-img-wrapper {
+        position: relative;
+    }
+
+    .ranked-badge {
+        position: absolute;
+        bottom: 4px;
+        left: 6px;
+        font-size: 2.4rem;
+        font-weight: 900;
+        color: #FFFFFF;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 10px rgba(124, 58, 237, 0.9);
+        line-height: 1;
+        z-index: 4;
+        font-family: Arial, sans-serif;
+    }
+
+    .main-content {
+        padding-bottom: 150px !important;
+    }
+}
+
+
 
 
