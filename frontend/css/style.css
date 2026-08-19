@@ -3727,22 +3727,23 @@ input {
    MOBILE SPOTIFY PREMIUM x YOUTUBE MUSIC REDESIGN (< 1024px)
    ========================================================================== */
 @media (max-width: 1023px) {
-    /* Floating Glass Mini Player Dock */
+    /* Floating Glass Mini Player Dock (Centered) */
     .music-player {
         position: fixed !important;
         bottom: 74px !important;
-        left: 12px !important;
-        right: 12px !important;
-        width: auto !important;
-        height: 60px !important;
-        border-radius: 30px !important;
-        background: rgba(18, 18, 26, 0.94) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100% - 24px) !important;
+        max-width: 500px !important;
+        height: 64px !important;
+        border-radius: 32px !important;
+        background: rgba(18, 18, 26, 0.96) !important;
         backdrop-filter: blur(25px) !important;
         -webkit-backdrop-filter: blur(25px) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75) !important;
         z-index: 2500 !important;
-        padding: 0 12px !important;
+        padding: 0 14px !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
@@ -3753,7 +3754,7 @@ input {
     .music-player .player-left {
         display: flex !important;
         align-items: center !important;
-        gap: 10px !important;
+        gap: 12px !important;
         flex: 1 !important;
         min-width: 0 !important;
         overflow: hidden !important;
@@ -3762,11 +3763,12 @@ input {
     }
 
     .music-player .now-playing-img {
-        width: 42px !important;
-        height: 42px !important;
+        width: 44px !important;
+        height: 44px !important;
         border-radius: 50% !important;
         object-fit: cover !important;
         flex-shrink: 0 !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
     }
 
     .music-player .now-playing-info {
@@ -3780,7 +3782,7 @@ input {
 
     .music-player .now-playing-info h4,
     .music-player #playerTitle {
-        font-size: 0.85rem !important;
+        font-size: 0.88rem !important;
         font-weight: 700 !important;
         color: #FFFFFF !important;
         margin: 0 !important;
@@ -3791,7 +3793,7 @@ input {
 
     .music-player .now-playing-info p,
     .music-player #playerArtist {
-        font-size: 0.72rem !important;
+        font-size: 0.75rem !important;
         color: rgba(255, 255, 255, 0.65) !important;
         margin: 2px 0 0 0 !important;
         white-space: nowrap !important;
@@ -3802,8 +3804,8 @@ input {
     .music-player .player-center {
         display: flex !important;
         align-items: center !important;
-        justify-content: flex-end !important;
-        gap: 6px !important;
+        justify-content: center !important;
+        gap: 8px !important;
         flex: 0 0 auto !important;
         max-width: none !important;
         padding: 0 !important;
@@ -3813,23 +3815,44 @@ input {
     .music-player .player-controls {
         display: flex !important;
         align-items: center !important;
-        gap: 6px !important;
+        justify-content: center !important;
+        gap: 8px !important;
     }
 
-    .music-player .control-btn {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 1rem !important;
-        color: rgba(255, 255, 255, 0.85) !important;
+    .music-player #prevBtn,
+    .music-player #nextBtn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.1rem !important;
+        color: #FFFFFF !important;
+        background: transparent !important;
+        border: none !important;
+        cursor: pointer !important;
     }
 
+    .music-player #playPauseBtn,
     .music-player .play-pause-btn {
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 42px !important;
+        height: 42px !important;
+        font-size: 1.15rem !important;
         background: #1DB954 !important;
         color: #000000 !important;
         border-radius: 50% !important;
+        border: none !important;
+        cursor: pointer !important;
+        box-shadow: 0 4px 14px rgba(29, 185, 84, 0.5) !important;
+        transition: transform 0.15s ease !important;
+    }
+
+    .music-player #playPauseBtn:active,
+    .music-player .play-pause-btn:active {
+        transform: scale(0.92) !important;
     }
 
     .music-player #playerLikeBtn,
@@ -3840,16 +3863,17 @@ input {
         display: none !important;
     }
 
-    /* Floating Glass Bottom Navigation Bar */
+    /* Floating Glass Bottom Navigation Bar (Centered) */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
         bottom: 8px !important;
-        left: 12px !important;
-        right: 12px !important;
-        width: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100% - 24px) !important;
+        max-width: 500px !important;
         height: 58px !important;
-        border-radius: 28px !important;
+        border-radius: 29px !important;
         background: rgba(15, 23, 42, 0.95) !important;
         backdrop-filter: blur(25px) !important;
         -webkit-backdrop-filter: blur(25px) !important;
