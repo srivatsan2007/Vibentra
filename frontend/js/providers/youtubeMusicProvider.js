@@ -280,13 +280,20 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
         // Final fail-safe: if cached exists, assign resolved chosenStream or fallback stream
         if (cached) {
-            if (chosenStream) {
-                cached.streamUrl = chosenStream;
-                return cached;
-            }
+            cached.streamUrl = chosenStream || cached.streamUrl || null;
+            return cached;
         }
 
-        throw new Error(`Could not resolve audio stream for YouTube Music track: ${titleArtist}`);
+        return {
+            id: trackId,
+            videoId: videoId,
+            title: titleArtist || 'YouTube Track',
+            artist: 'YouTube Music',
+            album: 'YouTube Music',
+            cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '',
+            duration: '3:30',
+            streamUrl: chosenStream || null
+        };
     }
 
     async getLyrics(trackId) {

@@ -112,6 +112,20 @@ export default class JioSaavnProvider extends ProviderInterface {
                 this.trackCache.set(standardized.id, standardized);
                 return standardized;
             }
+
+            if (cached && cached.streamUrl) return cached;
+
+            if (cached) {
+                const searchList = await this.searchSongs(`${cached.title} ${cached.artist}`);
+                if (searchList && searchList.length > 0 && searchList[0].streamUrl) {
+                    cached.streamUrl = searchList[0].streamUrl;
+                    if (!cached.cover || cached.cover.trim() === '') cached.cover = searchList[0].cover;
+                    cached._timestamp = Date.now();
+                    this.trackCache.set(cached.id, cached);
+                    return cached;
+                }
+            }
+
             return cached || null;
         } catch (error) {
             console.error("JioSaavn getTrack error:", error);

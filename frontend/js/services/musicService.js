@@ -1026,6 +1026,23 @@ class MusicService {
             }
         }
 
+        // Emergency inline stream resolution fallback before declaring stream URL missing
+        if ((!fullTrack || !fullTrack.streamUrl) && (track?.title || fullTrack?.title)) {
+            try {
+                const searchQ = `${fullTrack?.title || track.title} ${fullTrack?.artist || track.artist || ''}`;
+                console.log(`[PLAYBACK_START] Attempting emergency stream recovery for: "${searchQ}"`);
+                const recoveryResults = await providerManager.searchSongs(searchQ);
+                if (recoveryResults && recoveryResults.length > 0 && recoveryResults[0].streamUrl) {
+                    if (!fullTrack) fullTrack = { ...track };
+                    fullTrack.streamUrl = recoveryResults[0].streamUrl;
+                    if (!fullTrack.cover || fullTrack.cover.trim() === '') fullTrack.cover = recoveryResults[0].cover;
+                    fullTrack._fetchedAt = Date.now();
+                }
+            } catch (recoveryErr) {
+                console.warn(`[PLAYBACK_START] Inline emergency stream recovery failed:`, recoveryErr);
+            }
+        }
+
         // Verify request generation is still current
         if (this._playbackRequestId !== requestId) {
             console.log(`[PLAYBACK_START] Request ${requestId} superseded by request ${this._playbackRequestId}. Aborting.`);
@@ -1480,8 +1497,13 @@ class MusicService {
     }
 
     updatePlayerUI(track) {
-        document.getElementById('playerTitle').textContent = track.title;
-        document.getElementById('playerImg').src = track.cover;
+        if (!track) return;
+        const defaultCover = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        const safeCover = (track.cover && String(track.cover).trim() !== '') ? track.cover : defaultCover;
+
+        document.getElementById('playerTitle').textContent = track.title || 'Untitled Track';
+        const playerImg = document.getElementById('playerImg');
+        if (playerImg) playerImg.src = safeCover;
         document.getElementById('totalTime').textContent = track.duration || "0:00";
 
         const progressSlider = document.getElementById('progressSlider');
@@ -1498,7 +1520,7 @@ class MusicService {
 
         const artistEl = document.getElementById('playerArtist');
         if (artistEl) {
-            artistEl.textContent = track.artist;
+            artistEl.textContent = track.artist || 'Unknown Artist';
         }
 
         const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn')];
@@ -1581,12 +1603,15 @@ class MusicService {
     renderLargePlayer() {
         if (!this.currentTrack) return;
 
+        const defaultCover = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        const safeCover = (this.currentTrack.cover && String(this.currentTrack.cover).trim() !== '') ? this.currentTrack.cover : defaultCover;
+
         const imgEl = document.getElementById('largePlayerImg');
-        if (imgEl) imgEl.src = this.currentTrack.cover;
+        if (imgEl) imgEl.src = safeCover;
         const ambientEl = document.getElementById('largePlayerAmbientBg');
-        if (ambientEl) ambientEl.src = this.currentTrack.cover;
-        document.getElementById('largePlayerTitle').textContent = this.currentTrack.title;
-        document.getElementById('largePlayerArtist').textContent = this.currentTrack.artist;
+        if (ambientEl) ambientEl.src = safeCover;
+        document.getElementById('largePlayerTitle').textContent = this.currentTrack.title || 'Untitled Track';
+        document.getElementById('largePlayerArtist').textContent = this.currentTrack.artist || 'Unknown Artist';
 
         const upNextList = document.getElementById('upNextList');
         if (!upNextList) return;
