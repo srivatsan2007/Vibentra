@@ -781,28 +781,6 @@ const initHome = () => {
 
     // Views Rendering
     async function renderHome() {
-        const quickItems = [
-            { title: 'Karuppu All Songs (Tamil)', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80', query: 'Karuppu Tamil' },
-            { title: 'Gentleman', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&q=80', query: 'Gentleman AR Rahman' },
-            { title: 'Rajinimurugan (OST)', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80', query: 'Rajinimurugan Imman' },
-            { title: 'Jana Nayagan (Tamil)', cover: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&q=80', query: 'Jana Nayagan' },
-            { title: 'Karuppu (Original Motion Picture)', cover: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&q=80', query: 'Karuppu Soundtrack' },
-            { title: 'Ayyappan Tamil Hits', cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80', query: 'Ayyappan Tamil' },
-            { title: 'Maan Karate (OST)', cover: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&q=80', query: 'Maan Karate Anirudh' },
-            { title: 'Unnikrishnan Best Hits', cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300&q=80', query: 'Unnikrishnan Tamil' }
-        ];
-
-        let quickHtml = '';
-        quickItems.forEach(item => {
-            quickHtml += `
-                <div class="spotify-quick-card" data-query="${item.query}">
-                    <img src="${item.cover}" alt="cover">
-                    <span>${item.title}</span>
-                    <button class="spotify-quick-play-btn"><i class="fa-solid fa-play"></i></button>
-                </div>
-            `;
-        });
-
         dynamicContent.innerHTML = `
             <!-- Spotify Filter Chips (Desktop View) -->
             <div class="spotify-filter-chips desktop-only-el" style="margin-bottom: 20px;">
@@ -811,9 +789,8 @@ const initHome = () => {
                 <button class="chip">Podcasts</button>
             </div>
 
-            <!-- Spotify 2-Column Quick Grid (Desktop View) -->
-            <div class="spotify-quick-grid desktop-only-el">
-                ${quickHtml}
+            <!-- Spotify 2-Column Quick Grid (Desktop View - Dynamic) -->
+            <div class="spotify-quick-grid desktop-only-el" id="desktopQuickGrid">
             </div>
 
             <div class="welcome-banner" style="margin-bottom: 20px;">
@@ -851,23 +828,52 @@ const initHome = () => {
             </div>
         `;
 
-        // Bind Quick Grid Click Handlers
-        document.querySelectorAll('.spotify-quick-card').forEach(card => {
-            card.addEventListener('click', async () => {
-                const query = card.getAttribute('data-query');
-                const searchNavBtn = document.querySelector('.nav-item[data-path="search"]');
-                if (searchNavBtn) {
-                    searchNavBtn.click();
-                    setTimeout(() => {
-                        const searchInput = document.getElementById('searchInput');
-                        if (searchInput) {
-                            searchInput.value = query;
-                            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    }, 50);
+        const renderDesktopQuickGrid = (trendingSongs = []) => {
+            const container = document.getElementById('desktopQuickGrid');
+            if (!container) return;
+
+            const history = historyService.getHistory() || [];
+            const favorites = favoriteService.getFavorites() || [];
+            const combined = [...history, ...favorites];
+
+            const uniqueTracks = [];
+            const seen = new Set();
+            combined.forEach(t => {
+                if (t && t.id && !seen.has(String(t.id))) {
+                    seen.add(String(t.id));
+                    uniqueTracks.push(t);
                 }
             });
-        });
+
+            if (uniqueTracks.length < 8 && trendingSongs.length > 0) {
+                trendingSongs.forEach(t => {
+                    if (t && t.id && !seen.has(String(t.id)) && uniqueTracks.length < 8) {
+                        seen.add(String(t.id));
+                        uniqueTracks.push(t);
+                    }
+                });
+            }
+
+            container.innerHTML = '';
+            const sliceTracks = uniqueTracks.slice(0, 8);
+            sliceTracks.forEach(track => {
+                const card = document.createElement('div');
+                card.className = 'spotify-quick-card';
+                const cover = (track.cover && String(track.cover).trim() !== '') ? track.cover : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80';
+                card.innerHTML = `
+                    <img src="${cover}" alt="cover">
+                    <span>${track.title || 'Dynamic Song'}</span>
+                    <button class="spotify-quick-play-btn" title="Play"><i class="fa-solid fa-play"></i></button>
+                `;
+                card.addEventListener('click', () => {
+                    musicService.playContext(sliceTracks, track);
+                });
+                container.appendChild(card);
+            });
+        };
+
+        // Render initial quick grid from history/favorites
+        renderDesktopQuickGrid([]);
 
         const history = historyService.getHistory();
         if (history.length > 0) {
@@ -901,6 +907,9 @@ const initHome = () => {
             try {
                 const trendingResults = await searchService.searchSongs(searchQuery);
                 if (!document.getElementById('homeTrendingGrid')) return; // Check if still on home
+
+                // Dynamically update Desktop Quick Grid with real live trending songs
+                renderDesktopQuickGrid(trendingResults);
 
                 trendingGrid.innerHTML = '';
                 if (trendingResults.length === 0) {
