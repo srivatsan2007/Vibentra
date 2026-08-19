@@ -3565,6 +3565,124 @@ input {
 }
 
 /* ==========================================================================
+   SPOTIFY PREMIUM x YOUTUBE MUSIC COMPONENT STYLES (GLOBAL - ALL VIEWPORTS)
+   ========================================================================== */
+
+/* YTM Filter Chips Row (Global Desktop & Mobile) */
+.mobile-filter-chips-wrapper {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 4px 0 16px 0;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+}
+.mobile-filter-chips-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.mobile-filter-chip {
+    flex: 0 0 auto;
+    padding: 8px 18px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    outline: none;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.mobile-filter-chip:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.mobile-filter-chip.active {
+    background: #1DB954 !important;
+    color: #000000 !important;
+    border-color: #1DB954 !important;
+    box-shadow: 0 0 14px rgba(29, 185, 84, 0.4) !important;
+    font-weight: 700 !important;
+}
+
+/* YouTube Music Hero Mix Card & Play Mix Button (Global Desktop & Mobile) */
+.hero-mix-card {
+    position: relative;
+    width: 100%;
+    border-radius: 16px;
+    padding: 22px 26px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(6, 182, 212, 0.25));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.hero-mix-card .mix-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #38BDF8;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.hero-mix-card h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: #FFFFFF;
+}
+
+.hero-mix-card p {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 16px;
+}
+
+.hero-mix-card .btn-play-mix,
+.btn-play-mix {
+    background: #1DB954 !important;
+    color: #000000 !important;
+    border: none !important;
+    padding: 10px 24px !important;
+    border-radius: 22px !important;
+    font-weight: 800 !important;
+    font-size: 0.9rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    outline: none !important;
+    font-family: inherit !important;
+    box-shadow: 0 6px 18px rgba(29, 185, 84, 0.4) !important;
+    transition: all 0.2s ease !important;
+}
+
+.hero-mix-card .btn-play-mix:hover,
+.btn-play-mix:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 8px 22px rgba(29, 185, 84, 0.6) !important;
+    background: #1ed760 !important;
+}
+
+.hero-mix-card .btn-play-mix:active,
+.btn-play-mix:active {
+    transform: scale(0.96) !important;
+}
+
+/* ==========================================================================
    MOBILE SPOTIFY PREMIUM x YOUTUBE MUSIC REDESIGN (< 1024px)
    ========================================================================== */
 @media (max-width: 1023px) {
