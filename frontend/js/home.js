@@ -771,6 +771,67 @@ const initHome = () => {
         return card;
     }
 
+    // Shared Helper to Create Album Cards across Home & Search views
+    function createAlbumCard(album) {
+        const card = document.createElement('div');
+        card.className = 'music-card album-card';
+        const cover = (album.cover && String(album.cover).trim() !== '') ? album.cover : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        const providerName = album.provider || (album.source === 'youtube' ? 'YouTube Music' : 'JioSaavn');
+
+        card.innerHTML = `
+            <div class="card-img-wrapper" style="position: relative;">
+                <img src="${cover}" alt="${album.title || 'Album'}" loading="lazy">
+                <div class="play-btn-overlay" title="Play Album"><i class="fa-solid fa-folder-open"></i></div>
+                <button class="save-to-playlist-btn" title="Save as local playlist" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+            <div class="card-info">
+                <h3 title="${album.title || 'Untitled Album'}">${album.title || 'Untitled Album'}</h3>
+                <p title="${album.artist || 'Various Artists'}">${album.artist || 'Various Artists'}</p>
+                <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                    <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; color: rgba(255,255,255,0.7);">Album</span>
+                    <span style="font-size: 0.72rem; padding: 2px 6px; background: ${providerName === 'YouTube Music' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${providerName === 'YouTube Music' ? '#f87171' : '#34d399'}; border-radius: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="${providerName === 'YouTube Music' ? 'fa-brands fa-youtube' : 'fa-solid fa-music'}"></i>
+                        ${providerName}
+                    </span>
+                </div>
+            </div>
+        `;
+
+        card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            showNotification(`Loading '${album.title}'...`);
+            const pId = album.providerId || (album.source === 'youtube' ? 'youtube' : 'jiosaavn');
+            const albumTracks = await providerManager.getAlbum(pId, album.id);
+            if (albumTracks && albumTracks.length > 0) {
+                musicService.playContext(albumTracks, albumTracks[0]);
+            } else {
+                showNotification('Failed to load album tracks', 'error');
+            }
+        });
+
+        card.addEventListener('click', () => {
+            renderRemoteCollectionDetail(album, 'album');
+        });
+
+        card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            showNotification(`Saving '${album.title}' to your playlists...`);
+            const pId = album.providerId || (album.source === 'youtube' ? 'youtube' : 'jiosaavn');
+            const albumTracks = await providerManager.getAlbum(pId, album.id);
+            if (albumTracks && albumTracks.length > 0) {
+                const newPl = playlistService.createPlaylist(album.title, `Saved Album: ${album.artist}`);
+                albumTracks.forEach(track => playlistService.addTrackToPlaylist(newPl.id, track));
+                showNotification(`Saved '${album.title}' as a new playlist!`);
+            } else {
+                showNotification('Failed to load album tracks for saving', 'error');
+            }
+        });
+
+        return card;
+    }
+
     // Dismiss open dropdowns on click outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.music-card')) {
@@ -818,6 +879,14 @@ const initHome = () => {
             </div>
             <div class="cards-grid" id="homeTrendingGrid">
                 <p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>
+            </div>
+
+            <div class="section-header" style="margin-top: 2rem; display: flex; align-items: baseline; justify-content: space-between;">
+                <h2>Latest Albums & New Releases</h2>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">YouTube Music & JioSaavn</span>
+            </div>
+            <div class="cards-grid" id="homeLatestAlbumsGrid">
+                <p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>
             </div>
 
             <div class="section-header" style="margin-top: 2rem;">
@@ -900,9 +969,29 @@ const initHome = () => {
 
             const trendingGrid = document.getElementById('homeTrendingGrid');
             const artistsGrid = document.getElementById('homeArtistsGrid');
+            const albumsGrid = document.getElementById('homeLatestAlbumsGrid');
 
             if (trendingGrid) trendingGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>';
             if (artistsGrid) artistsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading artists...</p>';
+            if (albumsGrid) albumsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>';
+
+            // Load Latest Albums concurrently
+            searchService.searchAll(`latest album ${language} 2026`).then(albumRes => {
+                const targetGrid = document.getElementById('homeLatestAlbumsGrid');
+                if (!targetGrid) return;
+                targetGrid.innerHTML = '';
+                if (albumRes && albumRes.albums && albumRes.albums.length > 0) {
+                    albumRes.albums.slice(0, 8).forEach(album => {
+                        targetGrid.appendChild(createAlbumCard(album));
+                    });
+                } else {
+                    targetGrid.innerHTML = '<p style="color: var(--text-muted);">No new release albums found.</p>';
+                }
+            }).catch(err => {
+                console.error("Latest albums fetch error:", err);
+                const targetGrid = document.getElementById('homeLatestAlbumsGrid');
+                if (targetGrid) targetGrid.innerHTML = '<p style="color: var(--text-muted);">Failed to load albums.</p>';
+            });
 
             try {
                 const trendingResults = await searchService.searchSongs(searchQuery);
@@ -1521,15 +1610,20 @@ const initHome = () => {
         `;
 
         document.getElementById('backFromRemoteBtn').addEventListener('click', () => {
-            renderSearch(currentQuery);
+            if (currentQuery) {
+                renderSearch(currentQuery);
+            } else {
+                renderHome();
+            }
         });
 
         let remoteTracks = [];
         try {
+            const pId = collection.providerId || (collection.source === 'youtube' ? 'youtube' : 'jiosaavn');
             if (type === 'album') {
-                remoteTracks = await providerManager.getAlbum('jiosaavn', collection.id);
+                remoteTracks = await providerManager.getAlbum(pId, collection.id);
             } else {
-                remoteTracks = await providerManager.getPlaylist('jiosaavn', collection.id);
+                remoteTracks = await providerManager.getPlaylist(pId, collection.id);
             }
 
             document.getElementById('playAllRemoteBtn').addEventListener('click', () => {
