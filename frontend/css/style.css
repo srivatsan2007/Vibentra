@@ -1917,109 +1917,6 @@ input {
 
     .mobile-bottom-nav {
         display: flex !important;
-        bottom: 12px !important;
-        width: calc(100% - 24px) !important;
-        z-index: 2000 !important;
-    }
-
-    .music-player {
-        bottom: 84px !important;
-        width: calc(100% - 24px) !important;
-        height: 62px !important;
-        padding: 0 14px !important;
-        border-radius: 32px !important;
-        z-index: 1500 !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        box-sizing: border-box !important;
-    }
-
-    .player-left {
-        width: auto !important;
-        flex: 1 !important;
-        min-width: 0 !important;
-        overflow: hidden !important;
-        margin-right: 8px !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 10px !important;
-    }
-
-    .now-playing-img {
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 50% !important;
-        flex-shrink: 0 !important;
-    }
-
-    .now-playing-info {
-        flex: 1 !important;
-        min-width: 0 !important;
-        overflow: hidden !important;
-    }
-
-    .now-playing-info h4,
-    #playerTitle {
-        font-size: 0.85rem !important;
-        font-weight: 700 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        margin: 0 0 2px 0 !important;
-        color: #FFFFFF !important;
-    }
-
-    .now-playing-info p,
-    #playerArtist {
-        font-size: 0.72rem !important;
-        color: rgba(255, 255, 255, 0.65) !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        margin: 0 !important;
-    }
-
-    /* Hide heart, shuffle, repeat, progress, right volume on mobile mini-player to avoid squeezing controls into text */
-    #playerLikeBtn,
-    #shuffleBtn,
-    #repeatBtn,
-    .progress-container,
-    .player-right {
-        display: none !important;
-    }
-
-    .player-center {
-        width: auto !important;
-        flex: none !important;
-        flex-shrink: 0 !important;
-    }
-
-    .player-controls {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        margin-bottom: 0 !important;
-    }
-
-    #prevBtn, #nextBtn {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 0.95rem !important;
-        background: transparent !important;
-        border: none !important;
-        color: rgba(255, 255, 255, 0.85) !important;
-        flex-shrink: 0 !important;
-    }
-
-    .play-pause-btn, #playPauseBtn {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 1rem !important;
-        flex-shrink: 0 !important;
     }
 }
 
@@ -3836,17 +3733,111 @@ input {
         bottom: 74px !important;
         left: 12px !important;
         right: 12px !important;
-        width: calc(100% - 24px) !important;
-        height: 62px !important;
-        border-radius: 28px !important;
-        background: rgba(18, 18, 26, 0.92) !important;
+        width: auto !important;
+        height: 60px !important;
+        border-radius: 30px !important;
+        background: rgba(18, 18, 26, 0.94) !important;
         backdrop-filter: blur(25px) !important;
         -webkit-backdrop-filter: blur(25px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
-        z-index: 999 !important;
-        padding: 0 16px !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
+        z-index: 2500 !important;
+        padding: 0 12px !important;
         margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        box-sizing: border-box !important;
+    }
+
+    .music-player .player-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .music-player .now-playing-img {
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        flex-shrink: 0 !important;
+    }
+
+    .music-player .now-playing-info {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    .music-player .now-playing-info h4,
+    .music-player #playerTitle {
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
+        color: #FFFFFF !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .music-player .now-playing-info p,
+    .music-player #playerArtist {
+        font-size: 0.72rem !important;
+        color: rgba(255, 255, 255, 0.65) !important;
+        margin: 2px 0 0 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .music-player .player-center {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 6px !important;
+        flex: 0 0 auto !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .music-player .player-controls {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    .music-player .control-btn {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1rem !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .music-player .play-pause-btn {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1rem !important;
+        background: #1DB954 !important;
+        color: #000000 !important;
+        border-radius: 50% !important;
+    }
+
+    .music-player #playerLikeBtn,
+    .music-player #shuffleBtn,
+    .music-player #repeatBtn,
+    .music-player .progress-container,
+    .music-player .player-right {
+        display: none !important;
     }
 
     /* Floating Glass Bottom Navigation Bar */
@@ -3856,18 +3847,19 @@ input {
         bottom: 8px !important;
         left: 12px !important;
         right: 12px !important;
-        width: calc(100% - 24px) !important;
+        width: auto !important;
         height: 58px !important;
         border-radius: 28px !important;
-        background: rgba(15, 23, 42, 0.94) !important;
+        background: rgba(15, 23, 42, 0.95) !important;
         backdrop-filter: blur(25px) !important;
         -webkit-backdrop-filter: blur(25px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
-        z-index: 1000 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+        z-index: 3000 !important;
         justify-content: space-around !important;
         align-items: center !important;
         padding: 0 10px !important;
+        box-sizing: border-box !important;
     }
 
     .mobile-bottom-nav .nav-items-container {
@@ -3883,20 +3875,21 @@ input {
         align-items: center !important;
         gap: 3px !important;
         color: rgba(255, 255, 255, 0.6) !important;
-        font-size: 0.75rem !important;
+        font-size: 0.72rem !important;
         font-weight: 600 !important;
-        padding: 6px 16px !important;
-        border-radius: 20px !important;
+        padding: 6px 14px !important;
+        border-radius: 18px !important;
         transition: all 0.2s ease !important;
+        cursor: pointer !important;
     }
 
     .mobile-nav-item i {
-        font-size: 1.15rem !important;
+        font-size: 1.1rem !important;
     }
 
     .mobile-nav-item.active {
         color: #1DB954 !important;
-        background: rgba(29, 185, 84, 0.12) !important;
+        background: rgba(29, 185, 84, 0.15) !important;
     }
 
     /* Sticky YTM Filter Chips Row */
@@ -3942,28 +3935,59 @@ input {
     }
 
     .spotify-quick-card {
-        height: 54px !important;
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 56px !important;
         border-radius: 8px !important;
-        background: rgba(255, 255, 255, 0.07) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        padding-right: 8px !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding-right: 40px !important;
         overflow: hidden !important;
+        cursor: pointer !important;
+        box-sizing: border-box !important;
     }
 
     .spotify-quick-card img {
-        width: 54px !important;
-        height: 54px !important;
+        width: 56px !important;
+        height: 56px !important;
         object-fit: cover !important;
+        flex-shrink: 0 !important;
+        border-radius: 8px 0 0 8px !important;
     }
 
     .spotify-quick-card span {
         font-size: 0.8rem !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
+        color: #FFFFFF !important;
         margin-left: 10px !important;
-        white-space: nowrap !important;
+        line-height: 1.25 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
         overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-width: 100px !important;
+        word-break: break-word !important;
+        flex: 1 !important;
+        max-width: none !important;
+    }
+
+    .spotify-quick-play-btn {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50% !important;
+        background: #1DB954 !important;
+        color: #000000 !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 0.85rem !important;
+        position: absolute !important;
+        right: 8px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+        opacity: 1 !important;
     }
 
     /* YouTube Music Hero Mix Card */
@@ -4062,7 +4086,7 @@ input {
     }
 
     .main-content {
-        padding-bottom: 150px !important;
+        padding-bottom: 160px !important;
     }
 }
 

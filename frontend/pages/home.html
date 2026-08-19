@@ -505,36 +505,24 @@
         </div>
     </div>
 
-    <!-- Mobile Bottom Navigation (Echo Music Style) -->
+    <!-- Mobile Bottom Navigation (Spotify Premium Style) -->
     <div class="mobile-bottom-nav hidden" id="mobileBottomNav">
         <div class="nav-items-container">
-            <div class="mobile-nav-item active" data-target="home" onclick="document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active')); this.classList.add('active');">
+            <div class="mobile-nav-item active" data-target="home">
                 <i class="fa-solid fa-house"></i>
                 <span>Home</span>
             </div>
-            <div class="mobile-nav-item" data-target="search" onclick="document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active')); this.classList.add('active');">
+            <div class="mobile-nav-item" data-target="search">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <span>Search</span>
             </div>
-            <div class="mobile-nav-item" data-target="playlists" onclick="document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active')); this.classList.add('active');">
+            <div class="mobile-nav-item" data-target="playlists">
                 <i class="fa-solid fa-music"></i>
                 <span>Library</span>
             </div>
-        </div>
-        <div style="position: relative;">
-            <button class="mobile-fab" id="mobileFab">
-                <i class="fa-solid fa-ellipsis"></i>
-            </button>
-            <div class="notifications-dropdown hidden" id="mobileFabDropdown">
-                <div class="option-item" id="mobileAddToPlaylistOpt">
-                    <i class="fa-solid fa-folder-plus"></i> Add to Playlist
-                </div>
-                <div class="option-item" id="mobileRingtoneOpt">
-                    <i class="fa-solid fa-mobile-screen-button"></i> Set Ringtone
-                </div>
-                <div class="option-item" id="mobileLyricsOpt">
-                    <i class="fa-solid fa-align-left"></i> Lyrics
-                </div>
+            <div class="mobile-nav-item" data-target="settings">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
             </div>
         </div>
     </div>
