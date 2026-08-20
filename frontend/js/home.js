@@ -2985,7 +2985,7 @@ const initHome = () => {
                 <!-- App Version Badge -->
                 <div style="text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 0.85rem;">
                     <span style="display: inline-flex; align-items: center; gap: 8px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); padding: 6px 14px; border-radius: 20px; color: #FFFFFF; font-weight: 600;">
-                        <i class="fa-solid fa-code-commit" style="color: var(--primary);"></i> Vibentra Build: a085713 (v1.1.6)
+                        <i class="fa-solid fa-code-commit" style="color: var(--primary);"></i> Vibentra Build: fe5fae7 (v1.1.7)
                     </span>
                 </div>
             </div>
