@@ -61,25 +61,9 @@ class MusicService {
             window.Capacitor.Plugins.BackgroundAudio.addListener('mediaAction', (data) => {
                 console.log(`[Vibentra Native Action] Received: ${data?.action}`);
                 if (data?.action === 'play') {
-                    this._isCallPaused = false;
-                    this.isPlaying = true;
-                    this._userRequestedPause = false;
-                    if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
-                        this.keepAliveCtx.resume().catch(() => {});
-                    }
-                    this.updatePlayPauseUI(true);
-                    this.safePlay('native_call_resume').catch(() => {});
+                    this.forceCallResume();
                 } else if (data?.action === 'pause') {
-                    this._isCallPaused = true;
-                    this.isPlaying = false;
-                    this._userRequestedPause = true;
-                    if (this.keepAliveCtx && this.keepAliveCtx.state === 'running') {
-                        this.keepAliveCtx.suspend().catch(() => {});
-                    }
-                    if (this.audioPlayer && !this.audioPlayer.paused) {
-                        this.audioPlayer.pause();
-                    }
-                    this.updatePlayPauseUI(false);
+                    this.forceCallPause();
                 } else if (data?.action === 'next') {
                     this.playNext(false);
                 } else if (data?.action === 'previous') {
@@ -105,6 +89,39 @@ class MusicService {
 
     set _playbackRequestId(val) {
         this._playbackGeneration = val;
+    }
+
+    forceCallPause() {
+        console.log("[CALL_INTERRUPT] Force pausing all audio elements and WebAudio context for incoming call.");
+        this._isCallPaused = true;
+        this._userRequestedPause = true;
+        this.isPlaying = false;
+        this.clearTransientTimers();
+        if (this.audioPlayer) {
+            try {
+                this.audioPlayer.pause();
+            } catch (e) {}
+        }
+        if (this.keepAliveCtx && this.keepAliveCtx.state === 'running') {
+            try {
+                this.keepAliveCtx.suspend().catch(() => {});
+            } catch (e) {}
+        }
+        this.updatePlayPauseUI(false);
+    }
+
+    forceCallResume() {
+        console.log("[CALL_INTERRUPT] Restoring audio elements and WebAudio context after call ended.");
+        this._isCallPaused = false;
+        this._userRequestedPause = false;
+        this.isPlaying = true;
+        if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
+            try {
+                this.keepAliveCtx.resume().catch(() => {});
+            } catch (e) {}
+        }
+        this.updatePlayPauseUI(true);
+        this.safePlay('native_call_resume').catch(() => {});
     }
 
     clearTransientTimers() {

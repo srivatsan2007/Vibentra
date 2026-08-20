@@ -62,8 +62,65 @@ public class MainActivity extends BridgeActivity {
                     requestPermissions(new String[]{android.Manifest.permission.READ_PHONE_STATE}, 1001);
                 }
             }
+            registerTelephonyCallbackInActivity();
         } catch (Exception e) {
             Log.w(TAG, "Permission request error", e);
+        }
+    }
+
+    private void registerTelephonyCallbackInActivity() {
+        try {
+            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            if (tm != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    tm.registerTelephonyCallback(getMainExecutor(), new android.telephony.TelephonyCallback() implements android.telephony.TelephonyCallback.CallStateListener {
+                        @Override
+                        public void onCallStateChanged(int state) {
+                            handleActivityCallState(state);
+                        }
+                    });
+                } else {
+                    tm.listen(new android.telephony.PhoneStateListener() {
+                        @Override
+                        public void onCallStateChanged(int state, String phoneNumber) {
+                            handleActivityCallState(state);
+                        }
+                    }, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
+                }
+                Log.d(TAG, "ACTIVITY_TELEPHONY_LISTENER_ACTIVE");
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Activity telephony listener warning", e);
+        }
+    }
+
+    private void handleActivityCallState(int state) {
+        try {
+            if (state == android.telephony.TelephonyManager.CALL_STATE_RINGING || state == android.telephony.TelephonyManager.CALL_STATE_OFFHOOK) {
+                Log.d(TAG, "ACTIVITY_CALL_PAUSE: Phone call active. Force pausing WebView audio.");
+                runOnUiThread(() -> {
+                    try {
+                        if (getBridge() != null && getBridge().getWebView() != null) {
+                            getBridge().getWebView().evaluateJavascript("if(window.musicService) window.musicService.forceCallPause();", null);
+                        }
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                });
+            } else if (state == android.telephony.TelephonyManager.CALL_STATE_IDLE) {
+                Log.d(TAG, "ACTIVITY_CALL_RESUME: Phone call ended. Restoring WebView audio.");
+                runOnUiThread(() -> {
+                    try {
+                        if (getBridge() != null && getBridge().getWebView() != null) {
+                            getBridge().getWebView().evaluateJavascript("if(window.musicService) window.musicService.forceCallResume();", null);
+                        }
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
