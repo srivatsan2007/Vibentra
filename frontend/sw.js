@@ -54,7 +54,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     // Only intercept GET requests
     if (event.request.method !== 'GET') return;
-    
+
     // Ignore API requests and third party streaming URLs (like JioSaavn audio, Firebase streams)
     const url = new URL(event.request.url);
     if (url.hostname.includes('firebase') || url.hostname.includes('saavncdn') || url.pathname.includes('/api/')) {
