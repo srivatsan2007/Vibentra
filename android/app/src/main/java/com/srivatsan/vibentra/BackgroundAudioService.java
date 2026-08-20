@@ -58,17 +58,60 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     private boolean isCallActive = false;
     private Bitmap coverBitmap = null;
 
-    private void muteAudio(boolean mute) {
+    private int originalMusicVolume = -1;
+
+    private synchronized void applyCallSilence(boolean enable) {
         if (audioManager == null) return;
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, mute ? AudioManager.ADJUST_MUTE : AudioManager.ADJUST_UNMUTE, 0);
+            if (enable) {
+                if (originalMusicVolume == -1) {
+                    int currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    if (currentVol > 0) {
+                        originalMusicVolume = currentVol;
+                    }
+                }
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
+                Log.d(TAG, "HARD_AUDIO_VOLUME_ZERO: STREAM_MUSIC forced to 0 for active call");
             } else {
-                audioManager.setStreamMute(AudioManager.STREAM_MUSIC, mute);
+                if (originalMusicVolume != -1) {
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0);
+                    Log.d(TAG, "RESTORED_AUDIO_VOLUME: STREAM_MUSIC restored to " + originalMusicVolume);
+                    originalMusicVolume = -1;
+                }
             }
-            Log.d(TAG, "NATIVE_AUDIO_MUTE_SET: " + mute);
         } catch (Throwable t) {
-            Log.w(TAG, "Mute stream warning", t);
+            Log.w(TAG, "Call silence volume warning", t);
+        }
+    }
+
+    private void processCallState(int state) {
+        try {
+            Log.d(TAG, "TELEPHONY_CALL_STATE_CHANGED: " + state);
+            if (state == TelephonyManager.CALL_STATE_RINGING || state == TelephonyManager.CALL_STATE_OFFHOOK) {
+                Log.d(TAG, "PHONE_CALL_ACTIVE: Call incoming/active. Forcing volume 0, abandoning focus, and pausing JS audio...");
+                isCallActive = true;
+                if (isPlaying || wasPlayingBeforeCall) {
+                    wasPlayingBeforeCall = true;
+                    isPlaying = false;
+                }
+                applyCallSilence(true);
+                abandonAudioFocus();
+                updateMediaSessionState();
+                BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+            } else if (state == TelephonyManager.CALL_STATE_IDLE) {
+                Log.d(TAG, "PHONE_CALL_ENDED: Call ended. Restoring volume and resuming JS audio...");
+                isCallActive = false;
+                applyCallSilence(false);
+                if (wasPlayingBeforeCall) {
+                    wasPlayingBeforeCall = false;
+                    isPlaying = true;
+                    requestAudioFocus();
+                    updateMediaSessionState();
+                    BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
+                }
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 
@@ -92,30 +135,14 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         @Override
         public void onReceive(Context context, Intent intent) {
             try {
-                String state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
-                Log.d(TAG, "PHONE_STATE_CHANGED: " + state);
-                if (TelephonyManager.EXTRA_STATE_RINGING.equals(state) || TelephonyManager.EXTRA_STATE_OFFHOOK.equals(state)) {
-                    Log.d(TAG, "PHONE_CALL_ACTIVE: Incoming/Active call detected. Muting native audio and pausing playback...");
-                    isCallActive = true;
-                    if (isPlaying || wasPlayingBeforeCall) {
-                        wasPlayingBeforeCall = true;
-                        isPlaying = false;
-                    }
-                    muteAudio(true);
-                    abandonAudioFocus();
-                    updateMediaSessionState();
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
-                } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(state)) {
-                    Log.d(TAG, "PHONE_CALL_ENDED: Call ended. Re-requesting audio focus and resuming playback...");
-                    isCallActive = false;
-                    muteAudio(false);
-                    if (wasPlayingBeforeCall) {
-                        wasPlayingBeforeCall = false;
-                        isPlaying = true;
-                        requestAudioFocus();
-                        updateMediaSessionState();
-                        BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
-                    }
+                String stateStr = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+                Log.d(TAG, "PHONE_STATE_CHANGED Broadcast: " + stateStr);
+                if (TelephonyManager.EXTRA_STATE_RINGING.equals(stateStr)) {
+                    processCallState(TelephonyManager.CALL_STATE_RINGING);
+                } else if (TelephonyManager.EXTRA_STATE_OFFHOOK.equals(stateStr)) {
+                    processCallState(TelephonyManager.CALL_STATE_OFFHOOK);
+                } else if (TelephonyManager.EXTRA_STATE_IDLE.equals(stateStr)) {
+                    processCallState(TelephonyManager.CALL_STATE_IDLE);
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -190,8 +217,36 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+
+            registerTelephonyListener();
         } catch (Throwable t) {
             t.printStackTrace();
+        }
+    }
+
+    private void registerTelephonyListener() {
+        try {
+            TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            if (telephonyManager != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    telephonyManager.registerTelephonyCallback(getMainExecutor(), new android.telephony.TelephonyCallback() implements android.telephony.TelephonyCallback.CallStateListener {
+                        @Override
+                        public void onCallStateChanged(int state) {
+                            processCallState(state);
+                        }
+                    });
+                } else {
+                    telephonyManager.listen(new android.telephony.PhoneStateListener() {
+                        @Override
+                        public void onCallStateChanged(int state, String phoneNumber) {
+                            processCallState(state);
+                        }
+                    }, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
+                }
+                Log.d(TAG, "TELEPHONY_LISTENER_REGISTERED");
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Telephony listener registration warning", t);
         }
     }
 
@@ -244,7 +299,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                         wasPlayingBeforeCall = true;
                         resumeOnFocusGain = true;
                         isPlaying = false;
-                        muteAudio(true);
+                        applyCallSilence(true);
                         updateMediaSessionState();
                         BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                     }
@@ -255,7 +310,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                     resumeOnFocusGain = false;
                     wasPlayingBeforeCall = false;
                     isPlaying = false;
-                    muteAudio(true);
+                    applyCallSilence(true);
                     updateMediaSessionState();
                     BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
                     break;
@@ -265,7 +320,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                         Log.d(TAG, "AUDIOFOCUS_GAIN ignored because phone call is still active.");
                         break;
                     }
-                    muteAudio(false);
+                    applyCallSilence(false);
                     if (resumeOnFocusGain || wasPlayingBeforeCall) {
                         resumeOnFocusGain = false;
                         wasPlayingBeforeCall = false;

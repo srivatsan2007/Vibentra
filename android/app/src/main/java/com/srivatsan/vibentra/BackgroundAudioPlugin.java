@@ -35,6 +35,35 @@ public class BackgroundAudioPlugin extends Plugin {
             }
 
             instance.notifyListeners("mediaAction", ret);
+
+            // Direct WebView JavaScript evaluation backup for instant call auto-pause/resume
+            if (instance.getBridge() != null && instance.getBridge().getWebView() != null) {
+                instance.getBridge().getWebView().post(() -> {
+                    try {
+                        if (BackgroundAudioService.ACTION_PAUSE.equals(action)) {
+                            instance.getBridge().getWebView().evaluateJavascript(
+                                "if (window.musicService) { " +
+                                "  window.musicService._isCallPaused = true; " +
+                                "  if (window.musicService.audioPlayer && !window.musicService.audioPlayer.paused) { " +
+                                "    window.musicService.audioPlayer.pause(); " +
+                                "  } " +
+                                "  window.musicService.isPlaying = false; " +
+                                "  window.musicService.updatePlayPauseUI(false); " +
+                                "}", null);
+                        } else if (BackgroundAudioService.ACTION_PLAY.equals(action)) {
+                            instance.getBridge().getWebView().evaluateJavascript(
+                                "if (window.musicService) { " +
+                                "  window.musicService._isCallPaused = false; " +
+                                "  window.musicService.isPlaying = true; " +
+                                "  window.musicService.updatePlayPauseUI(true); " +
+                                "  window.musicService.safePlay('native_call_resume').catch(function(){}); " +
+                                "}", null);
+                        }
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                });
+            }
         } catch (Throwable t) {
             t.printStackTrace();
         }
