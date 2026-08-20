@@ -159,8 +159,8 @@ class MusicService {
     }
 
     checkAndResumePlayback(eventTag = 'unknown') {
-        // NEVER auto-resume on timeupdate. timeupdate fires continuously while advancing.
-        if (eventTag === 'timeupdate') return;
+        // NEVER auto-resume on timeupdate or during phone calls.
+        if (eventTag === 'timeupdate' || this._isCallPaused) return;
 
         if (this.isPlaying && !this._userRequestedPause && this.audioPlayer.paused && !this._isTransitioning && this.audioPlayer.readyState >= 2) {
             console.log(`[PLAYBACK_AUTO_RESUME] Resume triggered by ${eventTag}. ReadyState: ${this.audioPlayer.readyState}, Track: "${this.currentTrack?.title}" at ${this.audioPlayer.currentTime.toFixed(1)}s`);
@@ -310,7 +310,7 @@ class MusicService {
 
             if (this._isTransitioning) return;
 
-            if (this._userRequestedPause) {
+            if (this._userRequestedPause || this._isCallPaused) {
                 this.clearTransientTimers();
                 this.isPlaying = false;
                 this.playbackState = 'PAUSED';
