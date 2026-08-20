@@ -41,6 +41,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BackgroundAudioPlugin.class);
         super.onCreate(savedInstanceState);
         setupWebViewSettings();
+        requestPhoneStatePermission();
 
         try {
             IntentFilter filter = new IntentFilter();
@@ -52,6 +53,18 @@ public class MainActivity extends BridgeActivity {
         }
 
         webViewActiveHandler.post(keepActiveRunnable);
+    }
+
+    private void requestPhoneStatePermission() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{android.Manifest.permission.READ_PHONE_STATE}, 1001);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Permission request error", e);
+        }
     }
 
     @Override

@@ -54,14 +54,32 @@ class MusicService {
             }, 2500);
         }
 
+        this._isCallPaused = false;
+
         // Capacitor Native MediaAction listener
         if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
             window.Capacitor.Plugins.BackgroundAudio.addListener('mediaAction', (data) => {
                 console.log(`[Vibentra Native Action] Received: ${data?.action}`);
                 if (data?.action === 'play') {
-                    if (!this.isPlaying) this.togglePlayPause();
+                    this._isCallPaused = false;
+                    this.isPlaying = true;
+                    this._userRequestedPause = false;
+                    if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
+                        this.keepAliveCtx.resume().catch(() => {});
+                    }
+                    this.updatePlayPauseUI(true);
+                    this.safePlay('native_call_resume').catch(() => {});
                 } else if (data?.action === 'pause') {
-                    if (this.isPlaying) this.togglePlayPause();
+                    this._isCallPaused = true;
+                    this.isPlaying = false;
+                    this._userRequestedPause = true;
+                    if (this.keepAliveCtx && this.keepAliveCtx.state === 'running') {
+                        this.keepAliveCtx.suspend().catch(() => {});
+                    }
+                    if (this.audioPlayer && !this.audioPlayer.paused) {
+                        this.audioPlayer.pause();
+                    }
+                    this.updatePlayPauseUI(false);
                 } else if (data?.action === 'next') {
                     this.playNext(false);
                 } else if (data?.action === 'previous') {
@@ -152,7 +170,7 @@ class MusicService {
 
     checkPlaybackHeartbeat() {
         const currentGen = this._playbackGeneration;
-        if (!this.isPlaying || this._userRequestedPause || this._isTransitioning || !this.currentTrack || this.playbackState === 'ENDED' || this._endedHandledForGeneration === currentGen) {
+        if (!this.isPlaying || this._userRequestedPause || this._isCallPaused || this._isTransitioning || !this.currentTrack || this.playbackState === 'ENDED' || this._endedHandledForGeneration === currentGen) {
             this._lastPosition = 0;
             this._stallCount = 0;
             return;
