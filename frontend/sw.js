@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v42';
+const CACHE_NAME = 'vibentra-cache-v43';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -10,6 +10,7 @@ const ASSETS_TO_CACHE = [
     '/js/home.js',
     '/js/firebase-config.js',
     '/js/services/musicService.js',
+    '/js/services/lyricsService.js',
     '/js/services/connectService.js',
     '/js/providers/jiosaavnProvider.js',
     '/js/providers/providerManager.js',

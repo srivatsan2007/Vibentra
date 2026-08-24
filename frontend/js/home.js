@@ -615,6 +615,9 @@ const initHome = () => {
                     <button class="card-action-btn like-btn ${isFav ? 'active' : ''}" title="${isFav ? 'Remove Favorite' : 'Add to Favorites'}">
                         <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
                     </button>
+                    <button class="card-action-btn lyrics-btn" title="Show Lyrics">
+                        <i class="fa-solid fa-align-left"></i>
+                    </button>
                     <button class="card-action-btn ringtone-btn" title="Set as Ringtone Studio">
                         <i class="fa-solid fa-bell"></i>
                     </button>
@@ -671,7 +674,7 @@ const initHome = () => {
         const ringtoneBtns = card.querySelectorAll('.ringtone-btn, .opt-ringtone');
         const downloadBtns = card.querySelectorAll('.download-btn, .opt-download');
         const playlistBtns = card.querySelectorAll('.opt-playlist');
-        const lyricsBtns = card.querySelectorAll('.opt-lyrics');
+        const lyricsBtns = card.querySelectorAll('.lyrics-btn, .opt-lyrics');
         const optPlayBtn = card.querySelector('.opt-play');
         const moreBtn = card.querySelector('.more-btn');
         const menuTrigger = card.querySelector('.card-menu-trigger');

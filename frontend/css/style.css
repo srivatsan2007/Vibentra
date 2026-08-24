@@ -1760,6 +1760,67 @@ input {
     pointer-events: all;
 }
 
+/* Synced Real-Time Lyrics Engine Styles */
+.lyrics-body-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 10px 40px 10px;
+    width: 100%;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+}
+
+.lrc-line {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.45);
+    padding: 12px 18px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center center;
+    text-align: center;
+    user-select: none;
+    line-height: 1.6;
+    border: 1px solid transparent;
+}
+
+.lrc-line:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.02);
+}
+
+.lrc-line.active {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.4), rgba(6, 182, 212, 0.3));
+    border: 1px solid rgba(6, 182, 212, 0.5);
+    box-shadow: 0 8px 30px rgba(124, 58, 237, 0.35), 0 0 20px rgba(6, 182, 212, 0.25);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+    transform: scale(1.05);
+    padding: 16px 22px;
+    border-radius: 20px;
+}
+
+.lyrics-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    background: rgba(124, 58, 237, 0.25);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    color: #A78BFA;
+    letter-spacing: 0.5px;
+}
+
 /* Mobile Bottom Navigation Dock */
 .mobile-bottom-nav {
     display: none;
