@@ -1715,36 +1715,50 @@ const initHome = () => {
         const providerName = collection.provider || (collection.providerId === 'ytmusic' || collection.source === 'youtube' ? 'YouTube Music' : 'JioSaavn');
         const pId = collection.providerId || (providerName === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
 
-        dynamicContent.innerHTML = `
-            <div class="section-header" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <button class="btn" id="backFromRemoteBtn" style="background: transparent; border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        const targetContainer = document.getElementById('searchDynamicContainer') || document.getElementById('dynamicContainer') || document.getElementById('mainContent') || document.querySelector('.main-content') || document.querySelector('.content-area') || document.body;
+
+        if (!targetContainer) return;
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        targetContainer.innerHTML = `
+            <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+                <button class="btn" id="backFromRemoteBtn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 10px 22px; border-radius: 25px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-size: 0.95rem; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.2s ease;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Search
+                </button>
             </div>
-            <div style="display: flex; align-items: flex-end; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
-                <img src="${collection.cover}" style="width: 180px; height: 180px; border-radius: 10px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="display: flex; align-items: flex-end; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; background: rgba(255,255,255,0.03); padding: 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+                <img src="${collection.cover}" style="width: 180px; height: 180px; border-radius: 12px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
                 <div style="flex: 1;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">${type === 'album' ? 'Album' : 'Playlist'}</p>
-                        <span style="font-size: 0.75rem; padding: 2px 8px; background: rgba(255,255,255,0.1); border-radius: 12px; font-weight: 600; color: #34d399; display: inline-flex; align-items: center; gap: 4px;">
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;">${type === 'album' ? 'Album' : 'Playlist'}</p>
+                        <span style="font-size: 0.75rem; padding: 3px 10px; background: rgba(255,255,255,0.1); border-radius: 12px; font-weight: 600; color: #34d399; display: inline-flex; align-items: center; gap: 4px;">
                             ${providerName}
                         </span>
                     </div>
-                    <h2 style="margin: 0 0 10px 0; font-size: clamp(1.5rem, 5vw, 3rem); font-family: 'Delius', cursive;">${collection.title}</h2>
-                    <p style="margin: 0; color: var(--text-muted);">${collection.artist || providerName}</p>
-                    <button class="btn" id="playAllRemoteBtn" style="margin-top: 20px; background: white; color: black; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; border: none; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-play"></i> Play</button>
+                    <h2 style="margin: 0 0 10px 0; font-size: clamp(1.5rem, 5vw, 2.8rem); font-weight: 800; color: #fff;">${collection.title}</h2>
+                    <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 1rem;">${collection.artist || providerName}</p>
+                    <button class="btn" id="playAllRemoteBtn" style="margin-top: 20px; background: #1DB954; color: #000; padding: 12px 32px; border-radius: 30px; font-weight: 800; font-size: 1.05rem; border: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 20px rgba(29, 185, 84, 0.4);"><i class="fa-solid fa-play"></i> Play All</button>
                 </div>
             </div>
             <div class="track-list" id="remoteTrackList">
-                <p style="color: var(--primary);">Loading tracks...</p>
+                <div style="padding: 40px 0; text-align: center; color: rgba(255,255,255,0.7);">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: #1DB954; margin-bottom: 12px;"></i>
+                    <p style="font-size: 0.95rem; font-weight: 600;">Loading playlist tracks...</p>
+                </div>
             </div>
         `;
 
-        document.getElementById('backFromRemoteBtn').addEventListener('click', () => {
-            if (currentQuery) {
-                renderSearch(currentQuery);
-            } else {
-                renderHome();
-            }
-        });
+        const backBtn = document.getElementById('backFromRemoteBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                if (currentQuery) {
+                    renderSearch(currentQuery);
+                } else {
+                    renderHome();
+                }
+            });
+        }
 
         let remoteTracks = [];
         try {
