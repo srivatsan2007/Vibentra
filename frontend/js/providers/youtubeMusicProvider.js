@@ -4,11 +4,10 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     constructor() {
         super('ytmusic', 'YouTube Music');
         
-        // Active YouTube Music & Piped search API instances
         this.apiInstances = [
             'https://api.piped.private.coffee',
-            'https://pipedapi.lunar.icu',
             'https://pipedapi.kavin.rocks',
+            'https://pipedapi.lunar.icu',
             'https://pipedapi.drgns.space'
         ];
         this.currentInstanceIndex = 0;
@@ -27,15 +26,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         }
     }
 
-    getInstanceUrl() {
-        return this.apiInstances[this.currentInstanceIndex];
-    }
-
-    rotateInstance() {
-        this.currentInstanceIndex = (this.currentInstanceIndex + 1) % this.apiInstances.length;
-    }
-
-    async fetchWithTimeout(url, timeoutMs = 2500) {
+    async fetchWithTimeout(url, timeoutMs = 3000) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -72,13 +63,30 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
+    standardizeTrack(trackData) {
+        const id = trackData.id ? (String(trackData.id).startsWith('yt_') ? String(trackData.id) : `yt_${trackData.id}`) : `yt_${Math.random().toString(36).substring(7)}`;
+        const videoId = trackData.videoId || (id ? id.replace('yt_', '') : null);
+        return {
+            id: id,
+            videoId: videoId,
+            title: trackData.title || 'YouTube Track',
+            artist: trackData.artist || 'YouTube Music',
+            album: trackData.album || 'YouTube Music',
+            cover: trackData.cover || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'),
+            duration: trackData.duration || '3:30',
+            streamUrl: trackData.streamUrl || null,
+            provider: 'YouTube Music',
+            providerId: 'ytmusic'
+        };
+    }
+
     async prefetchTrackStream(track) {
         if (!track || track.streamUrl) return;
         try {
             const query = encodeURIComponent(`${track.title} ${track.artist}`);
             const urlsToTry = [
-                `${this.backendUrl}/search?q=${query}`,
                 `https://vibentra.vercel.app/api/jiosaavn/search?q=${query}`,
+                `${this.backendUrl}/search?q=${query}`,
                 `https://saavn.me/search/songs?query=${query}`
             ];
             for (let u of urlsToTry) {
@@ -104,10 +112,10 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     }
 
     async searchSongs(query) {
+        if (!query || !query.trim()) return [];
         let songs = [];
         const cleanQuery = encodeURIComponent(query.trim());
 
-        // Fast parallel search across active Piped mirrors, Invidious mirrors, and metadata search fallbacks
         const searchPromises = [
             // Piped mirrors
             ...this.apiInstances.map(inst => 
@@ -133,27 +141,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
                         });
                     }).catch(() => null)
             ),
-            // Invidious mirror
-            fetch(`https://inv.tux.pizza/api/v1/search?q=${cleanQuery}&type=video`, { headers: { 'Accept': 'application/json' } })
-                .then(r => r.ok ? r.json() : null)
-                .then(items => {
-                    if (!Array.isArray(items) || items.length === 0) return null;
-                    return items.slice(0, 20).map(item => {
-                        const vId = item.videoId;
-                        const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').replace(/\(Lyric Video\)/gi, '').trim();
-                        return this.standardizeTrack({
-                            id: `yt_${vId}`,
-                            videoId: vId,
-                            title: title,
-                            artist: item.author || 'YouTube Music',
-                            album: 'YouTube Music',
-                            cover: vId ? `https://i.ytimg.com/vi/${vId}/hqdefault.jpg` : '',
-                            duration: this.formatDuration(item.lengthSeconds),
-                            streamUrl: null
-                        });
-                    });
-                }).catch(() => null),
-            // Guaranteed Vercel metadata search route for YouTube Music
+            // Fast guaranteed Vercel search route for YouTube Music
             fetch(`https://vibentra.vercel.app/api/jiosaavn/search?q=${cleanQuery}`, { headers: { 'Accept': 'application/json' } })
                 .then(r => r.ok ? r.json() : null)
                 .then(json => {
@@ -198,7 +186,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
         songs.forEach(t => this.trackCache.set(t.id, t));
 
-        // Pre-fetch stream in background for top tracks missing streamUrl
+        // Background stream pre-fetching for top tracks missing streamUrl
         songs.slice(0, 5).forEach(t => {
             if (!t.streamUrl) this.prefetchTrackStream(t);
         });
@@ -234,7 +222,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
     async getTrack(trackId) {
         const cached = this.trackCache.get(trackId);
-        const videoId = cached?.videoId || trackId.replace('yt_', '');
+        const videoId = cached?.videoId || (typeof trackId === 'string' ? trackId.replace('yt_', '') : '');
 
         if (cached && cached.streamUrl && cached._streamTimestamp && (Date.now() - cached._streamTimestamp < 2.5 * 60 * 1000)) {
             return cached;
@@ -248,10 +236,9 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             if (!titleArtist) return null;
             const query = encodeURIComponent(titleArtist);
             const urlsToTry = [
-                `${this.backendUrl}/search?q=${query}`,
                 `https://vibentra.vercel.app/api/jiosaavn/search?q=${query}`,
-                `https://saavn.me/search/songs?query=${query}`,
-                `https://jiosaavn-api-v3.vercel.app/search?q=${query}`
+                `${this.backendUrl}/search?q=${query}`,
+                `https://saavn.me/search/songs?query=${query}`
             ];
             for (let u of urlsToTry) {
                 try {
@@ -297,30 +284,6 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
         let chosenStream = pipedStream || fastStream;
 
-        if (!chosenStream && titleArtist) {
-            const fallbackApis = [
-                `https://jiosaavn-api-v3.vercel.app/search?q=${encodeURIComponent(titleArtist)}`,
-                `https://saavn.me/search/songs?query=${encodeURIComponent(titleArtist)}`
-            ];
-            for (let api of fallbackApis) {
-                try {
-                    const fallbackRes = await fetch(api);
-                    if (fallbackRes.ok) {
-                        const fallbackJson = await fallbackRes.json();
-                        const resultsList = Array.isArray(fallbackJson) ? fallbackJson : (fallbackJson?.data?.results || fallbackJson?.results || []);
-                        if (resultsList && resultsList.length > 0) {
-                            const first = resultsList[0];
-                            const sUrl = first.streamUrl || (first.downloadUrl && first.downloadUrl.length > 0 ? (typeof first.downloadUrl === 'string' ? first.downloadUrl : first.downloadUrl[first.downloadUrl.length - 1].url) : null);
-                            if (sUrl) {
-                                chosenStream = sUrl;
-                                break;
-                            }
-                        }
-                    }
-                } catch (e) { }
-            }
-        }
-
         if (chosenStream && cached) {
             cached.streamUrl = chosenStream;
             cached._streamTimestamp = Date.now();
@@ -347,9 +310,8 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         });
     }
 
-    async getLyrics(trackId) {
-        return null;
-    }
+    async getAlbum(albumId) { return []; }
+    async getPlaylist(playlistId) { return []; }
+    async searchArtists(query) { return []; }
+    async getLyrics(trackId) { return null; }
 }
-
-
