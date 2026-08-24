@@ -153,19 +153,19 @@ export default class YouTubeMusicProvider extends ProviderInterface {
                         });
                     });
                 }).catch(() => null),
-            // High-reliability search API fallback
-            fetch(`https://saavn.me/search/songs?query=${cleanQuery}`, { headers: { 'Accept': 'application/json' } })
+            // Guaranteed Vercel metadata search route for YouTube Music
+            fetch(`https://vibentra.vercel.app/api/jiosaavn/search?q=${cleanQuery}`, { headers: { 'Accept': 'application/json' } })
                 .then(r => r.ok ? r.json() : null)
                 .then(json => {
-                    const list = json?.data?.results || json?.results || (Array.isArray(json) ? json : []);
+                    const list = Array.isArray(json) ? json : (json?.data?.results || json?.results || []);
                     if (!list || list.length === 0) return null;
                     return list.slice(0, 20).map(item => {
                         const sUrl = item.streamUrl || (item.downloadUrl && item.downloadUrl.length > 0 ? (typeof item.downloadUrl === 'string' ? item.downloadUrl : item.downloadUrl[item.downloadUrl.length - 1].url) : null);
                         return this.standardizeTrack({
                             id: `yt_${item.id || Math.random().toString(36).substring(7)}`,
                             videoId: item.id,
-                            title: item.name || item.title || 'YouTube Track',
-                            artist: item.primaryArtists || item.artist || 'YouTube Music',
+                            title: item.title || item.name || 'YouTube Track',
+                            artist: item.artist || item.primaryArtists || 'YouTube Music',
                             album: 'YouTube Music',
                             cover: (item.image && item.image.length > 0 ? (typeof item.image === 'string' ? item.image : item.image[item.image.length - 1].url) : '') || item.cover || '',
                             duration: typeof item.duration === 'number' ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : (item.duration || '3:30'),
@@ -176,34 +176,24 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         ];
 
         const results = await Promise.allSettled(searchPromises);
-        for (let res of results) {
+        const validTrackLists = [];
+        results.forEach(res => {
             if (res.status === 'fulfilled' && Array.isArray(res.value) && res.value.length > 0) {
-                songs = res.value;
-                break;
+                validTrackLists.push(res.value);
             }
-        }
+        });
 
-        // Final fail-safe if all parallel promises failed
-        if (songs.length === 0) {
-            try {
-                const res = await fetch(`${this.backendUrl}/search?q=${cleanQuery}`);
-                if (res.ok) {
-                    const json = await res.json();
-                    const list = Array.isArray(json) ? json : (json?.data?.results || []);
-                    if (list.length > 0) {
-                        songs = list.slice(0, 20).map(item => this.standardizeTrack({
-                            id: `yt_${item.id || Math.random().toString(36).substring(7)}`,
-                            videoId: item.id,
-                            title: item.title || item.name || 'YouTube Track',
-                            artist: item.artist || item.primaryArtists || 'YouTube Music',
-                            album: 'YouTube Music',
-                            cover: item.cover || '',
-                            duration: item.duration || '3:30',
-                            streamUrl: item.streamUrl || null
-                        }));
-                    }
+        // Deduplicate tracks by title
+        const seenTitles = new Set();
+        songs = [];
+        for (let trackList of validTrackLists) {
+            for (let track of trackList) {
+                const normKey = track.title.toLowerCase().trim();
+                if (!seenTitles.has(normKey)) {
+                    seenTitles.add(normKey);
+                    songs.push(track);
                 }
-            } catch (e) { }
+            }
         }
 
         songs.forEach(t => this.trackCache.set(t.id, t));
