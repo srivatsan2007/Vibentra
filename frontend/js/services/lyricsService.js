@@ -146,7 +146,63 @@ class LyricsService {
             console.warn('[LyricsService] LRCLIB search failed:', e.message || e);
         }
 
-        // 3. Fallback to Provider getLyrics (e.g. JioSaavn)
+        // 3. Musixmatch Provider Query
+        try {
+            const mxmUrl = `https://apic-desktop.musixmatch.com/ws/1.1/macro.subtitles.get?format=json&q_track=${encodeURIComponent(title)}&q_artist=${encodeURIComponent(artist)}&user_token=200529729864210d7a0dbf038fdfebbf75c74230495f54316d8e0e&app_id=web-desktop-app-v1.0`;
+            const res = await fetch(mxmUrl);
+            if (res.ok) {
+                const json = await res.json();
+                const macroCalls = json?.message?.body?.macro_calls;
+                if (macroCalls) {
+                    const subtitleBody = macroCalls['track.subtitles.get']?.message?.body?.subtitle_list?.[0]?.subtitle?.subtitle_body;
+                    const lyricsBody = macroCalls['track.lyrics.get']?.message?.body?.lyrics?.lyrics_body;
+
+                    if (subtitleBody && subtitleBody.trim().length > 0) {
+                        let lines = [];
+                        try {
+                            const parsedSub = JSON.parse(subtitleBody);
+                            if (Array.isArray(parsedSub)) {
+                                lines = parsedSub.map(item => ({
+                                    time: item.time?.total || (item.time?.minutes * 60 + item.time?.seconds),
+                                    text: item.text || '♪'
+                                })).filter(item => typeof item.time === 'number' && !isNaN(item.time));
+                            }
+                        } catch (e) {
+                            lines = this.parseLrc(subtitleBody);
+                        }
+
+                        if (lines.length > 0) {
+                            const result = {
+                                isSynced: true,
+                                syncedLines: lines.sort((a, b) => a.time - b.time),
+                                plainText: lines.map(l => l.text).join('\n'),
+                                source: 'Musixmatch Provider'
+                            };
+                            this.cache.set(cacheKey, result);
+                            return result;
+                        }
+                    }
+
+                    if (lyricsBody && lyricsBody.trim().length > 0) {
+                        const cleanLyrics = lyricsBody.replace(/\*\*\*\*\*\*\* This Lyrics is NOT for Commercial use \*\*\*\*\*\*\*/g, '').trim();
+                        if (cleanLyrics.length > 0) {
+                            const result = {
+                                isSynced: false,
+                                syncedLines: [],
+                                plainText: cleanLyrics,
+                                source: 'Musixmatch Provider'
+                            };
+                            this.cache.set(cacheKey, result);
+                            return result;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[LyricsService] Musixmatch query failed:', e.message || e);
+        }
+
+        // 4. Fallback to Provider getLyrics (e.g. JioSaavn)
         try {
             const providerManagerModule = await import('../providers/providerManager.js');
             const providerManager = providerManagerModule.default;
