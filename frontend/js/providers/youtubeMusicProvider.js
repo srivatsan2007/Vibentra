@@ -4,12 +4,14 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     constructor() {
         super('ytmusic', 'YouTube Music');
         
-        // Fast, active YouTube Music search API endpoints
+        // Active YouTube Piped search & stream API instances
         this.apiInstances = [
             'https://api.piped.private.coffee',
             'https://pipedapi.kavin.rocks',
             'https://pipedapi.drgns.space',
-            'https://api.piped.privacydev.net'
+            'https://api.piped.privacydev.net',
+            'https://pipedapi.mha.fi',
+            'https://piped-api.garudalinux.org'
         ];
         this.currentInstanceIndex = 0;
         this.trackCache = new Map();
@@ -18,7 +20,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             if (window.location.protocol === 'file:' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
                 this.backendUrl = 'https://vibentra.vercel.app/api/jiosaavn';
             } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('10.')) {
-                this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn`;
+                this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn';
             } else {
                 this.backendUrl = '/api/jiosaavn';
             }
@@ -35,7 +37,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         this.currentInstanceIndex = (this.currentInstanceIndex + 1) % this.apiInstances.length;
     }
 
-    async fetchWithTimeout(url, timeoutMs = 2500) {
+    async fetchWithTimeout(url, timeoutMs = 3000) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -88,6 +90,22 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
+    standardizeTrack(track) {
+        if (!track) return null;
+        return {
+            id: track.id,
+            videoId: track.videoId || this.extractVideoId(track.id),
+            title: track.title || 'YouTube Track',
+            artist: track.artist || 'YouTube Music',
+            album: track.album || 'YouTube Music',
+            cover: track.cover || (track.videoId ? `https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg` : ''),
+            duration: track.duration || '3:30',
+            streamUrl: track.streamUrl || null,
+            provider: 'YouTube Music',
+            providerId: 'ytmusic'
+        };
+    }
+
     async prefetchTrackStream(track) {
         if (!track || track.streamUrl) return;
         try {
@@ -117,34 +135,38 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         let songs = [];
         const cleanQuery = encodeURIComponent(query.trim());
 
-        // 1. Try Piped search instances
-        try {
-            const endpoint = `/search?q=${cleanQuery}&filter=music_songs`;
-            const data = await this.fetchWithFallback(endpoint);
-            const rawItems = data.items || [];
-            const rawSongs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
-            
-            songs = rawSongs.map(item => {
-                const videoId = this.extractVideoId(item.url);
-                const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').replace(/\(Lyric Video\)/gi, '').trim();
-                const artist = item.uploaderName || item.artist || 'YouTube Music';
-                
-                return this.standardizeTrack({
-                    id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
-                    videoId: videoId,
-                    title: title,
-                    artist: artist,
-                    album: 'YouTube Music',
-                    cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
-                    duration: this.formatDuration(item.duration),
-                    streamUrl: `https://inv.tux.pizza/latest_version?id=${videoId}&itag=140`
-                });
-            });
-        } catch (error) {
-            console.warn('[YouTube Music] Primary Piped search failed, trying Invidious mirrors:', error.message || error);
+        // 1. Primary: Search Piped instances
+        for (let instance of this.apiInstances) {
+            try {
+                const endpoint = `${instance}/search?q=${cleanQuery}&filter=music_songs`;
+                const data = await this.fetchWithTimeout(endpoint, 3000);
+                const rawItems = data.items || [];
+                const rawSongs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
+                if (rawSongs.length > 0) {
+                    songs = rawSongs.map(item => {
+                        const videoId = this.extractVideoId(item.url);
+                        const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').replace(/\(Lyric Video\)/gi, '').trim();
+                        const artist = item.uploaderName || item.artist || 'YouTube Music';
+                        
+                        return this.standardizeTrack({
+                            id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
+                            videoId: videoId,
+                            title: title,
+                            artist: artist,
+                            album: 'YouTube Music',
+                            cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
+                            duration: this.formatDuration(item.duration),
+                            streamUrl: null
+                        });
+                    });
+                    break;
+                }
+            } catch (err) {
+                console.warn(`[YouTube Music] Search mirror failed (${instance}):`, err.message || err);
+            }
         }
 
-        // 2. Secondary fallback: Try Invidious search mirrors if Piped mirrors are offline
+        // 2. Invidious fallback search if Piped instances fail
         if (songs.length === 0) {
             const invidiousMirrors = [
                 'https://inv.tux.pizza/api/v1',
@@ -169,7 +191,7 @@ export default class YouTubeMusicProvider extends ProviderInterface {
                                     album: 'YouTube Music',
                                     cover: vId ? `https://i.ytimg.com/vi/${vId}/hqdefault.jpg` : '',
                                     duration: this.formatDuration(item.lengthSeconds),
-                                    streamUrl: `${mirror.replace('/api/v1', '')}/latest_version?id=${vId}&itag=140`
+                                    streamUrl: null
                                 });
                             });
                             break;
@@ -217,24 +239,51 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             return cached;
         }
 
-        // Direct YouTube audio streams (Invidious & Piped)
-        const audioStreamCandidates = [
-            `https://inv.tux.pizza/latest_version?id=${videoId}&itag=140`,
-            `https://invidious.nerdvpn.de/latest_version?id=${videoId}&itag=140`,
-            `https://vid.puffyan.us/latest_version?id=${videoId}&itag=140`
-        ];
+        let chosenStream = null;
 
-        let chosenStream = audioStreamCandidates[0];
-
-        // Verify/fetch via Piped API if available
-        try {
-            const data = await this.fetchWithTimeout(`${this.getInstanceUrl()}/streams/${videoId}`, 2500);
-            if (data && data.audioStreams) {
-                const audioStreams = data.audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-                const best = audioStreams.find(s => s.mimeType?.includes('audio/mp4') || s.mimeType?.includes('audio/m4a')) || audioStreams[0];
-                if (best?.url) chosenStream = best.url;
+        // 1. Try Piped API mirrors for direct YouTube video audio stream
+        if (videoId && videoId.length === 11) {
+            for (let instance of this.apiInstances) {
+                try {
+                    const data = await this.fetchWithTimeout(`${instance}/streams/${videoId}`, 3000);
+                    if (data && data.audioStreams && data.audioStreams.length > 0) {
+                        const audioStreams = data.audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+                        const best = audioStreams.find(s => s.mimeType?.includes('audio/mp4') || s.mimeType?.includes('audio/m4a')) || audioStreams[0];
+                        if (best?.url) {
+                            chosenStream = best.url;
+                            if (cached && (!cached.title || cached.title === 'YouTube Track') && data.title) {
+                                cached.title = data.title.replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
+                                if (data.uploader) cached.artist = data.uploader;
+                            }
+                            break;
+                        }
+                    }
+                } catch (e) { }
             }
-        } catch (e) { }
+        }
+
+        // 2. High-Fidelity Audio Resolver Fallback: Match audio stream by clean title + artist name
+        if (!chosenStream && cached && cached.title && cached.title !== 'YouTube Track') {
+            try {
+                const searchStr = `${cached.title} ${cached.artist !== 'YouTube Music' ? cached.artist : ''}`.trim();
+                const searchUrl = `${this.backendUrl}/search?q=${encodeURIComponent(searchStr)}`;
+                const res = await fetch(searchUrl);
+                if (res.ok) {
+                    const results = await res.json();
+                    const list = Array.isArray(results) ? results : (results?.data?.results || results?.results || []);
+                    if (list && list.length > 0) {
+                        const match = list[0];
+                        const sUrl = match.streamUrl || (match.downloadUrl && match.downloadUrl.length > 0 ? (typeof match.downloadUrl === 'string' ? match.downloadUrl : match.downloadUrl[match.downloadUrl.length - 1].url) : null);
+                        if (sUrl) chosenStream = sUrl;
+                    }
+                }
+            } catch (e) { }
+        }
+
+        // 3. Fallback to Invidious direct stream URL
+        if (!chosenStream && videoId && videoId.length === 11) {
+            chosenStream = `https://invidious.nerdvpn.de/latest_version?id=${videoId}&itag=140`;
+        }
 
         if (cached) {
             cached.streamUrl = chosenStream;
@@ -246,8 +295,8 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         return this.standardizeTrack({
             id: trackId,
             videoId: videoId,
-            title: 'YouTube Track',
-            artist: 'YouTube Music',
+            title: cached?.title || 'YouTube Track',
+            artist: cached?.artist || 'YouTube Music',
             album: 'YouTube Music',
             cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
             duration: '3:30',
