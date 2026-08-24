@@ -188,8 +188,53 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     }
 
     async searchAll(query) {
-        const songs = await this.searchSongs(query);
-        return { songs, albums: [], playlists: [] };
+        try {
+            const songs = await this.searchSongs(query);
+            let albums = [];
+            let playlists = [];
+
+            // 1. Fetch albums from YouTube Music backend endpoint if available
+            try {
+                const res = await fetch(`${this.backendUrl}/search/albums?q=${encodeURIComponent(query)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const rawAlbums = Array.isArray(data) ? data : (data.results || data.data || []);
+                    if (Array.isArray(rawAlbums) && rawAlbums.length > 0) {
+                        albums = rawAlbums.map(item => ({
+                            id: item.id || item.browseId || `yt_album_${Math.random()}`,
+                            title: item.title || item.name || 'Album',
+                            artist: item.artist || item.artists?.[0]?.name || 'Various Artists',
+                            cover: item.cover || item.thumbnails?.[0]?.url || (songs[0]?.cover || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80'),
+                            year: item.year || '',
+                            type: 'album',
+                            provider: 'YouTube Music',
+                            providerId: 'ytmusic'
+                        }));
+                    }
+                }
+            } catch (e) {
+                console.warn('[YTMusic] Album search endpoint check:', e);
+            }
+
+            // 2. Curated album collection from YouTube Music search results if no direct array was returned
+            if (albums.length === 0 && songs.length > 0) {
+                albums.push({
+                    id: `yt_album_${encodeURIComponent(query)}`,
+                    title: `${query.charAt(0).toUpperCase() + query.slice(1)} Collection`,
+                    artist: songs[0]?.artist || 'YouTube Music',
+                    cover: songs[0]?.cover || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
+                    type: 'album',
+                    provider: 'YouTube Music',
+                    providerId: 'ytmusic',
+                    tracks: songs
+                });
+            }
+
+            return { songs, albums, playlists };
+        } catch (e) {
+            console.error('[YTMusic] searchAll failed:', e);
+            return { songs: [], albums: [], playlists: [] };
+        }
     }
 
     async getTrack(trackId) {

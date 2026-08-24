@@ -835,6 +835,45 @@ const initHome = () => {
         return card;
     }
 
+    // Shared Helper to Create Playlist Cards across Search & Browse views
+    function createPlaylistCard(playlist) {
+        const card = document.createElement('div');
+        card.className = 'music-card playlist-card';
+        card.setAttribute('data-id', playlist.id);
+        const cover = playlist.cover || playlist.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
+        const providerName = playlist.provider || 'JioSaavn';
+
+        card.innerHTML = `
+            <div class="card-img-wrapper" style="position: relative;">
+                <img src="${cover}" alt="${playlist.title || playlist.name || 'Playlist'}" loading="lazy">
+                <div class="play-btn-overlay" title="Play Playlist"><i class="fa-solid fa-list-check"></i></div>
+            </div>
+            <div class="card-info">
+                <h3 title="${playlist.title || playlist.name || 'Untitled Playlist'}">${playlist.title || playlist.name || 'Untitled Playlist'}</h3>
+                <p title="${playlist.artist || playlist.subtitle || 'Curated Playlist'}">${playlist.artist || playlist.subtitle || 'Curated Playlist'}</p>
+                <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                    <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(6, 182, 212, 0.2); border-radius: 4px; color: #22d3ee;">Playlist</span>
+                    <span style="font-size: 0.72rem; padding: 2px 6px; background: rgba(255,255,255,0.08); border-radius: 4px; font-weight: 600; color: var(--text-muted);">
+                        ${providerName}
+                    </span>
+                </div>
+            </div>
+        `;
+
+        card.addEventListener('click', async () => {
+            showNotification(`Loading playlist '${playlist.title || playlist.name}'...`);
+            const pId = playlist.providerId || 'jiosaavn';
+            const plTracks = await providerManager.getPlaylist(pId, playlist.id);
+            if (plTracks && plTracks.length > 0) {
+                musicService.playContext(plTracks, plTracks[0]);
+            } else {
+                showNotification('Failed to load playlist tracks', 'error');
+            }
+        });
+
+        return card;
+    }
+
     // Dismiss open dropdowns on click outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.music-card')) {

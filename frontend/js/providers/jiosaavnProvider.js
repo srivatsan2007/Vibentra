@@ -133,21 +133,86 @@ export default class JioSaavnProvider extends ProviderInterface {
         }
     }
 
+    standardizeAlbum(album) {
+        if (!album) return null;
+        let cover = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80';
+        if (album.image) {
+            if (Array.isArray(album.image)) {
+                cover = album.image[album.image.length - 1]?.link || album.image[album.image.length - 1]?.url || cover;
+            } else if (typeof album.image === 'string') {
+                cover = album.image.replace('150x150', '500x500');
+            }
+        }
+        return {
+            id: album.id,
+            title: album.title || album.name || 'Album',
+            artist: album.artist || album.music || album.subtitle || 'Various Artists',
+            cover: cover,
+            year: album.year || album.release_date || '',
+            type: 'album',
+            provider: 'JioSaavn',
+            providerId: 'jiosaavn'
+        };
+    }
+
+    standardizePlaylist(playlist) {
+        if (!playlist) return null;
+        let cover = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
+        if (playlist.image) {
+            if (Array.isArray(playlist.image)) {
+                cover = playlist.image[playlist.image.length - 1]?.link || playlist.image[playlist.image.length - 1]?.url || cover;
+            } else if (typeof playlist.image === 'string') {
+                cover = playlist.image.replace('150x150', '500x500');
+            }
+        }
+        return {
+            id: playlist.id,
+            title: playlist.title || playlist.name || 'Playlist',
+            artist: playlist.artist || playlist.subtitle || 'Curated Playlist',
+            cover: cover,
+            type: 'playlist',
+            provider: 'JioSaavn',
+            providerId: 'jiosaavn'
+        };
+    }
+
     async searchAll(query) {
         try {
             const endpoint = `/search/all?q=${encodeURIComponent(query)}`;
-            let data = await this.safeFetch(endpoint);
-            
-            if (!data || (!data.songs && !data.albums && !data.playlists)) {
-                const songs = await this.searchSongs(query);
-                data = { songs, albums: [], playlists: [] };
+            let rawData = await this.safeFetch(endpoint);
+            let data = rawData?.data || rawData || {};
+
+            let songs = [];
+            let albums = [];
+            let playlists = [];
+
+            // Extract Songs Array safely
+            const rawSongs = Array.isArray(data.songs) ? data.songs : (data.songs?.results || data.songs?.data || []);
+            songs = rawSongs.map(t => this.standardizeTrack(t)).filter(Boolean);
+            songs.forEach(t => this.trackCache.set(t.id, t));
+
+            // Extract Albums Array safely
+            const rawAlbums = Array.isArray(data.albums) ? data.albums : (data.albums?.results || data.albums?.data || []);
+            albums = rawAlbums.map(a => this.standardizeAlbum(a)).filter(Boolean);
+
+            // Extract Playlists Array safely
+            const rawPlaylists = Array.isArray(data.playlists) ? data.playlists : (data.playlists?.results || data.playlists?.data || []);
+            playlists = rawPlaylists.map(p => this.standardizePlaylist(p)).filter(Boolean);
+
+            // Fallback: If no dedicated album array was returned from search/all, query /search/albums
+            if (albums.length === 0) {
+                try {
+                    const albumData = await this.safeFetch(`/search/albums?q=${encodeURIComponent(query)}`);
+                    const fallbackAlbums = Array.isArray(albumData) ? albumData : (albumData?.results || albumData?.data || albumData?.albums?.results || []);
+                    if (Array.isArray(fallbackAlbums) && fallbackAlbums.length > 0) {
+                        albums = fallbackAlbums.map(a => this.standardizeAlbum(a)).filter(Boolean);
+                    }
+                } catch (e) {
+                    console.warn('[JioSaavn] Album fallback search failed:', e);
+                }
             }
 
-            if (data.songs) {
-                data.songs = data.songs.map(t => this.standardizeTrack(t));
-                data.songs.forEach(t => this.trackCache.set(t.id, t));
-            }
-            return data;
+            return { songs, albums, playlists };
         } catch (error) {
             console.error("JioSaavn searchAll error:", error);
             return { songs: [], albums: [], playlists: [] };
