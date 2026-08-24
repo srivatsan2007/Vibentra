@@ -684,6 +684,7 @@ class MusicService {
         const showLyricsOpt = document.getElementById('showLyricsOpt');
         const mobileLyricsOpt = document.getElementById('mobileLyricsOpt');
         const largeOptLyrics = document.getElementById('largeOptLyrics');
+        const largeLyricsBtn = document.getElementById('largeLyricsBtn');
         const lyricsModal = document.getElementById('lyricsModal');
         const closeLyricsModal = document.getElementById('closeLyricsModal');
 
@@ -691,7 +692,9 @@ class MusicService {
             e.stopPropagation();
             if (dropdownElem) dropdownElem.classList.add('hidden');
             if (!this.currentTrack) {
-                alert('Play a song first to view lyrics!');
+                document.dispatchEvent(new CustomEvent('showNotification', {
+                    detail: '⚠️ Play a song first to view lyrics!'
+                }));
                 return;
             }
             this.showLyricsModal(this.currentTrack);
@@ -700,10 +703,19 @@ class MusicService {
         if (showLyricsOpt && lyricsModal) showLyricsOpt.addEventListener('click', (e) => handleLyricsClick(e, playerOptionsDropdown));
         if (mobileLyricsOpt && lyricsModal) mobileLyricsOpt.addEventListener('click', (e) => handleLyricsClick(e, mobileFabDropdown));
         if (largeOptLyrics && lyricsModal) largeOptLyrics.addEventListener('click', (e) => handleLyricsClick(e, largePlayerOptionsDropdown));
+        if (largeLyricsBtn && lyricsModal) largeLyricsBtn.addEventListener('click', (e) => handleLyricsClick(e, null));
 
         if (closeLyricsModal) {
             closeLyricsModal.addEventListener('click', () => {
                 lyricsModal.classList.remove('active');
+            });
+        }
+
+        if (lyricsModal) {
+            lyricsModal.addEventListener('click', (e) => {
+                if (e.target === lyricsModal) {
+                    lyricsModal.classList.remove('active');
+                }
             });
         }
 
@@ -876,56 +888,93 @@ class MusicService {
         const modal = document.getElementById('lyricsModal');
         const content = document.getElementById('lyricsContent');
         const title = document.getElementById('lyricsTitle');
-        if (!modal || !content || !trackToFetch) return;
+        
+        if (!modal || !content) {
+            console.error('[LyricsModal] Modal DOM elements not found.');
+            return;
+        }
 
-        title.textContent = `${trackToFetch.title} • ${trackToFetch.artist || 'Lyrics'}`;
+        if (!trackToFetch) {
+            document.dispatchEvent(new CustomEvent('showNotification', {
+                detail: '⚠️ Play a song first to view lyrics!'
+            }));
+            return;
+        }
+
+        if (title) {
+            title.textContent = `${trackToFetch.title || 'Track'} • ${trackToFetch.artist || 'Lyrics'}`;
+        }
         content.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i><p style="color: var(--text-muted); margin-top: 12px; font-size: 1rem;">Searching synced lyrics...</p></div>';
+        
+        // Bring modal into active state
         modal.classList.add('active');
 
         this._lastActiveLyricsIndex = -1;
         this._currentLyricsData = null;
 
-        const lyrics = await lyricsService.fetchLyrics(trackToFetch);
-        if (lyrics) {
-            this._currentLyricsData = lyrics;
-            if (lyrics.isSynced && lyrics.syncedLines.length > 0) {
-                let html = `
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <span class="lyrics-badge"><i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> Synced Lyrics (${lyrics.source})</span>
-                    </div>
-                    <div class="lyrics-body-container">
-                `;
-                lyrics.syncedLines.forEach((line, index) => {
-                    html += `<div class="lrc-line" data-index="${index}" data-time="${line.time}">${line.text}</div>`;
-                });
-                html += `</div>`;
-                content.innerHTML = html;
-
-                const lineElements = content.querySelectorAll('.lrc-line');
-                lineElements.forEach(el => {
-                    el.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const time = parseFloat(el.getAttribute('data-time'));
-                        if (!isNaN(time) && this.audioPlayer) {
-                            this.audioPlayer.currentTime = time;
-                            this.updateLyricsSyncedPosition();
-                        }
+        try {
+            const lyrics = await lyricsService.fetchLyrics(trackToFetch);
+            if (lyrics) {
+                this._currentLyricsData = lyrics;
+                if (lyrics.isSynced && lyrics.syncedLines.length > 0) {
+                    let html = `
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <span class="lyrics-badge"><i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> Synced Lyrics (${lyrics.source})</span>
+                        </div>
+                        <div class="lyrics-body-container">
+                    `;
+                    lyrics.syncedLines.forEach((line, index) => {
+                        html += `<div class="lrc-line" data-index="${index}" data-time="${line.time}">${line.text}</div>`;
                     });
-                });
+                    html += `</div>`;
+                    content.innerHTML = html;
 
-                this.updateLyricsSyncedPosition();
-            } else if (lyrics.plainText) {
-                content.innerHTML = `
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <span class="lyrics-badge" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.15);"><i class="fa-solid fa-align-left"></i> Plain Text (${lyrics.source})</span>
-                    </div>
-                    <div style="white-space: pre-wrap; line-height: 2.2; font-size: 1.18rem; color: rgba(255,255,255,0.9); padding: 10px 15px; text-align: center; font-family: sans-serif;">${lyrics.plainText}</div>
-                `;
+                    const lineElements = content.querySelectorAll('.lrc-line');
+                    lineElements.forEach(el => {
+                        el.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const time = parseFloat(el.getAttribute('data-time'));
+                            if (!isNaN(time) && this.audioPlayer) {
+                                this.audioPlayer.currentTime = time;
+                                this.updateLyricsSyncedPosition();
+                            }
+                        });
+                    });
+
+                    this.updateLyricsSyncedPosition();
+                } else if (lyrics.plainText) {
+                    content.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <span class="lyrics-badge" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.15);"><i class="fa-solid fa-align-left"></i> Plain Text (${lyrics.source})</span>
+                        </div>
+                        <div style="white-space: pre-wrap; line-height: 2.2; font-size: 1.18rem; color: rgba(255,255,255,0.9); padding: 10px 15px; text-align: center; font-family: sans-serif;">${lyrics.plainText}</div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            <i class="fa-regular fa-face-frown" style="font-size: 2.5rem; margin-bottom: 15px; opacity: 0.6;"></i>
+                            <p style="font-size: 1.1rem; color: white; margin-bottom: 6px;">No lyrics found for this song</p>
+                            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.5);">"${trackToFetch.title}" by ${trackToFetch.artist || 'Unknown'}</p>
+                        </div>
+                    `;
+                }
             } else {
-                content.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="fa-regular fa-face-frown" style="font-size: 2.5rem; margin-bottom: 15px; opacity: 0.6;"></i><p>No lyrics found for this song.</p></div>';
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fa-regular fa-face-frown" style="font-size: 2.5rem; margin-bottom: 15px; opacity: 0.6;"></i>
+                        <p style="font-size: 1.1rem; color: white; margin-bottom: 6px;">No lyrics found for this song</p>
+                        <p style="font-size: 0.85rem; color: rgba(255,255,255,0.5);">"${trackToFetch.title}" by ${trackToFetch.artist || 'Unknown'}</p>
+                    </div>
+                `;
             }
-        } else {
-            content.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="fa-regular fa-face-frown" style="font-size: 2.5rem; margin-bottom: 15px; opacity: 0.6;"></i><p>No lyrics found for this song.</p></div>';
+        } catch (err) {
+            console.error('[LyricsModal] Error loading lyrics:', err);
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.5rem; margin-bottom: 15px; color: #F59E0B;"></i>
+                    <p style="font-size: 1.1rem; color: white;">Unable to load lyrics right now.</p>
+                </div>
+            `;
         }
     }
 
