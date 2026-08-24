@@ -80,7 +80,7 @@ class ProviderManager {
         
         try {
             const results = await Promise.allSettled(
-                activeProviders.map(p => this.withTimeout(p.searchSongs(query), 6500, []))
+                activeProviders.map(p => this.withTimeout(p.searchSongs(query), 8500, []))
             );
 
             let unifiedList = [];
@@ -109,7 +109,7 @@ class ProviderManager {
             const results = await Promise.allSettled(
                 activeProviders.map(p => {
                     if (!p.searchAll) return Promise.resolve({ songs: [], albums: [], playlists: [] });
-                    return this.withTimeout(p.searchAll(query), 6500, { songs: [], albums: [], playlists: [] });
+                    return this.withTimeout(p.searchAll(query), 8500, { songs: [], albums: [], playlists: [] });
                 })
             );
 

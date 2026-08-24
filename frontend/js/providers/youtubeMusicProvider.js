@@ -115,39 +115,47 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
     async searchSongs(query) {
         let songs = [];
+        const cleanQuery = encodeURIComponent(query.trim());
+
+        // 1. Ultra-fast parallel search across Piped instances
         try {
-            const endpoint = `/search?q=${encodeURIComponent(query)}&filter=music_songs`;
-            const data = await this.fetchWithFallback(endpoint);
-            
+            const endpoint = `/search?q=${cleanQuery}&filter=music_songs`;
+            const searchPromises = this.apiInstances.map(baseUrl => 
+                this.fetchWithTimeout(`${baseUrl}${endpoint}`, 1800)
+            );
+            const data = await Promise.any(searchPromises);
             const rawItems = data.items || [];
             const rawSongs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
             
-            songs = rawSongs.map(item => {
-                const videoId = this.extractVideoId(item.url);
-                const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
-                const artist = item.uploaderName || item.artist || 'YouTube Music';
-                
-                return this.standardizeTrack({
-                    id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
-                    videoId: videoId,
-                    title: title,
-                    artist: artist,
-                    album: 'YouTube Music',
-                    cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
-                    duration: this.formatDuration(item.duration),
-                    streamUrl: null
+            if (rawSongs.length > 0) {
+                songs = rawSongs.map(item => {
+                    const videoId = this.extractVideoId(item.url);
+                    const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
+                    const artist = item.uploaderName || item.artist || 'YouTube Music';
+                    
+                    return this.standardizeTrack({
+                        id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
+                        videoId: videoId,
+                        title: title,
+                        artist: artist,
+                        album: 'YouTube Music',
+                        cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
+                        duration: this.formatDuration(item.duration),
+                        streamUrl: null
+                    });
                 });
-            });
+            }
         } catch (error) {
-            console.warn('[YouTube Music] Primary search mirrors failed, using API fallback:', error.message || error);
+            console.warn('[YouTube Music] Parallel search mirrors failed, using API fallback:', error.message || error);
         }
 
-        // Secondary resilient fallback: query fallback API so YT Music search ALWAYS returns songs & playable streamUrls
+        // 2. Secondary resilient fallback: query fallback API so YT Music search ALWAYS returns songs & suggestions
         if (songs.length === 0) {
             try {
                 const fallbackUrls = [
-                    `https://vibentra.vercel.app/api/jiosaavn/search?q=${encodeURIComponent(query)}`,
-                    `https://jiosaavn-api-v3.vercel.app/search?q=${encodeURIComponent(query)}`
+                    `${this.backendUrl}/search?q=${cleanQuery}`,
+                    `https://vibentra.vercel.app/api/jiosaavn/search?q=${cleanQuery}`,
+                    `https://jiosaavn-api-v3.vercel.app/search?q=${cleanQuery}`
                 ];
                 for (let api of fallbackUrls) {
                     try {
