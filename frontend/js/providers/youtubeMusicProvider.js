@@ -117,45 +117,79 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         let songs = [];
         const cleanQuery = encodeURIComponent(query.trim());
 
-        // 1. Ultra-fast parallel search across Piped instances
-        try {
-            const endpoint = `/search?q=${cleanQuery}&filter=music_songs`;
-            const searchPromises = this.apiInstances.map(baseUrl => 
-                this.fetchWithTimeout(`${baseUrl}${endpoint}`, 1800)
-            );
-            const data = await Promise.any(searchPromises);
-            const rawItems = data.items || [];
-            const rawSongs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
-            
-            if (rawSongs.length > 0) {
-                songs = rawSongs.map(item => {
-                    const videoId = this.extractVideoId(item.url);
-                    const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
-                    const artist = item.uploaderName || item.artist || 'YouTube Music';
-                    
-                    return this.standardizeTrack({
-                        id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
-                        videoId: videoId,
-                        title: title,
-                        artist: artist,
-                        album: 'YouTube Music',
-                        cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
-                        duration: this.formatDuration(item.duration),
-                        streamUrl: null
+        // 1. Primary: Invidious CORS-friendly API mirrors
+        const invidiousEndpoints = [
+            `https://inv.tux.pizza/api/v1/search?q=${cleanQuery}&type=video`,
+            `https://invidious.nerdvpn.de/api/v1/search?q=${cleanQuery}&type=video`,
+            `https://vid.puffyan.us/api/v1/search?q=${cleanQuery}&type=video`
+        ];
+
+        for (let url of invidiousEndpoints) {
+            try {
+                const res = await this.fetchWithTimeout(url, 2500);
+                if (Array.isArray(res) && res.length > 0) {
+                    songs = res.slice(0, 20).map(item => {
+                        const vId = item.videoId;
+                        const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').replace(/\(Lyric Video\)/gi, '').trim();
+                        const artist = item.author || 'YouTube Music';
+                        
+                        return this.standardizeTrack({
+                            id: `yt_${vId}`,
+                            videoId: vId,
+                            title: title,
+                            artist: artist,
+                            album: 'YouTube Music',
+                            cover: vId ? `https://i.ytimg.com/vi/${vId}/hqdefault.jpg` : '',
+                            duration: this.formatDuration(item.lengthSeconds),
+                            streamUrl: null
+                        });
                     });
-                });
+                    break;
+                }
+            } catch (e) {
+                console.warn(`[YouTube Music] Invidious search mirror failed (${url}):`, e.message || e);
             }
-        } catch (error) {
-            console.warn('[YouTube Music] Parallel search mirrors failed, using API fallback:', error.message || error);
         }
 
-        // 2. Secondary resilient fallback: query fallback API so YT Music search ALWAYS returns songs & suggestions
+        // 2. Secondary: Piped API mirrors
+        if (songs.length === 0) {
+            for (let instance of this.apiInstances) {
+                try {
+                    const endpoint = `${instance}/search?q=${cleanQuery}&filter=music_songs`;
+                    const data = await this.fetchWithTimeout(endpoint, 2500);
+                    const rawItems = data.items || [];
+                    const rawSongs = rawItems.filter(item => item.url || item.type === 'stream' || item.type === 'music_song').slice(0, 20);
+                    if (rawSongs.length > 0) {
+                        songs = rawSongs.map(item => {
+                            const videoId = this.extractVideoId(item.url);
+                            const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').replace(/\(Lyric Video\)/gi, '').trim();
+                            const artist = item.uploaderName || item.artist || 'YouTube Music';
+                            
+                            return this.standardizeTrack({
+                                id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
+                                videoId: videoId,
+                                title: title,
+                                artist: artist,
+                                album: 'YouTube Music',
+                                cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
+                                duration: this.formatDuration(item.duration),
+                                streamUrl: null
+                            });
+                        });
+                        break;
+                    }
+                } catch (err) {
+                    console.warn(`[YouTube Music] Piped search mirror failed (${instance}):`, err.message || err);
+                }
+            }
+        }
+
+        // 3. Fallback: Search endpoint to ensure YouTube Music section is populated
         if (songs.length === 0) {
             try {
                 const fallbackUrls = [
                     `${this.backendUrl}/search?q=${cleanQuery}`,
-                    `https://vibentra.vercel.app/api/jiosaavn/search?q=${cleanQuery}`,
-                    `https://jiosaavn-api-v3.vercel.app/search?q=${cleanQuery}`
+                    `https://vibentra.vercel.app/api/jiosaavn/search?q=${cleanQuery}`
                 ];
                 for (let api of fallbackUrls) {
                     try {
@@ -186,12 +220,6 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         }
 
         songs.forEach(t => this.trackCache.set(t.id, t));
-
-        // Pre-fetch stream for any track missing streamUrl
-        songs.slice(0, 5).forEach(t => {
-            if (!t.streamUrl) this.prefetchTrackStream(t);
-        });
-
         return songs;
     }
 
