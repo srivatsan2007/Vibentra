@@ -240,15 +240,48 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     async getTrack(trackId) {
         const cached = this.trackCache.get(trackId);
         const videoId = cached?.videoId || trackId.replace('yt_', '');
+        const isRawId = (str) => !str || /^[a-zA-Z0-9_-]{11}$/.test(str.trim());
 
         if (cached && cached.streamUrl && cached._streamTimestamp && (Date.now() - cached._streamTimestamp < 2.5 * 60 * 1000)) {
             return cached;
         }
 
-        const titleArtist = cached ? `${cached.title} ${cached.artist}` : videoId;
+        const rawTitle = cached?.title || '';
+        const rawArtist = cached?.artist || '';
+        const titleArtist = (!isRawId(rawTitle) && rawTitle !== 'YouTube Track') ? `${rawTitle} ${rawArtist}`.trim() : '';
 
-        // Concurrent ultra-fast audio stream resolution
+        // 1. Direct YouTube Video Audio Stream Resolution via Piped API
+        const resolvePipedStream = async () => {
+            if (!videoId || isRawId(videoId)) {
+                // If videoId is valid 11-char string
+                const targetId = videoId || trackId.replace('yt_', '');
+                let attempts = 0;
+                while (attempts < this.apiInstances.length) {
+                    const baseUrl = this.getInstanceUrl();
+                    try {
+                        const data = await this.fetchWithTimeout(`${baseUrl}/streams/${targetId}`, 3000);
+                        if (data) {
+                            if (cached && (isRawId(cached.title) || cached.title === 'YouTube Track') && data.title) {
+                                cached.title = data.title.replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
+                                if (data.uploader) cached.artist = data.uploader;
+                                if (data.thumbnailUrl) cached.cover = data.thumbnailUrl;
+                            }
+                            const audioStreams = (data.audioStreams || []).sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+                            const bestAudio = audioStreams.find(s => s.mimeType?.includes('audio/mp4') || s.mimeType?.includes('audio/m4a')) || audioStreams[0];
+                            if (bestAudio?.url) return bestAudio.url;
+                        }
+                    } catch (e) {
+                        this.rotateInstance();
+                    }
+                    attempts++;
+                }
+            }
+            return null;
+        };
+
+        // 2. Secondary Human Title Search Fallback (only if clean human title exists)
         const resolveBackendStream = async () => {
+            if (!titleArtist || isRawId(titleArtist)) return null;
             const query = encodeURIComponent(titleArtist);
             const urlsToTry = [
                 `${this.backendUrl}/search?q=${query}`,
@@ -272,46 +305,10 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             return null;
         };
 
-        const resolvePipedStream = async () => {
-            try {
-                const data = await this.fetchWithTimeout(`${this.getInstanceUrl()}/streams/${videoId}`, 2500);
-                const audioStreams = (data.audioStreams || []).sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-                const bestAudio = audioStreams.find(s => s.mimeType?.includes('audio/mp4') || s.mimeType?.includes('audio/m4a')) || audioStreams[0];
-                return bestAudio?.url || null;
-            } catch(e) {}
-            return null;
-        };
-
-        // Execute fast stream resolvers in parallel
-        const [fastStream, pipedStream] = await Promise.all([
-            resolveBackendStream(),
-            resolvePipedStream()
-        ]);
-
-        let chosenStream = fastStream || pipedStream;
-
+        // Execute Piped exact audio resolution first, fallback to title search if Piped fails
+        let chosenStream = await resolvePipedStream();
         if (!chosenStream && titleArtist) {
-            const fallbackApis = [
-                `https://jiosaavn-api-v3.vercel.app/search?q=${encodeURIComponent(titleArtist)}`,
-                `https://saavn.me/search/songs?query=${encodeURIComponent(titleArtist)}`
-            ];
-            for (let api of fallbackApis) {
-                try {
-                    const fallbackRes = await fetch(api);
-                    if (fallbackRes.ok) {
-                        const fallbackJson = await fallbackRes.json();
-                        const resultsList = Array.isArray(fallbackJson) ? fallbackJson : (fallbackJson?.data?.results || fallbackJson?.results || []);
-                        if (resultsList && resultsList.length > 0) {
-                            const first = resultsList[0];
-                            const sUrl = first.streamUrl || (first.downloadUrl && first.downloadUrl.length > 0 ? (typeof first.downloadUrl === 'string' ? first.downloadUrl : first.downloadUrl[first.downloadUrl.length - 1].url) : null);
-                            if (sUrl) {
-                                chosenStream = sUrl;
-                                break;
-                            }
-                        }
-                    }
-                } catch (e) { }
-            }
+            chosenStream = await resolveBackendStream();
         }
 
         if (chosenStream && cached) {
@@ -323,7 +320,6 @@ export default class YouTubeMusicProvider extends ProviderInterface {
 
         if (cached && cached.streamUrl) return cached;
 
-        // Final fail-safe: if cached exists, assign resolved chosenStream or fallback stream
         if (cached) {
             cached.streamUrl = chosenStream || cached.streamUrl || null;
             return cached;
@@ -332,10 +328,10 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         return {
             id: trackId,
             videoId: videoId,
-            title: titleArtist || 'YouTube Track',
-            artist: 'YouTube Music',
+            title: (!isRawId(rawTitle) && rawTitle !== 'YouTube Track') ? rawTitle : 'YouTube Song',
+            artist: rawArtist || 'YouTube Music',
             album: 'YouTube Music',
-            cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '',
+            cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80',
             duration: '3:30',
             streamUrl: chosenStream || null
         };
