@@ -83,27 +83,38 @@ class ProviderManager {
                 activeProviders.map(p => this.withTimeout(p.searchSongs(query), 8500, []))
             );
 
-            let unifiedList = [];
+            const providerLists = [];
             results.forEach((result, index) => {
-                if (result.status === 'fulfilled' && Array.isArray(result.value)) {
-                    unifiedList = unifiedList.concat(result.value);
-                } else {
+                if (result.status === 'fulfilled' && Array.isArray(result.value) && result.value.length > 0) {
+                    providerLists.push(result.value);
+                } else if (result.status === 'rejected') {
                     console.error(`Provider ${activeProviders[index]?.name} failed or timed out:`, result.reason);
                 }
             });
 
-            return unifiedList;
+            // Interleave provider results so YouTube Music and JioSaavn suggestions appear side-by-side
+            return this.interleaveArrays(providerLists);
         } catch (error) {
             console.error("Unified search failed", error);
             return [];
         }
     }
 
+    interleaveArrays(arrays) {
+        const result = [];
+        const maxLength = Math.max(...arrays.map(a => (a ? a.length : 0)), 0);
+        for (let i = 0; i < maxLength; i++) {
+            for (let arr of arrays) {
+                if (arr && i < arr.length) {
+                    result.push(arr[i]);
+                }
+            }
+        }
+        return result;
+    }
+
     async searchAll(query) {
         const activeProviders = this.getAllProviders().filter(p => p.enabled);
-        let unifiedSongs = [];
-        let unifiedAlbums = [];
-        let unifiedPlaylists = [];
 
         try {
             const results = await Promise.allSettled(
@@ -113,14 +124,23 @@ class ProviderManager {
                 })
             );
 
+            const songLists = [];
+            const albumLists = [];
+            const playlistLists = [];
+
             results.forEach(res => {
                 if (res.status === 'fulfilled' && res.value) {
-                    if (res.value.songs) unifiedSongs = unifiedSongs.concat(res.value.songs);
-                    if (res.value.albums) unifiedAlbums = unifiedAlbums.concat(res.value.albums);
-                    if (res.value.playlists) unifiedPlaylists = unifiedPlaylists.concat(res.value.playlists);
+                    if (Array.isArray(res.value.songs) && res.value.songs.length > 0) songLists.push(res.value.songs);
+                    if (Array.isArray(res.value.albums) && res.value.albums.length > 0) albumLists.push(res.value.albums);
+                    if (Array.isArray(res.value.playlists) && res.value.playlists.length > 0) playlistLists.push(res.value.playlists);
                 }
             });
-            return { songs: unifiedSongs, albums: unifiedAlbums, playlists: unifiedPlaylists };
+
+            return {
+                songs: this.interleaveArrays(songLists),
+                albums: this.interleaveArrays(albumLists),
+                playlists: this.interleaveArrays(playlistLists)
+            };
         } catch (error) {
             console.error("Unified searchAll failed", error);
             return { songs: [], albums: [], playlists: [] };
