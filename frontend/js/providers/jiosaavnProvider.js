@@ -27,7 +27,7 @@ export default class JioSaavnProvider extends ProviderInterface {
         for (let url of urlsToTry) {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const timeoutId = setTimeout(() => controller.abort(), 4500);
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
                 if (response.ok) {
@@ -247,24 +247,26 @@ export default class JioSaavnProvider extends ProviderInterface {
 
     async getPlaylist(playlistId) {
         try {
-            let data = await this.safeFetch(`/playlist?id=${playlistId}`);
-            if (!data || !Array.isArray(data) || data.length === 0) {
+            let rawData = await this.safeFetch(`/playlist?id=${playlistId}`);
+            let tracksArray = Array.isArray(rawData) ? rawData : (rawData?.songs || rawData?.data?.songs || rawData?.results || rawData?.data || []);
+            
+            if (!tracksArray || !Array.isArray(tracksArray) || tracksArray.length === 0) {
                 // Fallback API endpoints for playlist details
                 const fallbackApis = [
-                    `https://jiosaavn-api-v3.vercel.app/playlists?id=${playlistId}`,
-                    `https://saavn.me/playlists?id=${playlistId}`
+                    `https://saavn.me/playlists?id=${playlistId}`,
+                    `https://jiosaavn-api-v3.vercel.app/playlists?id=${playlistId}`
                 ];
                 for (let api of fallbackApis) {
                     try {
                         const fallbackRes = await fetch(api);
                         if (fallbackRes.ok) {
                             const fallbackJson = await fallbackRes.json();
-                            let rawList = Array.isArray(fallbackJson) ? fallbackJson : (fallbackJson?.data?.songs || fallbackJson?.songs || fallbackJson?.data?.results || []);
-                            if (rawList && rawList.length > 0) {
-                                data = rawList.map(t => ({
+                            let rawList = Array.isArray(fallbackJson) ? fallbackJson : (fallbackJson?.data?.songs || fallbackJson?.songs || fallbackJson?.data?.results || fallbackJson?.data || []);
+                            if (rawList && Array.isArray(rawList) && rawList.length > 0) {
+                                tracksArray = rawList.map(t => ({
                                     id: t.id,
-                                    title: t.name || t.title || '',
-                                    artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : '') || t.artist || '',
+                                    title: t.name || t.title || t.song || '',
+                                    artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : '') || t.artist || t.singers || '',
                                     album: t.album?.name || t.album || '',
                                     cover: (t.image && t.image.length > 0) ? (typeof t.image === 'string' ? t.image : t.image[t.image.length - 1].url) : (t.cover || ''),
                                     duration: typeof t.duration === 'number' ? `${Math.floor(t.duration / 60)}:${(t.duration % 60).toString().padStart(2, '0')}` : (t.duration || '3:30'),
@@ -276,8 +278,15 @@ export default class JioSaavnProvider extends ProviderInterface {
                     } catch (e) { }
                 }
             }
-            if (!data || !Array.isArray(data)) return [];
-            const standardized = data.map(t => this.standardizeTrack(t));
+
+            // Fallback: search songs using playlist ID / title if direct playlist detail API returned no items
+            if (!tracksArray || !Array.isArray(tracksArray) || tracksArray.length === 0) {
+                const cleanQuery = String(playlistId).replace(/yt_pl_|jio_pl_/gi, '').replace(/_/g, ' ');
+                tracksArray = await this.searchSongs(cleanQuery);
+                return tracksArray;
+            }
+
+            const standardized = tracksArray.map(t => this.standardizeTrack(t)).filter(Boolean);
             standardized.forEach(t => this.trackCache.set(t.id, t));
             return standardized;
         } catch (error) {

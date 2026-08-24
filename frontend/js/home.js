@@ -1754,6 +1754,19 @@ const initHome = () => {
                 remoteTracks = await providerManager.getPlaylist(pId, collection.id);
             }
 
+            // High-reliability Fallback if provider getPlaylist/getAlbum returns empty array
+            if (!remoteTracks || remoteTracks.length === 0) {
+                if (collection.tracks && collection.tracks.length > 0) {
+                    remoteTracks = collection.tracks;
+                } else if (collection.songs && collection.songs.length > 0) {
+                    remoteTracks = collection.songs;
+                } else {
+                    const fallbackTerm = collection.title || collection.searchQuery || currentQuery || 'hits';
+                    const fallbackRes = await searchService.searchAll(fallbackTerm);
+                    remoteTracks = (fallbackRes && fallbackRes.songs && fallbackRes.songs.length > 0) ? fallbackRes.songs : [];
+                }
+            }
+
             document.getElementById('playAllRemoteBtn').addEventListener('click', () => {
                 if (remoteTracks.length > 0) {
                     musicService.playContext(remoteTracks, remoteTracks[0]);
