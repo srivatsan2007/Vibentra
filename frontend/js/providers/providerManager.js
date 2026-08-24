@@ -148,13 +148,15 @@ class ProviderManager {
     }
 
     async getAlbum(providerId, albumId) {
-        const provider = this.getProvider(providerId);
+        const pId = (providerId === 'youtube' || providerId === 'ytmusic') ? 'ytmusic' : providerId;
+        const provider = this.getProvider(pId);
         if (!provider || !provider.enabled || !provider.getAlbum) return [];
         return await provider.getAlbum(albumId);
     }
 
     async getPlaylist(providerId, playlistId) {
-        const provider = this.getProvider(providerId);
+        const pId = (providerId === 'youtube' || providerId === 'ytmusic') ? 'ytmusic' : providerId;
+        const provider = this.getProvider(pId);
         if (!provider || !provider.enabled || !provider.getPlaylist) return [];
         return await provider.getPlaylist(playlistId);
     }

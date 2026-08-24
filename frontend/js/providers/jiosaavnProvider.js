@@ -212,6 +212,19 @@ export default class JioSaavnProvider extends ProviderInterface {
                 }
             }
 
+            // Fallback: If no dedicated playlist array was returned from search/all, query /search/playlists
+            if (playlists.length === 0) {
+                try {
+                    const plData = await this.safeFetch(`/search/playlists?q=${encodeURIComponent(query)}`);
+                    const fallbackPls = Array.isArray(plData) ? plData : (plData?.results || plData?.data || plData?.playlists?.results || []);
+                    if (Array.isArray(fallbackPls) && fallbackPls.length > 0) {
+                        playlists = fallbackPls.map(p => this.standardizePlaylist(p)).filter(Boolean);
+                    }
+                } catch (e) {
+                    console.warn('[JioSaavn] Playlist fallback search failed:', e);
+                }
+            }
+
             return { songs, albums, playlists };
         } catch (error) {
             console.error("JioSaavn searchAll error:", error);
@@ -234,7 +247,35 @@ export default class JioSaavnProvider extends ProviderInterface {
 
     async getPlaylist(playlistId) {
         try {
-            const data = await this.safeFetch(`/playlist?id=${playlistId}`);
+            let data = await this.safeFetch(`/playlist?id=${playlistId}`);
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                // Fallback API endpoints for playlist details
+                const fallbackApis = [
+                    `https://jiosaavn-api-v3.vercel.app/playlists?id=${playlistId}`,
+                    `https://saavn.me/playlists?id=${playlistId}`
+                ];
+                for (let api of fallbackApis) {
+                    try {
+                        const fallbackRes = await fetch(api);
+                        if (fallbackRes.ok) {
+                            const fallbackJson = await fallbackRes.json();
+                            let rawList = Array.isArray(fallbackJson) ? fallbackJson : (fallbackJson?.data?.songs || fallbackJson?.songs || fallbackJson?.data?.results || []);
+                            if (rawList && rawList.length > 0) {
+                                data = rawList.map(t => ({
+                                    id: t.id,
+                                    title: t.name || t.title || '',
+                                    artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : '') || t.artist || '',
+                                    album: t.album?.name || t.album || '',
+                                    cover: (t.image && t.image.length > 0) ? (typeof t.image === 'string' ? t.image : t.image[t.image.length - 1].url) : (t.cover || ''),
+                                    duration: typeof t.duration === 'number' ? `${Math.floor(t.duration / 60)}:${(t.duration % 60).toString().padStart(2, '0')}` : (t.duration || '3:30'),
+                                    streamUrl: (t.downloadUrl && t.downloadUrl.length > 0) ? (typeof t.downloadUrl === 'string' ? t.downloadUrl : t.downloadUrl[t.downloadUrl.length - 1].url) : (t.streamUrl || null)
+                                }));
+                                break;
+                            }
+                        }
+                    } catch (e) { }
+                }
+            }
             if (!data || !Array.isArray(data)) return [];
             const standardized = data.map(t => this.standardizeTrack(t));
             standardized.forEach(t => this.trackCache.set(t.id, t));

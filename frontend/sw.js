@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v57';
+const CACHE_NAME = 'vibentra-cache-v58';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
     '/js/services/lyricsService.js',
     '/js/services/connectService.js',
     '/js/providers/jiosaavnProvider.js',
+    '/js/providers/youtubeMusicProvider.js',
     '/js/providers/providerManager.js',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];

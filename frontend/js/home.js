@@ -1478,6 +1478,10 @@ const initHome = () => {
 
         // Helper to create Album Card
         const createAlbumCard = (album) => {
+            const providerName = album.provider || (album.providerId === 'ytmusic' || album.source === 'youtube' ? 'YouTube Music' : 'JioSaavn');
+            const pId = album.providerId || (providerName === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
+            const isYTM = providerName === 'YouTube Music' || pId === 'ytmusic';
+
             const card = document.createElement('div');
             card.className = 'music-card';
             card.innerHTML = `
@@ -1491,13 +1495,19 @@ const initHome = () => {
                 <div class="card-info">
                     <h3>${album.title}</h3>
                     <p>${album.artist}</p>
-                    <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: rgba(255,255,255,0.6);">Album</span>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                        <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; color: rgba(255,255,255,0.6);">Album</span>
+                        <span style="font-size: 0.72rem; padding: 2px 6px; background: ${isYTM ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${isYTM ? '#f87171' : '#34d399'}; border-radius: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="${isYTM ? 'fa-brands fa-youtube' : 'fa-solid fa-music'}"></i>
+                            ${providerName}
+                        </span>
+                    </div>
                 </div>
             `;
             card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                showNotification('Loading album...');
-                const albumTracks = await providerManager.getAlbum('jiosaavn', album.id);
+                showNotification(`Loading '${album.title}'...`);
+                const albumTracks = await providerManager.getAlbum(pId, album.id);
                 if (albumTracks && albumTracks.length > 0) {
                     musicService.playContext(albumTracks, albumTracks[0]);
                 } else {
@@ -1510,7 +1520,7 @@ const initHome = () => {
             card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
                 e.stopPropagation();
                 showNotification(`Saving '${album.title}' to your playlists...`);
-                const albumTracks = await providerManager.getAlbum('jiosaavn', album.id);
+                const albumTracks = await providerManager.getAlbum(pId, album.id);
                 if (albumTracks && albumTracks.length > 0) {
                     const newPl = playlistService.createPlaylist(album.title, `Saved Album: ${album.artist}`);
                     albumTracks.forEach(track => playlistService.addTrackToPlaylist(newPl.id, track));
@@ -1524,26 +1534,36 @@ const initHome = () => {
 
         // Helper to create Playlist Card
         const createPlaylistCard = (pl) => {
+            const providerName = pl.provider || (pl.providerId === 'ytmusic' ? 'YouTube Music' : 'JioSaavn');
+            const pId = pl.providerId || (providerName === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
+            const isYTM = providerName === 'YouTube Music' || pId === 'ytmusic';
+
             const card = document.createElement('div');
             card.className = 'music-card';
             card.innerHTML = `
                 <div class="card-img-wrapper" style="position: relative;">
                     <img src="${pl.cover}" alt="Cover" loading="lazy">
-                    <div class="play-btn-overlay" title="Play Playlist"><i class="fa-solid fa-folder-open"></i></div>
+                    <div class="play-btn-overlay" title="Play Playlist"><i class="fa-solid fa-list-check"></i></div>
                     <button class="save-to-playlist-btn" title="Save as local playlist" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center;">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                 </div>
                 <div class="card-info">
                     <h3>${pl.title}</h3>
-                    <p>${pl.artist || 'JioSaavn'}</p>
-                    <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; display: inline-block; margin-top: 5px; color: rgba(255,255,255,0.6);">Playlist</span>
+                    <p>${pl.artist || providerName}</p>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                        <span style="font-size: 0.7rem; padding: 2px 6px; background: rgba(6, 182, 212, 0.2); border-radius: 4px; color: #22d3ee;">Playlist</span>
+                        <span style="font-size: 0.72rem; padding: 2px 6px; background: ${isYTM ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${isYTM ? '#f87171' : '#34d399'}; border-radius: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="${isYTM ? 'fa-brands fa-youtube' : 'fa-solid fa-music'}"></i>
+                            ${providerName}
+                        </span>
+                    </div>
                 </div>
             `;
             card.querySelector('.play-btn-overlay').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                showNotification('Loading playlist...');
-                const plTracks = await providerManager.getPlaylist('jiosaavn', pl.id);
+                showNotification(`Loading playlist '${pl.title}'...`);
+                const plTracks = await providerManager.getPlaylist(pId, pl.id);
                 if (plTracks && plTracks.length > 0) {
                     musicService.playContext(plTracks, plTracks[0]);
                 } else {
@@ -1556,9 +1576,9 @@ const initHome = () => {
             card.querySelector('.save-to-playlist-btn').addEventListener('click', async (e) => {
                 e.stopPropagation();
                 showNotification(`Saving '${pl.title}' to your playlists...`);
-                const plTracks = await providerManager.getPlaylist('jiosaavn', pl.id);
+                const plTracks = await providerManager.getPlaylist(pId, pl.id);
                 if (plTracks && plTracks.length > 0) {
-                    const newPl = playlistService.createPlaylist(pl.title, `Saved JioSaavn Playlist`);
+                    const newPl = playlistService.createPlaylist(pl.title, `Saved ${providerName} Playlist`);
                     plTracks.forEach(track => playlistService.addTrackToPlaylist(newPl.id, track));
                     showNotification(`Saved '${pl.title}' as a new playlist!`);
                 } else {
@@ -1692,6 +1712,9 @@ const initHome = () => {
 
 
     async function renderRemoteCollectionDetail(collection, type, currentQuery = '') {
+        const providerName = collection.provider || (collection.providerId === 'ytmusic' || collection.source === 'youtube' ? 'YouTube Music' : 'JioSaavn');
+        const pId = collection.providerId || (providerName === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
+
         dynamicContent.innerHTML = `
             <div class="section-header" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <button class="btn" id="backFromRemoteBtn" style="background: transparent; border: 1px solid var(--border); padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-arrow-left"></i> Back</button>
@@ -1699,9 +1722,14 @@ const initHome = () => {
             <div style="display: flex; align-items: flex-end; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
                 <img src="${collection.cover}" style="width: 180px; height: 180px; border-radius: 10px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="flex: 1;">
-                    <p style="margin: 0 0 5px 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">${type === 'album' ? 'Album' : 'Playlist'}</p>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">${type === 'album' ? 'Album' : 'Playlist'}</p>
+                        <span style="font-size: 0.75rem; padding: 2px 8px; background: rgba(255,255,255,0.1); border-radius: 12px; font-weight: 600; color: #34d399; display: inline-flex; align-items: center; gap: 4px;">
+                            ${providerName}
+                        </span>
+                    </div>
                     <h2 style="margin: 0 0 10px 0; font-size: clamp(1.5rem, 5vw, 3rem); font-family: 'Delius', cursive;">${collection.title}</h2>
-                    <p style="margin: 0; color: var(--text-muted);">${collection.artist || 'JioSaavn'}</p>
+                    <p style="margin: 0; color: var(--text-muted);">${collection.artist || providerName}</p>
                     <button class="btn" id="playAllRemoteBtn" style="margin-top: 20px; background: white; color: black; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; border: none; display: flex; align-items: center; gap: 10px;"><i class="fa-solid fa-play"></i> Play</button>
                 </div>
             </div>
@@ -1720,7 +1748,6 @@ const initHome = () => {
 
         let remoteTracks = [];
         try {
-            const pId = collection.providerId || (collection.source === 'youtube' ? 'youtube' : 'jiosaavn');
             if (type === 'album') {
                 remoteTracks = await providerManager.getAlbum(pId, collection.id);
             } else {

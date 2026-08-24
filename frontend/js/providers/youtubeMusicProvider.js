@@ -194,11 +194,76 @@ export default class YouTubeMusicProvider extends ProviderInterface {
         return songs;
     }
 
+    async searchPlaylists(query) {
+        if (!query || !query.trim()) return [];
+        const cleanQuery = encodeURIComponent(query.trim());
+        let playlists = [];
+
+        const searchPromises = this.apiInstances.map(inst =>
+            this.fetchWithTimeout(`${inst}/search?q=${cleanQuery}&filter=music_playlists`, 3000)
+                .then(data => {
+                    const items = data?.items || [];
+                    const playlistItems = items.filter(item => item.type === 'playlist' || item.type === 'music_playlist' || (item.url && item.url.includes('list=')));
+                    if (playlistItems.length === 0) return null;
+                    return playlistItems.map(item => {
+                        const url = item.url || '';
+                        const listMatch = url.match(/list=([a-zA-Z0-9_-]+)/);
+                        const plId = listMatch ? listMatch[1] : (item.id || item.playlistId || url.replace('/playlist?list=', ''));
+                        return {
+                            id: `yt_pl_${plId}`,
+                            playlistId: plId,
+                            title: item.title ? item.title.replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim() : `${query} Mix`,
+                            artist: item.uploaderName || item.artist || 'YouTube Music',
+                            cover: item.thumbnail || (plId ? `https://i.ytimg.com/vi/${plId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80'),
+                            type: 'playlist',
+                            provider: 'YouTube Music',
+                            providerId: 'ytmusic',
+                            searchQuery: query
+                        };
+                    });
+                }).catch(() => null)
+        );
+
+        const results = await Promise.allSettled(searchPromises);
+        results.forEach(res => {
+            if (res.status === 'fulfilled' && Array.isArray(res.value) && res.value.length > 0) {
+                playlists.push(...res.value);
+            }
+        });
+
+        // Deduplicate playlists by title
+        const seenTitles = new Set();
+        const uniquePlaylists = [];
+        for (let pl of playlists) {
+            const key = pl.title.toLowerCase().trim();
+            if (!seenTitles.has(key)) {
+                seenTitles.add(key);
+                uniquePlaylists.push(pl);
+            }
+        }
+
+        // Guarantee YouTube Music playlists for searches like "Tamil 90's hits", "Illayaraja hits", "AR Rahman hits"
+        const formattedTitle = query.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        uniquePlaylists.push({
+            id: `yt_pl_${encodeURIComponent(query.trim())}`,
+            playlistId: null,
+            title: `${formattedTitle} - YouTube Music Mix`,
+            artist: 'YouTube Music',
+            cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80',
+            type: 'playlist',
+            provider: 'YouTube Music',
+            providerId: 'ytmusic',
+            searchQuery: query
+        });
+
+        return uniquePlaylists;
+    }
+
     async searchAll(query) {
         try {
             const songs = await this.searchSongs(query);
             let albums = [];
-            let playlists = [];
+            let playlists = await this.searchPlaylists(query);
 
             if (songs.length > 0) {
                 albums.push({
@@ -211,6 +276,13 @@ export default class YouTubeMusicProvider extends ProviderInterface {
                     providerId: 'ytmusic',
                     tracks: songs
                 });
+                
+                // If playlist cover can be improved using top song cover
+                if (playlists && playlists.length > 0 && songs[0]?.cover) {
+                    playlists.forEach(pl => {
+                        if (pl.cover.includes('unsplash')) pl.cover = songs[0].cover;
+                    });
+                }
             }
 
             return { songs, albums, playlists };
@@ -311,7 +383,50 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     }
 
     async getAlbum(albumId) { return []; }
-    async getPlaylist(playlistId) { return []; }
+
+    async getPlaylist(playlistId) {
+        if (!playlistId) return [];
+
+        let rawPlId = String(playlistId).replace('yt_pl_essentials_', '').replace('yt_pl_', '');
+        let decodedQuery = null;
+        try {
+            decodedQuery = decodeURIComponent(rawPlId);
+        } catch(e) {
+            decodedQuery = rawPlId;
+        }
+
+        if (rawPlId.startsWith('PL') || rawPlId.startsWith('RD') || rawPlId.startsWith('OLAK5uy')) {
+            for (let inst of this.apiInstances) {
+                try {
+                    const data = await this.fetchWithTimeout(`${inst}/playlists/${rawPlId}`, 3500);
+                    const streams = data?.relatedStreams || data?.items || [];
+                    if (streams && streams.length > 0) {
+                        const tracks = streams.map(item => {
+                            const videoId = this.extractVideoId(item.url || item.id);
+                            const title = (item.title || 'YouTube Track').replace(/\(Official Audio\)/gi, '').replace(/\(Official Video\)/gi, '').trim();
+                            return this.standardizeTrack({
+                                id: `yt_${videoId || Math.random().toString(36).substring(7)}`,
+                                videoId: videoId,
+                                title: title,
+                                artist: item.uploaderName || item.artist || 'YouTube Music',
+                                album: 'YouTube Music Playlist',
+                                cover: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ''),
+                                duration: this.formatDuration(item.duration),
+                                streamUrl: null
+                            });
+                        });
+                        tracks.forEach(t => this.trackCache.set(t.id, t));
+                        return tracks;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        const searchQuery = decodedQuery || 'top hits';
+        const songs = await this.searchSongs(searchQuery);
+        return songs;
+    }
+
     async searchArtists(query) { return []; }
     async getLyrics(trackId) { return null; }
 }
