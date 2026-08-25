@@ -1,16 +1,16 @@
 {
-  "version": "v1.5.8",
-  "swVersion": "vibentra-cache-v95",
-  "releaseDate": "25 August 2026, 02:40 pm",
+  "version": "v1.5.9",
+  "swVersion": "vibentra-cache-v99",
+  "releaseDate": "25 August 2026, 07:21 pm",
   "size": "2.8 MB",
-  "importantNote": "Enforced cache-busting and explicit layout constraints for 3-dot options buttons across all mobile viewports.",
+  "importantNote": "Restored stable working build v1.5.9 with guaranteed Vercel deployment trigger.",
   "changelog": [
     {
-      "category": "Mobile 3-Dot Options Button Instant Fix",
+      "category": "Stable Production Deployment Restore",
       "items": [
-        "Injected cache-busting query strings (?v=1.5.8) in index.html and home.html so mobile browsers instantly pull fresh JS/CSS assets.",
-        "Converted all search, playlist, and remote collection song rows to enforce flex contraction boundaries, guaranteeing 100% on-screen visibility for 3-dot options buttons.",
-        "Preserved 100% backend streaming and track menu action sheet functionality."
+        "Restored complete working application layout and playback stability.",
+        "Bumped Service Worker cache to vibentra-cache-v99 to force client devices and PWA to reload fresh assets.",
+        "Pushed new production commit to trigger immediate automatic Vercel build."
       ]
     }
   ]
