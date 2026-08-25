@@ -1,15 +1,15 @@
 {
-  "version": "v1.3.2",
-  "swVersion": "vibentra-cache-v77",
-  "releaseDate": "25 August 2026, 12:21 pm",
+  "version": "v1.3.3",
+  "swVersion": "vibentra-cache-v78",
+  "releaseDate": "25 August 2026, 12:23 pm",
   "size": "2.9 MB",
-  "importantNote": "Synchronized loadView execution after authentication status and user cloud data resolution.",
+  "importantNote": "Eliminated 2.5 second splash screen delay and unblocked loadView execution for instant zero-latency startup.",
   "changelog": [
     {
-      "category": "App Launch Orchestration",
+      "category": "Zero-Latency Launch & Instant Render",
       "items": [
-        "Updated `onAuthStateChanged` to resolve user session and cloud data before invoking `loadView`.",
-        "Ensures home screen, playlists, and user identity elements populate immediately on app start."
+        "Removed 2000ms splash delay in `app.js` for immediate authentication check.",
+        "Made `syncFromCloud` non-blocking in `home.js` so `loadView` renders your home dashboard in 0 milliseconds."
       ]
     }
   ]

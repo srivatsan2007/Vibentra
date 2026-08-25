@@ -120,17 +120,7 @@ const initHome = () => {
             console.error("Error loading user data:", error);
         }
 
-        // Sync Favorites & Playlists from Cloud
-        try {
-            await Promise.all([
-                favoriteService.syncFromCloud(user.uid),
-                playlistService.syncFromCloud(user.uid)
-            ]);
-        } catch (e) {
-            console.warn("Cloud sync warning:", e);
-        }
-
-        // Render target view with authenticated user context
+        // Render target view immediately so app opens instantly with zero latency
         const targetPath = window.location.hash.replace('#', '') || 'home';
         loadView(targetPath, false);
 
@@ -142,6 +132,10 @@ const initHome = () => {
 
         const profileUsername = document.getElementById('profileUsername');
         if (profileUsername) profileUsername.textContent = nameToDisplay;
+
+        // Sync Favorites & Playlists from Cloud in background
+        favoriteService.syncFromCloud(user.uid).catch(e => console.warn("Cloud sync warning:", e));
+        playlistService.syncFromCloud(user.uid).catch(e => console.warn("Cloud sync warning:", e));
     });
 
     // Mobile Navigation Toggle
