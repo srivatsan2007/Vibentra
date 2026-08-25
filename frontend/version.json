@@ -1,23 +1,22 @@
 {
-  "version": "v1.2.7",
-  "swVersion": "vibentra-cache-v72",
-  "releaseDate": "25 August 2026, 12:02 pm",
+  "version": "v1.2.8",
+  "swVersion": "vibentra-cache-v73",
+  "releaseDate": "25 August 2026, 12:05 pm",
   "size": "2.9 MB",
-  "importantNote": "Automatic user account name and song data restoration on auth ready, restored home view greeting and cloud sync refresh.",
+  "importantNote": "Immediate view loading on app start eliminating blank pages, instant automatic logged account & playlist restoration.",
   "changelog": [
     {
-      "category": "Account & Song Restoration",
+      "category": "Instant App Load & Account Auto-Restoration",
       "items": [
-        "Fixed home page greeting DOM element binding (`id=welcomeName`) to display user account name immediately.",
-        "Automatic refresh of home view when Firebase authentication completes, restoring saved songs, history, and playlists."
+        "Enforced immediate initial `loadView` execution on app startup so your account home page, playlists, and songs render instantly without waiting.",
+        "Non-blocking background cloud synchronization for user playlists, favorites, and profile data."
       ]
     },
     {
       "category": "Classic App Experience & Silent Updates",
       "items": [
         "Disabled automatic floating update banners and popup overlays to preserve clean, uninterrupted app usage.",
-        "Updates now process seamlessly in the background without forcing screens or prompting.",
-        "Restored classic smooth navigation and touch responsiveness across all views."
+        "Updates now process seamlessly in the background without forcing screens or prompting."
       ]
     }
   ]

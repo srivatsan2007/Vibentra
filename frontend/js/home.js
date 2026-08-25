@@ -93,6 +93,10 @@ const initHome = () => {
     const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
     window.applyTheme(savedTheme);
 
+    // Render initial view immediately so app never opens to a blank screen
+    const initialHash = window.location.hash.replace('#', '') || 'home';
+    loadView(initialHash, false);
+
     // Check Auth State
     musicService.initUI(); // Initialize player UI bindings
     onAuthStateChanged(auth, async (user) => {
@@ -129,13 +133,9 @@ const initHome = () => {
         const profileUsername = document.getElementById('profileUsername');
         if (profileUsername) profileUsername.textContent = nameToDisplay;
 
-        // Trigger Cloud Data Sync for User Favorites & Playlists
-        await favoriteService.syncFromCloud(user.uid);
-        await playlistService.syncFromCloud(user.uid);
-
-        // Refresh current active view (e.g. Home) so user songs, history, and playlists load immediately
-        const activePath = document.querySelector('.nav-item.active')?.getAttribute('data-path') || 'home';
-        loadView(activePath, false);
+        // Trigger Cloud Data Sync for User Favorites & Playlists (non-blocking)
+        favoriteService.syncFromCloud(user.uid);
+        playlistService.syncFromCloud(user.uid);
     });
 
     // Mobile Navigation Toggle
