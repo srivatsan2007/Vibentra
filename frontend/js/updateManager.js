@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.3.0</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.3.1</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 12:15 pm</p>
+                        <p>Released on: 25 August 2026, 12:18 pm</p>
                         <p>Size: 2.9 MB</p>
-                        <p>SW Cache: vibentra-cache-v75</p>
+                        <p>SW Cache: vibentra-cache-v76</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Restored exact classic Home UI matching user reference image, resolved null reference exceptions, and cleaned Service Worker boot sequence.
+                        Cleaned auth page service worker scripts and ensured smooth login and registration redirects to home.
                     </div>
 
                     <div id="updateChangelogContainer">

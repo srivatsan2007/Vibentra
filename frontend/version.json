@@ -1,23 +1,15 @@
 {
-  "version": "v1.3.0",
-  "swVersion": "vibentra-cache-v75",
-  "releaseDate": "25 August 2026, 12:15 pm",
+  "version": "v1.3.1",
+  "swVersion": "vibentra-cache-v76",
+  "releaseDate": "25 August 2026, 12:18 pm",
   "size": "2.9 MB",
-  "importantNote": "Restored exact classic Home UI matching user reference image, resolved null reference exceptions, and cleaned Service Worker boot sequence.",
+  "importantNote": "Cleaned auth page service worker scripts and ensured smooth login and registration redirects to home.",
   "changelog": [
     {
-      "category": "Exact Home Screen Design Restoration",
+      "category": "Authentication & Session Stability",
       "items": [
-        "Restored original clean `Good Morning, User!` gradient heading and 2-column Trending Now cards grid.",
-        "Removed screen-blocking filter chips overlay.",
-        "Fixed `langPrefSelect` null reference exception to restore smooth song rendering on open."
-      ]
-    },
-    {
-      "category": "Permanent SW Activation",
-      "items": [
-        "Cleaned `index.html` inline registration script to eliminate all update prompts and unregistration loops.",
-        "Enforced instant background activation across all client devices."
+        "Cleaned `auth.html` inline registration script to eliminate interference with login flow.",
+        "Verified Firebase email/password and Google authentication redirects to home dashboard."
       ]
     }
   ]
