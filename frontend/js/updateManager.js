@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.5.1</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.5.2</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 01:43 pm</p>
+                        <p>Released on: 25 August 2026, 01:51 pm</p>
                         <p>Size: 2.8 MB</p>
-                        <p>SW Cache: vibentra-cache-v88</p>
+                        <p>SW Cache: vibentra-cache-v89</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Search songs now display in a clean vertical list of track rows. Zero backend changes!
+                        Search page redesigned to match Spotify mobile search layout with explicit Song, Album, and Playlist type labels!
                     </div>
 
                     <div id="updateChangelogContainer">

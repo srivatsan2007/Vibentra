@@ -1,16 +1,17 @@
 {
-  "version": "v1.5.1",
-  "swVersion": "vibentra-cache-v88",
-  "releaseDate": "25 August 2026, 01:43 pm",
+  "version": "v1.5.2",
+  "swVersion": "vibentra-cache-v89",
+  "releaseDate": "25 August 2026, 01:51 pm",
   "size": "2.8 MB",
-  "importantNote": "Search songs now render in a clean vertical list of horizontal track rows (Spotify & YTM style) to eliminate clumsy card alignment.",
+  "importantNote": "Search page UI updated to match Spotify mobile search layout with explicit Song, Album, and Playlist type labels, vertical alignment, and action buttons.",
   "changelog": [
     {
-      "category": "Search Results UI Update",
+      "category": "Spotify Search Mobile UI Parity",
       "items": [
-        "Replaced horizontal song cards grid with a clean vertical list of horizontal track rows.",
-        "Each track row clearly displays full track title, artist, provider badge (YouTube Music / JioSaavn), and 3-dots action sheet button.",
-        "Strictly preserved 100% of backend streaming and search logic."
+        "Rendered songs, albums, and playlists as clean vertical rows in distinct sections.",
+        "Added explicit type tags: 'Song • Artist', 'Album • Artist', and 'Playlist • Creator' for instant visual identification.",
+        "Integrated 3-dots menu and + add buttons on the right side of each item.",
+        "Strictly preserved 100% of backend music streaming logic."
       ]
     }
   ]

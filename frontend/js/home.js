@@ -1457,43 +1457,48 @@ const initHome = () => {
             const contentArea = document.getElementById('resultsContentArea');
             contentArea.innerHTML = '';
 
-            const createSearchTrackRow = (track, contextTracks = []) => {
+            const createSearchSongRow = (track, contextTracks = []) => {
                 const row = document.createElement('div');
                 row.className = 'spotify-track-row search-track-row';
                 row.style.cssText = `
                     display: flex;
                     align-items: center;
                     gap: 14px;
-                    padding: 10px 14px;
-                    border-radius: 14px;
-                    background: rgba(255, 255, 255, 0.04);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    margin-bottom: 8px;
+                    padding: 10px 12px;
+                    border-radius: 12px;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    margin-bottom: 6px;
                     cursor: pointer;
-                    transition: all 0.2s ease;
+                    transition: background 0.2s ease;
                     width: 100%;
                     box-sizing: border-box;
                 `;
 
-                const isYtm = track.source === 'ytm' || track.isYTM || (track.id && String(track.id).startsWith('ytm_'));
-                const providerBadge = isYtm
-                    ? `<span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: rgba(239, 68, 68, 0.2); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;"><i class="fa-brands fa-youtube" style="font-size: 0.75rem;"></i> YouTube Music</span>`
-                    : `<span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;"><i class="fa-solid fa-music" style="font-size: 0.75rem;"></i> JioSaavn</span>`;
+                const artistStr = track.artist || 'Unknown Artist';
 
                 row.innerHTML = `
-                    <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" alt="${track.title}">
+                    <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" alt="${track.title}">
                     <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin: 0 0 2px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
-                        <p style="margin: 0 0 3px 0; font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.artist || 'Unknown Artist'}</p>
-                        <div>${providerBadge}</div>
+                        <h4 style="margin: 0 0 3px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                        <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
+                            <span style="color: #38BDF8; font-weight: 700;">Song</span>
+                            <span>•</span>
+                            <span>${artistStr}</span>
+                        </div>
                     </div>
-                    <button class="search-row-opt-btn" title="Track Options" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); color: #38BDF8; font-size: 1.15rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 5;">
-                        <i class="fa-solid fa-ellipsis-vertical"></i>
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                        <button class="search-row-opt-btn" title="Track Options" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <button class="search-row-add-btn" title="Add to Playlist" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.2rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-regular fa-circle-plus"></i>
+                        </button>
+                    </div>
                 `;
 
                 row.addEventListener('click', (e) => {
-                    if (e.target.closest('.search-row-opt-btn')) return;
+                    if (e.target.closest('.search-row-opt-btn') || e.target.closest('.search-row-add-btn')) return;
                     musicService.playContext(contextTracks.length > 0 ? contextTracks : [track], track);
                 });
 
@@ -1504,6 +1509,109 @@ const initHome = () => {
                         openTrackOptionsMenu(track);
                     });
                 }
+
+                const addBtn = row.querySelector('.search-row-add-btn');
+                if (addBtn) {
+                    addBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openTrackOptionsMenu(track);
+                    });
+                }
+
+                return row;
+            };
+
+            const createSearchAlbumRow = (album) => {
+                const row = document.createElement('div');
+                row.className = 'spotify-track-row search-album-row';
+                row.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    padding: 10px 12px;
+                    border-radius: 12px;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    margin-bottom: 6px;
+                    cursor: pointer;
+                    transition: background 0.2s ease;
+                    width: 100%;
+                    box-sizing: border-box;
+                `;
+
+                const titleStr = album.title || album.name || 'Untitled Album';
+                const artistStr = album.artist || album.artistName || 'Various Artists';
+                const coverUrl = album.cover || album.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80';
+
+                row.innerHTML = `
+                    <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" alt="${titleStr}">
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="margin: 0 0 3px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
+                        <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
+                            <span style="color: #C084FC; font-weight: 700;">Album</span>
+                            <span>•</span>
+                            <span>${artistStr}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                        <button class="search-row-opt-btn" title="Album Options" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                    </div>
+                `;
+
+                row.addEventListener('click', () => {
+                    if (searchInput) {
+                        searchInput.value = titleStr;
+                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                });
+
+                return row;
+            };
+
+            const createSearchPlaylistRow = (pl) => {
+                const row = document.createElement('div');
+                row.className = 'spotify-track-row search-playlist-row';
+                row.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    padding: 10px 12px;
+                    border-radius: 12px;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    margin-bottom: 6px;
+                    cursor: pointer;
+                    transition: background 0.2s ease;
+                    width: 100%;
+                    box-sizing: border-box;
+                `;
+
+                const titleStr = pl.title || pl.name || 'Untitled Playlist';
+                const creatorStr = pl.creator || pl.source || 'Vibentra';
+                const coverUrl = pl.cover || pl.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
+
+                row.innerHTML = `
+                    <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" alt="${titleStr}">
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="margin: 0 0 3px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
+                        <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
+                            <span style="color: #34D399; font-weight: 700;">Playlist</span>
+                            <span>•</span>
+                            <span>${creatorStr}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                        <button class="search-row-opt-btn" title="Playlist Options" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                    </div>
+                `;
+
+                row.addEventListener('click', () => {
+                    if (pl.id) renderPlaylistDetail(pl.id);
+                });
 
                 return row;
             };
@@ -1533,82 +1641,84 @@ const initHome = () => {
                     });
                     contentArea.appendChild(topCard);
 
-                    // Songs Vertical List
+                    // Songs Section (Vertical List)
                     const songsSection = document.createElement('div');
-                    songsSection.style.marginBottom = '30px';
-                    songsSection.innerHTML = `<h2 class="spotify-genre-section-title">Songs</h2>`;
+                    songsSection.style.marginBottom = '24px';
+                    songsSection.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Songs</h2>`;
                     const songsList = document.createElement('div');
-                    songsList.className = 'search-songs-vertical-list';
                     songsList.style.display = 'flex';
                     songsList.style.flexDirection = 'column';
-                    results.songs.slice(0, 8).forEach(track => {
-                        songsList.appendChild(createSearchTrackRow(track, results.songs));
+                    results.songs.slice(0, 6).forEach(track => {
+                        songsList.appendChild(createSearchSongRow(track, results.songs));
                     });
                     songsSection.appendChild(songsList);
                     contentArea.appendChild(songsSection);
                 }
 
-                // Albums Grid
+                // Albums Section (Vertical List)
                 if (hasAlbums) {
                     const albumSec = document.createElement('div');
-                    albumSec.style.marginBottom = '30px';
-                    albumSec.innerHTML = `<h2 class="spotify-genre-section-title">Albums</h2>`;
-                    const albumGrid = document.createElement('div');
-                    albumGrid.className = 'cards-grid';
+                    albumSec.style.marginBottom = '24px';
+                    albumSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Albums</h2>`;
+                    const albumList = document.createElement('div');
+                    albumList.style.display = 'flex';
+                    albumList.style.flexDirection = 'column';
                     results.albums.slice(0, 4).forEach(album => {
-                        albumGrid.appendChild(createAlbumCard(album));
+                        albumList.appendChild(createSearchAlbumRow(album));
                     });
-                    albumSec.appendChild(albumGrid);
+                    albumSec.appendChild(albumList);
                     contentArea.appendChild(albumSec);
                 }
 
-                // Playlists Grid
+                // Playlists Section (Vertical List)
                 if (hasPlaylists) {
                     const plSec = document.createElement('div');
-                    plSec.style.marginBottom = '30px';
-                    plSec.innerHTML = `<h2 class="spotify-genre-section-title">Playlists</h2>`;
-                    const plGrid = document.createElement('div');
-                    plGrid.className = 'cards-grid';
+                    plSec.style.marginBottom = '24px';
+                    plSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Playlists</h2>`;
+                    const plList = document.createElement('div');
+                    plList.style.display = 'flex';
+                    plList.style.flexDirection = 'column';
                     results.playlists.slice(0, 4).forEach(pl => {
-                        plGrid.appendChild(createPlaylistCard(pl));
+                        plList.appendChild(createSearchPlaylistRow(pl));
                     });
-                    plSec.appendChild(plGrid);
+                    plSec.appendChild(plList);
                     contentArea.appendChild(plSec);
                 }
 
             } else if (filter === 'songs') {
                 const songsSection = document.createElement('div');
-                songsSection.innerHTML = `<h2 class="spotify-genre-section-title">All Songs</h2>`;
+                songsSection.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">All Songs</h2>`;
                 const songsList = document.createElement('div');
-                songsList.className = 'search-songs-vertical-list';
                 songsList.style.display = 'flex';
                 songsList.style.flexDirection = 'column';
                 results.songs.forEach(track => {
-                    songsList.appendChild(createSearchTrackRow(track, results.songs));
+                    songsList.appendChild(createSearchSongRow(track, results.songs));
                 });
                 songsSection.appendChild(songsList);
                 contentArea.appendChild(songsSection);
 
             } else if (filter === 'albums') {
                 const albumSec = document.createElement('div');
-                albumSec.innerHTML = `<h2 class="spotify-genre-section-title">All Albums</h2>`;
-                const albumGrid = document.createElement('div');
-                albumGrid.className = 'cards-grid';
+                albumSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">All Albums</h2>`;
+                const albumList = document.createElement('div');
+                albumList.style.display = 'flex';
+                albumList.style.flexDirection = 'column';
                 results.albums.forEach(album => {
-                    albumGrid.appendChild(createAlbumCard(album));
+                    albumList.appendChild(createSearchAlbumRow(album));
                 });
-                albumSec.appendChild(albumGrid);
+                albumSec.appendChild(albumList);
                 contentArea.appendChild(albumSec);
 
             } else if (filter === 'playlists') {
                 const plSec = document.createElement('div');
-                plSec.innerHTML = `<h2 class="spotify-genre-section-title">All Playlists</h2>`;
-                const plGrid = document.createElement('div');
-                plGrid.className = 'cards-grid';
+                plSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">All Playlists</h2>`;
+                const plList = document.createElement('div');
+                plList.style.display = 'flex';
+                plList.style.flexDirection = 'column';
                 results.playlists.forEach(pl => {
-                    plGrid.appendChild(createPlaylistCard(pl));
+                    plList.appendChild(createSearchPlaylistRow(pl));
                 });
-                plSec.appendChild(plGrid);
+                plSec.appendChild(plList);
                 contentArea.appendChild(plSec);
             }
         };
