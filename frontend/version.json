@@ -1,10 +1,18 @@
 {
-  "version": "v1.2.1",
-  "swVersion": "vibentra-cache-v66",
-  "releaseDate": "25 August 2026, 11:48 am",
+  "version": "v1.2.2",
+  "swVersion": "vibentra-cache-v67",
+  "releaseDate": "25 August 2026, 11:51 am",
   "size": "2.9 MB",
-  "importantNote": "Top-bar mobile navigation drawer, fixed sticky update action buttons, clean 4-item bottom dock, and YouTube Music style categorized settings are live.",
+  "importantNote": "Account profile page restoration, top-bar mobile navigation drawer, fixed sticky update action buttons, and YouTube Music style categorized settings are live.",
   "changelog": [
+    {
+      "category": "Account Profile View Fix",
+      "items": [
+        "Restored complete Account Profile page rendering (`renderProfile`).",
+        "View active user avatar, Firebase account status, and quick stats (Liked Songs, Playlists, History).",
+        "Update account password directly from profile and manage session logouts."
+      ]
+    },
     {
       "category": "Mobile Navigation Drawer & Top-Bar",
       "items": [
@@ -26,13 +34,6 @@
       "items": [
         "Restored clean 4-item bottom navigation dock: Home, Search, Library, and Settings.",
         "Floated Mini-Player neatly above bottom nav with zero overlapping."
-      ]
-    },
-    {
-      "category": "Categorized Settings & Engine Stability",
-      "items": [
-        "YouTube Music / Echo Music style settings sub-pages with interactive toggle switches.",
-        "100% decoupling from core JioSaavn / YouTube Music background audio persistence."
       ]
     }
   ]
