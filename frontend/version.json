@@ -1,30 +1,31 @@
 {
   "version": "v1.2.0",
   "swVersion": "vibentra-cache-v64",
-  "releaseDate": "25 August 2026, 11:00 am",
-  "size": "2.5 MB",
-  "importantNote": "To enable Android Home Screen Widgets & latest audio persistence, update to Vibentra v1.2.0.",
+  "releaseDate": "25 August 2026, 11:30 am",
+  "size": "2.8 MB",
+  "importantNote": "Immersive Full-Screen Layout, Floating Capsule Navigation Pill & YouTube Music style Categorized Settings are now live.",
   "changelog": [
     {
-      "category": "New Features",
+      "category": "New Visual Features",
       "items": [
-        "Mobile Home Screen Widget with live album artwork sync and instant playback controls.",
-        "Interactive Release Notes Update view with real-time install progress."
+        "Floating Double-Deck Capsule Navigation pill with instant Home, Library & circular Search button.",
+        "YouTube Music / Echo Music style Categorized Settings Engine with dedicated sub-pages and interactive toggle switches.",
+        "Immersive 100vw / 100vh Full-Screen Layout across all app views."
       ]
     },
     {
-      "category": "Improvements",
+      "category": "Engine & UI Improvements",
       "items": [
-        "Enhanced background audio persistence and Android partial wake lock integration.",
-        "Direct raw GitHub links & optimized MIME headers for Portfolio APK downloads.",
-        "Refined equalizer spacing and glassmorphic control alignment."
+        "Quality selector & 320kbps Vibentra HQ audio preset toggles.",
+        "Interactive Release Notes & SW Cache v64 automatic upgrade manager.",
+        "Glassmorphism UI backdrop filter optimizations for low-end mobile devices."
       ]
     },
     {
-      "category": "Fixes",
+      "category": "Stability & Audio Integrity",
       "items": [
-        "Resolved Service Worker cache invalidation sequence across all user clients.",
-        "Corrected app version sync between native Android service and Web UI."
+        "Strict decoupling of UI components from backend music engine (JioSaavn / YouTube Music).",
+        "Seamless service worker cache invalidation on single-tap update installation."
       ]
     }
   ]

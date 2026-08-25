@@ -29,13 +29,14 @@ export function initUpdateManager() {
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 11:00 am</p>
-                        <p>Size: 2.5 MB</p>
+                        <p>Released on: 25 August 2026, 11:30 am</p>
+                        <p>Size: 2.8 MB</p>
+                        <p>SW Cache: vibentra-cache-v64</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         > [!IMPORTANT]<br>
-                        > All audio engines, widget synchronization, and service worker caches updated.
+                        > Immersive Full-Screen Layout, Floating Capsule Navigation Pill & YouTube Music style Categorized Settings are now live.
                     </div>
 
                     <div id="updateChangelogContainer">
