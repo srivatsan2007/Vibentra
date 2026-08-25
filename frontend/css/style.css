@@ -5392,3 +5392,200 @@ input:checked + .toggle-slider:before {
     width: 100% !important;
     box-sizing: border-box !important;
 }
+
+/* ==========================================================================
+   GLOBAL COMPREHENSIVE MOBILE RESPONSIVENESS & TOUCH ENHANCEMENT ENGINE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    /* Global Layout & Touch Viewport Bounds */
+    body, html {
+        width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+
+    .main-content {
+        padding: 0.75rem 0.85rem 170px 0.85rem !important;
+        width: 100vw !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Topbar Mobile Touch Optimizations */
+    .topbar {
+        padding: 0.6rem 0.9rem !important;
+        gap: 8px !important;
+    }
+
+    .topbar-actions {
+        gap: 8px !important;
+    }
+
+    .mobile-logo-brand {
+        display: flex !important;
+        font-size: 1.05rem !important;
+    }
+
+    .notifications-dropdown {
+        width: calc(100vw - 24px) !important;
+        max-width: 320px !important;
+        right: 0 !important;
+    }
+
+    /* Dynamic Content Pages Mobile Rescaling */
+    .spotify-search-title,
+    .section-header h2,
+    .liked-songs-hero-info h2 {
+        font-size: clamp(1.4rem, 5vw, 2.2rem) !important;
+    }
+
+    .liked-songs-hero-card {
+        padding: 18px 20px !important;
+        border-radius: 18px !important;
+        margin-bottom: 20px !important;
+        flex-direction: row !important;
+    }
+
+    .liked-songs-play-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.2rem !important;
+    }
+
+    /* Search & Filter Bar Mobile */
+    .spotify-search-bar-container {
+        padding: 4px 12px !important;
+        border-radius: 40px !important;
+        margin-bottom: 16px !important;
+    }
+
+    .spotify-search-input {
+        font-size: 0.92rem !important;
+    }
+
+    .spotify-top-result-card {
+        padding: 16px !important;
+        max-width: 100% !important;
+    }
+
+    .spotify-top-result-img {
+        width: 72px !important;
+        height: 72px !important;
+        border-radius: 10px !important;
+    }
+
+    .spotify-top-result-title {
+        font-size: 1.2rem !important;
+    }
+
+    .spotify-top-result-play-btn {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 1.1rem !important;
+        right: 16px !important;
+        bottom: 16px !important;
+    }
+
+    /* Genre & Playlists Grid Mobile */
+    .spotify-genre-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .spotify-genre-card {
+        height: 110px !important;
+        padding: 12px !important;
+    }
+
+    .spotify-genre-title {
+        font-size: 0.95rem !important;
+    }
+
+    .spotify-genre-img {
+        width: 70px !important;
+        height: 70px !important;
+    }
+
+    .playlist-list-container {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* Track Rows & List Adaptation */
+    .spotify-track-row,
+    .fav-track-row {
+        padding: 8px 10px !important;
+        border-radius: 12px !important;
+        gap: 10px !important;
+    }
+
+    /* Profile View Mobile Stack */
+    .profile-view .glass-panel,
+    .glass-panel {
+        padding: 18px 16px !important;
+        border-radius: 18px !important;
+    }
+
+    /* Settings Cards Mobile */
+    .settings-view-wrapper {
+        padding-bottom: 80px !important;
+    }
+
+    .settings-card-item {
+        padding: 14px 16px !important;
+        border-radius: 16px !important;
+    }
+
+    .settings-card-left {
+        font-size: 0.95rem !important;
+    }
+
+    /* Auth Page Mobile Optimizations */
+    .auth-container {
+        padding: 1.5rem 0.85rem !important;
+    }
+
+    .auth-card {
+        padding: 1.8rem 1.4rem !important;
+        border-radius: 22px !important;
+    }
+
+    .brand-title {
+        font-size: 1.75rem !important;
+        letter-spacing: 3px !important;
+    }
+
+    /* Vinyl Modal Screen Adaptation */
+    .vinyl-modal-content {
+        width: 94vw !important;
+        max-height: 90vh !important;
+        padding: 16px !important;
+        border-radius: 24px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Ultra-Compact Phone Devices (320px - 480px) */
+    .topbar-actions {
+        gap: 6px !important;
+    }
+
+    .top-username-text {
+        display: none !important;
+    }
+
+    .liked-songs-hero-info p {
+        font-size: 0.8rem !important;
+    }
+
+    /* Connect / Room join inputs */
+    #joinRoomCode {
+        width: 100% !important;
+    }
+
+    /* Playlist detail header */
+    .playlist-cover-mosaic {
+        width: 130px !important;
+        height: 130px !important;
+    }
+}
+

@@ -1,18 +1,17 @@
 {
-  "version": "v1.5.4",
-  "swVersion": "vibentra-cache-v91",
-  "releaseDate": "25 August 2026, 02:15 pm",
+  "version": "v1.5.5",
+  "swVersion": "vibentra-cache-v92",
+  "releaseDate": "25 August 2026, 02:25 pm",
   "size": "2.8 MB",
-  "importantNote": "Search page redesigned to YouTube Music style with Moods & moments, Genres, and minimalist track list rows.",
+  "importantNote": "Enforced global mobile responsiveness across all views (Home, Search, Playlists, Profile, Settings, Vibe AI, Connect, and Auth).",
   "changelog": [
     {
-      "category": "YouTube Music Search UI Parity",
+      "category": "Global Mobile Responsiveness",
       "items": [
-        "Added 'Moods & moments' and 'Genres' categories with vibrant 2-column gradient cards and angled album thumbnails.",
-        "Redesigned search input bar to dark rounded pill container matching native dark mode aesthetic.",
-        "Integrated filter chips with active checkmarks (✓ Songs, Albums, Playlists).",
-        "Rendered track list items as sleek, pitch-black list rows with 3-dot options menu triggers.",
-        "Strictly preserved 100% of backend music streaming logic."
+        "Standardized mobile breakpoints (@media max-width: 768px and 480px) across all views.",
+        "Refactored 3-dot options buttons and track rows to ensure 100% tap visibility on mobile touchscreens.",
+        "Adaptive hero cards, genre grids, and headers scaling dynamically to small mobile screens.",
+        "Preserved 100% backend music streaming and API logic."
       ]
     }
   ]
