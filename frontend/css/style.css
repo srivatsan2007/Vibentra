@@ -3972,11 +3972,17 @@ input {
     /* Sticky YTM Filter Chips Row */
     .mobile-filter-chips-wrapper {
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         overflow-x: auto !important;
         gap: 8px !important;
         padding: 4px 0 14px 0 !important;
         margin-bottom: 12px !important;
         scrollbar-width: none !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        flex-shrink: 0 !important;
     }
     .mobile-filter-chips-wrapper::-webkit-scrollbar {
         display: none !important;
@@ -3984,7 +3990,11 @@ input {
 
     .mobile-filter-chip {
         flex: 0 0 auto !important;
-        padding: 8px 16px !important;
+        height: 36px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 6px 16px !important;
         border-radius: 20px !important;
         background: rgba(255, 255, 255, 0.08) !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -4549,7 +4559,6 @@ html, body {
 
 /* Full Screen Container View Suite */
 .view-container,
-#dynamicContent > div,
 .home-view,
 .search-view,
 .playlists-view,
