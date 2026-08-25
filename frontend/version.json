@@ -1,37 +1,30 @@
 {
-  "version": "v1.2.5",
-  "swVersion": "vibentra-cache-v70",
-  "releaseDate": "25 August 2026, 11:58 am",
+  "version": "v1.2.6",
+  "swVersion": "vibentra-cache-v71",
+  "releaseDate": "25 August 2026, 12:00 pm",
   "size": "2.9 MB",
-  "importantNote": "Fixed touch/click gesture responsiveness by setting explicit display:none on backdrop overlay, restored full account profile view and mobile bottom dock.",
+  "importantNote": "Restored classic app flow, silent update management without popups or interruptions, and fully responsive user interface.",
   "changelog": [
     {
-      "category": "UI Touch & Event Responsiveness Fix",
+      "category": "Classic App Experience & Silent Updates",
       "items": [
-        "Fixed full-screen tap/click blocking caused by transparent fixed backdrop layer by adding explicit `display: none !important` when inactive.",
-        "Restored 100% immediate touch responsiveness for bottom navigation dock, song cards, topbar menu, and player controls."
+        "Disabled automatic floating update banners and popup overlays to preserve clean, uninterrupted app usage.",
+        "Updates now process seamlessly in the background without forcing screens or prompting.",
+        "Restored classic smooth navigation and touch responsiveness across all views."
       ]
     },
     {
-      "category": "User Data & Cloud Sync Auto-Load",
+      "category": "User Data & Cloud Sync",
       "items": [
-        "Enabled automatic Firebase Cloud data synchronization for Favorites and Playlists on user authentication.",
-        "Added real-time listeners for `favoritesSynced` and `playlistsSynced` to render stored user data on app open."
+        "Automatic Firebase Cloud data synchronization for Favorites and Playlists on login.",
+        "Real-time data auto-rendering when account data finishes syncing."
       ]
     },
     {
       "category": "Account Profile View",
       "items": [
-        "Restored complete Account Profile page rendering (`renderProfile`).",
-        "View active user avatar, Firebase account status, and quick stats (Liked Songs, Playlists, History).",
-        "Update account password directly from profile and manage session logouts."
-      ]
-    },
-    {
-      "category": "Mobile Navigation Drawer & Top-Bar",
-      "items": [
-        "Enabled top-left hamburger menu button to toggle smooth slide-out sidebar drawer on mobile.",
-        "Full access to working features: Home, Search, Playlists, Favorites, Connect, Vibe AI, Profile, Settings, and Logout."
+        "Full Account Profile page rendering (`renderProfile`).",
+        "View active user avatar, Firebase account status, and quick stats (Liked Songs, Playlists, History)."
       ]
     }
   ]
