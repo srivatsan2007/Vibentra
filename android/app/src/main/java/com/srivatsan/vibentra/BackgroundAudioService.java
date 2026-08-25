@@ -425,6 +425,9 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                                 PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
                     .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f);
             mediaSession.setPlaybackState(stateBuilder.build());
+
+            // Synchronize Home Screen Widget
+            VibentraWidgetProvider.updateWidgetState(this, currentTitle, currentArtist, isPlaying, coverBitmap);
         } catch (Throwable t) {
             t.printStackTrace();
         }
@@ -494,6 +497,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
 
                 if (bitmap != null) {
                     coverBitmap = bitmap;
+                    VibentraWidgetProvider.updateWidgetState(BackgroundAudioService.this, currentTitle, currentArtist, isPlaying, coverBitmap);
                     Notification notification = buildNotification();
                     NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                     if (nm != null) {

@@ -41,6 +41,20 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name=".VibentraWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.srivatsan.vibentra.WIDGET_PLAY_PAUSE" />
+                <action android:name="com.srivatsan.vibentra.WIDGET_NEXT" />
+                <action android:name="com.srivatsan.vibentra.WIDGET_PREV" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/vibentra_widget_info" />
+        </receiver>
     </application>
 
     <!-- Permissions for Background Audio & System Persistence -->
