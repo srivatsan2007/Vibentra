@@ -1,17 +1,17 @@
 {
-  "version": "v1.6.2",
-  "swVersion": "vibentra-cache-v100",
-  "releaseDate": "25 August 2026, 07:26 pm",
+  "version": "v1.6.3",
+  "swVersion": "vibentra-cache-v101",
+  "releaseDate": "25 August 2026, 07:34 pm",
   "size": "2.8 MB",
-  "importantNote": "Redesigned mobile navigation into a liquid glass floating dock (Home, Library, Search) matching the reference design.",
+  "importantNote": "Refined mobile UI layout to eliminate element overlap and perfectly match the liquid glass floating dock reference design.",
   "changelog": [
     {
-      "category": "Liquid Glass Multi-Capsule Dock Redesign (v1.6.2)",
+      "category": "Liquid Glass Mobile Dock & Mini Player Perfecting (v1.6.3)",
       "items": [
-        "Redesigned bottom navigation into a liquid glass floating dock with combined Home & Library capsule pill.",
-        "Integrated dedicated standalone circular search button directing to the search page.",
-        "Converted mini player into a pill-shaped floating capsule above the navigation dock with cover art, track info, heart button, and play control.",
-        "Preserved 100% backend streaming, playlist routing, and musicService event logic."
+        "Eliminated all overlapping player controls and obsolete bottom navigation CSS rules.",
+        "Refined floating mini player pill to display artwork, title/artist info, heart like button, and play control.",
+        "Aligned bottom navigation dock pill with Home & Library options alongside the circular Search floating button.",
+        "Pushed new production build to Vercel for instant deployment."
       ]
     }
   ]

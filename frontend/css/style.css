@@ -1841,91 +1841,7 @@ input {
     letter-spacing: 0.5px;
 }
 
-/* Mobile Bottom Navigation Dock */
-/* Mobile Bottom Navigation Dock (Floating Capsule Pill Style matching screenshot) */
-.mobile-bottom-nav {
-    display: none;
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10000;
-    align-items: center;
-    gap: 12px;
-    pointer-events: auto;
-}
-
-.mobile-nav-pill {
-    display: flex;
-    align-items: center;
-    background: rgba(14, 16, 26, 0.88);
-    backdrop-filter: blur(30px) saturate(190%);
-    -webkit-backdrop-filter: blur(30px) saturate(190%);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 40px;
-    padding: 6px 10px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-    gap: 6px;
-}
-
-.mobile-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.92rem;
-    padding: 10px 22px;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    font-weight: 600;
-}
-
-.mobile-nav-item i {
-    font-size: 1.1rem;
-}
-
-.mobile-nav-item span {
-    display: inline !important;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.mobile-nav-item.active {
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #FFFFFF;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
-}
-
-.mobile-nav-search-btn {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: rgba(14, 16, 26, 0.88);
-    backdrop-filter: blur(30px) saturate(190%);
-    -webkit-backdrop-filter: blur(30px) saturate(190%);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    color: #FFFFFF;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-    transition: transform 0.2s, background 0.2s;
-}
-
-.mobile-nav-search-btn:active {
-    transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.2);
-}
-
-@media (max-width: 768px) {
-    .mobile-bottom-nav {
-        display: flex !important;
-    }
-}
+/* Mobile Bottom Navigation Dock handled cleanly in responsive media query block below */
 
 /* Mobile FAB Dropdown Pops Above Three Dots */
 #mobileFabDropdown {
@@ -2009,9 +1925,7 @@ input {
         z-index: 3000 !important;
     }
 
-    .mobile-bottom-nav {
-        display: flex !important;
-    }
+
 }
 
 @media (max-width: 480px) {
@@ -3784,26 +3698,45 @@ input {
    MOBILE SPOTIFY PREMIUM x YOUTUBE MUSIC REDESIGN (< 1024px)
    ========================================================================== */
 @media (max-width: 1023px) {
-    /* Floating Glass Mini Player Dock (Centered) */
-    .music-player {
-    /* Floating Glass Mini Player Capsule Bar */
+    /* Mobile Content Container Padding */
+    .main-content {
+        padding-bottom: 170px !important;
+    }
+
+    /* Hero Mix Card Mobile Cleanup (Prevents oversized height clutter) */
+    .hero-mix-card {
+        padding: 16px 20px !important;
+        margin-bottom: 18px !important;
+        border-radius: 16px !important;
+    }
+
+    .hero-mix-card h2 {
+        font-size: 1.2rem !important;
+    }
+
+    .hero-mix-card p {
+        font-size: 0.8rem !important;
+        margin-bottom: 12px !important;
+    }
+
+    /* Liquid Glass Floating Capsule Mini Player (Exact match to Reference Image 2) */
     .music-player {
         position: fixed !important;
         bottom: 86px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        width: calc(100% - 32px) !important;
+        width: calc(100% - 24px) !important;
         max-width: 480px !important;
-        height: 64px !important;
+        height: 62px !important;
         border-radius: 9999px !important;
-        background: rgba(18, 18, 26, 0.88) !important;
+        background: rgba(14, 16, 24, 0.90) !important;
         backdrop-filter: blur(30px) saturate(190%) !important;
         -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
         z-index: 2500 !important;
-        padding: 0 14px 0 10px !important;
+        padding: 0 16px 0 10px !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
@@ -3823,8 +3756,8 @@ input {
     }
 
     .music-player .now-playing-img {
-        width: 46px !important;
-        height: 46px !important;
+        width: 44px !important;
+        height: 44px !important;
         border-radius: 12px !important;
         object-fit: cover !important;
         flex-shrink: 0 !important;
@@ -3864,7 +3797,7 @@ input {
     .music-player .player-center {
         display: flex !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-end !important;
         gap: 12px !important;
         flex: 0 0 auto !important;
         max-width: none !important;
@@ -3875,25 +3808,27 @@ input {
     .music-player .player-controls {
         display: flex !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-end !important;
         gap: 12px !important;
     }
 
     .music-player #playerLikeBtn,
-    .music-player .pill-like-btn {
+    .music-player .like-btn {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         background: transparent !important;
         border: none !important;
         color: #FFFFFF !important;
-        font-size: 1.3rem !important;
+        font-size: 1.35rem !important;
         cursor: pointer !important;
-        padding: 6px !important;
+        padding: 4px !important;
         transition: transform 0.15s ease !important;
+        margin-right: 4px !important;
     }
 
-    .music-player #playerLikeBtn.active i {
+    .music-player #playerLikeBtn.active i,
+    .music-player .like-btn.active i {
         color: #EC4899 !important;
     }
 
@@ -3902,14 +3837,15 @@ input {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 1.2rem !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.25rem !important;
         background: transparent !important;
         color: #FFFFFF !important;
         border-radius: 50% !important;
         border: none !important;
         cursor: pointer !important;
+        box-shadow: none !important;
         transition: transform 0.15s ease !important;
     }
 
@@ -3919,6 +3855,7 @@ input {
         transform: scale(0.88) !important;
     }
 
+    /* Hide desktop controls on mobile mini player */
     .music-player #shuffleBtn,
     .music-player #prevBtn,
     .music-player #nextBtn,
@@ -3928,7 +3865,7 @@ input {
         display: none !important;
     }
 
-    /* Redesigned Floating Liquid Glass Navigation Dock (Exact match to Reference Image) */
+    /* Liquid Glass Floating Navigation Dock (Exact match to Reference Image 2) */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
@@ -3936,7 +3873,7 @@ input {
         left: 50% !important;
         transform: translateX(-50%) !important;
         width: auto !important;
-        height: 60px !important;
+        height: 58px !important;
         background: transparent !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
@@ -3945,7 +3882,7 @@ input {
         z-index: 3000 !important;
         justify-content: center !important;
         align-items: center !important;
-        gap: 14px !important;
+        gap: 12px !important;
         padding: 0 !important;
         margin: 0 !important;
         box-sizing: border-box !important;
@@ -3955,16 +3892,16 @@ input {
     .mobile-nav-dock-pill {
         display: flex !important;
         align-items: center !important;
-        height: 60px !important;
-        padding: 5px 8px !important;
-        border-radius: 40px !important;
-        background: rgba(18, 18, 24, 0.85) !important;
+        height: 58px !important;
+        padding: 4px 6px !important;
+        border-radius: 36px !important;
+        background: rgba(14, 16, 24, 0.90) !important;
         backdrop-filter: blur(30px) saturate(190%) !important;
         -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
-        gap: 6px !important;
+        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+        gap: 4px !important;
         box-sizing: border-box !important;
     }
 
@@ -3973,8 +3910,8 @@ input {
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: 6px 22px !important;
-        border-radius: 30px !important;
+        padding: 6px 20px !important;
+        border-radius: 28px !important;
         color: rgba(255, 255, 255, 0.65) !important;
         font-size: 0.72rem !important;
         font-weight: 600 !important;
@@ -3990,23 +3927,23 @@ input {
     }
 
     .mobile-nav-dock-pill .mobile-nav-item.active {
-        background: rgba(255, 255, 255, 0.14) !important;
+        background: rgba(255, 255, 255, 0.16) !important;
         color: #FFFFFF !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
         box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
     }
 
     /* Right Separate Circular Search Button */
     .mobile-nav-search-circle {
-        width: 60px !important;
-        height: 60px !important;
+        width: 58px !important;
+        height: 58px !important;
         border-radius: 50% !important;
-        background: rgba(18, 18, 24, 0.85) !important;
+        background: rgba(14, 16, 24, 0.90) !important;
         backdrop-filter: blur(30px) saturate(190%) !important;
         -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
