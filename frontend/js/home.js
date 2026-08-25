@@ -216,9 +216,9 @@ const initHome = () => {
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 const docEl = document.documentElement;
                 if (docEl.requestFullscreen) {
-                    docEl.requestFullscreen().catch(() => {});
+                    docEl.requestFullscreen().catch(() => { });
                 } else if (docEl.webkitRequestFullscreen) {
-                    docEl.webkitRequestFullscreen().catch(() => {});
+                    docEl.webkitRequestFullscreen().catch(() => { });
                 }
             }
         };
@@ -233,9 +233,9 @@ const initHome = () => {
                     showNotification('Entered Fullscreen Mode', 'info');
                 } else {
                     if (document.exitFullscreen) {
-                        document.exitFullscreen().catch(() => {});
+                        document.exitFullscreen().catch(() => { });
                     } else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen().catch(() => {});
+                        document.webkitExitFullscreen().catch(() => { });
                     }
                     fullScreenToggleBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
                     showNotification('Exited Fullscreen Mode', 'info');
@@ -1068,7 +1068,7 @@ const initHome = () => {
 
         const langPrefSelect = document.getElementById('langPrefSelect');
         const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
-        langPrefSelect.value = storedLang;
+        if (langPrefSelect) langPrefSelect.value = storedLang;
 
         let activeTrendingTracks = [];
 

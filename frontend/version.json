@@ -1,22 +1,23 @@
 {
-  "version": "v1.2.9",
-  "swVersion": "vibentra-cache-v74",
-  "releaseDate": "25 August 2026, 12:08 pm",
+  "version": "v1.3.0",
+  "swVersion": "vibentra-cache-v75",
+  "releaseDate": "25 August 2026, 12:15 pm",
   "size": "2.9 MB",
-  "importantNote": "Permanent fix for Service Worker auto-activation (skipWaiting + clients.claim + controllerchange auto-reload) for seamless hands-free updates.",
+  "importantNote": "Restored exact classic Home UI matching user reference image, resolved null reference exceptions, and cleaned Service Worker boot sequence.",
   "changelog": [
     {
-      "category": "Permanent SW Auto-Activation Fix",
+      "category": "Exact Home Screen Design Restoration",
       "items": [
-        "Enforced automatic `self.skipWaiting()` on install and `self.clients.claim()` on activate in `sw.js`.",
-        "Added `controllerchange` listener in `updateManager.js` to automatically activate code changes without manual refresh."
+        "Restored original clean `Good Morning, User!` gradient heading and 2-column Trending Now cards grid.",
+        "Removed screen-blocking filter chips overlay.",
+        "Fixed `langPrefSelect` null reference exception to restore smooth song rendering on open."
       ]
     },
     {
-      "category": "Instant App Load & Account Auto-Restoration",
+      "category": "Permanent SW Activation",
       "items": [
-        "Enforced immediate initial `loadView` execution on app startup so your account home page, playlists, and songs render instantly.",
-        "Non-blocking background cloud synchronization for user playlists, favorites, and profile data."
+        "Cleaned `index.html` inline registration script to eliminate all update prompts and unregistration loops.",
+        "Enforced instant background activation across all client devices."
       ]
     }
   ]

@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.2.9</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.3.0</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 12:08 pm</p>
+                        <p>Released on: 25 August 2026, 12:15 pm</p>
                         <p>Size: 2.9 MB</p>
-                        <p>SW Cache: vibentra-cache-v74</p>
+                        <p>SW Cache: vibentra-cache-v75</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Permanent fix for Service Worker auto-activation (skipWaiting + clients.claim + controllerchange auto-reload) for seamless hands-free updates.
+                        Restored exact classic Home UI matching user reference image, resolved null reference exceptions, and cleaned Service Worker boot sequence.
                     </div>
 
                     <div id="updateChangelogContainer">
