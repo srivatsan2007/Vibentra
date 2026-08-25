@@ -1477,14 +1477,14 @@ const initHome = () => {
                 const artistStr = track.artist || 'Unknown Artist';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${track.title}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</p>
                         </div>
                     </div>
-                    <button class="search-row-opt-btn" title="Track Options" style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                    <button class="search-row-opt-btn" title="Track Options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -1519,6 +1519,7 @@ const initHome = () => {
                     transition: background 0.2s ease;
                     width: 100%;
                     box-sizing: border-box;
+                    overflow: hidden;
                 `;
 
                 const titleStr = album.title || album.name || 'Untitled Album';
@@ -1526,14 +1527,14 @@ const initHome = () => {
                 const coverUrl = album.cover || album.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
                         <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Album • ${artistStr}</p>
                         </div>
                     </div>
-                    <button class="search-album-opt-btn" title="Album Options" style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                    <button class="search-album-opt-btn" title="Album Options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -1578,6 +1579,7 @@ const initHome = () => {
                     transition: background 0.2s ease;
                     width: 100%;
                     box-sizing: border-box;
+                    overflow: hidden;
                 `;
 
                 const titleStr = pl.title || pl.name || 'Untitled Playlist';
@@ -1585,14 +1587,14 @@ const initHome = () => {
                 const coverUrl = pl.cover || pl.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
                         <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Playlist • ${creatorStr}</p>
                         </div>
                     </div>
-                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -2044,11 +2046,46 @@ const initHome = () => {
                 return;
             }
 
-            trackListContainer.className = 'cards-grid';
+            trackListContainer.className = 'remote-track-list-container';
+            trackListContainer.style.cssText = 'display: flex; flex-direction: column; gap: 6px; width: 100%; box-sizing: border-box;';
             trackListContainer.innerHTML = '';
 
-            remoteTracks.forEach(track => {
-                trackListContainer.appendChild(createSongCard(track, remoteTracks));
+            remoteTracks.forEach((track, index) => {
+                const row = document.createElement('div');
+                row.className = 'spotify-track-row';
+                row.setAttribute('data-id', track.id);
+                row.setAttribute('data-index', index);
+                row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05);';
+
+                row.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${track.title}">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                            <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                            <p style="font-size: 0.8rem; color: #aaaaaa; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${track.artist || 'Unknown Artist'}
+                            </p>
+                        </div>
+                    </div>
+                    <button class="remove-from-pl-btn remote-track-opt-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                `;
+
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('.remote-track-opt-btn')) return;
+                    musicService.playContext(remoteTracks, track);
+                });
+
+                const optBtn = row.querySelector('.remote-track-opt-btn');
+                if (optBtn) {
+                    optBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openTrackOptionsMenu(track);
+                    });
+                }
+
+                trackListContainer.appendChild(row);
             });
 
         } catch (error) {

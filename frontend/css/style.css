@@ -5388,9 +5388,35 @@ input:checked + .toggle-slider:before {
     color: #FFFFFF !important;
 }
 
-.spotify-track-row {
+.spotify-track-row,
+.ytm-search-row,
+.fav-track-row {
     width: 100% !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+}
+
+.spotify-track-row > div:first-child,
+.ytm-search-row > div:first-child,
+.fav-track-row > div:first-child {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: calc(100% - 48px) !important;
+    overflow: hidden !important;
+}
+
+.search-row-opt-btn,
+.search-album-opt-btn,
+.search-pl-opt-btn,
+.remove-from-pl-btn,
+.fav-opt-btn,
+.remote-track-opt-btn {
+    flex-shrink: 0 !important;
+    margin-left: 8px !important;
 }
 
 /* ==========================================================================

@@ -1,15 +1,15 @@
 {
-  "version": "v1.5.6",
-  "swVersion": "vibentra-cache-v93",
-  "releaseDate": "25 August 2026, 02:30 pm",
+  "version": "v1.5.7",
+  "swVersion": "vibentra-cache-v94",
+  "releaseDate": "25 August 2026, 02:35 pm",
   "size": "2.8 MB",
-  "importantNote": "Enforced high-visibility glowing glass styling for 3-dot options buttons across Search and Playlist pages.",
+  "importantNote": "Fixed 3-dot options buttons truncation on playlist and search pages.",
   "changelog": [
     {
-      "category": "3-Dot Track Options Visibility Fix",
+      "category": "3-Dot Track Options Layout Fix",
       "items": [
-        "Enabled permanent high-contrast glowing cyan glass circle styling for 3-dot options buttons on Search, Playlist, Favorites, and Music Cards.",
-        "Ensured 3-dot buttons (.search-row-opt-btn, .remove-from-pl-btn, .fav-opt-btn, .card-menu-trigger) are 100% visible on both desktop and mobile viewports.",
+        "Converted remote playlist and album track lists from card grids to sleek horizontal rows with visible 3-dot options buttons.",
+        "Enforced max-width (calc(100% - 48px)) on track title/artist flex containers so 3-dot buttons (.search-row-opt-btn, .remove-from-pl-btn, .remote-track-opt-btn) are pinned on-screen and never pushed off the viewport edge.",
         "Preserved 100% backend streaming and track menu action sheet functionality."
       ]
     }
