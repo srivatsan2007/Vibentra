@@ -4488,6 +4488,120 @@ input {
     color: #FFFFFF;
 }
 
+/* ==========================================================================
+   IMMERSIVE FULL SCREEN VIEW ENGINE FOR ALL PAGES (HOME, SEARCH, PLAYLISTS, ETC)
+   ========================================================================== */
+
+html, body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--background, #0F172A);
+}
+
+.app-layout {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.main-content {
+    flex: 1;
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.5rem 2rem 170px 2rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 2;
+    -webkit-overflow-scrolling: touch;
+}
+
+#dynamicContent {
+    flex: 1;
+    width: 100%;
+    min-height: calc(100vh - 130px);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* Full Screen Container View Suite */
+.view-container,
+#dynamicContent > div,
+.home-view,
+.search-view,
+.playlists-view,
+.favorites-view,
+.connect-view,
+.vibe-ai-view,
+.profile-view,
+.settings-view,
+.playlist-detail-view,
+.remote-collection-view {
+    width: 100%;
+    min-height: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    animation: fadeInView 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInView {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Full-Screen Immersive Adaptations */
+@media (max-width: 768px) {
+    .app-layout {
+        width: 100vw !important;
+        height: 100vh !important;
+    }
+
+    .main-content {
+        width: 100vw !important;
+        height: 100vh !important;
+        padding: 0.75rem 1rem 170px 1rem !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+    }
+
+    .topbar {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 900 !important;
+        margin-left: -1rem !important;
+        margin-right: -1rem !important;
+        margin-top: -0.75rem !important;
+        width: calc(100% + 2rem) !important;
+        border-radius: 0 0 20px 20px !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
+        padding: 0.8rem 1.2rem !important;
+        background: rgba(12, 16, 43, 0.88) !important;
+        backdrop-filter: blur(30px) saturate(190%) !important;
+        -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+    }
+
+    #dynamicContent {
+        width: 100% !important;
+        min-height: calc(100vh - 140px) !important;
+        padding-top: 8px;
+    }
+}
+
+
 
 
 
