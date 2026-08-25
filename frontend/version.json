@@ -1,15 +1,16 @@
 {
-  "version": "v1.4.1",
-  "swVersion": "vibentra-cache-v86",
-  "releaseDate": "25 August 2026, 01:27 pm",
+  "version": "v1.5.0",
+  "swVersion": "vibentra-cache-v87",
+  "releaseDate": "25 August 2026, 01:38 pm",
   "size": "2.8 MB",
-  "importantNote": "Fixed JS scope issue with playlist action sheet helper to ensure 100% app stability and song loading across all views.",
+  "importantNote": "Complete Spotify & YouTube Music UI Redesign for Search & Playlist pages (Hero Liked Songs Card, Spotify Angled Genre Grid, YTM Pill Filters, Top Result Card, and Track Rows).",
   "changelog": [
     {
-      "category": "Stability & Scope Fix",
+      "category": "Spotify & YouTube Music Redesign",
       "items": [
-        "Fixed JavaScript scope declaration for openTrackOptionsMenu in home.js.",
-        "Restored full 100% playback, search, and playlist functionality across mobile and desktop clients."
+        "Playlist Page: Integrated Spotify style 'Liked Songs' hero gradient card, 4-tile mosaic cards, and Spotify green play button.",
+        "Search Page: Added Spotify angled colorful genre cards with rotated artwork, YouTube Music pill filters, voice mic search button, and Top Result card.",
+        "Strictly preserved 100% of backend playback, API streaming, and service logic."
       ]
     }
   ]

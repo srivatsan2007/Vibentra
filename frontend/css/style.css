@@ -5044,6 +5044,308 @@ input:checked + .toggle-slider:before {
     cursor: pointer !important;
 }
 
+/* ============================================================
+   SPOTIFY & YOUTUBE MUSIC REDESIGN (SEARCH & PLAYLIST PAGES)
+   ============================================================ */
+
+/* 1. SEARCH PAGE REDESIGN */
+.spotify-search-page {
+    padding: 10px 4px 30px 4px !important;
+}
+
+.spotify-search-title {
+    font-size: 2.2rem !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    margin: 0 0 20px 0 !important;
+    letter-spacing: -0.5px !important;
+}
+
+.spotify-search-bar-container {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    margin-bottom: 24px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 50px !important;
+    padding: 6px 16px !important;
+    box-sizing: border-box !important;
+    backdrop-filter: blur(16px) !important;
+    transition: all 0.25s ease !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25) !important;
+}
+
+.spotify-search-bar-container:focus-within {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: #38BDF8 !important;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.35) !important;
+}
+
+.spotify-search-icon {
+    font-size: 1.15rem !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    margin-right: 12px !important;
+}
+
+.spotify-search-input {
+    flex: 1 !important;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #FFFFFF !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
+
+.spotify-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.spotify-clear-btn,
+.spotify-voice-btn {
+    background: none !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    padding: 8px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+}
+
+.spotify-voice-btn:hover,
+.spotify-voice-btn.recording {
+    color: #EC4899 !important;
+    transform: scale(1.1) !important;
+}
+
+/* YTM Pill Filter Chips */
+.spotify-filter-chips {
+    display: flex !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    padding-bottom: 16px !important;
+    margin-bottom: 20px !important;
+    scrollbar-width: none !important;
+}
+
+.spotify-filter-chips::-webkit-scrollbar {
+    display: none !important;
+}
+
+.spotify-chip {
+    padding: 8px 18px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    transition: all 0.2s ease !important;
+}
+
+.spotify-chip.active {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border-color: #FFFFFF !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 14px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Spotify Angled Genre Card Grid */
+.spotify-genre-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 16px !important;
+    margin-bottom: 30px !important;
+}
+
+.spotify-genre-card {
+    position: relative !important;
+    height: 140px !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease !important;
+}
+
+.spotify-genre-card:hover {
+    transform: translateY(-4px) scale(1.02) !important;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45) !important;
+}
+
+.spotify-genre-title {
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    line-height: 1.2 !important;
+    position: relative !important;
+    z-index: 2 !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+.spotify-genre-img {
+    position: absolute !important;
+    right: -14px !important;
+    bottom: -10px !important;
+    width: 90px !important;
+    height: 90px !important;
+    object-fit: cover !important;
+    border-radius: 10px !important;
+    transform: rotate(25deg) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5) !important;
+    transition: transform 0.3s ease !important;
+}
+
+.spotify-genre-card:hover .spotify-genre-img {
+    transform: rotate(20deg) scale(1.08) !important;
+}
+
+/* Spotify Top Result Card */
+.spotify-top-result-card {
+    position: relative !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
+    max-width: 440px !important;
+    margin-bottom: 28px !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+.spotify-top-result-card:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-3px) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.spotify-top-result-img {
+    width: 92px !important;
+    height: 92px !important;
+    border-radius: 14px !important;
+    object-fit: cover !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.spotify-top-result-title {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    margin: 0 0 6px 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.spotify-top-result-sub {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 0.88rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.spotify-badge {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
+    padding: 3px 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+}
+
+.spotify-top-result-play-btn {
+    position: absolute !important;
+    right: 24px !important;
+    bottom: 24px !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 50% !important;
+    background: #1DB954 !important;
+    color: #000000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.3rem !important;
+    box-shadow: 0 8px 20px rgba(29, 185, 84, 0.45) !important;
+    transition: transform 0.2s ease, background 0.2s ease !important;
+    padding-left: 3px !important;
+}
+
+.spotify-top-result-card:hover .spotify-top-result-play-btn {
+    transform: scale(1.08) !important;
+    background: #1ed760 !important;
+}
+
+/* 2. PLAYLIST HUB REDESIGN */
+.liked-songs-hero-card {
+    position: relative !important;
+    width: 100% !important;
+    background: linear-gradient(135deg, #450af5 0%, #1e1b4b 50%, #06b6d4 100%) !important;
+    border-radius: 24px !important;
+    padding: 28px !important;
+    margin-bottom: 28px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+    box-shadow: 0 12px 35px rgba(69, 10, 245, 0.35) !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.liked-songs-hero-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 18px 45px rgba(69, 10, 245, 0.5) !important;
+}
+
+.liked-songs-hero-info h2 {
+    font-size: 2.2rem !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    margin: 0 0 8px 0 !important;
+    letter-spacing: -0.5px !important;
+}
+
+.liked-songs-hero-info p {
+    font-size: 0.95rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    margin: 0 !important;
+    font-weight: 600 !important;
+}
+
+.liked-songs-play-btn {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    background: #1DB954 !important;
+    color: #000000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.5rem !important;
+    box-shadow: 0 10px 25px rgba(29, 185, 84, 0.5) !important;
+    flex-shrink: 0 !important;
+    padding-left: 3px !important;
+}
+
+
 
 
 

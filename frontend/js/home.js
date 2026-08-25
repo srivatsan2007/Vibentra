@@ -1912,11 +1912,22 @@ const initHome = () => {
 
     function renderPlaylists() {
         const playlists = playlistService.getPlaylists();
+        const favCount = (favoriteService.getFavorites() || []).length;
 
         let html = `
+            <div class="liked-songs-hero-card" id="heroLikedSongsCard">
+                <div class="liked-songs-hero-info">
+                    <h2><i class="fa-solid fa-heart" style="color: #EC4899; margin-right: 12px;"></i> Liked Songs</h2>
+                    <p>${favCount} ${favCount === 1 ? 'favorite track' : 'favorite tracks'} saved to your library</p>
+                </div>
+                <div class="liked-songs-play-btn" title="Play Liked Songs">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+            </div>
+
             <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Your Playlists</h2>
-                <button class="btn btn-primary" id="openCreatePlaylistBtn" style="border-radius: 20px; padding: 10px 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <h2 style="font-weight: 800;">Your Playlists</h2>
+                <button class="btn btn-primary" id="openCreatePlaylistBtn" style="border-radius: 24px; padding: 10px 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1DB954, #059669); border: none; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4);">
                     <i class="fa-solid fa-plus"></i> Create Playlist
                 </button>
             </div>
@@ -1925,18 +1936,18 @@ const initHome = () => {
 
         playlists.forEach(pl => {
             html += `
-                <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 16px; padding: 14px; width: 100%; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); transition: all 0.3s ease; cursor: pointer;">
+                <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 16px; padding: 14px; width: 100%; border-radius: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; cursor: pointer; backdrop-filter: blur(12px);">
                     <div class="playlist-img-wrapper" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.4); background: rgba(255,255,255,0.05);">
                         ${renderMosaicCover(pl.tracks)}
                     </div>
                     <div class="playlist-info" style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                         <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.name}</h3>
-                        <p style="margin: 0; color: var(--text-muted); font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.description || 'Custom Playlist'}</p>
-                        <span style="font-size: 0.78rem; color: var(--primary); font-weight: 600; margin-top: 4px;">${pl.tracks.length} ${pl.tracks.length === 1 ? 'Track' : 'Tracks'}</span>
+                        <p style="margin: 0; color: rgba(255,255,255,0.6); font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.description || 'Custom Playlist'}</p>
+                        <span style="font-size: 0.78rem; color: #38BDF8; font-weight: 600; margin-top: 4px;">${pl.tracks.length} ${pl.tracks.length === 1 ? 'Track' : 'Tracks'}</span>
                     </div>
                     <div class="playlist-actions" style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
-                        <button class="btn edit-pl-btn" data-id="${pl.id}" title="Edit Playlist" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 36px; height: 36px; border: none; color: white; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-pen" style="font-size: 0.85rem;"></i></button>
-                        <button class="btn delete-pl-btn" data-id="${pl.id}" title="Delete Playlist" style="background: rgba(239, 68, 68, 0.15); border-radius: 50%; width: 36px; height: 36px; border: none; color: #ef4444; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-trash" style="font-size: 0.85rem;"></i></button>
+                        <button class="btn edit-pl-btn" data-id="${pl.id}" title="Edit Playlist" style="background: rgba(255,255,255,0.1); border-radius: 50%; width: 36px; height: 36px; border: none; color: white; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-pen" style="font-size: 0.85rem;"></i></button>
+                        <button class="btn delete-pl-btn" data-id="${pl.id}" title="Delete Playlist" style="background: rgba(239, 68, 68, 0.2); border-radius: 50%; width: 36px; height: 36px; border: none; color: #ef4444; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-trash" style="font-size: 0.85rem;"></i></button>
                     </div>
                 </div>
             `;
@@ -1944,6 +1955,11 @@ const initHome = () => {
 
         html += `</div>`;
         dynamicContent.innerHTML = html;
+
+        // Liked Songs Hero Card click
+        document.getElementById('heroLikedSongsCard')?.addEventListener('click', () => {
+            renderFavorites();
+        });
 
         // Add Event Listeners
         document.getElementById('openCreatePlaylistBtn')?.addEventListener('click', () => {
@@ -2379,29 +2395,34 @@ const initHome = () => {
     function renderFavorites() {
         const favs = favoriteService.getFavorites();
         let html = `
-            <div class="section-header">
-                <h2>Liked Songs</h2>
+            <div class="liked-songs-hero-card" style="margin-bottom: 24px;">
+                <div class="liked-songs-hero-info">
+                    <h2><i class="fa-solid fa-heart" style="color: #EC4899; margin-right: 10px;"></i> Liked Songs</h2>
+                    <p>${favs.length} ${favs.length === 1 ? 'track' : 'tracks'} in your collection</p>
+                </div>
+                ${favs.length > 0 ? `
+                <div class="liked-songs-play-btn" id="playAllFavsBtn" title="Play All Liked Songs">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                ` : ''}
             </div>
             <div class="track-list" id="favoritesTrackList">
         `;
 
         if (favs.length === 0) {
-            html += `<p style="color: var(--text-muted);">No favorite songs yet. Start liking some tracks!</p>`;
+            html += `<p style="color: rgba(255,255,255,0.6); text-align: center; padding: 40px;">No favorite songs yet. Start liking tracks!</p>`;
         } else {
             favs.forEach((track, index) => {
                 html += `
-                <div class="track-item" data-id="${track.id}" style="cursor: pointer;">
-                    <div class="track-number">${index + 1}</div>
-                    <div class="track-info-row">
-                        <img src="${track.cover}" class="track-img" alt="cover">
-                        <div class="track-details">
-                            <span style="font-weight: 500;">${track.title}</span>
-                            <span style="font-size: 0.8rem; color: var(--text-muted);">${track.artist}</span>
-                        </div>
+                <div class="spotify-track-row fav-track-row" data-index="${index}" style="display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,0.03); margin-bottom: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="width: 24px; color: rgba(255,255,255,0.5); font-weight: 700; text-align: center;">${index + 1}</div>
+                    <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover;">
+                    <div style="flex: 1; min-width: 0;">
+                        <h4 style="margin: 0 0 2px 0; font-size: 0.95rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title}</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.artist}</p>
                     </div>
-                    <div class="track-album">${track.album || 'Single'}</div>
-                    <div class="track-duration">${track.duration}</div>
-                    <button class="like-btn active fav-page-like-btn" data-id="${track.id}"><i class="fa-solid fa-heart"></i></button>
+                    <div style="font-size: 0.82rem; color: rgba(255,255,255,0.5); font-weight: 600; margin-right: 8px;">${track.duration || ''}</div>
+                    <button class="remove-from-pl-btn fav-opt-btn" data-id="${track.id}" title="Options" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #38BDF8; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                 </div>
                 `;
             });
@@ -2410,34 +2431,24 @@ const initHome = () => {
         html += `</div>`;
         dynamicContent.innerHTML = html;
 
-        // Add event listeners
-        document.querySelectorAll('#favoritesTrackList .track-item').forEach((item, idx) => {
-            item.addEventListener('click', (e) => {
-                if (e.target.closest('.fav-page-like-btn')) return; // Ignore if clicking heart
-                // Play track and pass favs as queue
-                musicService.playContext(favs, favs[idx]);
+        document.getElementById('playAllFavsBtn')?.addEventListener('click', () => {
+            if (favs.length > 0) musicService.playContext(favs, favs[0]);
+        });
+
+        document.querySelectorAll('.fav-track-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.fav-opt-btn')) return;
+                const idx = parseInt(row.getAttribute('data-index'));
+                if (!isNaN(idx) && favs[idx]) musicService.playContext(favs, favs[idx]);
             });
         });
 
-        document.querySelectorAll('.fav-page-like-btn').forEach(btn => {
+        document.querySelectorAll('.fav-opt-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const trackId = btn.getAttribute('data-id');
-                const track = favs.find(t => t.id === trackId);
-                if (track) {
-                    favoriteService.toggleFavorite(track);
-                    renderFavorites(); // Re-render to remove it
-
-                    // Update main player heart icon if it's currently playing
-                    if (musicService.currentTrack && musicService.currentTrack.id === trackId) {
-                        const icon = document.querySelector('#playerLikeBtn i');
-                        const playerLikeBtn = document.getElementById('playerLikeBtn');
-                        if (icon && playerLikeBtn) {
-                            icon.className = 'fa-regular fa-heart';
-                            playerLikeBtn.classList.remove('active');
-                        }
-                    }
-                }
+                const track = favs.find(t => String(t.id) === String(trackId));
+                if (track) openTrackOptionsMenu(track);
             });
         });
     }
