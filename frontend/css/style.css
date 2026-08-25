@@ -4816,6 +4816,49 @@ input:checked + .toggle-slider:before {
     transform: translateX(24px);
 }
 
+/* Horizontal Shelf Scrolling for Latest Albums, Trending Hits, and Artists */
+.cards-grid,
+.horizontal-shelf {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 16px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 10px 4px 16px 4px !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+}
+
+.cards-grid::-webkit-scrollbar,
+.horizontal-shelf::-webkit-scrollbar {
+    display: none !important;
+}
+
+.cards-grid .music-card,
+.horizontal-shelf .music-card {
+    flex: 0 0 165px !important;
+    width: 165px !important;
+    min-width: 165px !important;
+}
+
+@media (max-width: 768px) {
+    .cards-grid .music-card,
+    .horizontal-shelf .music-card {
+        flex: 0 0 140px !important;
+        width: 140px !important;
+        min-width: 140px !important;
+    }
+    
+    .dashboard-container,
+    .home-view-container,
+    .main-content,
+    .content-area,
+    body {
+        padding-bottom: 200px !important;
+    }
+}
+
 
 
 

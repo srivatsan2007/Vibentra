@@ -601,6 +601,52 @@ const initHome = () => {
         }
     });
 
+    // Global helper to create album cards for Latest Albums & New Releases
+    function createAlbumCard(album) {
+        const card = document.createElement('div');
+        card.className = 'music-card album-card';
+        card.style.cursor = 'pointer';
+        const cover = album.cover || album.image || album.artworkUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
+        const title = album.title || album.name || 'Latest Album';
+        const artist = album.artist || album.subtitle || 'YouTube Music';
+        const provider = album.provider || 'YouTube Music';
+
+        card.innerHTML = `
+            <div class="card-img-wrapper">
+                <img src="${cover}" alt="${title}" loading="lazy">
+                <div class="play-btn-overlay" title="Open ${title}">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+            </div>
+            <div class="card-info">
+                <div class="card-title-row">
+                    <h3 title="${title}">${title}</h3>
+                </div>
+                <p title="${artist}">${artist}</p>
+                <span style="font-size: 0.72rem; padding: 3px 8px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
+                    <i class="fa-brands fa-youtube"></i>
+                    ${provider}
+                </span>
+            </div>
+        `;
+
+        card.addEventListener('click', () => {
+            const searchNavBtn = document.querySelector('.nav-item[data-path="search"]');
+            if (searchNavBtn) {
+                searchNavBtn.click();
+                setTimeout(() => {
+                    const searchInput = document.getElementById('searchInput') || document.getElementById('desktopSearchInput');
+                    if (searchInput) {
+                        searchInput.value = title;
+                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }, 100);
+            }
+        });
+
+        return card;
+    }
+
     // Global helper to create fully-featured music cards with working Like, Ringtone, Download, and Three Dots options
     function createSongCard(track, contextList = []) {
         const card = document.createElement('div');

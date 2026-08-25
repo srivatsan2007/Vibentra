@@ -1,16 +1,16 @@
 {
-  "version": "v1.3.6",
-  "swVersion": "vibentra-cache-v81",
-  "releaseDate": "25 August 2026, 12:35 pm",
+  "version": "v1.3.7",
+  "swVersion": "vibentra-cache-v82",
+  "releaseDate": "25 August 2026, 12:40 pm",
   "size": "2.8 MB",
-  "importantNote": "Fully reverted codebase to 100% stable classic build with full features, working authentication, playlist sync, streaming, and capsule navigation.",
+  "importantNote": "Fixed Latest Albums rendering on mobile viewports with horizontal touch-scrolling cards and increased bottom padding.",
   "changelog": [
     {
-      "category": "100% Stable Classic Build Restoration",
+      "category": "Mobile View Album Restoration",
       "items": [
-        "Reverted all recent experimental changes and restored classic functional Vibentra app architecture.",
-        "Fully operational account login, Firestore playlist & favorites synchronization, search providers, and background playback.",
-        "Sleek glassmorphic navigation dock, clean layout, and auto-activating SW cache v81."
+        "Implemented missing `createAlbumCard` function in `home.js` to render Latest Albums & New Releases properly.",
+        "Added horizontal touch-scrolling CSS rules (`.horizontal-shelf`) for smooth mobile swiping.",
+        "Increased mobile container bottom padding to 200px so floating player and navigation capsule never overlap content."
       ]
     }
   ]
