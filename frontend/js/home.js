@@ -138,6 +138,19 @@ const initHome = () => {
         playlistService.syncFromCloud(user.uid).catch(e => console.warn("Cloud sync warning:", e));
     });
 
+    // Auto-update UI when cloud favorites or playlists finish syncing
+    window.addEventListener('favoritesSynced', () => {
+        if (currentView === 'home' || currentView === 'favorites' || currentView === 'library') {
+            loadView(currentView, false);
+        }
+    });
+
+    window.addEventListener('playlistsSynced', () => {
+        if (currentView === 'home' || currentView === 'playlists' || currentView === 'library') {
+            loadView(currentView, false);
+        }
+    });
+
     // Mobile Navigation Toggle
     const mobileNavToggle = document.getElementById('mobileNavToggle');
     const sidebar = document.getElementById('sidebar');

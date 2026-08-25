@@ -39,11 +39,22 @@ export class FavoriteService {
 
     async syncFromCloud(uid) {
         try {
+            let cloudFavs = [];
+            // Check primary userFavorites collection
             const docRef = doc(db, "userFavorites", uid);
             const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const cloudFavs = docSnap.data().favorites || [];
-                // Merge cloud and local
+            if (docSnap.exists() && docSnap.data().favorites) {
+                cloudFavs = docSnap.data().favorites;
+            } else {
+                // Fallback: check users collection for legacy accounts
+                const userRef = doc(db, "users", uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists() && userSnap.data().favorites) {
+                    cloudFavs = userSnap.data().favorites;
+                }
+            }
+
+            if (cloudFavs.length > 0) {
                 const merged = [...this.favorites];
                 cloudFavs.forEach(ct => {
                     if (!merged.find(lt => lt.id === ct.id)) {
@@ -52,9 +63,9 @@ export class FavoriteService {
                 });
                 this.favorites = merged;
                 this.saveFavoritesLocal();
-                this.saveToCloud(); // Push back the merged list
+                this.saveToCloud(); // Push back merged list to primary collection
                 
-                // Dispatch event to optionally update UI
+                // Dispatch event to update UI
                 window.dispatchEvent(new CustomEvent('favoritesSynced'));
             } else if (this.favorites.length > 0) {
                 this.saveToCloud();

@@ -1,15 +1,15 @@
 {
-  "version": "v1.3.4",
-  "swVersion": "vibentra-cache-v79",
-  "releaseDate": "25 August 2026, 12:25 pm",
+  "version": "v1.3.5",
+  "swVersion": "vibentra-cache-v80",
+  "releaseDate": "25 August 2026, 12:31 pm",
   "size": "2.9 MB",
-  "importantNote": "Enforced complete service worker cache purge across all devices to clear stale browser state.",
+  "importantNote": "Restored multi-collection user data cloud sync and added instant UI listeners for synced favorites and playlists.",
   "changelog": [
     {
-      "category": "Complete Device Cache Invalidation",
+      "category": "Cloud User Data Restoration",
       "items": [
-        "Updated `sw.js` to unconditionally wipe old client browser caches on activation.",
-        "Ensures user devices fetch the fresh production assets upon page refresh."
+        "Updated `favoriteService` and `playlistService` to check both primary and legacy `users` Firestore collections.",
+        "Added `favoritesSynced` and `playlistsSynced` event listeners in `home.js` so user data populates on screen automatically."
       ]
     }
   ]

@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.3.4</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.3.5</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 12:25 pm</p>
+                        <p>Released on: 25 August 2026, 12:31 pm</p>
                         <p>Size: 2.9 MB</p>
-                        <p>SW Cache: vibentra-cache-v79</p>
+                        <p>SW Cache: vibentra-cache-v80</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Enforced complete service worker cache purge across all devices to clear stale browser state.
+                        Restored multi-collection user data cloud sync and added instant UI listeners for synced favorites and playlists.
                     </div>
 
                     <div id="updateChangelogContainer">
