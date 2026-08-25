@@ -3719,24 +3719,24 @@ input {
         margin-bottom: 12px !important;
     }
 
-    /* Liquid Glass Floating Capsule Mini Player (Exact match to Reference Image) */
+    /* Liquid Glass Floating Capsule Mini Player (Compact Floating Dock Match) */
     .music-player {
         position: fixed !important;
         bottom: 86px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        width: calc(100% - 24px) !important;
-        max-width: 480px !important;
-        height: 60px !important;
+        width: calc(100% - 36px) !important;
+        max-width: 420px !important;
+        height: 56px !important;
         border-radius: 9999px !important;
-        background: rgba(14, 15, 20, 0.90) !important;
+        background: rgba(14, 15, 20, 0.92) !important;
         backdrop-filter: blur(40px) saturate(200%) !important;
         -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
         border: 1px solid rgba(255, 255, 255, 0.22) !important;
         border-top: 1.5px solid rgba(255, 255, 255, 0.4) !important;
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
         z-index: 2500 !important;
-        padding: 0 20px 0 10px !important;
+        padding: 0 14px 0 8px !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
@@ -3747,7 +3747,7 @@ input {
     .music-player .player-left {
         display: flex !important;
         align-items: center !important;
-        gap: 12px !important;
+        gap: 10px !important;
         flex: 1 !important;
         min-width: 0 !important;
         overflow: hidden !important;
@@ -3757,8 +3757,8 @@ input {
     }
 
     .music-player .now-playing-img {
-        width: 44px !important;
-        height: 44px !important;
+        width: 40px !important;
+        height: 40px !important;
         border-radius: 10px !important;
         object-fit: cover !important;
         flex-shrink: 0 !important;
@@ -3776,7 +3776,7 @@ input {
 
     .music-player .now-playing-info h4,
     .music-player #playerTitle {
-        font-size: 0.95rem !important;
+        font-size: 0.88rem !important;
         font-weight: 700 !important;
         color: #FFFFFF !important;
         margin: 0 !important;
@@ -3788,10 +3788,10 @@ input {
 
     .music-player .now-playing-info p,
     .music-player #playerArtist {
-        font-size: 0.78rem !important;
+        font-size: 0.74rem !important;
         font-weight: 500 !important;
         color: rgba(255, 255, 255, 0.72) !important;
-        margin: 2px 0 0 0 !important;
+        margin: 1px 0 0 0 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -3802,9 +3802,9 @@ input {
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
-        gap: 12px !important;
+        gap: 10px !important;
         flex: 0 0 auto !important;
-        margin: 0 10px 0 0 !important;
+        margin: 0 8px 0 0 !important;
         padding: 0 !important;
         order: 2 !important;
     }
@@ -3817,7 +3817,7 @@ input {
         background: transparent !important;
         border: none !important;
         color: #FFFFFF !important;
-        font-size: 1.25rem !important;
+        font-size: 1.15rem !important;
         cursor: pointer !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -3844,7 +3844,7 @@ input {
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
-        gap: 12px !important;
+        gap: 10px !important;
         margin: 0 !important;
         padding: 0 !important;
     }
@@ -3857,7 +3857,7 @@ input {
         background: transparent !important;
         border: none !important;
         color: #FFFFFF !important;
-        font-size: 1.05rem !important;
+        font-size: 0.98rem !important;
         cursor: pointer !important;
         padding: 2px !important;
         margin: 0 !important;
@@ -3872,7 +3872,7 @@ input {
         justify-content: center !important;
         width: auto !important;
         height: auto !important;
-        font-size: 1.25rem !important;
+        font-size: 1.15rem !important;
         background: transparent !important;
         color: #FFFFFF !important;
         border-radius: 0 !important;
