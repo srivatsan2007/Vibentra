@@ -497,6 +497,26 @@ const initHome = () => {
         });
     }
 
+    // Mobile Sidebar Drawer Toggle Logic
+    const mobileNavToggle = document.getElementById('mobileNavToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+    if (mobileNavToggle && sidebar) {
+        mobileNavToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active');
+        });
+    }
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', () => {
+            if (sidebar) sidebar.classList.remove('active');
+            sidebarBackdrop.classList.remove('active');
+        });
+    }
+
     // Navigation and Dynamic Views
     const navItems = document.querySelectorAll('.nav-item[data-path]');
     const dynamicContent = document.getElementById('dynamicContent');
@@ -504,11 +524,16 @@ const initHome = () => {
 
     // Handle Android/Mobile Back Button
     window.addEventListener('popstate', (e) => {
-        // Check if any modal is open, if so, just close the modal and stay on page
+        // Check if any modal or mobile sidebar is open, if so, just close it
+        if (sidebar && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+            return;
+        }
+
         const openModals = document.querySelectorAll('.large-player-modal.active');
         if (openModals.length > 0) {
             openModals.forEach(m => m.classList.remove('active'));
-            // Re-push the current state so the next back press works for navigation
             const currentPath = document.querySelector('.nav-item.active')?.getAttribute('data-path') || 'home';
             history.pushState({ path: currentPath }, '', '#' + currentPath);
             return;
@@ -535,9 +560,8 @@ const initHome = () => {
 
             mobileNavItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-target') === item.getAttribute('data-path')));
 
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('active');
-            }
+            if (sidebar) sidebar.classList.remove('active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
 
             const path = item.getAttribute('data-path');
             loadView(path);

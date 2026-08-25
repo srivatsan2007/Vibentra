@@ -1,39 +1,38 @@
 {
-  "version": "v1.2.0",
-  "swVersion": "vibentra-cache-v65",
-  "releaseDate": "25 August 2026, 11:35 am",
-  "size": "2.8 MB",
-  "importantNote": "All modern interface upgrades, double-deck floating capsule navigation, YouTube Music style categorized settings, and audio stability patches are fully active in v1.2.0.",
+  "version": "v1.2.1",
+  "swVersion": "vibentra-cache-v66",
+  "releaseDate": "25 August 2026, 11:48 am",
+  "size": "2.9 MB",
+  "importantNote": "Top-bar mobile navigation drawer, fixed sticky update action buttons, clean 4-item bottom dock, and YouTube Music style categorized settings are live.",
   "changelog": [
     {
-      "category": "Floating Capsule Navigation Pill",
+      "category": "Mobile Navigation Drawer & Top-Bar",
       "items": [
-        "Redesigned bottom navigation into a sleek glassmorphic capsule dock.",
-        "Instant access to Home and Library inside the primary glass capsule.",
-        "Independent floating circular Search button with smooth tactile animation."
+        "Enabled top-left hamburger menu button to toggle smooth slide-out sidebar drawer on mobile.",
+        "Full access to working features: Home, Search, Playlists, Favorites, Connect, Vibe AI, Profile, Settings, and Logout.",
+        "Dark glass backdrop overlay with tap-to-close interaction."
       ]
     },
     {
-      "category": "YouTube Music Style Categorized Settings",
+      "category": "Update Manager & Action Buttons",
       "items": [
-        "Categorized settings portal featuring Account, Interface, Content, Audio, Playback, History, Lyrics, AI, Music Sources, Storage, and Check for Updates.",
-        "Interactive sub-pages with real-time toggle switches for Download Liked Songs, Video playback, Radio Audio-Only, Explicit Content, YT Offline Playlists, and Proxy.",
-        "Audio Quality selector with 320kbps Vibentra HQ sound preset."
+        "Fixed Install & Later action buttons sticky at screen bottom with safe-area support.",
+        "Cleaned changelog markdown formatting for crisp, readable release notes.",
+        "Real-time Service Worker upgrade progress bar with single-tap installation."
       ]
     },
     {
-      "category": "Full-Screen Layout & Mobile Enhancements",
+      "category": "Classic 4-Item Bottom Navigation Dock",
       "items": [
-        "Edge-to-edge 100vw / 100vh immersive viewport layout across all pages.",
-        "Optimized mobile filter chips bar with smooth horizontal pill scrolling.",
-        "Android Home Screen Widget integration guide & background audio battery saver recommendations."
+        "Restored clean 4-item bottom navigation dock: Home, Search, Library, and Settings.",
+        "Floated Mini-Player neatly above bottom nav with zero overlapping."
       ]
     },
     {
-      "category": "Backend Decoupling & Cache Invalidation",
+      "category": "Categorized Settings & Engine Stability",
       "items": [
-        "100% strict isolation of UI updates from core background audio persistence and streaming providers.",
-        "One-tap Service Worker cache invalidation (vibentra-cache-v65) with real-time installation progress bar."
+        "YouTube Music / Echo Music style settings sub-pages with interactive toggle switches.",
+        "100% decoupling from core JioSaavn / YouTube Music background audio persistence."
       ]
     }
   ]
