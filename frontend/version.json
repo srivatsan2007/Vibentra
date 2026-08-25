@@ -1,15 +1,15 @@
 {
-  "version": "v1.5.7",
-  "swVersion": "vibentra-cache-v94",
-  "releaseDate": "25 August 2026, 02:35 pm",
+  "version": "v1.5.8",
+  "swVersion": "vibentra-cache-v95",
+  "releaseDate": "25 August 2026, 02:40 pm",
   "size": "2.8 MB",
-  "importantNote": "Fixed 3-dot options buttons truncation on playlist and search pages.",
+  "importantNote": "Enforced cache-busting and explicit layout constraints for 3-dot options buttons across all mobile viewports.",
   "changelog": [
     {
-      "category": "3-Dot Track Options Layout Fix",
+      "category": "Mobile 3-Dot Options Button Instant Fix",
       "items": [
-        "Converted remote playlist and album track lists from card grids to sleek horizontal rows with visible 3-dot options buttons.",
-        "Enforced max-width (calc(100% - 48px)) on track title/artist flex containers so 3-dot buttons (.search-row-opt-btn, .remove-from-pl-btn, .remote-track-opt-btn) are pinned on-screen and never pushed off the viewport edge.",
+        "Injected cache-busting query strings (?v=1.5.8) in index.html and home.html so mobile browsers instantly pull fresh JS/CSS assets.",
+        "Converted all search, playlist, and remote collection song rows to enforce flex contraction boundaries, guaranteeing 100% on-screen visibility for 3-dot options buttons.",
         "Preserved 100% backend streaming and track menu action sheet functionality."
       ]
     }

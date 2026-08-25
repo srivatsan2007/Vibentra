@@ -2424,8 +2424,8 @@ const initHome = () => {
         } else {
             pl.tracks.forEach((track, index) => {
                 html += `
-                <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box; overflow: hidden;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
@@ -2436,7 +2436,7 @@ const initHome = () => {
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto;">
                         ${track.duration ? `<span style="font-size: 0.78rem; color: var(--text-muted); flex-shrink: 0;">${track.duration}</span>` : ''}
-                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>
