@@ -35,8 +35,8 @@ export function initUpdateManager() {
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
-                        > [!IMPORTANT]<br>
-                        > Immersive Full-Screen Layout, Floating Capsule Navigation Pill & YouTube Music style Categorized Settings are now live.
+                        <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
+                        Immersive Full-Screen Layout, Clean Bottom Navigation Dock & YouTube Music style Categorized Settings are now live.
                     </div>
 
                     <div id="updateChangelogContainer">
@@ -138,9 +138,10 @@ export function initUpdateManager() {
         `;
 
         if (data.importantNote) {
+            const cleanNote = data.importantNote.replace(/^>\s*\[!IMPORTANT\]\s*/gi, '').replace(/^>\s*/gm, '');
             document.getElementById('updateImportantBlock').innerHTML = `
-                > [!IMPORTANT]<br>
-                > ${data.importantNote}
+                <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
+                ${cleanNote}
             `;
         }
 
@@ -151,7 +152,8 @@ export function initUpdateManager() {
             data.changelog.forEach(cat => {
                 const sec = document.createElement('div');
                 sec.className = 'update-changelog-section';
-                sec.innerHTML = `<h3>### ${cat.category}</h3>`;
+                const cleanCategory = cat.category.replace(/^#+\s*/, '');
+                sec.innerHTML = `<h3>${cleanCategory}</h3>`;
                 const ul = document.createElement('ul');
                 cat.items.forEach(item => {
                     const li = document.createElement('li');
