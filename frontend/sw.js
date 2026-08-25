@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v80';
+const CACHE_NAME = 'vibentra-cache-v81';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -20,9 +20,8 @@ const ASSETS_TO_CACHE = [
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
-// Install Event - Cache App Shell & Skip Waiting Immediately
+// Install Event - Cache App Shell
 self.addEventListener('install', event => {
-    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             console.log('Opened cache');
@@ -31,25 +30,28 @@ self.addEventListener('install', event => {
     );
 });
 
-// Listen for message from frontend to skip waiting
+// Listen for message from frontend to skip waiting and activate new version
 self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
 });
 
-// Activate Event - Clean up old caches & Claim Clients Instantly
+// Activate Event - Clean up old caches
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
-                    console.log('Deleting old cache:', cacheName);
-                    return caches.delete(cacheName);
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
                 })
             );
-        }).then(() => self.clients.claim())
+        })
     );
+    self.clients.claim(); // Take control of all clients immediately
 });
 
 // Fetch Event - Network First, falling back to Cache

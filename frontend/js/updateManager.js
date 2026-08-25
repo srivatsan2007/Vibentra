@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.3.5</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.3.6</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 12:31 pm</p>
-                        <p>Size: 2.9 MB</p>
-                        <p>SW Cache: vibentra-cache-v80</p>
+                        <p>Released on: 25 August 2026, 12:35 pm</p>
+                        <p>Size: 2.8 MB</p>
+                        <p>SW Cache: vibentra-cache-v81</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Restored multi-collection user data cloud sync and added instant UI listeners for synced favorites and playlists.
+                        Fully reverted codebase to 100% stable classic build with full features, working authentication, playlist sync, streaming, and capsule navigation.
                     </div>
 
                     <div id="updateChangelogContainer">
@@ -84,34 +84,26 @@ export function initUpdateManager() {
 
             const storedSw = localStorage.getItem('vibentra_active_sw_version');
             if (storedSw !== data.swVersion) {
-                localStorage.setItem('vibentra_active_sw_version', data.swVersion);
+                showToastBanner(data.version);
             }
         })
         .catch(err => console.log('Could not fetch version.json:', err));
 
-    // Service Worker Registration & Controller Auto-Refresh Listener
+    // Service Worker Registration Listener
     if ('serviceWorker' in navigator) {
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) {
-                refreshing = true;
-                window.location.reload();
-            }
-        });
-
         navigator.serviceWorker.register(window.location.pathname.includes('/pages/') ? '../sw.js' : './sw.js')
             .then(reg => {
                 reg.addEventListener('updatefound', () => {
                     newWorker = reg.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            if (updateData) localStorage.setItem('vibentra_active_sw_version', updateData.swVersion);
+                            if (updateData) showToastBanner(updateData.version);
                         }
                     });
                 });
                 if (reg.waiting) {
                     newWorker = reg.waiting;
-                    if (updateData) localStorage.setItem('vibentra_active_sw_version', updateData.swVersion);
+                    if (updateData) showToastBanner(updateData.version);
                 }
             })
             .catch(err => console.log('SW Registration error:', err));

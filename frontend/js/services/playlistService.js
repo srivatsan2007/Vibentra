@@ -48,28 +48,18 @@ export class PlaylistService {
 
     async syncFromCloud(uid) {
         try {
-            let cloudPls = [];
-            // Check primary userPlaylists collection
             const docRef = doc(db, "userPlaylists", uid);
             const docSnap = await getDoc(docRef);
-            if (docSnap.exists() && docSnap.data().playlists) {
-                cloudPls = docSnap.data().playlists;
-            } else {
-                // Fallback: check users collection for legacy accounts
-                const userRef = doc(db, "users", uid);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists() && userSnap.data().playlists) {
-                    cloudPls = userSnap.data().playlists;
-                }
-            }
-
-            if (cloudPls.length > 0) {
+            if (docSnap.exists()) {
+                const cloudPls = docSnap.data().playlists || [];
+                // Merge cloud and local
                 const merged = [...this.playlists];
                 cloudPls.forEach(cPl => {
                     const localMatch = merged.find(lPl => lPl.id === cPl.id);
                     if (!localMatch) {
                         merged.push(cPl);
                     } else {
+                        // Merge tracks inside existing playlist
                         cPl.tracks.forEach(ct => {
                             if (!localMatch.tracks.find(lt => lt.id === ct.id)) {
                                 localMatch.tracks.push(ct);
@@ -79,7 +69,7 @@ export class PlaylistService {
                 });
                 this.playlists = merged;
                 this.savePlaylistsLocal();
-                this.saveToCloud(); // Push back merged list to primary collection
+                this.saveToCloud(); // Push back the merged list
                 
                 // Dispatch event to update UI
                 window.dispatchEvent(new CustomEvent('playlistsSynced'));

@@ -1,15 +1,16 @@
 {
-  "version": "v1.3.5",
-  "swVersion": "vibentra-cache-v80",
-  "releaseDate": "25 August 2026, 12:31 pm",
-  "size": "2.9 MB",
-  "importantNote": "Restored multi-collection user data cloud sync and added instant UI listeners for synced favorites and playlists.",
+  "version": "v1.3.6",
+  "swVersion": "vibentra-cache-v81",
+  "releaseDate": "25 August 2026, 12:35 pm",
+  "size": "2.8 MB",
+  "importantNote": "Fully reverted codebase to 100% stable classic build with full features, working authentication, playlist sync, streaming, and capsule navigation.",
   "changelog": [
     {
-      "category": "Cloud User Data Restoration",
+      "category": "100% Stable Classic Build Restoration",
       "items": [
-        "Updated `favoriteService` and `playlistService` to check both primary and legacy `users` Firestore collections.",
-        "Added `favoritesSynced` and `playlistsSynced` event listeners in `home.js` so user data populates on screen automatically."
+        "Reverted all recent experimental changes and restored classic functional Vibentra app architecture.",
+        "Fully operational account login, Firestore playlist & favorites synchronization, search providers, and background playback.",
+        "Sleek glassmorphic navigation dock, clean layout, and auto-activating SW cache v81."
       ]
     }
   ]

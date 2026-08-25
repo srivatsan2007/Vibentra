@@ -93,7 +93,7 @@ const initHome = () => {
     const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
     window.applyTheme(savedTheme);
 
-    // Check Auth State & Orchestrate App Launch
+    // Check Auth State
     musicService.initUI(); // Initialize player UI bindings
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
@@ -101,13 +101,20 @@ const initHome = () => {
             return;
         }
 
-        let nameToDisplay = user.displayName || user.email?.split('@')[0] || 'User';
-
+        // Load User Data
         try {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                if (userData.username) nameToDisplay = userData.username;
+                const welcomeNameEl = document.getElementById('welcomeName');
+                if (welcomeNameEl) welcomeNameEl.textContent = userData.username;
+
+                const topUsernameEl = document.getElementById('topUsername');
+                if (topUsernameEl) topUsernameEl.textContent = userData.username;
+
+                const profileUsername = document.getElementById('profileUsername');
+                if (profileUsername) profileUsername.textContent = userData.username;
+
                 if (userData.profileImage) {
                     const topProfileImg = document.getElementById('topProfileImg');
                     if (topProfileImg) topProfileImg.src = userData.profileImage;
@@ -115,39 +122,27 @@ const initHome = () => {
                     const profileAvatar = document.getElementById('profileAvatar');
                     if (profileAvatar) profileAvatar.src = userData.profileImage;
                 }
+            } else {
+                const welcomeNameEl = document.getElementById('welcomeName');
+                if (welcomeNameEl) welcomeNameEl.textContent = user.displayName || 'User';
+
+                const topUsernameEl = document.getElementById('topUsername');
+                if (topUsernameEl) topUsernameEl.textContent = user.displayName || 'User';
+
+                const profileUsername = document.getElementById('profileUsername');
+                if (profileUsername) profileUsername.textContent = user.displayName || 'User';
             }
         } catch (error) {
             console.error("Error loading user data:", error);
-        }
+            const fallbackName = user.displayName || user.email?.split('@')[0] || 'User';
+            const welcomeNameEl = document.getElementById('welcomeName');
+            if (welcomeNameEl) welcomeNameEl.textContent = fallbackName;
 
-        // Render target view immediately so app opens instantly with zero latency
-        const targetPath = window.location.hash.replace('#', '') || 'home';
-        loadView(targetPath, false);
+            const topUsernameEl = document.getElementById('topUsername');
+            if (topUsernameEl) topUsernameEl.textContent = fallbackName;
 
-        const welcomeNameEl = document.getElementById('welcomeName');
-        if (welcomeNameEl) welcomeNameEl.textContent = nameToDisplay;
-
-        const topUsernameEl = document.getElementById('topUsername');
-        if (topUsernameEl) topUsernameEl.textContent = nameToDisplay;
-
-        const profileUsername = document.getElementById('profileUsername');
-        if (profileUsername) profileUsername.textContent = nameToDisplay;
-
-        // Sync Favorites & Playlists from Cloud in background
-        favoriteService.syncFromCloud(user.uid).catch(e => console.warn("Cloud sync warning:", e));
-        playlistService.syncFromCloud(user.uid).catch(e => console.warn("Cloud sync warning:", e));
-    });
-
-    // Auto-update UI when cloud favorites or playlists finish syncing
-    window.addEventListener('favoritesSynced', () => {
-        if (currentView === 'home' || currentView === 'favorites' || currentView === 'library') {
-            loadView(currentView, false);
-        }
-    });
-
-    window.addEventListener('playlistsSynced', () => {
-        if (currentView === 'home' || currentView === 'playlists' || currentView === 'library') {
-            loadView(currentView, false);
+            const profileUsername = document.getElementById('profileUsername');
+            if (profileUsername) profileUsername.textContent = fallbackName;
         }
     });
 
@@ -229,9 +224,9 @@ const initHome = () => {
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 const docEl = document.documentElement;
                 if (docEl.requestFullscreen) {
-                    docEl.requestFullscreen().catch(() => { });
+                    docEl.requestFullscreen().catch(() => {});
                 } else if (docEl.webkitRequestFullscreen) {
-                    docEl.webkitRequestFullscreen().catch(() => { });
+                    docEl.webkitRequestFullscreen().catch(() => {});
                 }
             }
         };
@@ -246,9 +241,9 @@ const initHome = () => {
                     showNotification('Entered Fullscreen Mode', 'info');
                 } else {
                     if (document.exitFullscreen) {
-                        document.exitFullscreen().catch(() => { });
+                        document.exitFullscreen().catch(() => {});
                     } else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen().catch(() => { });
+                        document.webkitExitFullscreen().catch(() => {});
                     }
                     fullScreenToggleBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
                     showNotification('Exited Fullscreen Mode', 'info');
@@ -502,26 +497,6 @@ const initHome = () => {
         });
     }
 
-    // Mobile Sidebar Drawer Toggle Logic
-    const mobileNavToggle = document.getElementById('mobileNavToggle');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-
-    if (mobileNavToggle && sidebar) {
-        mobileNavToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebar.classList.toggle('active');
-            if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active');
-        });
-    }
-
-    if (sidebarBackdrop) {
-        sidebarBackdrop.addEventListener('click', () => {
-            if (sidebar) sidebar.classList.remove('active');
-            sidebarBackdrop.classList.remove('active');
-        });
-    }
-
     // Navigation and Dynamic Views
     const navItems = document.querySelectorAll('.nav-item[data-path]');
     const dynamicContent = document.getElementById('dynamicContent');
@@ -529,16 +504,11 @@ const initHome = () => {
 
     // Handle Android/Mobile Back Button
     window.addEventListener('popstate', (e) => {
-        // Check if any modal or mobile sidebar is open, if so, just close it
-        if (sidebar && sidebar.classList.contains('active')) {
-            sidebar.classList.remove('active');
-            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
-            return;
-        }
-
+        // Check if any modal is open, if so, just close the modal and stay on page
         const openModals = document.querySelectorAll('.large-player-modal.active');
         if (openModals.length > 0) {
             openModals.forEach(m => m.classList.remove('active'));
+            // Re-push the current state so the next back press works for navigation
             const currentPath = document.querySelector('.nav-item.active')?.getAttribute('data-path') || 'home';
             history.pushState({ path: currentPath }, '', '#' + currentPath);
             return;
@@ -565,8 +535,9 @@ const initHome = () => {
 
             mobileNavItems.forEach(nav => nav.classList.toggle('active', nav.getAttribute('data-target') === item.getAttribute('data-path')));
 
-            if (sidebar) sidebar.classList.remove('active');
-            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
 
             const path = item.getAttribute('data-path');
             loadView(path);
@@ -627,21 +598,6 @@ const initHome = () => {
     document.addEventListener('favoritesChanged', () => {
         if (document.getElementById('favoritesTrackList')) {
             renderFavorites();
-        }
-    });
-
-    // Listen for cloud data synchronization to update UI automatically
-    window.addEventListener('favoritesSynced', () => {
-        const activeNav = document.querySelector('.nav-item.active')?.getAttribute('data-path');
-        if (activeNav === 'favorites' || activeNav === 'profile') {
-            loadView(activeNav, false);
-        }
-    });
-
-    window.addEventListener('playlistsSynced', () => {
-        const activeNav = document.querySelector('.nav-item.active')?.getAttribute('data-path');
-        if (activeNav === 'playlists' || activeNav === 'profile') {
-            loadView(activeNav, false);
         }
     });
 
@@ -957,7 +913,7 @@ const initHome = () => {
 
             <div class="welcome-banner" style="margin-bottom: 20px;">
                 <div>
-                    <h1 style="font-size: 2rem; margin-bottom: 6px;">Good Morning, <span id="welcomeName">${auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'User'}</span>!</h1>
+                    <h1 style="font-size: 2rem; margin-bottom: 6px;">Good evening</h1>
                     <p style="opacity: 0.8;">Ready for some new tunes?</p>
                 </div>
             </div>
@@ -1081,7 +1037,7 @@ const initHome = () => {
 
         const langPrefSelect = document.getElementById('langPrefSelect');
         const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
-        if (langPrefSelect) langPrefSelect.value = storedLang;
+        langPrefSelect.value = storedLang;
 
         let activeTrendingTracks = [];
 
@@ -2971,125 +2927,6 @@ const initHome = () => {
                 }
             };
         }
-    }
-
-    async function renderProfile() {
-        const currentUser = auth.currentUser;
-        let username = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';
-        let userEmail = currentUser?.email || 'Not logged in';
-        let profileImg = currentUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=7C3AED&color=fff`;
-
-        if (currentUser) {
-            try {
-                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    if (data.username) username = data.username;
-                    if (data.profileImage) profileImg = data.profileImage;
-                }
-            } catch (e) {
-                console.log("Could not fetch user doc for profile:", e);
-            }
-        }
-
-        const favCount = favoriteService.getFavorites().length;
-        const playlistCount = playlistService.getPlaylists().length;
-        const historyCount = historyService.getHistory().length;
-
-        dynamicContent.innerHTML = `
-            <div class="section-header">
-                <h2>Account Profile</h2>
-            </div>
-
-            <div class="profile-view-wrapper" style="display: flex; flex-direction: column; gap: 24px; max-width: 700px;">
-                <!-- User Hero Card -->
-                <div class="glass-panel" style="position: relative; overflow: hidden; padding: 28px; border-radius: 24px; display: flex; align-items: center; gap: 24px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(6, 182, 212, 0.2)); border: 1px solid rgba(255, 255, 255, 0.15);">
-                    <img src="${profileImg}" alt="${username}" id="profilePageAvatar" style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);">
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                            <h3 style="font-size: 1.5rem; font-weight: 800; color: #FFFFFF; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${username}</h3>
-                            <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10B981; color: #10B981; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 12px;">ACTIVE</span>
-                        </div>
-                        <p style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7); margin: 0 0 10px 0;">${userEmail}</p>
-                        <span style="font-size: 0.78rem; color: #38BDF8; background: rgba(56, 189, 248, 0.12); padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
-                            <i class="fa-solid fa-shield-halved"></i> Firebase Encrypted Account
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Quick Stats Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px;">
-                    <div class="glass-panel" style="padding: 20px; border-radius: 18px; text-align: center; background: rgba(255,255,255,0.05);">
-                        <i class="fa-solid fa-heart" style="font-size: 1.5rem; color: #EC4899; margin-bottom: 8px;"></i>
-                        <h4 style="font-size: 1.4rem; font-weight: 800; color: #FFFFFF; margin: 0;">${favCount}</h4>
-                        <span style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Liked Songs</span>
-                    </div>
-                    <div class="glass-panel" style="padding: 20px; border-radius: 18px; text-align: center; background: rgba(255,255,255,0.05);">
-                        <i class="fa-solid fa-list-check" style="font-size: 1.5rem; color: #06B6D4; margin-bottom: 8px;"></i>
-                        <h4 style="font-size: 1.4rem; font-weight: 800; color: #FFFFFF; margin: 0;">${playlistCount}</h4>
-                        <span style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Playlists</span>
-                    </div>
-                    <div class="glass-panel" style="padding: 20px; border-radius: 18px; text-align: center; background: rgba(255,255,255,0.05);">
-                        <i class="fa-solid fa-clock-rotate-left" style="font-size: 1.5rem; color: #10B981; margin-bottom: 8px;"></i>
-                        <h4 style="font-size: 1.4rem; font-weight: 800; color: #FFFFFF; margin: 0;">${historyCount}</h4>
-                        <span style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Recently Played</span>
-                    </div>
-                </div>
-
-                <!-- Account Actions Panel -->
-                <div class="glass-panel" style="padding: 24px; border-radius: 20px; display: flex; flex-direction: column; gap: 18px;">
-                    <h4 style="font-size: 1.1rem; font-weight: 700; color: #FFFFFF; margin: 0;">Account Settings</h4>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Email Address</label>
-                        <input type="text" value="${userEmail}" readonly style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #FFFFFF; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; outline: none; cursor: not-allowed;">
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Update Password</label>
-                        <div style="display: flex; gap: 12px;">
-                            <input type="password" id="profileNewPass" placeholder="Enter new password" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #FFFFFF; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; outline: none;">
-                            <button id="updatePassBtn" class="btn btn-primary" style="padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; white-space: nowrap;">
-                                Save Password
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <button id="profileLogoutBtn" class="btn btn-outline" style="width: 100%; border-color: #EF4444; color: #EF4444; padding: 14px; border-radius: 14px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
-                            <i class="fa-solid fa-right-from-bracket"></i> Log Out from Vibentra
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('updatePassBtn')?.addEventListener('click', async () => {
-            const passInput = document.getElementById('profileNewPass');
-            const newPass = passInput?.value?.trim();
-            if (!newPass || newPass.length < 6) {
-                showNotification('Password must be at least 6 characters long', 'error');
-                return;
-            }
-            try {
-                if (auth.currentUser) {
-                    await updatePassword(auth.currentUser, newPass);
-                    showNotification('Password updated successfully!', 'success');
-                    if (passInput) passInput.value = '';
-                }
-            } catch (err) {
-                showNotification(err.message || 'Failed to update password', 'error');
-            }
-        });
-
-        document.getElementById('profileLogoutBtn')?.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                window.location.href = 'auth.html';
-            } catch (err) {
-                showNotification(err.message, 'error');
-            }
-        });
     }
 
     function renderSettings() {

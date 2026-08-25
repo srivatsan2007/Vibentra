@@ -5,20 +5,23 @@ const initApp = () => {
     const splashScreen = document.getElementById('splashScreen');
     if (!splashScreen) return;
 
-    // Check Firebase Auth state instantly
-    onAuthStateChanged(auth, (user) => {
-        splashScreen.classList.add('hidden');
-        
-        setTimeout(() => {
-            if (user) {
-                // User is signed in, redirect to home
-                window.location.href = './pages/home.html';
-            } else {
-                // User is signed out, redirect to auth
-                window.location.href = './pages/auth.html';
-            }
-        }, 200); // Fast 200ms transition
-    });
+    // Simulate loading time (e.g., fetching initial data)
+    setTimeout(() => {
+        // Check Firebase Auth state
+        onAuthStateChanged(auth, (user) => {
+            splashScreen.classList.add('hidden');
+            
+            setTimeout(() => {
+                if (user) {
+                    // User is signed in, redirect to home
+                    window.location.href = './pages/home.html';
+                } else {
+                    // User is signed out, redirect to auth
+                    window.location.href = './pages/auth.html';
+                }
+            }, 500); // Wait for transition
+        });
+    }, 2000); // 2 seconds splash screen
 };
 
 if (document.readyState === 'loading') {
