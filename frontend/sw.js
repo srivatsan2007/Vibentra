@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v78';
+const CACHE_NAME = 'vibentra-cache-v79';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -44,10 +44,8 @@ self.addEventListener('activate', event => {
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
+                    console.log('Deleting old cache:', cacheName);
+                    return caches.delete(cacheName);
                 })
             );
         }).then(() => self.clients.claim())

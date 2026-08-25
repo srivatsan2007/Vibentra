@@ -1,15 +1,15 @@
 {
-  "version": "v1.3.3",
-  "swVersion": "vibentra-cache-v78",
-  "releaseDate": "25 August 2026, 12:23 pm",
+  "version": "v1.3.4",
+  "swVersion": "vibentra-cache-v79",
+  "releaseDate": "25 August 2026, 12:25 pm",
   "size": "2.9 MB",
-  "importantNote": "Eliminated 2.5 second splash screen delay and unblocked loadView execution for instant zero-latency startup.",
+  "importantNote": "Enforced complete service worker cache purge across all devices to clear stale browser state.",
   "changelog": [
     {
-      "category": "Zero-Latency Launch & Instant Render",
+      "category": "Complete Device Cache Invalidation",
       "items": [
-        "Removed 2000ms splash delay in `app.js` for immediate authentication check.",
-        "Made `syncFromCloud` non-blocking in `home.js` so `loadView` renders your home dashboard in 0 milliseconds."
+        "Updated `sw.js` to unconditionally wipe old client browser caches on activation.",
+        "Ensures user devices fetch the fresh production assets upon page refresh."
       ]
     }
   ]
