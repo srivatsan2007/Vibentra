@@ -1087,6 +1087,23 @@ const initHome = () => {
 
         let activeTrendingTracks = [];
 
+        const renderInitialAlbums = (lang = 'Tamil') => {
+            const targetGrid = document.getElementById('homeLatestAlbumsGrid');
+            if (!targetGrid) return;
+            const defaultAlbums = [
+                { title: 'Dragon', artist: 'Leon James • Tamil 2026', cover: 'https://c.saavncdn.com/712/Dragon-Tamil-2025-20250201121045-500x500.jpg', provider: 'YouTube Music' },
+                { title: 'Kanguva', artist: 'Devi Sri Prasad • Tamil 2026', cover: 'https://c.saavncdn.com/393/Kanguva-Tamil-2024-20241113203402-500x500.jpg', provider: 'JioSaavn' },
+                { title: 'Vettaiyan', artist: 'Anirudh Ravichander', cover: 'https://c.saavncdn.com/970/Vettaiyan-Tamil-2024-20241008133515-500x500.jpg', provider: 'YouTube Music' },
+                { title: 'GOAT - Greatest Of All Time', artist: 'Yuvan Shankar Raja', cover: 'https://c.saavncdn.com/640/The-Greatest-Of-All-Time-Tamil-2024-20240903173114-500x500.jpg', provider: 'JioSaavn' },
+                { title: 'Amaran', artist: 'G.V. Prakash Kumar', cover: 'https://c.saavncdn.com/366/Amaran-Tamil-2024-20241030173629-500x500.jpg', provider: 'YouTube Music' },
+                { title: 'Viduthalai Part 2', artist: 'Ilaiyaraaja', cover: 'https://c.saavncdn.com/475/Viduthalai-Part-2-Tamil-2024-20241219191040-500x500.jpg', provider: 'JioSaavn' }
+            ];
+            targetGrid.innerHTML = '';
+            defaultAlbums.forEach(album => targetGrid.appendChild(createAlbumCard(album)));
+        };
+
+        renderInitialAlbums(storedLang);
+
         const loadTrendingData = async (language) => {
             const queryMap = {
                 'English': 'latest english top hits 2026',
@@ -1101,7 +1118,7 @@ const initHome = () => {
 
             if (trendingGrid) trendingGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>';
             if (artistsGrid) artistsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading artists...</p>';
-            if (albumsGrid) albumsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>';
+            if (albumsGrid && albumsGrid.children.length === 0) albumsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>';
 
             // Load Latest Albums concurrently
             searchService.searchAll(`latest album ${language} 2026`).then(albumRes => {
@@ -2113,17 +2130,19 @@ const initHome = () => {
         } else {
             pl.tracks.forEach((track, index) => {
                 html += `
-                <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative;">
-                    <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${track.artist || 'Unknown Artist'}
-                        </p>
+                <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 90px);">
+                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                            <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${track.artist || 'Unknown Artist'}
+                            </p>
+                        </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0;">
-                        <span style="font-size: 0.8rem; color: var(--text-muted); margin-right: 4px;">${track.duration || ''}</span>
-                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); color: #FFFFFF; font-size: 1.1rem; padding: 8px 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 38px; min-height: 38px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); backdrop-filter: blur(8px);">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto;">
+                        ${track.duration ? `<span style="font-size: 0.78rem; color: var(--text-muted);">${track.duration}</span>` : ''}
+                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>

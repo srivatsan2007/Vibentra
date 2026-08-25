@@ -1,16 +1,16 @@
 {
-  "version": "v1.3.8",
-  "swVersion": "vibentra-cache-v83",
-  "releaseDate": "25 August 2026, 01:15 pm",
+  "version": "v1.3.9",
+  "swVersion": "vibentra-cache-v84",
+  "releaseDate": "25 August 2026, 01:20 pm",
   "size": "2.8 MB",
-  "importantNote": "Fixed home screen mobile album shelf rendering & made custom playlist track option buttons 100% visible and interactive on touch devices.",
+  "importantNote": "Enforced min-height pre-population for Latest Albums shelf on mobile & constrained playlist track text width to guarantee 100% visible 3-dots option buttons.",
   "changelog": [
     {
-      "category": "Mobile Touch Visibility & Playlist Fixes",
+      "category": "Mobile Layout & Touch Options Fixes",
       "items": [
-        "Added track-to-album fallback so Latest Albums & New Releases shelf always renders populated on mobile devices.",
-        "Highlighted playlist track row options buttons (`remove-from-pl-btn`) with high-visibility glass pill styling for 100% clarity on touch screens.",
-        "Enforced mobile touch visibility for card quick-actions, play overlays, and three-dot option menus without touching backend logic."
+        "Enforced 220px min-height & instant album card pre-population so Latest Albums shelf is never collapsed or covered on mobile screens.",
+        "Constrained playlist track text width to max-width: calc(100% - 90px) to prevent long song titles/artists from overflowing.",
+        "Created a glowing circular 3-dots options button (#38BDF8) locked on the right edge of every playlist track row for instant touch access."
       ]
     }
   ]

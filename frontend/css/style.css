@@ -4818,7 +4818,10 @@ input:checked + .toggle-slider:before {
 
 /* Horizontal Shelf Scrolling for Latest Albums, Trending Hits, and Artists */
 .cards-grid,
-.horizontal-shelf {
+.horizontal-shelf,
+#homeLatestAlbumsGrid,
+#homeTrendingGrid,
+#homeArtistsGrid {
     display: flex !important;
     flex-wrap: nowrap !important;
     gap: 16px !important;
@@ -4828,6 +4831,7 @@ input:checked + .toggle-slider:before {
     scroll-behavior: smooth !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
+    min-height: 220px !important;
 }
 
 .cards-grid::-webkit-scrollbar,
@@ -4840,6 +4844,34 @@ input:checked + .toggle-slider:before {
     flex: 0 0 165px !important;
     width: 165px !important;
     min-width: 165px !important;
+}
+
+.spotify-track-row {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+}
+
+.spotify-track-row .remove-from-pl-btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: #38BDF8 !important;
+    font-size: 1.2rem !important;
+    flex-shrink: 0 !important;
+    z-index: 10 !important;
 }
 
 @media (max-width: 768px) {
@@ -4871,9 +4903,10 @@ input:checked + .toggle-slider:before {
 
     .remove-from-pl-btn {
         opacity: 1 !important;
-        color: #FFFFFF !important;
-        background: rgba(255, 255, 255, 0.18) !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        visibility: visible !important;
+        color: #38BDF8 !important;
+        background: rgba(255, 255, 255, 0.22) !important;
+        border: 1px solid rgba(255, 255, 255, 0.45) !important;
     }
     
     .dashboard-container,
