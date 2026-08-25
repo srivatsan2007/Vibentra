@@ -1112,6 +1112,21 @@ const initHome = () => {
                     albumRes.albums.slice(0, 8).forEach(album => {
                         targetGrid.appendChild(createAlbumCard(album));
                     });
+                } else if (albumRes && albumRes.tracks && albumRes.tracks.length > 0) {
+                    const trackAlbums = [];
+                    const seenCovers = new Set();
+                    albumRes.tracks.forEach(t => {
+                        if (t.cover && !seenCovers.has(t.cover) && trackAlbums.length < 8) {
+                            seenCovers.add(t.cover);
+                            trackAlbums.push({
+                                title: t.album || t.title,
+                                artist: t.artist,
+                                cover: t.cover,
+                                provider: t.provider || 'YouTube Music'
+                            });
+                        }
+                    });
+                    trackAlbums.forEach(album => targetGrid.appendChild(createAlbumCard(album)));
                 } else {
                     targetGrid.innerHTML = '<p style="color: var(--text-muted);">No new release albums found.</p>';
                 }
@@ -2106,9 +2121,9 @@ const initHome = () => {
                             ${track.artist || 'Unknown Artist'}
                         </p>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
-                        <span style="font-size: 0.8rem; color: var(--text-muted); margin-right: 6px;">${track.duration || ''}</span>
-                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Remove track from playlist" style="background: none; border: none; color: var(--text-muted); font-size: 1.1rem; padding: 8px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s, color 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted); margin-right: 4px;">${track.duration || ''}</span>
+                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); color: #FFFFFF; font-size: 1.1rem; padding: 8px 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 38px; min-height: 38px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); backdrop-filter: blur(8px);">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>

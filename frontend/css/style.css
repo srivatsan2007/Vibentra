@@ -4845,9 +4845,35 @@ input:checked + .toggle-slider:before {
 @media (max-width: 768px) {
     .cards-grid .music-card,
     .horizontal-shelf .music-card {
-        flex: 0 0 140px !important;
-        width: 140px !important;
-        min-width: 140px !important;
+        flex: 0 0 145px !important;
+        width: 145px !important;
+        min-width: 145px !important;
+    }
+    
+    /* Force quick actions and options button to be 100% visible on mobile touch devices */
+    .card-quick-actions {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .play-btn-overlay {
+        opacity: 1 !important;
+        transform: scale(0.9) !important;
+    }
+
+    .card-menu-trigger {
+        opacity: 1 !important;
+        color: #FFFFFF !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-radius: 6px !important;
+        padding: 4px 8px !important;
+    }
+
+    .remove-from-pl-btn {
+        opacity: 1 !important;
+        color: #FFFFFF !important;
+        background: rgba(255, 255, 255, 0.18) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
     }
     
     .dashboard-container,
@@ -4855,7 +4881,7 @@ input:checked + .toggle-slider:before {
     .main-content,
     .content-area,
     body {
-        padding-bottom: 200px !important;
+        padding-bottom: 220px !important;
     }
 }
 

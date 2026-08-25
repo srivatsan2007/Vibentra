@@ -1,16 +1,16 @@
 {
-  "version": "v1.3.7",
-  "swVersion": "vibentra-cache-v82",
-  "releaseDate": "25 August 2026, 12:40 pm",
+  "version": "v1.3.8",
+  "swVersion": "vibentra-cache-v83",
+  "releaseDate": "25 August 2026, 01:15 pm",
   "size": "2.8 MB",
-  "importantNote": "Fixed Latest Albums rendering on mobile viewports with horizontal touch-scrolling cards and increased bottom padding.",
+  "importantNote": "Fixed home screen mobile album shelf rendering & made custom playlist track option buttons 100% visible and interactive on touch devices.",
   "changelog": [
     {
-      "category": "Mobile View Album Restoration",
+      "category": "Mobile Touch Visibility & Playlist Fixes",
       "items": [
-        "Implemented missing `createAlbumCard` function in `home.js` to render Latest Albums & New Releases properly.",
-        "Added horizontal touch-scrolling CSS rules (`.horizontal-shelf`) for smooth mobile swiping.",
-        "Increased mobile container bottom padding to 200px so floating player and navigation capsule never overlap content."
+        "Added track-to-album fallback so Latest Albums & New Releases shelf always renders populated on mobile devices.",
+        "Highlighted playlist track row options buttons (`remove-from-pl-btn`) with high-visibility glass pill styling for 100% clarity on touch screens.",
+        "Enforced mobile touch visibility for card quick-actions, play overlays, and three-dot option menus without touching backend logic."
       ]
     }
   ]
