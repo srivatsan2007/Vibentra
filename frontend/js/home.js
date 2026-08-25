@@ -1457,6 +1457,57 @@ const initHome = () => {
             const contentArea = document.getElementById('resultsContentArea');
             contentArea.innerHTML = '';
 
+            const createSearchTrackRow = (track, contextTracks = []) => {
+                const row = document.createElement('div');
+                row.className = 'spotify-track-row search-track-row';
+                row.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    padding: 10px 14px;
+                    border-radius: 14px;
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    margin-bottom: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    width: 100%;
+                    box-sizing: border-box;
+                `;
+
+                const isYtm = track.source === 'ytm' || track.isYTM || (track.id && String(track.id).startsWith('ytm_'));
+                const providerBadge = isYtm
+                    ? `<span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: rgba(239, 68, 68, 0.2); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;"><i class="fa-brands fa-youtube" style="font-size: 0.75rem;"></i> YouTube Music</span>`
+                    : `<span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;"><i class="fa-solid fa-music" style="font-size: 0.75rem;"></i> JioSaavn</span>`;
+
+                row.innerHTML = `
+                    <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 10px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" alt="${track.title}">
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="margin: 0 0 2px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                        <p style="margin: 0 0 3px 0; font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.artist || 'Unknown Artist'}</p>
+                        <div>${providerBadge}</div>
+                    </div>
+                    <button class="search-row-opt-btn" title="Track Options" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); color: #38BDF8; font-size: 1.15rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 5;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                `;
+
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('.search-row-opt-btn')) return;
+                    musicService.playContext(contextTracks.length > 0 ? contextTracks : [track], track);
+                });
+
+                const optBtn = row.querySelector('.search-row-opt-btn');
+                if (optBtn) {
+                    optBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openTrackOptionsMenu(track);
+                    });
+                }
+
+                return row;
+            };
+
             // Filter: ALL
             if (filter === 'all') {
                 // Top Result Card (Song #1)
@@ -1482,16 +1533,18 @@ const initHome = () => {
                     });
                     contentArea.appendChild(topCard);
 
-                    // Songs Grid
+                    // Songs Vertical List
                     const songsSection = document.createElement('div');
                     songsSection.style.marginBottom = '30px';
                     songsSection.innerHTML = `<h2 class="spotify-genre-section-title">Songs</h2>`;
-                    const songsGrid = document.createElement('div');
-                    songsGrid.className = 'cards-grid';
-                    results.songs.slice(0, 6).forEach(track => {
-                        songsGrid.appendChild(createSongCard(track, results.songs));
+                    const songsList = document.createElement('div');
+                    songsList.className = 'search-songs-vertical-list';
+                    songsList.style.display = 'flex';
+                    songsList.style.flexDirection = 'column';
+                    results.songs.slice(0, 8).forEach(track => {
+                        songsList.appendChild(createSearchTrackRow(track, results.songs));
                     });
-                    songsSection.appendChild(songsGrid);
+                    songsSection.appendChild(songsList);
                     contentArea.appendChild(songsSection);
                 }
 
@@ -1526,12 +1579,14 @@ const initHome = () => {
             } else if (filter === 'songs') {
                 const songsSection = document.createElement('div');
                 songsSection.innerHTML = `<h2 class="spotify-genre-section-title">All Songs</h2>`;
-                const songsGrid = document.createElement('div');
-                songsGrid.className = 'cards-grid';
+                const songsList = document.createElement('div');
+                songsList.className = 'search-songs-vertical-list';
+                songsList.style.display = 'flex';
+                songsList.style.flexDirection = 'column';
                 results.songs.forEach(track => {
-                    songsGrid.appendChild(createSongCard(track, results.songs));
+                    songsList.appendChild(createSearchTrackRow(track, results.songs));
                 });
-                songsSection.appendChild(songsGrid);
+                songsSection.appendChild(songsList);
                 contentArea.appendChild(songsSection);
 
             } else if (filter === 'albums') {

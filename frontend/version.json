@@ -1,16 +1,16 @@
 {
-  "version": "v1.5.0",
-  "swVersion": "vibentra-cache-v87",
-  "releaseDate": "25 August 2026, 01:38 pm",
+  "version": "v1.5.1",
+  "swVersion": "vibentra-cache-v88",
+  "releaseDate": "25 August 2026, 01:43 pm",
   "size": "2.8 MB",
-  "importantNote": "Complete Spotify & YouTube Music UI Redesign for Search & Playlist pages (Hero Liked Songs Card, Spotify Angled Genre Grid, YTM Pill Filters, Top Result Card, and Track Rows).",
+  "importantNote": "Search songs now render in a clean vertical list of horizontal track rows (Spotify & YTM style) to eliminate clumsy card alignment.",
   "changelog": [
     {
-      "category": "Spotify & YouTube Music Redesign",
+      "category": "Search Results UI Update",
       "items": [
-        "Playlist Page: Integrated Spotify style 'Liked Songs' hero gradient card, 4-tile mosaic cards, and Spotify green play button.",
-        "Search Page: Added Spotify angled colorful genre cards with rotated artwork, YouTube Music pill filters, voice mic search button, and Top Result card.",
-        "Strictly preserved 100% of backend playback, API streaming, and service logic."
+        "Replaced horizontal song cards grid with a clean vertical list of horizontal track rows.",
+        "Each track row clearly displays full track title, artist, provider badge (YouTube Music / JioSaavn), and 3-dots action sheet button.",
+        "Strictly preserved 100% of backend streaming and search logic."
       ]
     }
   ]
