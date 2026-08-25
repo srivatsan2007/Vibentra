@@ -5345,11 +5345,46 @@ input:checked + .toggle-slider:before {
     padding-left: 3px !important;
 }
 
+/* 3-Dot Options Button Mobile Visibility Enforcements */
+.search-row-opt-btn,
+.search-album-opt-btn,
+.search-pl-opt-btn,
+.remove-from-pl-btn,
+.fav-opt-btn,
+.spotify-track-row .remove-from-pl-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #38BDF8 !important;
+    font-size: 1.15rem !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+    margin-left: auto !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    transition: transform 0.2s ease, background-color 0.2s ease !important;
+}
 
+.search-row-opt-btn:hover,
+.search-album-opt-btn:hover,
+.search-pl-opt-btn:hover,
+.remove-from-pl-btn:hover,
+.fav-opt-btn:hover {
+    transform: scale(1.08) !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+}
 
-
-
-
-
-
-
+.spotify-track-row {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}

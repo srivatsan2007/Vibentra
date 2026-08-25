@@ -1463,7 +1463,7 @@ const initHome = () => {
                 row.style.cssText = `
                     display: flex;
                     align-items: center;
-                    gap: 14px;
+                    gap: 12px;
                     padding: 10px 12px;
                     border-radius: 12px;
                     background: rgba(255, 255, 255, 0.03);
@@ -1484,35 +1484,24 @@ const initHome = () => {
                         <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
                             <span style="color: #38BDF8; font-weight: 700;">Song</span>
                             <span>•</span>
-                            <span>${artistStr}</span>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</span>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-                        <button class="search-row-opt-btn" title="Track Options" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
+                        <button class="search-row-opt-btn" title="Track Options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(8px);">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
-                        </button>
-                        <button class="search-row-add-btn" title="Add to Playlist" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.2rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
-                            <i class="fa-regular fa-circle-plus"></i>
                         </button>
                     </div>
                 `;
 
                 row.addEventListener('click', (e) => {
-                    if (e.target.closest('.search-row-opt-btn') || e.target.closest('.search-row-add-btn')) return;
+                    if (e.target.closest('.search-row-opt-btn')) return;
                     musicService.playContext(contextTracks.length > 0 ? contextTracks : [track], track);
                 });
 
                 const optBtn = row.querySelector('.search-row-opt-btn');
                 if (optBtn) {
                     optBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        openTrackOptionsMenu(track);
-                    });
-                }
-
-                const addBtn = row.querySelector('.search-row-add-btn');
-                if (addBtn) {
-                    addBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         openTrackOptionsMenu(track);
                     });
@@ -1527,7 +1516,7 @@ const initHome = () => {
                 row.style.cssText = `
                     display: flex;
                     align-items: center;
-                    gap: 14px;
+                    gap: 12px;
                     padding: 10px 12px;
                     border-radius: 12px;
                     background: rgba(255, 255, 255, 0.03);
@@ -1550,22 +1539,38 @@ const initHome = () => {
                         <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
                             <span style="color: #C084FC; font-weight: 700;">Album</span>
                             <span>•</span>
-                            <span>${artistStr}</span>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</span>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-                        <button class="search-row-opt-btn" title="Album Options" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
+                        <button class="search-album-opt-btn" title="Album Options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #C084FC; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(8px);">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>
                 `;
 
-                row.addEventListener('click', () => {
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('.search-album-opt-btn')) return;
                     if (searchInput) {
                         searchInput.value = titleStr;
                         searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 });
+
+                const optBtn = row.querySelector('.search-album-opt-btn');
+                if (optBtn) {
+                    optBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        showNotification(`Loading '${titleStr}'...`);
+                        const pId = album.providerId || (album.provider === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
+                        const albumTracks = await providerManager.getAlbum(pId, album.id);
+                        if (albumTracks && albumTracks.length > 0) {
+                            musicService.playContext(albumTracks, albumTracks[0]);
+                        } else {
+                            showNotification('Failed to load album tracks', 'error');
+                        }
+                    });
+                }
 
                 return row;
             };
@@ -1576,7 +1581,7 @@ const initHome = () => {
                 row.style.cssText = `
                     display: flex;
                     align-items: center;
-                    gap: 14px;
+                    gap: 12px;
                     padding: 10px 12px;
                     border-radius: 12px;
                     background: rgba(255, 255, 255, 0.03);
@@ -1599,19 +1604,35 @@ const initHome = () => {
                         <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
                             <span style="color: #34D399; font-weight: 700;">Playlist</span>
                             <span>•</span>
-                            <span>${creatorStr}</span>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${creatorStr}</span>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-                        <button class="search-row-opt-btn" title="Playlist Options" style="background: none; border: none; color: rgba(255, 255, 255, 0.7); font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
+                        <button class="search-pl-opt-btn" title="Playlist Options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #34D399; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(8px);">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>
                 `;
 
-                row.addEventListener('click', () => {
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('.search-pl-opt-btn')) return;
                     if (pl.id) renderPlaylistDetail(pl.id);
                 });
+
+                const optBtn = row.querySelector('.search-pl-opt-btn');
+                if (optBtn) {
+                    optBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        showNotification(`Loading '${titleStr}'...`);
+                        const pId = pl.providerId || (pl.provider === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
+                        const plTracks = await providerManager.getPlaylist(pId, pl.id);
+                        if (plTracks && plTracks.length > 0) {
+                            musicService.playContext(plTracks, plTracks[0]);
+                        } else {
+                            showNotification('Failed to load playlist tracks', 'error');
+                        }
+                    });
+                }
 
                 return row;
             };
@@ -2384,7 +2405,7 @@ const initHome = () => {
             pl.tracks.forEach((track, index) => {
                 html += `
                 <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box;">
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 90px);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
@@ -2394,8 +2415,8 @@ const initHome = () => {
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto;">
-                        ${track.duration ? `<span style="font-size: 0.78rem; color: var(--text-muted);">${track.duration}</span>` : ''}
-                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                        ${track.duration ? `<span style="font-size: 0.78rem; color: var(--text-muted); flex-shrink: 0;">${track.duration}</span>` : ''}
+                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>

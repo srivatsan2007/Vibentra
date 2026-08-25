@@ -1,17 +1,17 @@
 {
-  "version": "v1.5.2",
-  "swVersion": "vibentra-cache-v89",
-  "releaseDate": "25 August 2026, 01:51 pm",
+  "version": "v1.5.3",
+  "swVersion": "vibentra-cache-v90",
+  "releaseDate": "25 August 2026, 02:02 pm",
   "size": "2.8 MB",
-  "importantNote": "Search page UI updated to match Spotify mobile search layout with explicit Song, Album, and Playlist type labels, vertical alignment, and action buttons.",
+  "importantNote": "Fixed 3-dots options button visibility and responsive layout on mobile view across Search and Playlist pages.",
   "changelog": [
     {
-      "category": "Spotify Search Mobile UI Parity",
+      "category": "Mobile UI & 3-Dot Options Button Fix",
       "items": [
-        "Rendered songs, albums, and playlists as clean vertical rows in distinct sections.",
-        "Added explicit type tags: 'Song • Artist', 'Album • Artist', and 'Playlist • Creator' for instant visual identification.",
-        "Integrated 3-dots menu and + add buttons on the right side of each item.",
-        "Strictly preserved 100% of backend music streaming logic."
+        "Enforced high-contrast circular translucent background for 3-dots action buttons across mobile viewports.",
+        "Removed restrictive max-width calculation in playlist detail track rows to prevent option buttons from clipping on narrow screens.",
+        "Added explicit option click handlers for search song, album, and playlist vertical rows.",
+        "Maintained 100% backend playback and streaming stability."
       ]
     }
   ]
