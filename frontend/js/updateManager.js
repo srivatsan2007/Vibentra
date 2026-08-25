@@ -29,9 +29,9 @@ export function initUpdateManager() {
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 11:30 am</p>
+                        <p>Released on: 25 August 2026, 11:35 am</p>
                         <p>Size: 2.8 MB</p>
-                        <p>SW Cache: vibentra-cache-v64</p>
+                        <p>SW Cache: vibentra-cache-v65</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">

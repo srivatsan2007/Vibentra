@@ -1,31 +1,39 @@
 {
   "version": "v1.2.0",
   "swVersion": "vibentra-cache-v65",
-  "releaseDate": "25 August 2026, 11:30 am",
+  "releaseDate": "25 August 2026, 11:35 am",
   "size": "2.8 MB",
-  "importantNote": "Immersive Full-Screen Layout, Floating Capsule Navigation Pill & YouTube Music style Categorized Settings are now live.",
+  "importantNote": "All modern interface upgrades, double-deck floating capsule navigation, YouTube Music style categorized settings, and audio stability patches are fully active in v1.2.0.",
   "changelog": [
     {
-      "category": "New Visual Features",
+      "category": "Floating Capsule Navigation Pill",
       "items": [
-        "Floating Double-Deck Capsule Navigation pill with instant Home, Library & circular Search button.",
-        "YouTube Music / Echo Music style Categorized Settings Engine with dedicated sub-pages and interactive toggle switches.",
-        "Immersive 100vw / 100vh Full-Screen Layout across all app views."
+        "Redesigned bottom navigation into a sleek glassmorphic capsule dock.",
+        "Instant access to Home and Library inside the primary glass capsule.",
+        "Independent floating circular Search button with smooth tactile animation."
       ]
     },
     {
-      "category": "Engine & UI Improvements",
+      "category": "YouTube Music Style Categorized Settings",
       "items": [
-        "Quality selector & 320kbps Vibentra HQ audio preset toggles.",
-        "Interactive Release Notes & SW Cache v64 automatic upgrade manager.",
-        "Glassmorphism UI backdrop filter optimizations for low-end mobile devices."
+        "Categorized settings portal featuring Account, Interface, Content, Audio, Playback, History, Lyrics, AI, Music Sources, Storage, and Check for Updates.",
+        "Interactive sub-pages with real-time toggle switches for Download Liked Songs, Video playback, Radio Audio-Only, Explicit Content, YT Offline Playlists, and Proxy.",
+        "Audio Quality selector with 320kbps Vibentra HQ sound preset."
       ]
     },
     {
-      "category": "Stability & Audio Integrity",
+      "category": "Full-Screen Layout & Mobile Enhancements",
       "items": [
-        "Strict decoupling of UI components from backend music engine (JioSaavn / YouTube Music).",
-        "Seamless service worker cache invalidation on single-tap update installation."
+        "Edge-to-edge 100vw / 100vh immersive viewport layout across all pages.",
+        "Optimized mobile filter chips bar with smooth horizontal pill scrolling.",
+        "Android Home Screen Widget integration guide & background audio battery saver recommendations."
+      ]
+    },
+    {
+      "category": "Backend Decoupling & Cache Invalidation",
+      "items": [
+        "100% strict isolation of UI updates from core background audio persistence and streaming providers.",
+        "One-tap Service Worker cache invalidation (vibentra-cache-v65) with real-time installation progress bar."
       ]
     }
   ]
