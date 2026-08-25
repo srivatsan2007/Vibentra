@@ -444,26 +444,21 @@
         </div>
     </div>
 
-    <!-- Mobile Bottom Navigation (Spotify Premium Style) -->
-    <div class="mobile-bottom-nav hidden" id="mobileBottomNav">
-        <div class="nav-items-container">
+    <!-- Mobile Bottom Navigation (Floating Capsule Pill Style matching screenshot) -->
+    <div class="mobile-bottom-nav" id="mobileBottomNav">
+        <div class="mobile-nav-pill">
             <div class="mobile-nav-item active" data-target="home">
                 <i class="fa-solid fa-house"></i>
                 <span>Home</span>
-            </div>
-            <div class="mobile-nav-item" data-target="search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <span>Search</span>
             </div>
             <div class="mobile-nav-item" data-target="playlists">
                 <i class="fa-solid fa-music"></i>
                 <span>Library</span>
             </div>
-            <div class="mobile-nav-item" data-target="settings">
-                <i class="fa-solid fa-gear"></i>
-                <span>Settings</span>
-            </div>
         </div>
+        <button class="mobile-nav-search-btn" data-target="search" id="mobileNavSearchBtn" title="Search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
     </div>
 
     <!-- Lyrics Modal -->

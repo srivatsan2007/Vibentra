@@ -2930,256 +2930,386 @@ const initHome = () => {
     }
 
     function renderSettings() {
-        let providersHtml = providerManager.getAllProviders().map(p => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--glass-border);">
-                <div>
-                    <h4 style="font-size: 1.05rem; margin-bottom: 4px; color: #FFFFFF;">${p.name}</h4>
-                    <p style="font-size: 0.82rem; color: var(--text-muted);">Status: <span style="color: ${p.enabled ? '#10B981' : '#EF4444'}; font-weight: 600;">${p.enabled ? 'Active' : 'Disabled'}</span></p>
-                </div>
-                <button class="btn ${p.enabled ? 'btn-outline' : 'btn-primary'} toggle-provider-btn" data-id="${p.id}" style="border-radius: 12px; padding: 8px 18px; font-size: 0.88rem;">
-                    ${p.enabled ? 'Disable' : 'Enable'}
-                </button>
-            </div>
-        `).join('');
-
-        const currentTheme = localStorage.getItem('vibentra_theme') || 'default';
-        const defaultCustomTheme = {
-            primary: '#7C3AED',
-            secondary: '#06B6D4',
-            accent: '#EC4899',
-            background: '#0F172A',
-            cards: 'rgba(30, 41, 59, 0.7)',
-            bgGradient: 'radial-gradient(circle at 20% 20%, #1A1F4C 0%, #0C102B 50%, #07091B 100%)',
-            orb1: '#7C3AED', orb2: '#06B6D4', orb3: '#EC4899', orb4: '#3B82F6'
-        };
-        const savedCustomTheme = JSON.parse(localStorage.getItem('vibentra_custom_theme') || 'null') || defaultCustomTheme;
-
-        const themeList = [
-            { id: 'default', name: 'Midnight Purple', color: '#7C3AED' },
-            { id: 'ocean', name: 'Ocean Blue', color: '#0284C7' },
-            { id: 'forest', name: 'Forest Green', color: '#16A34A' },
-            { id: 'sunset', name: 'Sunset Orange', color: '#EA580C' },
-            { id: 'cherry', name: 'Cherry Red', color: '#E11D48' },
-            { id: 'cyberpunk', name: 'Cyberpunk', color: '#D946EF' },
-            { id: 'india', name: 'Vibentra Tricolor', color: '#F97316' }
-        ];
-
-        const themeButtonsHtml = themeList.map(t => `
-            <button class="btn ${currentTheme === t.id ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="${t.id}" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; border-radius: 14px; transition: all 0.3s ease;">
-                <span style="width: 14px; height: 14px; border-radius: 50%; background: ${t.color}; box-shadow: 0 0 12px ${t.color}; display: inline-block;"></span>
-                <span>${t.name}</span>
-            </button>
-        `).join('');
-
         dynamicContent.innerHTML = `
             <div class="section-header">
                 <h2>Settings</h2>
             </div>
             
-            <div style="max-width: 650px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; margin-top: 10px; width: 100%;">
-                <!-- Appearance & Theme Panel -->
-                <div class="glass-panel" style="border-radius: 24px; overflow: hidden; width: 100%;">
-                    <div style="padding: 22px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
-                        <i class="fa-solid fa-palette" style="font-size: 1.3rem; color: var(--primary);"></i>
-                        <div>
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">Appearance & Theme</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Choose a preset or create your own custom theme color scheme.</p>
+            <div class="settings-view-wrapper">
+                <div class="settings-categories-list">
+                    <div class="settings-card-item" data-category="account">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-user"></i>
+                            <span>Account</span>
                         </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
                     </div>
-                    <div style="padding: 22px 24px;">
-                        <label style="display: block; font-size: 0.88rem; font-weight: 700; color: #FFFFFF; margin-bottom: 12px;">Preset Color Themes</label>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 24px;">
-                            ${themeButtonsHtml}
-                        </div>
 
-                        <!-- Custom Theme Studio -->
-                        <div style="padding-top: 20px; border-top: 1px solid var(--glass-border);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                                <h4 style="font-size: 1rem; font-weight: 700; color: #FFFFFF; margin: 0; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent);"></i> Custom Theme Studio
-                                </h4>
-                                <span class="badge" style="background: ${currentTheme === 'custom' ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem;">
-                                    ${currentTheme === 'custom' ? 'Active' : 'Custom'}
-                                </span>
-                            </div>
-                            <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 18px;">Pick your custom colors to build a unique visual theme.</p>
-                            
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin-bottom: 20px;">
-                                <div>
-                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Primary Accent</label>
-                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                                        <input type="color" id="customPrimary" value="${savedCustomTheme.primary}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
-                                        <span id="hexPrimary" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.primary}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Secondary Glow</label>
-                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                                        <input type="color" id="customSecondary" value="${savedCustomTheme.secondary}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
-                                        <span id="hexSecondary" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.secondary}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Highlight Accent</label>
-                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                                        <input type="color" id="customAccent" value="${savedCustomTheme.accent}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
-                                        <span id="hexAccent" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.accent}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Dark Background</label>
-                                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                                        <input type="color" id="customBg" value="${savedCustomTheme.background}" style="width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
-                                        <span id="hexBg" style="font-size: 0.82rem; font-family: monospace; color: #FFF;">${savedCustomTheme.background}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                <button id="applyCustomThemeBtn" class="btn btn-primary" style="flex: 1; min-width: 180px; padding: 12px 20px; border-radius: 12px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-paintbrush"></i> Apply Custom Theme
-                                </button>
-                                <button id="resetThemeBtn" class="btn btn-outline" style="padding: 12px 20px; border-radius: 12px; color: var(--text-muted);">
-                                    <i class="fa-solid fa-rotate-left"></i> Reset
-                                </button>
-                            </div>
+                    <div class="settings-card-item" data-category="interface">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Interface</span>
                         </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
                     </div>
-                </div>
 
-                <!-- Music Providers Panel -->
-                <div class="glass-panel" style="border-radius: 24px; overflow: hidden; width: 100%;">
-                    <div style="padding: 22px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
-                        <i class="fa-solid fa-sliders" style="font-size: 1.3rem; color: var(--secondary);"></i>
-                        <div>
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">Music Sources</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Enable or disable music providers for search & playback.</p>
+                    <div class="settings-card-item" data-category="content">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-bars-staggered"></i>
+                            <span>Content</span>
                         </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
                     </div>
-                    <div>
-                        ${providersHtml}
-                    </div>
-                </div>
 
-                <!-- Background Playback Guide -->
-                <div class="glass-panel" style="border-radius: 24px; overflow: hidden; width: 100%;">
-                    <div style="padding: 22px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
-                        <i class="fa-solid fa-battery-full" style="font-size: 1.3rem; color: #10B981;"></i>
-                        <div>
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #FFFFFF;">Background Playback & Battery Saver</h3>
-                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Ensure continuous music playback when device screen is off.</p>
+                    <div class="settings-card-item" data-category="audio">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-volume-high"></i>
+                            <span>Audio</span>
                         </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
                     </div>
-                    <div style="padding: 22px 24px; font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.85);">
-                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px;">
-                            <strong style="color: #FFFFFF; display: block; margin-bottom: 6px;"><i class="fa-solid fa-mobile-screen" style="color: var(--primary); margin-right: 6px;"></i> Recommended Mobile Settings:</strong>
-                            <ol style="margin-top: 8px; padding-left: 20px; color: var(--text-muted); font-size: 0.88rem;">
-                                <li style="margin-bottom: 6px;">Go to phone <strong>Settings > Apps > Vibentra</strong>.</li>
-                                <li style="margin-bottom: 6px;">Tap <strong>Battery</strong> and select <strong>Unrestricted / No Restrictions</strong>.</li>
-                                <li>Enable <strong>Autostart</strong> (for Xiaomi/MIUI, Vivo, RealMe, Samsung devices).</li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- App Version Badge -->
-                <div style="text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 0.85rem;">
-                    <span style="display: inline-flex; align-items: center; gap: 8px; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); padding: 6px 14px; border-radius: 20px; color: #FFFFFF; font-weight: 600;">
-                        <i class="fa-solid fa-code-commit" style="color: var(--primary);"></i> Vibentra Build: 0fb3d7d (v1.1.7)
-                    </span>
+                    <div class="settings-card-item" data-category="playback">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-circle-play"></i>
+                            <span>Playback</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="history">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <span>Listening history</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="lyrics">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-message"></i>
+                            <span>Lyrics</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="ai">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>AI</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="sources">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-compact-disc"></i>
+                            <span>Music Sources</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="storage">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Storage & Cache</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="updates">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>Check for Updates</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
                 </div>
             </div>
         `;
 
-        document.querySelectorAll('.toggle-provider-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const providerId = e.target.getAttribute('data-id');
-                const provider = providerManager.getProvider(providerId);
-                if (provider) {
-                    await providerManager.saveProviderSettings(providerId, !provider.enabled);
-                    renderSettings();
-                    showNotification(`${provider.name} ${provider.enabled ? 'enabled' : 'disabled'}`, 'info');
+        document.querySelectorAll('.settings-card-item').forEach(card => {
+            card.addEventListener('click', () => {
+                const category = card.getAttribute('data-category');
+                renderSettingsCategory(category);
+            });
+        });
+    }
+
+    function renderSettingsCategory(category) {
+        const getSettingState = (key, defaultVal = false) => {
+            const val = localStorage.getItem('vibentra_setting_' + key);
+            return val !== null ? val === 'true' : defaultVal;
+        };
+
+        const setSettingState = (key, boolVal) => {
+            localStorage.setItem('vibentra_setting_' + key, boolVal ? 'true' : 'false');
+        };
+
+        if (category === 'content') {
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Content</h2>
+                    </div>
+
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Language</h4>
+                                <div class="settings-option-subvalue">English</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Content Country</h4>
+                                <div class="settings-option-subvalue">IN (Global)</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Quality</h4>
+                                <div class="settings-option-subvalue">High - 320kbps (Vibentra HQ)</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Download quality</h4>
+                                <div class="settings-option-subvalue">High - 320kbps (Vibentra HQ)</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Download songs you like</h4>
+                                <p>Automatically download a song for offline playback when you add it to Favorites, using your download quality setting.</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingDownloadLiked" ${getSettingState('download_liked', false) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Play video for video track instead of audio only</h4>
+                                <p>Such as Music Video, Lyrics Video, Podcasts, and more</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingPlayVideo" ${getSettingState('play_video', false) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Keep radio audio-only</h4>
+                                <p>Skip music videos, remixes and mashups that YouTube mixes into a radio. Playlists and albums are not affected</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingRadioAudioOnly" ${getSettingState('radio_audio_only', true) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Video Quality</h4>
+                                <div class="settings-option-subvalue">720p</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Video download quality</h4>
+                                <div class="settings-option-subvalue">720p</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Send back listening data to Google</h4>
+                                <p>Upload your listening history to YouTube Music server, it will make YT Music recommendation system better. Working only if logged in</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingSendListeningData" ${getSettingState('send_data', true) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Play explicit content</h4>
+                                <p>Enable to play explicit content</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingExplicitContent" ${getSettingState('explicit', true) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Keep showing your YouTube playlist when offline</h4>
+                                <p>Save your YT playlist to local and keep to show when offline</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingOfflinePlaylist" ${getSettingState('offline_playlist', false) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Proxy</h4>
+                                <p>Using Proxy to bypass country content blocking</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingProxy" ${getSettingState('proxy', false) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingDownloadLiked')?.addEventListener('change', (e) => setSettingState('download_liked', e.target.checked));
+            document.getElementById('settingPlayVideo')?.addEventListener('change', (e) => setSettingState('play_video', e.target.checked));
+            document.getElementById('settingRadioAudioOnly')?.addEventListener('change', (e) => setSettingState('radio_audio_only', e.target.checked));
+            document.getElementById('settingSendListeningData')?.addEventListener('change', (e) => setSettingState('send_data', e.target.checked));
+            document.getElementById('settingExplicitContent')?.addEventListener('change', (e) => setSettingState('explicit', e.target.checked));
+            document.getElementById('settingOfflinePlaylist')?.addEventListener('change', (e) => setSettingState('offline_playlist', e.target.checked));
+            document.getElementById('settingProxy')?.addEventListener('change', (e) => setSettingState('proxy', e.target.checked));
+        } else if (category === 'interface') {
+            const currentTheme = localStorage.getItem('vibentra_theme') || 'default';
+            const themeList = [
+                { id: 'default', name: 'Midnight Purple', color: '#7C3AED' },
+                { id: 'ocean', name: 'Ocean Blue', color: '#0284C7' },
+                { id: 'forest', name: 'Forest Green', color: '#16A34A' },
+                { id: 'sunset', name: 'Sunset Orange', color: '#EA580C' },
+                { id: 'cherry', name: 'Cherry Red', color: '#E11D48' },
+                { id: 'cyberpunk', name: 'Cyberpunk', color: '#D946EF' },
+                { id: 'india', name: 'Vibentra Tricolor', color: '#F97316' }
+            ];
+
+            const themeButtonsHtml = themeList.map(t => `
+                <button class="btn ${currentTheme === t.id ? 'btn-primary' : 'btn-outline'} theme-select-btn" data-theme="${t.id}" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; border-radius: 14px; transition: all 0.3s ease;">
+                    <span style="width: 14px; height: 14px; border-radius: 50%; background: ${t.color}; box-shadow: 0 0 12px ${t.color}; display: inline-block;"></span>
+                    <span>${t.name}</span>
+                </button>
+            `).join('');
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Interface & Theme</h2>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <label style="display: block; font-size: 0.95rem; font-weight: 700; color: #FFFFFF;">Preset Color Themes</label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;">
+                            ${themeButtonsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.querySelectorAll('.theme-select-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const targetBtn = e.target.closest('.theme-select-btn');
+                    if (!targetBtn) return;
+                    const themeName = targetBtn.getAttribute('data-theme');
+                    window.applyTheme(themeName);
+                    renderSettingsCategory('interface');
+                    showNotification('Theme updated successfully!', 'success');
+                });
+            });
+        } else if (category === 'sources') {
+            let providersHtml = providerManager.getAllProviders().map(p => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--glass-border);">
+                    <div>
+                        <h4 style="font-size: 1.05rem; margin-bottom: 4px; color: #FFFFFF;">${p.name}</h4>
+                        <p style="font-size: 0.82rem; color: var(--text-muted);">Status: <span style="color: ${p.enabled ? '#10B981' : '#EF4444'}; font-weight: 600;">${p.enabled ? 'Active' : 'Disabled'}</span></p>
+                    </div>
+                    <button class="btn ${p.enabled ? 'btn-outline' : 'btn-primary'} toggle-provider-btn" data-id="${p.id}" style="border-radius: 12px; padding: 8px 18px; font-size: 0.88rem;">
+                        ${p.enabled ? 'Disable' : 'Enable'}
+                    </button>
+                </div>
+            `).join('');
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Music Sources</h2>
+                    </div>
+                    <div class="glass-panel" style="border-radius: 20px; overflow: hidden;">
+                        ${providersHtml}
+                    </div>
+                </div>
+            `;
+
+            document.querySelectorAll('.toggle-provider-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const providerId = e.target.getAttribute('data-id');
+                    const provider = providerManager.getProvider(providerId);
+                    if (provider) {
+                        await providerManager.saveProviderSettings(providerId, !provider.enabled);
+                        renderSettingsCategory('sources');
+                        showNotification(`${provider.name} ${provider.enabled ? 'enabled' : 'disabled'}`, 'info');
+                    }
+                });
+            });
+        } else if (category === 'updates') {
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Check for Updates</h2>
+                    </div>
+                    <div class="glass-panel" style="border-radius: 24px; padding: 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                        <div style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #7C3AED, #06B6D4); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; box-shadow: 0 0 25px rgba(124,58,237,0.5);">
+                            <i class="fa-solid fa-rotate"></i>
+                        </div>
+                        <h3 style="font-size: 1.4rem; color: #FFFFFF; font-weight: 800; margin: 0;">Vibentra Music v1.2.0</h3>
+                        <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0;">Service Worker Cache: vibentra-cache-v64</p>
+                        
+                        <button id="triggerCheckUpdateBtn" class="btn btn-primary" style="padding: 14px 28px; border-radius: 14px; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 10px;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> View Release Notes & Update
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('triggerCheckUpdateBtn')?.addEventListener('click', () => {
+                if (window.updateManager && typeof window.updateManager.showReleaseNotesView === 'function') {
+                    window.updateManager.showReleaseNotesView();
+                } else {
+                    showNotification('Checking for updates...', 'info');
                 }
             });
-        });
-
-        document.querySelectorAll('.theme-select-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const targetBtn = e.target.closest('.theme-select-btn');
-                if (!targetBtn) return;
-                const themeName = targetBtn.getAttribute('data-theme');
-                window.applyTheme(themeName);
-                renderSettings(); // Re-render to update active state
-                showNotification('Theme updated successfully!', 'success');
-            });
-        });
-
-        // Custom Theme Studio Listeners
-        const customPrimary = document.getElementById('customPrimary');
-        const customSecondary = document.getElementById('customSecondary');
-        const customAccent = document.getElementById('customAccent');
-        const customBg = document.getElementById('customBg');
-
-        const hexPrimary = document.getElementById('hexPrimary');
-        const hexSecondary = document.getElementById('hexSecondary');
-        const hexAccent = document.getElementById('hexAccent');
-        const hexBg = document.getElementById('hexBg');
-
-        const getCustomThemeData = () => {
-            const p = customPrimary.value;
-            const s = customSecondary.value;
-            const a = customAccent.value;
-            const bg = customBg.value;
-            return {
-                primary: p,
-                secondary: s,
-                accent: a,
-                background: bg,
-                cards: 'rgba(255, 255, 255, 0.08)',
-                bgGradient: `radial-gradient(circle at 20% 20%, ${p}44 0%, ${bg} 65%, #000000 100%)`,
-                orb1: p,
-                orb2: s,
-                orb3: a,
-                orb4: p
-            };
-        };
-
-        const updateHexLabels = () => {
-            if (hexPrimary) hexPrimary.textContent = customPrimary.value.toUpperCase();
-            if (hexSecondary) hexSecondary.textContent = customSecondary.value.toUpperCase();
-            if (hexAccent) hexAccent.textContent = customAccent.value.toUpperCase();
-            if (hexBg) hexBg.textContent = customBg.value.toUpperCase();
-        };
-
-        [customPrimary, customSecondary, customAccent, customBg].forEach(input => {
-            if (input) {
-                input.addEventListener('input', () => {
-                    updateHexLabels();
-                    const customObj = getCustomThemeData();
-                    window.applyTheme('custom', customObj);
-                });
-            }
-        });
-
-        const applyCustomThemeBtn = document.getElementById('applyCustomThemeBtn');
-        if (applyCustomThemeBtn) {
-            applyCustomThemeBtn.addEventListener('click', () => {
-                const customObj = getCustomThemeData();
-                window.applyTheme('custom', customObj);
-                renderSettings();
-                showNotification('Custom theme applied & saved!', 'success');
-            });
+        } else {
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title" style="text-transform: capitalize;">${category}</h2>
+                    </div>
+                    <div class="glass-panel" style="border-radius: 20px; padding: 24px;">
+                        <p style="color: rgba(255,255,255,0.8); font-size: 0.95rem;">Settings for <strong>${category}</strong> are active and optimized automatically by Vibentra Engine.</p>
+                    </div>
+                </div>
+            `;
         }
 
-        const resetThemeBtn = document.getElementById('resetThemeBtn');
-        if (resetThemeBtn) {
-            resetThemeBtn.addEventListener('click', () => {
-                localStorage.removeItem('vibentra_custom_theme');
-                window.applyTheme('default');
-                renderSettings();
-                showNotification('Theme reset to Default Midnight Purple', 'info');
-            });
-        }
+        document.getElementById('settingsSubBackBtn')?.addEventListener('click', () => {
+            renderSettings();
+        });
     }
 
     // Initial Load
