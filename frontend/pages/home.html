@@ -655,6 +655,51 @@
         </div>
     </div>
 
+    <!-- Spotify x YouTube Music Track Options Action Sheet -->
+    <div class="large-player-modal" id="songOptionsModal" style="z-index: 100000;">
+        <div class="song-options-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-track-header">
+                <img id="sheetTrackCover" src="" alt="Cover">
+                <div class="sheet-track-info">
+                    <h3 id="sheetTrackTitle">Track Title</h3>
+                    <p id="sheetTrackArtist">Artist Name</p>
+                </div>
+            </div>
+            <div class="sheet-options-list">
+                <button class="sheet-option-item" id="sheetPlayBtn">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Play Now</span>
+                </button>
+                <button class="sheet-option-item" id="sheetLikeBtn">
+                    <i class="fa-regular fa-heart"></i>
+                    <span>Add to Liked Songs</span>
+                </button>
+                <button class="sheet-option-item" id="sheetAddPlBtn">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add to Playlist</span>
+                </button>
+                <button class="sheet-option-item" id="sheetDownloadBtn">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Download Track</span>
+                </button>
+                <button class="sheet-option-item" id="sheetRingtoneBtn">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Ringtone Studio</span>
+                </button>
+                <button class="sheet-option-item" id="sheetLyricsBtn">
+                    <i class="fa-solid fa-quote-right"></i>
+                    <span>View Lyrics</span>
+                </button>
+                <button class="sheet-option-item danger" id="sheetRemoveBtn">
+                    <i class="fa-solid fa-trash"></i>
+                    <span>Remove from Playlist</span>
+                </button>
+            </div>
+            <button class="sheet-close-btn" id="closeSongOptionsBtn">Cancel</button>
+        </div>
+    </div>
+
     <script type="module" src="../js/home.js?v=3"></script>
 </body>
 </html>

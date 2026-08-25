@@ -1986,6 +1986,76 @@ const initHome = () => {
                 renderPlaylistDetail(id);
             });
         });
+    function openTrackOptionsMenu(track, playlistId = null) {
+        if (!track) return;
+        const modal = document.getElementById('songOptionsModal');
+        if (!modal) return;
+
+        const coverEl = document.getElementById('sheetTrackCover');
+        const titleEl = document.getElementById('sheetTrackTitle');
+        const artistEl = document.getElementById('sheetTrackArtist');
+
+        if (coverEl) coverEl.src = track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        if (titleEl) titleEl.textContent = track.title || 'Untitled Track';
+        if (artistEl) artistEl.textContent = track.artist || 'Unknown Artist';
+
+        const isFav = favoriteService.isFavorite(track.id);
+        const likeBtn = document.getElementById('sheetLikeBtn');
+        if (likeBtn) {
+            const icon = likeBtn.querySelector('i');
+            const label = likeBtn.querySelector('span');
+            if (icon) {
+                icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                icon.style.color = isFav ? '#EC4899' : '#38BDF8';
+            }
+            if (label) label.textContent = isFav ? 'Remove from Liked Songs' : 'Add to Liked Songs';
+        }
+
+        const removeBtn = document.getElementById('sheetRemoveBtn');
+        if (removeBtn) {
+            removeBtn.style.display = playlistId ? 'flex' : 'none';
+        }
+
+        modal.classList.add('active');
+
+        const closeModal = () => modal.classList.remove('active');
+
+        const closeBtn = document.getElementById('closeSongOptionsBtn');
+        if (closeBtn) closeBtn.onclick = closeModal;
+
+        modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+        };
+
+        const playBtn = document.getElementById('sheetPlayBtn');
+        if (playBtn) playBtn.onclick = () => { closeModal(); musicService.playTrack(track); };
+
+        if (likeBtn) likeBtn.onclick = () => {
+            closeModal();
+            favoriteService.toggleFavorite(track);
+            showNotification(isFav ? 'Removed from Liked Songs' : 'Saved to Liked Songs', 'success');
+        };
+
+        const addPlBtn = document.getElementById('sheetAddPlBtn');
+        if (addPlBtn) addPlBtn.onclick = () => { closeModal(); musicService.openAddToPlaylistModal(track); };
+
+        const dlBtn = document.getElementById('sheetDownloadBtn');
+        if (dlBtn) dlBtn.onclick = () => { closeModal(); musicService.downloadTrack(track); };
+
+        const ringtoneBtn = document.getElementById('sheetRingtoneBtn');
+        if (ringtoneBtn) ringtoneBtn.onclick = () => { closeModal(); musicService.openRingtoneModal(track); };
+
+        const lyricsBtn = document.getElementById('sheetLyricsBtn');
+        if (lyricsBtn) lyricsBtn.onclick = () => { closeModal(); musicService.showLyricsModal(track); };
+
+        if (removeBtn) removeBtn.onclick = () => {
+            closeModal();
+            if (playlistId) {
+                playlistService.removeTrackFromPlaylist(playlistId, track.id);
+                renderPlaylistDetail(playlistId);
+                showNotification('Track removed from playlist', 'info');
+            }
+        };
     }
 
     function renderPlaylistDetail(id) {
@@ -2299,22 +2369,7 @@ const initHome = () => {
                 const track = pl.tracks.find(t => String(t.id) === String(trackId));
                 if (!track) return;
 
-                const choice = prompt(`Track Options: "${track.title}"\n\n1. ▶ Play Now\n2. 🔔 Set as Ringtone Studio\n3. ⬇ Download Track\n4. 📜 View Lyrics\n5. ➕ Add to another Playlist\n6. 🗑 Remove from Playlist\n\nEnter option (1-6):`);
-                if (choice === '1') {
-                    musicService.playContext(pl.tracks, track);
-                } else if (choice === '2') {
-                    musicService.openRingtoneModal(track);
-                } else if (choice === '3') {
-                    musicService.downloadTrack(track);
-                } else if (choice === '4') {
-                    musicService.showLyricsModal(track);
-                } else if (choice === '5') {
-                    musicService.openAddToPlaylistModal(track);
-                } else if (choice === '6') {
-                    playlistService.removeTrackFromPlaylist(pl.id, trackId);
-                    renderPlaylistDetail(pl.id);
-                    showNotification('Track removed from playlist', 'info');
-                }
+                openTrackOptionsMenu(track, pl.id);
             });
         });
     }

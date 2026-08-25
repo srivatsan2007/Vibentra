@@ -1,16 +1,16 @@
 {
-  "version": "v1.3.9",
-  "swVersion": "vibentra-cache-v84",
-  "releaseDate": "25 August 2026, 01:20 pm",
+  "version": "v1.4.0",
+  "swVersion": "vibentra-cache-v85",
+  "releaseDate": "25 August 2026, 01:25 pm",
   "size": "2.8 MB",
-  "importantNote": "Enforced min-height pre-population for Latest Albums shelf on mobile & constrained playlist track text width to guarantee 100% visible 3-dots option buttons.",
+  "importantNote": "Implemented Spotify x YouTube Music glassmorphic action sheet modal for playlist track options with guaranteed 100% touch responsiveness on mobile.",
   "changelog": [
     {
-      "category": "Mobile Layout & Touch Options Fixes",
+      "category": "Playlist UI & Action Sheet Redesign",
       "items": [
-        "Enforced 220px min-height & instant album card pre-population so Latest Albums shelf is never collapsed or covered on mobile screens.",
-        "Constrained playlist track text width to max-width: calc(100% - 90px) to prevent long song titles/artists from overflowing.",
-        "Created a glowing circular 3-dots options button (#38BDF8) locked on the right edge of every playlist track row for instant touch access."
+        "Replaced browser prompt dialog with a premium Spotify & YouTube Music glassmorphic action sheet bottom modal.",
+        "Added instant touch actions for Play Now, Add/Remove Liked Songs, Add to Playlist, Download Track, Ringtone Studio, Lyrics, and Remove Track.",
+        "Guaranteed 100% visible 3-dots button positioning across all mobile viewports."
       ]
     }
   ]
