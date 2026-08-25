@@ -132,6 +132,9 @@ const initHome = () => {
                 const profileUsername = document.getElementById('profileUsername');
                 if (profileUsername) profileUsername.textContent = user.displayName || 'User';
             }
+            // Trigger explicit Cloud Data Sync for User Favorites & Playlists
+            favoriteService.syncFromCloud(user.uid);
+            playlistService.syncFromCloud(user.uid);
         } catch (error) {
             console.error("Error loading user data:", error);
             const fallbackName = user.displayName || user.email?.split('@')[0] || 'User';
@@ -622,6 +625,21 @@ const initHome = () => {
     document.addEventListener('favoritesChanged', () => {
         if (document.getElementById('favoritesTrackList')) {
             renderFavorites();
+        }
+    });
+
+    // Listen for cloud data synchronization to update UI automatically
+    window.addEventListener('favoritesSynced', () => {
+        const activeNav = document.querySelector('.nav-item.active')?.getAttribute('data-path');
+        if (activeNav === 'favorites' || activeNav === 'profile' || activeNav === 'home') {
+            loadView(activeNav, false);
+        }
+    });
+
+    window.addEventListener('playlistsSynced', () => {
+        const activeNav = document.querySelector('.nav-item.active')?.getAttribute('data-path');
+        if (activeNav === 'playlists' || activeNav === 'profile' || activeNav === 'home') {
+            loadView(activeNav, false);
         }
     });
 

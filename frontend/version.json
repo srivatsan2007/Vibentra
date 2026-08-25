@@ -1,19 +1,27 @@
 {
-  "version": "v1.2.3",
-  "swVersion": "vibentra-cache-v68",
-  "releaseDate": "25 August 2026, 11:53 am",
+  "version": "v1.2.4",
+  "swVersion": "vibentra-cache-v69",
+  "releaseDate": "25 August 2026, 11:55 am",
   "size": "2.9 MB",
-  "importantNote": "Fixed app launch loading issue, restored full account profile view, mobile navigation drawer, and categorized settings.",
+  "importantNote": "Automatic Firebase Cloud data synchronization, user data auto-rendering, account profile view, and mobile navigation are active.",
   "changelog": [
+    {
+      "category": "User Data & Cloud Sync Auto-Load",
+      "items": [
+        "Enabled automatic Firebase Cloud data synchronization for Favorites and Playlists on user authentication.",
+        "Added real-time listeners for `favoritesSynced` and `playlistsSynced` to immediately render stored user data on app open.",
+        "Guaranteed 100% data persistence between device sessions and Service Worker cache updates."
+      ]
+    },
     {
       "category": "App Initialization & Startup Fix",
       "items": [
         "Fixed script syntax closing brackets in `home.js` to ensure immediate and smooth app startup on all devices.",
-        "Cleared invalid cached script references via Service Worker v68 cache invalidation."
+        "Cleared invalid cached script references via Service Worker cache invalidation."
       ]
     },
     {
-      "category": "Account Profile View Fix",
+      "category": "Account Profile View",
       "items": [
         "Restored complete Account Profile page rendering (`renderProfile`).",
         "View active user avatar, Firebase account status, and quick stats (Liked Songs, Playlists, History).",
@@ -26,13 +34,6 @@
         "Enabled top-left hamburger menu button to toggle smooth slide-out sidebar drawer on mobile.",
         "Full access to working features: Home, Search, Playlists, Favorites, Connect, Vibe AI, Profile, Settings, and Logout.",
         "Dark glass backdrop overlay with tap-to-close interaction."
-      ]
-    },
-    {
-      "category": "Classic 4-Item Bottom Navigation Dock",
-      "items": [
-        "Restored clean 4-item bottom navigation dock: Home, Search, Library, and Settings.",
-        "Floated Mini-Player neatly above bottom nav with zero overlapping."
       ]
     }
   ]
