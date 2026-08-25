@@ -9,8 +9,12 @@ import { favoriteService } from './services/favoriteService.js';
 import { playlistService } from './services/playlistService.js';
 import { historyService } from './services/historyService.js';
 import { connectService } from './services/connectService.js';
+import { initUpdateManager } from './updateManager.js';
 
 const initHome = () => {
+    // Initialize New Update Release Notes & SW Manager
+    initUpdateManager();
+
     // Apply Theme
     const themes = {
         'default': {

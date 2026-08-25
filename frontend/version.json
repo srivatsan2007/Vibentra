@@ -1,0 +1,31 @@
+{
+  "version": "v1.2.0",
+  "swVersion": "vibentra-cache-v61",
+  "releaseDate": "25 August 2026, 11:00 am",
+  "size": "2.5 MB",
+  "importantNote": "To enable Android Home Screen Widgets & latest audio persistence, update to Vibentra v1.2.0.",
+  "changelog": [
+    {
+      "category": "New Features",
+      "items": [
+        "Mobile Home Screen Widget with live album artwork sync and instant playback controls.",
+        "Interactive Release Notes Update view with real-time install progress."
+      ]
+    },
+    {
+      "category": "Improvements",
+      "items": [
+        "Enhanced background audio persistence and Android partial wake lock integration.",
+        "Direct raw GitHub links & optimized MIME headers for Portfolio APK downloads.",
+        "Refined equalizer spacing and glassmorphic control alignment."
+      ]
+    },
+    {
+      "category": "Fixes",
+      "items": [
+        "Resolved Service Worker cache invalidation sequence across all user clients.",
+        "Corrected app version sync between native Android service and Web UI."
+      ]
+    }
+  ]
+}

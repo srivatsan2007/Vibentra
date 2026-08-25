@@ -8,6 +8,8 @@ const ASSETS_TO_CACHE = [
     '/js/app.js',
     '/js/auth.js',
     '/js/home.js',
+    '/js/updateManager.js',
+    '/version.json',
     '/js/firebase-config.js',
     '/js/services/musicService.js',
     '/js/services/lyricsService.js',
