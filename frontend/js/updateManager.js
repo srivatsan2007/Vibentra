@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.5.3</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.5.4</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 02:02 pm</p>
+                        <p>Released on: 25 August 2026, 02:15 pm</p>
                         <p>Size: 2.8 MB</p>
-                        <p>SW Cache: vibentra-cache-v90</p>
+                        <p>SW Cache: vibentra-cache-v91</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Fixed 3-dots options button visibility and responsive layout on mobile view across Search and Playlist pages.
+                        Search page redesigned to YouTube Music style with Moods & moments, Genres, and minimalist track list rows.
                     </div>
 
                     <div id="updateChangelogContainer">

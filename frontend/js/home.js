@@ -1251,27 +1251,30 @@ const initHome = () => {
 
         // Initial Load
         loadTrendingData(storedLang);
-    }
-
-    function renderSearch(initialQuery = '') {
-        const topGenres = [
-            { id: 'dance', title: 'Dance/\nElectronic', color: '#27856A', query: 'Dance Electronic', img: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&q=80' },
-            { id: 'indie', title: 'Indie', color: '#6082B6', query: 'Indie Hits', img: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&q=80' },
-            { id: 'pop', title: 'Pop', color: '#148A08', query: 'Pop Hits', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80' },
-            { id: 'hiphop', title: 'Hip-Hop', color: '#BA5D07', query: 'Hip Hop Rap', img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&q=80' }
+    }    function renderSearch(initialQuery = '') {
+        const moodsAndMoments = [
+            { id: 'chill', title: 'Chill', gradient: 'linear-gradient(135deg, #d95c47, #e08353)', query: 'Chill Coffee Blend', img: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&q=80' },
+            { id: 'commute', title: 'Commute', gradient: 'linear-gradient(135deg, #cc3370, #882255)', query: 'Commute Feel Good', img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&q=80' },
+            { id: 'energize', title: 'Energize', gradient: 'linear-gradient(135deg, #8a36d6, #e056fd)', query: 'Pump Up Pop Energize', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80' },
+            { id: 'feelgood', title: 'Feel good', gradient: 'linear-gradient(135deg, #d647a8, #86d654)', query: 'Sunshine Indie Feel Good', img: 'https://images.unsplash.com/photo-1499417265504-37060e8d5144?w=300&q=80' },
+            { id: 'focus', title: 'Focus', gradient: 'linear-gradient(135deg, #4b6cb7, #5c99e6)', query: 'Lofi Loft Focus', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80' },
+            { id: 'gaming', title: 'Gaming', gradient: 'linear-gradient(135deg, #80d636, #36b04a)', query: 'Gaming Soundtracks', img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&q=80' },
+            { id: 'party', title: 'Party', gradient: 'linear-gradient(135deg, #9b36d6, #e68036)', query: 'Bollywood Dance Party', img: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300&q=80' },
+            { id: 'romance', title: 'Romance', gradient: 'linear-gradient(135deg, #cc3659, #4b36d6)', query: 'Romance Love Songs', img: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&q=80' },
+            { id: 'sad', title: 'Sad', gradient: 'linear-gradient(135deg, #4b59d6, #80d636)', query: 'Bollywood Melancholy Sad', img: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&q=80' },
+            { id: 'sleep', title: 'Sleep', gradient: 'linear-gradient(135deg, #4b4bd6, #80e680)', query: 'Sleep Calming Ambient', img: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&q=80' },
+            { id: 'workout', title: 'Workout', gradient: 'linear-gradient(135deg, #36d6c8, #9b36d6)', query: 'HIIT Desi Pop Workout', img: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=300&q=80' }
         ];
 
-        const browseAllGenres = [
-            { id: 'mood', title: 'Mood', color: '#509BF5', query: 'Feel Good Mood', img: 'https://images.unsplash.com/photo-1499417265504-37060e8d5144?w=300&q=80' },
-            { id: 'rnb', title: 'R&B', color: '#B02897', query: 'R&B Soul', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&q=80' },
-            { id: 'rock', title: 'Rock', color: '#E61E32', query: 'Rock Hits', img: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=300&q=80' },
-            { id: 'focus', title: 'Focus', color: '#477D95', query: 'Focus Study Lofi', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&q=80' },
-            { id: 'devotional', title: 'Devotional', color: '#E59700', query: 'Devotional Songs', img: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=300&q=80' },
-            { id: 'romance', title: 'Romance', color: '#DC148C', query: 'Romance Love Songs', img: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&q=80' },
-            { id: 'party', title: 'Party', color: '#AF2896', query: 'Party Anthems', img: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300&q=80' },
-            { id: 'workout', title: 'Workout', color: '#1E3264', query: 'Workout Gym Energy', img: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=300&q=80' },
-            { id: 'trending', title: 'Trending', color: '#8400E7', query: 'Top Trending Hits', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80' },
-            { id: 'chill', title: 'Chill', color: '#006450', query: 'Chill Acoustic Vibes', img: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&q=80' }
+        const genresList = [
+            { id: 'african', title: 'African', gradient: 'linear-gradient(135deg, #e68036, #cc5936)', query: 'Afrobeats African Hits', img: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&q=80' },
+            { id: 'arabic', title: 'Arabic', gradient: 'linear-gradient(135deg, #b036d6, #cc4778)', query: 'Arabic Pop Hits', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&q=80' },
+            { id: 'bengali', title: 'Bengali', gradient: 'linear-gradient(135deg, #e6b036, #cc3636)', query: 'Bengali Hits', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80' },
+            { id: 'bhojpuri', title: 'Bhojpuri', gradient: 'linear-gradient(135deg, #a0d636, #e6cc36)', query: 'Bhojpuri Hits', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80' },
+            { id: 'bollywood', title: 'Bollywood', gradient: 'linear-gradient(135deg, #e63680, #ff5858)', query: 'Bollywood Songs', img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&q=80' },
+            { id: 'tamil', title: 'Tamil', gradient: 'linear-gradient(135deg, #4776E6, #8E54E9)', query: 'Tamil Songs', img: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300&q=80' },
+            { id: 'telugu', title: 'Telugu', gradient: 'linear-gradient(135deg, #FF8008, #FFC837)', query: 'Telugu Songs', img: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&q=80' },
+            { id: 'punjabi', title: 'Punjabi', gradient: 'linear-gradient(135deg, #FF416C, #FF4B2B)', query: 'Punjabi Hits', img: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=300&q=80' }
         ];
 
         // Storage for Recent Searches
@@ -1300,11 +1303,9 @@ const initHome = () => {
 
         dynamicContent.innerHTML = `
             <div class="spotify-search-page">
-                <h1 class="spotify-search-title">Search</h1>
-                
                 <div class="spotify-search-bar-container">
                     <i class="fa-solid fa-magnifying-glass spotify-search-icon"></i>
-                    <input type="text" class="spotify-search-input" id="searchInput" value="${initialQuery}" placeholder="Artists, songs, or podcasts" autocomplete="off">
+                    <input type="text" class="spotify-search-input" id="searchInput" value="${initialQuery}" placeholder="Search for artists..." autocomplete="off">
                     <button id="spotifyClearBtn" class="spotify-clear-btn" style="display: none;" title="Clear search">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -1353,11 +1354,11 @@ const initHome = () => {
                 ${recentHtml}
 
                 <div class="spotify-genre-section">
-                    <h2 class="spotify-genre-section-title">Your top genres</h2>
+                    <h2 class="spotify-genre-section-title">Moods & moments</h2>
                     <div class="spotify-genre-grid">
-                        ${topGenres.map(g => `
-                            <div class="spotify-genre-card" style="background: ${g.color};" data-query="${g.query}">
-                                <span class="spotify-genre-title">${g.title.replace('\n', '<br>')}</span>
+                        ${moodsAndMoments.map(g => `
+                            <div class="spotify-genre-card" style="background: ${g.gradient};" data-query="${g.query}">
+                                <span class="spotify-genre-title">${g.title}</span>
                                 <img src="${g.img}" class="spotify-genre-img" alt="${g.title}" loading="lazy">
                             </div>
                         `).join('')}
@@ -1365,10 +1366,10 @@ const initHome = () => {
                 </div>
 
                 <div class="spotify-genre-section">
-                    <h2 class="spotify-genre-section-title">Browse all</h2>
+                    <h2 class="spotify-genre-section-title">Genres</h2>
                     <div class="spotify-genre-grid">
-                        ${browseAllGenres.map(g => `
-                            <div class="spotify-genre-card" style="background: ${g.color};" data-query="${g.query}">
+                        ${genresList.map(g => `
+                            <div class="spotify-genre-card" style="background: ${g.gradient};" data-query="${g.query}">
                                 <span class="spotify-genre-title">${g.title}</span>
                                 <img src="${g.img}" class="spotify-genre-img" alt="${g.title}" loading="lazy">
                             </div>
@@ -1437,9 +1438,9 @@ const initHome = () => {
             let html = `
                 <div class="spotify-filter-chips">
                     <button class="spotify-chip ${filter === 'all' ? 'active' : ''}" data-filter="all">All</button>
-                    ${hasSongs ? `<button class="spotify-chip ${filter === 'songs' ? 'active' : ''}" data-filter="songs">Songs</button>` : ''}
-                    ${hasAlbums ? `<button class="spotify-chip ${filter === 'albums' ? 'active' : ''}" data-filter="albums">Albums</button>` : ''}
-                    ${hasPlaylists ? `<button class="spotify-chip ${filter === 'playlists' ? 'active' : ''}" data-filter="playlists">Playlists</button>` : ''}
+                    ${hasSongs ? `<button class="spotify-chip ${filter === 'songs' ? 'active' : ''}" data-filter="songs">${filter === 'songs' ? '<i class="fa-solid fa-check"></i> ' : ''}Songs</button>` : ''}
+                    ${hasAlbums ? `<button class="spotify-chip ${filter === 'albums' ? 'active' : ''}" data-filter="albums">${filter === 'albums' ? '<i class="fa-solid fa-check"></i> ' : ''}Albums</button>` : ''}
+                    ${hasPlaylists ? `<button class="spotify-chip ${filter === 'playlists' ? 'active' : ''}" data-filter="playlists">${filter === 'playlists' ? '<i class="fa-solid fa-check"></i> ' : ''}Playlists</button>` : ''}
                 </div>
                 <div id="resultsContentArea"></div>
             `;
@@ -1459,16 +1460,14 @@ const initHome = () => {
 
             const createSearchSongRow = (track, contextTracks = []) => {
                 const row = document.createElement('div');
-                row.className = 'spotify-track-row search-track-row';
+                row.className = 'ytm-track-row';
                 row.style.cssText = `
                     display: flex;
                     align-items: center;
+                    justify-content: space-between;
                     gap: 12px;
-                    padding: 10px 12px;
-                    border-radius: 12px;
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                    margin-bottom: 6px;
+                    padding: 10px 4px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     cursor: pointer;
                     transition: background 0.2s ease;
                     width: 100%;
@@ -1478,20 +1477,16 @@ const initHome = () => {
                 const artistStr = track.artist || 'Unknown Artist';
 
                 row.innerHTML = `
-                    <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" alt="${track.title}">
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin: 0 0 3px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
-                        <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
-                            <span style="color: #38BDF8; font-weight: 700;">Song</span>
-                            <span>•</span>
-                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</span>
+                    <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${track.title}">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                            <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                            <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</p>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
-                        <button class="search-row-opt-btn" title="Track Options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(8px);">
-                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                        </button>
-                    </div>
+                    <button class="search-row-opt-btn" title="Track Options" style="background: none; border: none; color: #cccccc; font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
                 `;
 
                 row.addEventListener('click', (e) => {
@@ -1512,16 +1507,14 @@ const initHome = () => {
 
             const createSearchAlbumRow = (album) => {
                 const row = document.createElement('div');
-                row.className = 'spotify-track-row search-album-row';
+                row.className = 'ytm-search-row';
                 row.style.cssText = `
                     display: flex;
                     align-items: center;
+                    justify-content: space-between;
                     gap: 12px;
-                    padding: 10px 12px;
-                    border-radius: 12px;
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                    margin-bottom: 6px;
+                    padding: 10px 4px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     cursor: pointer;
                     transition: background 0.2s ease;
                     width: 100%;
@@ -1533,20 +1526,16 @@ const initHome = () => {
                 const coverUrl = album.cover || album.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80';
 
                 row.innerHTML = `
-                    <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" alt="${titleStr}">
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin: 0 0 3px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
-                        <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
-                            <span style="color: #C084FC; font-weight: 700;">Album</span>
-                            <span>•</span>
-                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</span>
+                    <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                        <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                            <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
+                            <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Album • ${artistStr}</p>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
-                        <button class="search-album-opt-btn" title="Album Options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #C084FC; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(8px);">
-                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                        </button>
-                    </div>
+                    <button class="search-album-opt-btn" title="Album Options" style="background: none; border: none; color: #cccccc; font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
                 `;
 
                 row.addEventListener('click', (e) => {
@@ -1577,16 +1566,14 @@ const initHome = () => {
 
             const createSearchPlaylistRow = (pl) => {
                 const row = document.createElement('div');
-                row.className = 'spotify-track-row search-playlist-row';
+                row.className = 'ytm-search-row';
                 row.style.cssText = `
                     display: flex;
                     align-items: center;
+                    justify-content: space-between;
                     gap: 12px;
-                    padding: 10px 12px;
-                    border-radius: 12px;
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                    margin-bottom: 6px;
+                    padding: 10px 4px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     cursor: pointer;
                     transition: background 0.2s ease;
                     width: 100%;
@@ -1598,20 +1585,16 @@ const initHome = () => {
                 const coverUrl = pl.cover || pl.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
 
                 row.innerHTML = `
-                    <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" alt="${titleStr}">
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <h4 style="margin: 0 0 3px 0; font-size: 0.98rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
-                        <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
-                            <span style="color: #34D399; font-weight: 700;">Playlist</span>
-                            <span>•</span>
-                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${creatorStr}</span>
+                    <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                        <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                            <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
+                            <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Playlist • ${creatorStr}</p>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
-                        <button class="search-pl-opt-btn" title="Playlist Options" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: #34D399; font-size: 1.15rem; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(8px);">
-                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                        </button>
-                    </div>
+                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: none; border: none; color: #cccccc; font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
                 `;
 
                 row.addEventListener('click', (e) => {
@@ -1708,7 +1691,7 @@ const initHome = () => {
 
             } else if (filter === 'songs') {
                 const songsSection = document.createElement('div');
-                songsSection.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">All Songs</h2>`;
+                songsSection.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Songs</h2>`;
                 const songsList = document.createElement('div');
                 songsList.style.display = 'flex';
                 songsList.style.flexDirection = 'column';
@@ -1720,7 +1703,7 @@ const initHome = () => {
 
             } else if (filter === 'albums') {
                 const albumSec = document.createElement('div');
-                albumSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">All Albums</h2>`;
+                albumSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Albums</h2>`;
                 const albumList = document.createElement('div');
                 albumList.style.display = 'flex';
                 albumList.style.flexDirection = 'column';
@@ -1732,7 +1715,7 @@ const initHome = () => {
 
             } else if (filter === 'playlists') {
                 const plSec = document.createElement('div');
-                plSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">All Playlists</h2>`;
+                plSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Playlists</h2>`;
                 const plList = document.createElement('div');
                 plList.style.display = 'flex';
                 plList.style.flexDirection = 'column';
