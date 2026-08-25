@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.2.2</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.2.3</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 11:51 am</p>
+                        <p>Released on: 25 August 2026, 11:53 am</p>
                         <p>Size: 2.9 MB</p>
-                        <p>SW Cache: vibentra-cache-v67</p>
+                        <p>SW Cache: vibentra-cache-v68</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Account profile page restoration, top-bar mobile navigation drawer, fixed sticky update action buttons, and YouTube Music style categorized settings are live.
+                        Fixed app launch loading issue, restored full account profile view, mobile navigation drawer, and categorized settings.
                     </div>
 
                     <div id="updateChangelogContainer">

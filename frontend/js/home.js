@@ -2947,6 +2947,12 @@ const initHome = () => {
                             <p style="font-size: 0.9rem; margin-top: 2px;">${m.text}</p>
                         </div>
                     `).join('');
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
+                }
+            };
+        }
+    }
+
     async function renderProfile() {
         const currentUser = auth.currentUser;
         let username = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';

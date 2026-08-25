@@ -1,10 +1,17 @@
 {
-  "version": "v1.2.2",
-  "swVersion": "vibentra-cache-v67",
-  "releaseDate": "25 August 2026, 11:51 am",
+  "version": "v1.2.3",
+  "swVersion": "vibentra-cache-v68",
+  "releaseDate": "25 August 2026, 11:53 am",
   "size": "2.9 MB",
-  "importantNote": "Account profile page restoration, top-bar mobile navigation drawer, fixed sticky update action buttons, and YouTube Music style categorized settings are live.",
+  "importantNote": "Fixed app launch loading issue, restored full account profile view, mobile navigation drawer, and categorized settings.",
   "changelog": [
+    {
+      "category": "App Initialization & Startup Fix",
+      "items": [
+        "Fixed script syntax closing brackets in `home.js` to ensure immediate and smooth app startup on all devices.",
+        "Cleared invalid cached script references via Service Worker v68 cache invalidation."
+      ]
+    },
     {
       "category": "Account Profile View Fix",
       "items": [
@@ -19,14 +26,6 @@
         "Enabled top-left hamburger menu button to toggle smooth slide-out sidebar drawer on mobile.",
         "Full access to working features: Home, Search, Playlists, Favorites, Connect, Vibe AI, Profile, Settings, and Logout.",
         "Dark glass backdrop overlay with tap-to-close interaction."
-      ]
-    },
-    {
-      "category": "Update Manager & Action Buttons",
-      "items": [
-        "Fixed Install & Later action buttons sticky at screen bottom with safe-area support.",
-        "Cleaned changelog markdown formatting for crisp, readable release notes.",
-        "Real-time Service Worker upgrade progress bar with single-tap installation."
       ]
     },
     {
