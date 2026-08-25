@@ -1,17 +1,17 @@
 {
-  "version": "v1.6.4",
-  "swVersion": "vibentra-cache-v102",
-  "releaseDate": "25 August 2026, 07:42 pm",
+  "version": "v1.6.5",
+  "swVersion": "vibentra-cache-v103",
+  "releaseDate": "25 August 2026, 07:45 pm",
   "size": "2.8 MB",
-  "importantNote": "Redesigned music floating controller capsule to pixel-perfectly match reference design with white transparent play icon and aligned heart button.",
+  "importantNote": "Added Previous and Next track switching buttons to the floating liquid glass music controller capsule.",
   "changelog": [
     {
-      "category": "Liquid Glass Mini Player Redesign (v1.6.4)",
+      "category": "Floating Music Controller Track Navigation Update (v1.6.5)",
       "items": [
-        "Matched floating controller pill dimensions, glass blur, border highlights, and typography to reference design.",
-        "Converted play/pause button to a clean, borderless solid white icon directly on the glass capsule.",
-        "Aligned heart outline favorite icon with precision spacing next to the play control.",
-        "Pushed release v1.6.4 to GitHub and Vercel."
+        "Enabled Previous (prevBtn) and Next (nextBtn) track switching controls directly inside the floating mini player capsule.",
+        "Arranged controls with touch-friendly spacing: Heart Favorite, Previous, Play/Pause, and Next.",
+        "Maintained 100% backend playback logic and event listeners.",
+        "Pushed release build v1.6.5 to GitHub and Vercel."
       ]
     }
   ]

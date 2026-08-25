@@ -3797,14 +3797,14 @@ input {
         text-overflow: ellipsis !important;
     }
 
-    /* Right Action Container (Heart + Play) */
+    /* Right Action Container (Heart Favorite) */
     .music-player .player-right {
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
-        gap: 18px !important;
+        gap: 12px !important;
         flex: 0 0 auto !important;
-        margin: 0 !important;
+        margin: 0 10px 0 0 !important;
         padding: 0 !important;
         order: 2 !important;
     }
@@ -3817,7 +3817,7 @@ input {
         background: transparent !important;
         border: none !important;
         color: #FFFFFF !important;
-        font-size: 1.35rem !important;
+        font-size: 1.25rem !important;
         cursor: pointer !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -3829,6 +3829,7 @@ input {
         color: #EC4899 !important;
     }
 
+    /* Player Controls Container (Prev, Play, Next) */
     .music-player .player-center {
         display: flex !important;
         align-items: center !important;
@@ -3843,8 +3844,25 @@ input {
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
+        gap: 12px !important;
         margin: 0 !important;
         padding: 0 !important;
+    }
+
+    .music-player #prevBtn,
+    .music-player #nextBtn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        color: #FFFFFF !important;
+        font-size: 1.05rem !important;
+        cursor: pointer !important;
+        padding: 2px !important;
+        margin: 0 !important;
+        transition: transform 0.15s ease !important;
+        flex-shrink: 0 !important;
     }
 
     .music-player #playPauseBtn,
@@ -3861,21 +3879,20 @@ input {
         border: none !important;
         cursor: pointer !important;
         box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 0 0 18px !important;
+        padding: 2px !important;
+        margin: 0 !important;
         transition: transform 0.15s ease !important;
     }
 
+    .music-player #prevBtn:active,
+    .music-player #nextBtn:active,
     .music-player #playPauseBtn:active,
-    .music-player .play-pause-btn:active,
     .music-player #playerLikeBtn:active {
-        transform: scale(0.88) !important;
+        transform: scale(0.86) !important;
     }
 
-    /* Hide desktop controls & option menus on mobile mini player */
+    /* Hide desktop-only controls & option menus on mobile mini player */
     .music-player #shuffleBtn,
-    .music-player #prevBtn,
-    .music-player #nextBtn,
     .music-player #repeatBtn,
     .music-player .progress-container,
     .music-player #playerOptionsContainer,
