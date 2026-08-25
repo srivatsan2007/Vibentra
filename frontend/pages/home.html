@@ -12,7 +12,7 @@
     <meta name="theme-color" content="#0F172A">
     <link rel="apple-touch-icon" href="../images/icon-512.png">
     <link rel="icon" href="../images/icon-192.png" type="image/png">
-    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=1.5.9">
+    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=1.6.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         // PWA Service Worker Registration & Update Logic
@@ -444,23 +444,20 @@
         </div>
     </div>
 
-    <!-- Mobile Bottom Navigation (Clean 4-Item Glass Dock) -->
+    <!-- Liquid Glass Floating Dock Navigation (Redesigned v1.6.2) -->
     <div class="mobile-bottom-nav" id="mobileBottomNav">
-        <div class="mobile-nav-item active" data-target="home">
-            <i class="fa-solid fa-house"></i>
-            <span>Home</span>
+        <div class="mobile-nav-dock-pill">
+            <div class="mobile-nav-item active" data-target="home">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </div>
+            <div class="mobile-nav-item" data-target="playlists">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Library</span>
+            </div>
         </div>
-        <div class="mobile-nav-item" data-target="search">
+        <div class="mobile-nav-search-circle mobile-nav-item" data-target="search" title="Search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Search</span>
-        </div>
-        <div class="mobile-nav-item" data-target="playlists">
-            <i class="fa-solid fa-music"></i>
-            <span>Library</span>
-        </div>
-        <div class="mobile-nav-item" data-target="settings">
-            <i class="fa-solid fa-gear"></i>
-            <span>Settings</span>
         </div>
     </div>
 

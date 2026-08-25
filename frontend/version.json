@@ -1,16 +1,17 @@
 {
-  "version": "v1.5.9",
-  "swVersion": "vibentra-cache-v99",
-  "releaseDate": "25 August 2026, 07:21 pm",
+  "version": "v1.6.2",
+  "swVersion": "vibentra-cache-v100",
+  "releaseDate": "25 August 2026, 07:26 pm",
   "size": "2.8 MB",
-  "importantNote": "Restored stable working build v1.5.9 with guaranteed Vercel deployment trigger.",
+  "importantNote": "Redesigned mobile navigation into a liquid glass floating dock (Home, Library, Search) matching the reference design.",
   "changelog": [
     {
-      "category": "Stable Production Deployment Restore",
+      "category": "Liquid Glass Multi-Capsule Dock Redesign (v1.6.2)",
       "items": [
-        "Restored complete working application layout and playback stability.",
-        "Bumped Service Worker cache to vibentra-cache-v99 to force client devices and PWA to reload fresh assets.",
-        "Pushed new production commit to trigger immediate automatic Vercel build."
+        "Redesigned bottom navigation into a liquid glass floating dock with combined Home & Library capsule pill.",
+        "Integrated dedicated standalone circular search button directing to the search page.",
+        "Converted mini player into a pill-shaped floating capsule above the navigation dock with cover art, track info, heart button, and play control.",
+        "Preserved 100% backend streaming, playlist routing, and musicService event logic."
       ]
     }
   ]
