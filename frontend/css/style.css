@@ -3806,23 +3806,25 @@ input {
     }
 
     .sidebar-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.65);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        z-index: 10000;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0, 0, 0, 0.65) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        z-index: 10000 !important;
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transition: opacity 0.3s ease !important;
     }
 
     .sidebar-backdrop.active {
-        opacity: 1;
-        pointer-events: auto;
+        display: block !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
     }
 
     /* Floating Glass Mini Player Dock (Centered) */

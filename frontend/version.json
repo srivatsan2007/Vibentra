@@ -1,23 +1,22 @@
 {
-  "version": "v1.2.4",
-  "swVersion": "vibentra-cache-v69",
-  "releaseDate": "25 August 2026, 11:55 am",
+  "version": "v1.2.5",
+  "swVersion": "vibentra-cache-v70",
+  "releaseDate": "25 August 2026, 11:58 am",
   "size": "2.9 MB",
-  "importantNote": "Automatic Firebase Cloud data synchronization, user data auto-rendering, account profile view, and mobile navigation are active.",
+  "importantNote": "Fixed touch/click gesture responsiveness by setting explicit display:none on backdrop overlay, restored full account profile view and mobile bottom dock.",
   "changelog": [
+    {
+      "category": "UI Touch & Event Responsiveness Fix",
+      "items": [
+        "Fixed full-screen tap/click blocking caused by transparent fixed backdrop layer by adding explicit `display: none !important` when inactive.",
+        "Restored 100% immediate touch responsiveness for bottom navigation dock, song cards, topbar menu, and player controls."
+      ]
+    },
     {
       "category": "User Data & Cloud Sync Auto-Load",
       "items": [
         "Enabled automatic Firebase Cloud data synchronization for Favorites and Playlists on user authentication.",
-        "Added real-time listeners for `favoritesSynced` and `playlistsSynced` to immediately render stored user data on app open.",
-        "Guaranteed 100% data persistence between device sessions and Service Worker cache updates."
-      ]
-    },
-    {
-      "category": "App Initialization & Startup Fix",
-      "items": [
-        "Fixed script syntax closing brackets in `home.js` to ensure immediate and smooth app startup on all devices.",
-        "Cleared invalid cached script references via Service Worker cache invalidation."
+        "Added real-time listeners for `favoritesSynced` and `playlistsSynced` to render stored user data on app open."
       ]
     },
     {
@@ -32,8 +31,7 @@
       "category": "Mobile Navigation Drawer & Top-Bar",
       "items": [
         "Enabled top-left hamburger menu button to toggle smooth slide-out sidebar drawer on mobile.",
-        "Full access to working features: Home, Search, Playlists, Favorites, Connect, Vibe AI, Profile, Settings, and Logout.",
-        "Dark glass backdrop overlay with tap-to-close interaction."
+        "Full access to working features: Home, Search, Playlists, Favorites, Connect, Vibe AI, Profile, Settings, and Logout."
       ]
     }
   ]

@@ -631,14 +631,14 @@ const initHome = () => {
     // Listen for cloud data synchronization to update UI automatically
     window.addEventListener('favoritesSynced', () => {
         const activeNav = document.querySelector('.nav-item.active')?.getAttribute('data-path');
-        if (activeNav === 'favorites' || activeNav === 'profile' || activeNav === 'home') {
+        if (activeNav === 'favorites' || activeNav === 'profile') {
             loadView(activeNav, false);
         }
     });
 
     window.addEventListener('playlistsSynced', () => {
         const activeNav = document.querySelector('.nav-item.active')?.getAttribute('data-path');
-        if (activeNav === 'playlists' || activeNav === 'profile' || activeNav === 'home') {
+        if (activeNav === 'playlists' || activeNav === 'profile') {
             loadView(activeNav, false);
         }
     });
