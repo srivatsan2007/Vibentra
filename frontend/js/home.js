@@ -93,11 +93,7 @@ const initHome = () => {
     const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
     window.applyTheme(savedTheme);
 
-    // Render initial view immediately so app never opens to a blank screen
-    const initialHash = window.location.hash.replace('#', '') || 'home';
-    loadView(initialHash, false);
-
-    // Check Auth State
+    // Check Auth State & Orchestrate App Launch
     musicService.initUI(); // Initialize player UI bindings
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
@@ -124,6 +120,20 @@ const initHome = () => {
             console.error("Error loading user data:", error);
         }
 
+        // Sync Favorites & Playlists from Cloud
+        try {
+            await Promise.all([
+                favoriteService.syncFromCloud(user.uid),
+                playlistService.syncFromCloud(user.uid)
+            ]);
+        } catch (e) {
+            console.warn("Cloud sync warning:", e);
+        }
+
+        // Render target view with authenticated user context
+        const targetPath = window.location.hash.replace('#', '') || 'home';
+        loadView(targetPath, false);
+
         const welcomeNameEl = document.getElementById('welcomeName');
         if (welcomeNameEl) welcomeNameEl.textContent = nameToDisplay;
 
@@ -132,10 +142,6 @@ const initHome = () => {
 
         const profileUsername = document.getElementById('profileUsername');
         if (profileUsername) profileUsername.textContent = nameToDisplay;
-
-        // Trigger Cloud Data Sync for User Favorites & Playlists (non-blocking)
-        favoriteService.syncFromCloud(user.uid);
-        playlistService.syncFromCloud(user.uid);
     });
 
     // Mobile Navigation Toggle

@@ -1,15 +1,15 @@
 {
-  "version": "v1.3.1",
-  "swVersion": "vibentra-cache-v76",
-  "releaseDate": "25 August 2026, 12:18 pm",
+  "version": "v1.3.2",
+  "swVersion": "vibentra-cache-v77",
+  "releaseDate": "25 August 2026, 12:21 pm",
   "size": "2.9 MB",
-  "importantNote": "Cleaned auth page service worker scripts and ensured smooth login and registration redirects to home.",
+  "importantNote": "Synchronized loadView execution after authentication status and user cloud data resolution.",
   "changelog": [
     {
-      "category": "Authentication & Session Stability",
+      "category": "App Launch Orchestration",
       "items": [
-        "Cleaned `auth.html` inline registration script to eliminate interference with login flow.",
-        "Verified Firebase email/password and Google authentication redirects to home dashboard."
+        "Updated `onAuthStateChanged` to resolve user session and cloud data before invoking `loadView`.",
+        "Ensures home screen, playlists, and user identity elements populate immediately on app start."
       ]
     }
   ]
