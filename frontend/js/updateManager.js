@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.2.8</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.2.9</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 12:05 pm</p>
+                        <p>Released on: 25 August 2026, 12:08 pm</p>
                         <p>Size: 2.9 MB</p>
-                        <p>SW Cache: vibentra-cache-v73</p>
+                        <p>SW Cache: vibentra-cache-v74</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Immediate view loading on app start eliminating blank pages, instant automatic logged account & playlist restoration.
+                        Permanent fix for Service Worker auto-activation (skipWaiting + clients.claim + controllerchange auto-reload) for seamless hands-free updates.
                     </div>
 
                     <div id="updateChangelogContainer">
@@ -89,8 +89,16 @@ export function initUpdateManager() {
         })
         .catch(err => console.log('Could not fetch version.json:', err));
 
-    // Service Worker Registration Listener
+    // Service Worker Registration & Controller Auto-Refresh Listener
     if ('serviceWorker' in navigator) {
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+            }
+        });
+
         navigator.serviceWorker.register(window.location.pathname.includes('/pages/') ? '../sw.js' : './sw.js')
             .then(reg => {
                 reg.addEventListener('updatefound', () => {

@@ -1,22 +1,22 @@
 {
-  "version": "v1.2.8",
-  "swVersion": "vibentra-cache-v73",
-  "releaseDate": "25 August 2026, 12:05 pm",
+  "version": "v1.2.9",
+  "swVersion": "vibentra-cache-v74",
+  "releaseDate": "25 August 2026, 12:08 pm",
   "size": "2.9 MB",
-  "importantNote": "Immediate view loading on app start eliminating blank pages, instant automatic logged account & playlist restoration.",
+  "importantNote": "Permanent fix for Service Worker auto-activation (skipWaiting + clients.claim + controllerchange auto-reload) for seamless hands-free updates.",
   "changelog": [
     {
-      "category": "Instant App Load & Account Auto-Restoration",
+      "category": "Permanent SW Auto-Activation Fix",
       "items": [
-        "Enforced immediate initial `loadView` execution on app startup so your account home page, playlists, and songs render instantly without waiting.",
-        "Non-blocking background cloud synchronization for user playlists, favorites, and profile data."
+        "Enforced automatic `self.skipWaiting()` on install and `self.clients.claim()` on activate in `sw.js`.",
+        "Added `controllerchange` listener in `updateManager.js` to automatically activate code changes without manual refresh."
       ]
     },
     {
-      "category": "Classic App Experience & Silent Updates",
+      "category": "Instant App Load & Account Auto-Restoration",
       "items": [
-        "Disabled automatic floating update banners and popup overlays to preserve clean, uninterrupted app usage.",
-        "Updates now process seamlessly in the background without forcing screens or prompting."
+        "Enforced immediate initial `loadView` execution on app startup so your account home page, playlists, and songs render instantly.",
+        "Non-blocking background cloud synchronization for user playlists, favorites, and profile data."
       ]
     }
   ]
