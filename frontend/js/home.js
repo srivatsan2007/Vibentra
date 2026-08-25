@@ -101,20 +101,13 @@ const initHome = () => {
             return;
         }
 
-        // Load User Data
+        let nameToDisplay = user.displayName || user.email?.split('@')[0] || 'User';
+
         try {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                const welcomeNameEl = document.getElementById('welcomeName');
-                if (welcomeNameEl) welcomeNameEl.textContent = userData.username;
-
-                const topUsernameEl = document.getElementById('topUsername');
-                if (topUsernameEl) topUsernameEl.textContent = userData.username;
-
-                const profileUsername = document.getElementById('profileUsername');
-                if (profileUsername) profileUsername.textContent = userData.username;
-
+                if (userData.username) nameToDisplay = userData.username;
                 if (userData.profileImage) {
                     const topProfileImg = document.getElementById('topProfileImg');
                     if (topProfileImg) topProfileImg.src = userData.profileImage;
@@ -122,31 +115,27 @@ const initHome = () => {
                     const profileAvatar = document.getElementById('profileAvatar');
                     if (profileAvatar) profileAvatar.src = userData.profileImage;
                 }
-            } else {
-                const welcomeNameEl = document.getElementById('welcomeName');
-                if (welcomeNameEl) welcomeNameEl.textContent = user.displayName || 'User';
-
-                const topUsernameEl = document.getElementById('topUsername');
-                if (topUsernameEl) topUsernameEl.textContent = user.displayName || 'User';
-
-                const profileUsername = document.getElementById('profileUsername');
-                if (profileUsername) profileUsername.textContent = user.displayName || 'User';
             }
-            // Trigger explicit Cloud Data Sync for User Favorites & Playlists
-            favoriteService.syncFromCloud(user.uid);
-            playlistService.syncFromCloud(user.uid);
         } catch (error) {
             console.error("Error loading user data:", error);
-            const fallbackName = user.displayName || user.email?.split('@')[0] || 'User';
-            const welcomeNameEl = document.getElementById('welcomeName');
-            if (welcomeNameEl) welcomeNameEl.textContent = fallbackName;
-
-            const topUsernameEl = document.getElementById('topUsername');
-            if (topUsernameEl) topUsernameEl.textContent = fallbackName;
-
-            const profileUsername = document.getElementById('profileUsername');
-            if (profileUsername) profileUsername.textContent = fallbackName;
         }
+
+        const welcomeNameEl = document.getElementById('welcomeName');
+        if (welcomeNameEl) welcomeNameEl.textContent = nameToDisplay;
+
+        const topUsernameEl = document.getElementById('topUsername');
+        if (topUsernameEl) topUsernameEl.textContent = nameToDisplay;
+
+        const profileUsername = document.getElementById('profileUsername');
+        if (profileUsername) profileUsername.textContent = nameToDisplay;
+
+        // Trigger Cloud Data Sync for User Favorites & Playlists
+        await favoriteService.syncFromCloud(user.uid);
+        await playlistService.syncFromCloud(user.uid);
+
+        // Refresh current active view (e.g. Home) so user songs, history, and playlists load immediately
+        const activePath = document.querySelector('.nav-item.active')?.getAttribute('data-path') || 'home';
+        loadView(activePath, false);
     });
 
     // Mobile Navigation Toggle
@@ -955,7 +944,7 @@ const initHome = () => {
 
             <div class="welcome-banner" style="margin-bottom: 20px;">
                 <div>
-                    <h1 style="font-size: 2rem; margin-bottom: 6px;">Good evening</h1>
+                    <h1 style="font-size: 2rem; margin-bottom: 6px;">Good Morning, <span id="welcomeName">${auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'User'}</span>!</h1>
                     <p style="opacity: 0.8;">Ready for some new tunes?</p>
                 </div>
             </div>

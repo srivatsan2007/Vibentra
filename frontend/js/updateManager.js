@@ -24,19 +24,19 @@ export function initUpdateManager() {
                     <button class="update-back-btn" id="updateBackBtn" title="Back">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.2.6</h2>
+                    <h2 class="update-header-title" id="updateHeaderTitle">New update v1.2.7</h2>
                 </div>
 
                 <div class="update-view-body" id="updateViewBody">
                     <div class="update-meta-info" id="updateMetaInfo">
-                        <p>Released on: 25 August 2026, 12:00 pm</p>
+                        <p>Released on: 25 August 2026, 12:02 pm</p>
                         <p>Size: 2.9 MB</p>
-                        <p>SW Cache: vibentra-cache-v71</p>
+                        <p>SW Cache: vibentra-cache-v72</p>
                     </div>
 
                     <div class="update-important-block" id="updateImportantBlock">
                         <strong style="color: #38BDF8; display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> IMPORTANT NOTICE</strong><br>
-                        Restored classic app flow, silent update management without popups or interruptions, and fully responsive user interface.
+                        Automatic user account name and song data restoration on auth ready, restored home view greeting and cloud sync refresh.
                     </div>
 
                     <div id="updateChangelogContainer">

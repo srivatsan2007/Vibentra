@@ -1,30 +1,23 @@
 {
-  "version": "v1.2.6",
-  "swVersion": "vibentra-cache-v71",
-  "releaseDate": "25 August 2026, 12:00 pm",
+  "version": "v1.2.7",
+  "swVersion": "vibentra-cache-v72",
+  "releaseDate": "25 August 2026, 12:02 pm",
   "size": "2.9 MB",
-  "importantNote": "Restored classic app flow, silent update management without popups or interruptions, and fully responsive user interface.",
+  "importantNote": "Automatic user account name and song data restoration on auth ready, restored home view greeting and cloud sync refresh.",
   "changelog": [
+    {
+      "category": "Account & Song Restoration",
+      "items": [
+        "Fixed home page greeting DOM element binding (`id=welcomeName`) to display user account name immediately.",
+        "Automatic refresh of home view when Firebase authentication completes, restoring saved songs, history, and playlists."
+      ]
+    },
     {
       "category": "Classic App Experience & Silent Updates",
       "items": [
         "Disabled automatic floating update banners and popup overlays to preserve clean, uninterrupted app usage.",
         "Updates now process seamlessly in the background without forcing screens or prompting.",
         "Restored classic smooth navigation and touch responsiveness across all views."
-      ]
-    },
-    {
-      "category": "User Data & Cloud Sync",
-      "items": [
-        "Automatic Firebase Cloud data synchronization for Favorites and Playlists on login.",
-        "Real-time data auto-rendering when account data finishes syncing."
-      ]
-    },
-    {
-      "category": "Account Profile View",
-      "items": [
-        "Full Account Profile page rendering (`renderProfile`).",
-        "View active user avatar, Firebase account status, and quick stats (Liked Songs, Playlists, History)."
       ]
     }
   ]
