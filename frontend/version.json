@@ -1,17 +1,16 @@
 {
-  "version": "v1.5.5",
-  "swVersion": "vibentra-cache-v92",
-  "releaseDate": "25 August 2026, 02:25 pm",
+  "version": "v1.5.6",
+  "swVersion": "vibentra-cache-v93",
+  "releaseDate": "25 August 2026, 02:30 pm",
   "size": "2.8 MB",
-  "importantNote": "Enforced global mobile responsiveness across all views (Home, Search, Playlists, Profile, Settings, Vibe AI, Connect, and Auth).",
+  "importantNote": "Enforced high-visibility glowing glass styling for 3-dot options buttons across Search and Playlist pages.",
   "changelog": [
     {
-      "category": "Global Mobile Responsiveness",
+      "category": "3-Dot Track Options Visibility Fix",
       "items": [
-        "Standardized mobile breakpoints (@media max-width: 768px and 480px) across all views.",
-        "Refactored 3-dot options buttons and track rows to ensure 100% tap visibility on mobile touchscreens.",
-        "Adaptive hero cards, genre grids, and headers scaling dynamically to small mobile screens.",
-        "Preserved 100% backend music streaming and API logic."
+        "Enabled permanent high-contrast glowing cyan glass circle styling for 3-dot options buttons on Search, Playlist, Favorites, and Music Cards.",
+        "Ensured 3-dot buttons (.search-row-opt-btn, .remove-from-pl-btn, .fav-opt-btn, .card-menu-trigger) are 100% visible on both desktop and mobile viewports.",
+        "Preserved 100% backend streaming and track menu action sheet functionality."
       ]
     }
   ]

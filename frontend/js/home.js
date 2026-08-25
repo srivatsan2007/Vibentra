@@ -1484,7 +1484,7 @@ const initHome = () => {
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</p>
                         </div>
                     </div>
-                    <button class="search-row-opt-btn" title="Track Options" style="background: none; border: none; color: #cccccc; font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <button class="search-row-opt-btn" title="Track Options" style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -1533,7 +1533,7 @@ const initHome = () => {
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Album • ${artistStr}</p>
                         </div>
                     </div>
-                    <button class="search-album-opt-btn" title="Album Options" style="background: none; border: none; color: #cccccc; font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <button class="search-album-opt-btn" title="Album Options" style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -1592,7 +1592,7 @@ const initHome = () => {
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Playlist • ${creatorStr}</p>
                         </div>
                     </div>
-                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: none; border: none; color: #cccccc; font-size: 1.15rem; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;

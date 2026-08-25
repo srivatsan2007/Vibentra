@@ -5582,10 +5582,56 @@ input:checked + .toggle-slider:before {
         width: 100% !important;
     }
 
-    /* Playlist detail header */
-    .playlist-cover-mosaic {
-        width: 130px !important;
-        height: 130px !important;
-    }
 }
+
+/* ==========================================================================
+   PERMANENT HIGH-VISIBILITY ENFORCEMENT FOR ALL 3-DOT OPTION BUTTONS
+   ========================================================================== */
+
+.search-row-opt-btn,
+.search-album-opt-btn,
+.search-pl-opt-btn,
+.remove-from-pl-btn,
+.fav-opt-btn,
+.card-menu-trigger,
+.spotify-track-row .remove-from-pl-btn,
+.card-action-btn.more-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    color: #38BDF8 !important;
+    font-size: 1.15rem !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+    margin-left: auto !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+.search-row-opt-btn:hover,
+.search-album-opt-btn:hover,
+.search-pl-opt-btn:hover,
+.remove-from-pl-btn:hover,
+.fav-opt-btn:hover,
+.card-menu-trigger:hover,
+.card-action-btn.more-btn:hover {
+    transform: scale(1.1) !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: #38BDF8 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.6) !important;
+}
+
 
