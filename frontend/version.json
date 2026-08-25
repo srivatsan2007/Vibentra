@@ -1,17 +1,17 @@
 {
-  "version": "v1.6.3",
-  "swVersion": "vibentra-cache-v101",
-  "releaseDate": "25 August 2026, 07:34 pm",
+  "version": "v1.6.4",
+  "swVersion": "vibentra-cache-v102",
+  "releaseDate": "25 August 2026, 07:42 pm",
   "size": "2.8 MB",
-  "importantNote": "Refined mobile UI layout to eliminate element overlap and perfectly match the liquid glass floating dock reference design.",
+  "importantNote": "Redesigned music floating controller capsule to pixel-perfectly match reference design with white transparent play icon and aligned heart button.",
   "changelog": [
     {
-      "category": "Liquid Glass Mobile Dock & Mini Player Perfecting (v1.6.3)",
+      "category": "Liquid Glass Mini Player Redesign (v1.6.4)",
       "items": [
-        "Eliminated all overlapping player controls and obsolete bottom navigation CSS rules.",
-        "Refined floating mini player pill to display artwork, title/artist info, heart like button, and play control.",
-        "Aligned bottom navigation dock pill with Home & Library options alongside the circular Search floating button.",
-        "Pushed new production build to Vercel for instant deployment."
+        "Matched floating controller pill dimensions, glass blur, border highlights, and typography to reference design.",
+        "Converted play/pause button to a clean, borderless solid white icon directly on the glass capsule.",
+        "Aligned heart outline favorite icon with precision spacing next to the play control.",
+        "Pushed release v1.6.4 to GitHub and Vercel."
       ]
     }
   ]

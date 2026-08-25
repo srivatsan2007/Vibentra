@@ -12,7 +12,7 @@
     <meta name="theme-color" content="#0F172A">
     <link rel="apple-touch-icon" href="../images/icon-512.png">
     <link rel="icon" href="../images/icon-192.png" type="image/png">
-    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=1.6.3">
+    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=1.6.4">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         // PWA Service Worker Registration & Update Logic
@@ -402,9 +402,6 @@
                 <h4 id="playerTitle">Midnight City</h4>
                 <p id="playerArtist">M83</p>
             </div>
-            <button class="like-btn" id="playerLikeBtn">
-                <i class="fa-regular fa-heart"></i>
-            </button>
         </div>
 
         <div class="player-center">
@@ -423,6 +420,9 @@
         </div>
 
         <div class="player-right">
+            <button class="like-btn" id="playerLikeBtn" title="Favorite">
+                <i class="fa-regular fa-heart"></i>
+            </button>
             <div style="position: relative;" id="playerOptionsContainer">
                 <button class="control-btn" id="playerOptionsBtn" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                 <div class="notifications-dropdown hidden" id="playerOptionsDropdown" style="position: absolute; bottom: 150%; right: -20px; width: 220px; background: var(--cards); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 1000; overflow: hidden; padding: 10px 0;">

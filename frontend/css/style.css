@@ -3719,7 +3719,7 @@ input {
         margin-bottom: 12px !important;
     }
 
-    /* Liquid Glass Floating Capsule Mini Player (Exact match to Reference Image 2) */
+    /* Liquid Glass Floating Capsule Mini Player (Exact match to Reference Image) */
     .music-player {
         position: fixed !important;
         bottom: 86px !important;
@@ -3727,16 +3727,16 @@ input {
         transform: translateX(-50%) !important;
         width: calc(100% - 24px) !important;
         max-width: 480px !important;
-        height: 62px !important;
+        height: 60px !important;
         border-radius: 9999px !important;
-        background: rgba(14, 16, 24, 0.90) !important;
-        backdrop-filter: blur(30px) saturate(190%) !important;
-        -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+        background: rgba(14, 15, 20, 0.90) !important;
+        backdrop-filter: blur(40px) saturate(200%) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.22) !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
         z-index: 2500 !important;
-        padding: 0 16px 0 10px !important;
+        padding: 0 20px 0 10px !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
@@ -3753,12 +3753,13 @@ input {
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
+        order: 1 !important;
     }
 
     .music-player .now-playing-img {
         width: 44px !important;
         height: 44px !important;
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         object-fit: cover !important;
         flex-shrink: 0 !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
@@ -3775,41 +3776,37 @@ input {
 
     .music-player .now-playing-info h4,
     .music-player #playerTitle {
-        font-size: 0.92rem !important;
+        font-size: 0.95rem !important;
         font-weight: 700 !important;
         color: #FFFFFF !important;
         margin: 0 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        letter-spacing: -0.2px !important;
     }
 
     .music-player .now-playing-info p,
     .music-player #playerArtist {
-        font-size: 0.76rem !important;
-        color: rgba(255, 255, 255, 0.65) !important;
+        font-size: 0.78rem !important;
+        font-weight: 500 !important;
+        color: rgba(255, 255, 255, 0.72) !important;
         margin: 2px 0 0 0 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
 
-    .music-player .player-center {
+    /* Right Action Container (Heart + Play) */
+    .music-player .player-right {
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
-        gap: 12px !important;
+        gap: 18px !important;
         flex: 0 0 auto !important;
-        max-width: none !important;
-        padding: 0 !important;
         margin: 0 !important;
-    }
-
-    .music-player .player-controls {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: flex-end !important;
-        gap: 12px !important;
+        padding: 0 !important;
+        order: 2 !important;
     }
 
     .music-player #playerLikeBtn,
@@ -3822,9 +3819,9 @@ input {
         color: #FFFFFF !important;
         font-size: 1.35rem !important;
         cursor: pointer !important;
-        padding: 4px !important;
+        padding: 0 !important;
+        margin: 0 !important;
         transition: transform 0.15s ease !important;
-        margin-right: 4px !important;
     }
 
     .music-player #playerLikeBtn.active i,
@@ -3832,20 +3829,40 @@ input {
         color: #EC4899 !important;
     }
 
+    .music-player .player-center {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        flex: 0 0 auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        order: 3 !important;
+    }
+
+    .music-player .player-controls {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     .music-player #playPauseBtn,
     .music-player .play-pause-btn {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        width: 36px !important;
-        height: 36px !important;
+        width: auto !important;
+        height: auto !important;
         font-size: 1.25rem !important;
         background: transparent !important;
         color: #FFFFFF !important;
-        border-radius: 50% !important;
+        border-radius: 0 !important;
         border: none !important;
         cursor: pointer !important;
         box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 0 0 18px !important;
         transition: transform 0.15s ease !important;
     }
 
@@ -3855,13 +3872,14 @@ input {
         transform: scale(0.88) !important;
     }
 
-    /* Hide desktop controls on mobile mini player */
+    /* Hide desktop controls & option menus on mobile mini player */
     .music-player #shuffleBtn,
     .music-player #prevBtn,
     .music-player #nextBtn,
     .music-player #repeatBtn,
     .music-player .progress-container,
-    .music-player .player-right {
+    .music-player #playerOptionsContainer,
+    .music-player .volume-container {
         display: none !important;
     }
 
