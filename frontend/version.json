@@ -1,16 +1,15 @@
 {
-  "version": "v1.4.0",
-  "swVersion": "vibentra-cache-v85",
-  "releaseDate": "25 August 2026, 01:25 pm",
+  "version": "v1.4.1",
+  "swVersion": "vibentra-cache-v86",
+  "releaseDate": "25 August 2026, 01:27 pm",
   "size": "2.8 MB",
-  "importantNote": "Implemented Spotify x YouTube Music glassmorphic action sheet modal for playlist track options with guaranteed 100% touch responsiveness on mobile.",
+  "importantNote": "Fixed JS scope issue with playlist action sheet helper to ensure 100% app stability and song loading across all views.",
   "changelog": [
     {
-      "category": "Playlist UI & Action Sheet Redesign",
+      "category": "Stability & Scope Fix",
       "items": [
-        "Replaced browser prompt dialog with a premium Spotify & YouTube Music glassmorphic action sheet bottom modal.",
-        "Added instant touch actions for Play Now, Add/Remove Liked Songs, Add to Playlist, Download Track, Ringtone Studio, Lyrics, and Remove Track.",
-        "Guaranteed 100% visible 3-dots button positioning across all mobile viewports."
+        "Fixed JavaScript scope declaration for openTrackOptionsMenu in home.js.",
+        "Restored full 100% playback, search, and playlist functionality across mobile and desktop clients."
       ]
     }
   ]

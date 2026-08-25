@@ -1986,6 +1986,8 @@ const initHome = () => {
                 renderPlaylistDetail(id);
             });
         });
+    }
+
     function openTrackOptionsMenu(track, playlistId = null) {
         if (!track) return;
         const modal = document.getElementById('songOptionsModal');
