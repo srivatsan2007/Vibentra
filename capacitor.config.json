@@ -8,8 +8,7 @@
     "cleartext": true,
     "androidScheme": "https",
     "allowNavigation": [
-      "vibentra.vercel.app",
-      "*.vercel.app"
+      "*"
     ]
   }
 }
