@@ -4,9 +4,6 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signInWithPopup, 
-    signInWithRedirect,
-    signInWithCredential,
-    getRedirectResult,
     GoogleAuthProvider,
     sendPasswordResetEmail,
     updateProfile
@@ -167,7 +164,7 @@ const initAuth = () => {
         }
     });
 
-    // Google Sign-In with robust fallback
+    // Google Sign-In (In-app Popup)
     googleLoginBtn.addEventListener('click', async () => {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
@@ -176,23 +173,14 @@ const initAuth = () => {
             const result = await signInWithPopup(auth, provider);
             await handleSuccessfulUser(result.user);
         } catch (error) {
-            console.warn("Standard Firebase popup failed, checking options:", error);
-            
-            // Try signInWithRedirect if popup fails or is blocked
-            if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/operation-not-supported-in-this-environment') {
-                try {
-                    await signInWithRedirect(auth, provider);
-                    return;
-                } catch (redirectErr) {
-                    console.warn("Redirect auth error:", redirectErr);
-                }
-            }
-            
+            console.warn("Google login error:", error);
             let msg = error.message;
-            if (error.code === 'auth/popup-closed-by-user') msg = 'Google Sign-in was cancelled.';
-            else if (error.code === 'auth/popup-blocked') msg = 'Google Sign-in popup was blocked by browser.';
-            else if (error.message && error.message.includes('missing initial state')) {
-                msg = 'Device storage policy blocked redirect. Please log in using Email & Password.';
+            if (error.code === 'auth/popup-closed-by-user') {
+                msg = 'Google Sign-in was cancelled.';
+            } else if (error.code === 'auth/popup-blocked') {
+                msg = 'Google Sign-in popup was blocked by browser. Please enable popups or log in with Email & Password.';
+            } else if (error.code === 'auth/unauthorized-domain') {
+                msg = 'Domain not authorized for Google Sign-in.';
             }
             showNotification(msg, 'error');
         }
