@@ -174,6 +174,7 @@ public class MainActivity extends BridgeActivity {
                 settings.setDomStorageEnabled(true);
                 settings.setDatabaseEnabled(true);
                 settings.setJavaScriptCanOpenWindowsAutomatically(true);
+                settings.setSupportMultipleWindows(true);
                 settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
                 android.webkit.CookieManager cookieManager = android.webkit.CookieManager.getInstance();
@@ -186,6 +187,51 @@ public class MainActivity extends BridgeActivity {
                     settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                     cookieManager.setAcceptThirdPartyCookies(webView, true);
                 }
+
+                // Handle Google Auth popups directly inside the app instead of launching external Chrome browser
+                webView.setWebChromeClient(new android.webkit.WebChromeClient() {
+                    @Override
+                    public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
+                        WebView popupWebView = new WebView(MainActivity.this);
+                        popupWebView.getSettings().setJavaScriptEnabled(true);
+                        popupWebView.getSettings().setDomStorageEnabled(true);
+                        popupWebView.getSettings().setDatabaseEnabled(true);
+                        popupWebView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+                        popupWebView.getSettings().setSupportMultipleWindows(true);
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(popupWebView, true);
+                        }
+
+                        popupWebView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                        ));
+
+                        popupWebView.setWebChromeClient(this);
+                        popupWebView.setWebViewClient(new android.webkit.WebViewClient() {
+                            @Override
+                            public boolean shouldOverrideUrlLoading(WebView v, android.webkit.WebResourceRequest request) {
+                                return false;
+                            }
+                        });
+
+                        view.addView(popupWebView);
+                        WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                        transport.setWebView(popupWebView);
+                        resultMsg.sendToTarget();
+                        return true;
+                    }
+
+                    @Override
+                    public void onCloseWindow(WebView window) {
+                        try {
+                            ((android.view.ViewGroup) window.getParent()).removeView(window);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Error closing popup window", e);
+                        }
+                    }
+                });
             }
         } catch (Exception e) {
             Log.w(TAG, "Error configuring WebSettings", e);
