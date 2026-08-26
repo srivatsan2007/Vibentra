@@ -298,40 +298,15 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             switch (focusChange) {
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                    Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT: Muting native stream and pausing audio...");
-                    if (isPlaying || wasPlayingBeforeCall) {
-                        wasPlayingBeforeCall = true;
-                        resumeOnFocusGain = true;
-                        isPlaying = false;
-                        applyCallSilence(true);
-                        updateMediaSessionState();
-                        BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
-                    }
+                    Log.d(TAG, "AUDIOFOCUS_LOSS_TRANSIENT: Transient audio focus change logged.");
                     break;
 
                 case AudioManager.AUDIOFOCUS_LOSS:
-                    Log.d(TAG, "AUDIOFOCUS_LOSS: Permanent focus loss. Muting native stream and pausing...");
-                    resumeOnFocusGain = false;
-                    wasPlayingBeforeCall = false;
-                    isPlaying = false;
-                    applyCallSilence(true);
-                    updateMediaSessionState();
-                    BackgroundAudioPlugin.handleMediaAction(ACTION_PAUSE);
+                    Log.d(TAG, "AUDIOFOCUS_LOSS: External audio focus change logged.");
                     break;
 
                 case AudioManager.AUDIOFOCUS_GAIN:
-                    if (isCallActive) {
-                        Log.d(TAG, "AUDIOFOCUS_GAIN ignored because phone call is still active.");
-                        break;
-                    }
-                    applyCallSilence(false);
-                    if (resumeOnFocusGain || wasPlayingBeforeCall) {
-                        resumeOnFocusGain = false;
-                        wasPlayingBeforeCall = false;
-                        isPlaying = true;
-                        updateMediaSessionState();
-                        BackgroundAudioPlugin.handleMediaAction(ACTION_PLAY);
-                    }
+                    Log.d(TAG, "AUDIOFOCUS_GAIN: Audio focus gained.");
                     break;
             }
         } catch (Throwable t) {
