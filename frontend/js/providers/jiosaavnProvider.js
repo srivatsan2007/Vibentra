@@ -4,15 +4,16 @@ export default class JioSaavnProvider extends ProviderInterface {
     constructor() {
         super('jiosaavn', 'JioSaavn API');
         if (typeof window !== 'undefined') {
-            if (window.location.protocol === 'file:' || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
+            const isCapacitor = !!(window.Capacitor && (window.Capacitor.isNativePlatform?.() || window.Capacitor.platform === 'android' || window.Capacitor.platform === 'ios'));
+            const isLocalDev = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port === '5000';
+            
+            if (isCapacitor || !isLocalDev) {
                 this.backendUrl = 'https://vibentra.vercel.app/api/jiosaavn';
-            } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('10.')) {
-                this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn`;
             } else {
-                this.backendUrl = '/api/jiosaavn';
+                this.backendUrl = `http://${window.location.hostname}:5000/api/jiosaavn`;
             }
         } else {
-            this.backendUrl = '/api/jiosaavn';
+            this.backendUrl = 'https://vibentra.vercel.app/api/jiosaavn';
         }
         this.trackCache = new Map();
     }
