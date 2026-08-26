@@ -322,7 +322,16 @@ class MusicService {
         // 6. CANPLAY & CANPLAYTHROUGH: Media data buffered sufficiently
         this.audioPlayer.addEventListener('canplay', () => {
             console.log(`[PLAYBACK_CANPLAY] Gen ${this._playbackGeneration}: readyState ${this.audioPlayer.readyState}`);
+            if (this.currentTrack) {
+                this.updateNativeNotification(this.currentTrack);
+            }
             this.checkAndResumePlayback('canplay');
+        });
+
+        this.audioPlayer.addEventListener('loadedmetadata', () => {
+            if (this.currentTrack) {
+                this.updateNativeNotification(this.currentTrack);
+            }
         });
 
         this.audioPlayer.addEventListener('canplaythrough', () => {
@@ -1371,11 +1380,15 @@ class MusicService {
 
         try {
             if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
+                const durMs = Math.floor((this.audioPlayer.duration || 0) * 1000);
+                const posMs = Math.floor((this.audioPlayer.currentTime || 0) * 1000);
                 window.Capacitor.Plugins.BackgroundAudio.startService({
                     title: track.title || "Vibentra Music",
                     artist: track.artist || "Playing...",
                     cover: track.cover || "",
-                    isPlaying: this.isPlaying || this._isTransitioning
+                    isPlaying: this.isPlaying || this._isTransitioning,
+                    duration: durMs > 0 ? durMs : 0,
+                    position: posMs > 0 ? posMs : 0
                 });
             }
         } catch (e) {
@@ -1759,11 +1772,15 @@ class MusicService {
 
         try {
             if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio && this.currentTrack) {
+                const durMs = Math.floor((this.audioPlayer.duration || 0) * 1000);
+                const posMs = Math.floor((this.audioPlayer.currentTime || 0) * 1000);
                 window.Capacitor.Plugins.BackgroundAudio.startService({
                     title: this.currentTrack.title || "Vibentra Music",
                     artist: this.currentTrack.artist || "Playing...",
                     cover: this.currentTrack.cover || "",
-                    isPlaying: isPlaying
+                    isPlaying: isPlaying,
+                    duration: durMs > 0 ? durMs : 0,
+                    position: posMs > 0 ? posMs : 0
                 });
             }
         } catch (e) {

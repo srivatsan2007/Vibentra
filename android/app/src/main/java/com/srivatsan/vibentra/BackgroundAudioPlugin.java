@@ -47,6 +47,8 @@ public class BackgroundAudioPlugin extends Plugin {
             String artist = call.getString("artist", "Playing...");
             String cover = call.getString("cover", "");
             Boolean isPlaying = call.getBoolean("isPlaying", true);
+            long duration = call.hasOption("duration") ? call.getLong("duration") : 0L;
+            long position = call.hasOption("position") ? call.getLong("position") : 0L;
 
             Context context = getContext();
             if (context != null) {
@@ -55,6 +57,8 @@ public class BackgroundAudioPlugin extends Plugin {
                 intent.putExtra("artist", artist);
                 intent.putExtra("cover", cover);
                 intent.putExtra("isPlaying", isPlaying);
+                intent.putExtra("duration", duration);
+                intent.putExtra("position", position);
 
                 try {
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

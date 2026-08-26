@@ -19,8 +19,10 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.os.SystemClock;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -54,6 +56,8 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     private String currentArtist = "Playing...";
     private String currentCoverUrl = "";
     private boolean isPlaying = false;
+    private long currentDuration = 0L;
+    private long currentPosition = 0L;
     private boolean resumeOnFocusGain = false;
     private boolean wasPlayingBeforeCall = false;
     private boolean isCallActive = false;
@@ -335,10 +339,14 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 String artist = intent.getStringExtra("artist");
                 String cover = intent.getStringExtra("cover");
                 boolean playing = intent.getBooleanExtra("isPlaying", true);
+                long duration = intent.getLongExtra("duration", -1L);
+                long position = intent.getLongExtra("position", -1L);
 
                 if (title != null) currentTitle = title;
                 if (artist != null) currentArtist = artist;
                 if (playing != this.isPlaying) this.isPlaying = playing;
+                if (duration >= 0) currentDuration = duration;
+                if (position >= 0) currentPosition = position;
 
                 if (cover != null && !cover.equals(currentCoverUrl)) {
                     currentCoverUrl = cover;
@@ -399,11 +407,27 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         if (mediaSession == null) return;
         try {
             int state = isPlaying ? PlaybackStateCompat.STATE_PLAYING : PlaybackStateCompat.STATE_PAUSED;
+            long pos = currentPosition >= 0 ? currentPosition : PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN;
+            float playbackSpeed = isPlaying ? 1.0f : 0.0f;
+
             PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
                     .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE |
-                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
-                    .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f);
+                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
+                                PlaybackStateCompat.ACTION_SEEK_TO)
+                    .setState(state, pos, playbackSpeed, SystemClock.elapsedRealtime());
             mediaSession.setPlaybackState(stateBuilder.build());
+
+            MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder()
+                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
+                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist);
+
+            if (currentDuration > 0) {
+                metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, currentDuration);
+            }
+            if (coverBitmap != null) {
+                metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, coverBitmap);
+            }
+            mediaSession.setMetadata(metadataBuilder.build());
 
             // Synchronize Home Screen Widget
             VibentraWidgetProvider.updateWidgetState(this, currentTitle, currentArtist, isPlaying, coverBitmap);

@@ -1477,7 +1477,7 @@ const initHome = () => {
                 const artistStr = track.artist || 'Unknown Artist';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${track.title}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
@@ -1527,7 +1527,7 @@ const initHome = () => {
                 const coverUrl = album.cover || album.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
@@ -1587,7 +1587,7 @@ const initHome = () => {
                 const coverUrl = pl.cover || pl.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
@@ -2058,7 +2058,7 @@ const initHome = () => {
                 row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05);';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${track.title}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
@@ -2425,7 +2425,7 @@ const initHome = () => {
             pl.tracks.forEach((track, index) => {
                 html += `
                 <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>

@@ -1,17 +1,17 @@
 {
-  "version": "v1.6.6",
-  "swVersion": "vibentra-cache-v104",
-  "releaseDate": "25 August 2026, 07:48 pm",
+  "version": "v1.6.7",
+  "swVersion": "vibentra-cache-v105",
+  "releaseDate": "26 August 2026, 08:05 pm",
   "size": "2.8 MB",
-  "importantNote": "Reduced width and height of floating music controller capsule for a sleeker, more compact pill design.",
+  "importantNote": "Fixed Android lock screen duration & playback progress bar timer, and restored 3-dot options menu buttons across all playlists.",
   "changelog": [
     {
-      "category": "Compact Floating Controller Redesign (v1.6.6)",
+      "category": "Lock Screen Controller & Playlist Options Fixes (v1.6.7)",
       "items": [
-        "Reduced capsule length width to calc(100% - 36px) and height to 56px for a perfectly proportioned pill.",
-        "Optimized padding, thumbnail sizing (40px), and control icon spacing.",
-        "Maintained Previous, Play/Pause, Next, and Heart Favorite controls.",
-        "Pushed release v1.6.6 to GitHub and Vercel."
+        "Synchronized track duration and elapsed position with Android MediaSessionCompat & PlaybackStateCompat.",
+        "Fixed lock screen progress bar timer so seconds now count and animate continuously while screen is locked.",
+        "Fixed custom playlist track row flexbox layout so 3-dot options buttons are 100% visible on all mobile viewports.",
+        "Synchronized Capacitor native assets and updated service worker cache to v105."
       ]
     }
   ]
