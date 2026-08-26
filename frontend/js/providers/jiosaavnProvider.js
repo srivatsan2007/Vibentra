@@ -107,7 +107,7 @@ export default class JioSaavnProvider extends ProviderInterface {
 
         try {
             const data = await this.safeFetch(`/song?id=${trackId}`);
-            if (data && data.id) {
+            if (data && (data.id || data.streamUrl)) {
                 const standardized = this.standardizeTrack(data);
                 standardized._timestamp = Date.now();
                 this.trackCache.set(standardized.id, standardized);
@@ -116,14 +116,14 @@ export default class JioSaavnProvider extends ProviderInterface {
 
             if (cached && cached.streamUrl) return cached;
 
-            if (cached) {
-                const searchList = await this.searchSongs(`${cached.title} ${cached.artist}`);
+            const searchKey = cached ? `${cached.title} ${cached.artist || ''}` : String(trackId).replace(/_/g, ' ');
+            if (searchKey && searchKey.trim().length > 1) {
+                const searchList = await this.searchSongs(searchKey);
                 if (searchList && searchList.length > 0 && searchList[0].streamUrl) {
-                    cached.streamUrl = searchList[0].streamUrl;
-                    if (!cached.cover || cached.cover.trim() === '') cached.cover = searchList[0].cover;
-                    cached._timestamp = Date.now();
-                    this.trackCache.set(cached.id, cached);
-                    return cached;
+                    const resolved = searchList[0];
+                    resolved._timestamp = Date.now();
+                    this.trackCache.set(trackId, resolved);
+                    return resolved;
                 }
             }
 

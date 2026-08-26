@@ -238,9 +238,32 @@ const getSongDetails = async (req, res) => {
     if (!id) return res.status(400).json({ error: "Missing id" });
     try {
         const json = await fetchJson(`https://www.jiosaavn.com/api.php?__call=song.getDetails&_format=json&cc=in&pids=${encodeURIComponent(id)}`);
-        if (!json || !json[id]) return res.status(404).json({ error: "Song not found" });
-        res.json(formatTrack(json[id]));
+        if (json) {
+            const keys = Object.keys(json);
+            if (keys.length > 0 && json[keys[0]] && (json[keys[0]].id || json[keys[0]].song)) {
+                return res.json(formatTrack(json[keys[0]]));
+            }
+        }
+
+        // Secondary fallback API for song details by ID
+        const fallbackJson = await fetchJson(`https://saavn.me/songs?id=${encodeURIComponent(id)}`);
+        if (fallbackJson && fallbackJson.data && Array.isArray(fallbackJson.data) && fallbackJson.data.length > 0) {
+            const t = fallbackJson.data[0];
+            return res.json({
+                id: t.id,
+                title: t.name || t.title || '',
+                artist: t.primaryArtists || (t.artists?.primary ? t.artists.primary.map(a => a.name).join(', ') : ''),
+                album: t.album?.name || '',
+                cover: (t.image && t.image.length > 0) ? t.image[t.image.length - 1].url : '',
+                duration: formatTime(t.duration),
+                streamUrl: (t.downloadUrl && t.downloadUrl.length > 0) ? (typeof t.downloadUrl === 'string' ? t.downloadUrl : t.downloadUrl[t.downloadUrl.length - 1].url) : null,
+                type: 'song'
+            });
+        }
+
+        return res.status(404).json({ error: "Song not found" });
     } catch (err) {
+        console.error("getSongDetails error:", err);
         res.status(500).json({ error: "Failed to get song details" });
     }
 };

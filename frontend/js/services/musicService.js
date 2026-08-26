@@ -1174,30 +1174,35 @@ class MusicService {
         // Keep WebAudio thread active for smooth background track switches
         this.initKeepAliveAudio();
 
-        // Fetch full track details if streamUrl is missing or older than 2.5 minutes to avoid CDN link expiration stutter
         let fullTrack = track;
-        const isExpired = !fullTrack.streamUrl || !fullTrack._fetchedAt || (Date.now() - fullTrack._fetchedAt > 2.5 * 60 * 1000);
-        if (isExpired) {
+
+        // If streamUrl is missing or invalid, resolve via provider or emergency title/artist search
+        if (!fullTrack.streamUrl) {
             try {
                 const providerId = track.providerId || (track.provider === 'YouTube Music' || track.provider === 'ytmusic' || (track.id && String(track.id).startsWith('yt_')) ? 'ytmusic' : 'jiosaavn');
-                fullTrack = (await providerManager.getTrack(providerId, track.id)) || track;
-                fullTrack._fetchedAt = Date.now();
+                const fetchedTrack = await providerManager.getTrack(providerId, track.id);
+                if (fetchedTrack && fetchedTrack.streamUrl) {
+                    fullTrack = fetchedTrack;
+                    fullTrack._fetchedAt = Date.now();
+                }
             } catch (err) {
                 console.warn(`[PLAYBACK_ERROR] Stream URL fetch warning for gen ${requestId}:`, err);
             }
         }
 
-        // Emergency inline stream resolution fallback before declaring stream URL missing
-        if ((!fullTrack || !fullTrack.streamUrl) && (track?.title || fullTrack?.title)) {
+        // Emergency inline stream resolution fallback by song title & artist search
+        if (!fullTrack.streamUrl && (track?.title || fullTrack?.title)) {
             try {
-                const searchQ = `${fullTrack?.title || track.title} ${fullTrack?.artist || track.artist || ''}`;
+                const searchQ = `${fullTrack?.title || track.title} ${fullTrack?.artist || track.artist || ''}`.trim();
                 console.log(`[PLAYBACK_START] Attempting emergency stream recovery for: "${searchQ}"`);
                 const recoveryResults = await providerManager.searchSongs(searchQ);
-                if (recoveryResults && recoveryResults.length > 0 && recoveryResults[0].streamUrl) {
-                    if (!fullTrack) fullTrack = { ...track };
-                    fullTrack.streamUrl = recoveryResults[0].streamUrl;
-                    if (!fullTrack.cover || fullTrack.cover.trim() === '') fullTrack.cover = recoveryResults[0].cover;
-                    fullTrack._fetchedAt = Date.now();
+                if (recoveryResults && recoveryResults.length > 0) {
+                    const matched = recoveryResults.find(r => r.streamUrl) || recoveryResults[0];
+                    if (matched && matched.streamUrl) {
+                        fullTrack = { ...fullTrack, streamUrl: matched.streamUrl };
+                        if (!fullTrack.cover || fullTrack.cover.trim() === '') fullTrack.cover = matched.cover;
+                        fullTrack._fetchedAt = Date.now();
+                    }
                 }
             } catch (recoveryErr) {
                 console.warn(`[PLAYBACK_START] Inline emergency stream recovery failed:`, recoveryErr);
