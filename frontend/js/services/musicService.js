@@ -113,16 +113,21 @@ class MusicService {
 
     forceCallResume() {
         console.log("[CALL_INTERRUPT] Restoring audio elements and WebAudio context after call ended.");
+        const wasCallPaused = this._isCallPaused;
         this._isCallPaused = false;
-        this._userRequestedPause = false;
-        this.isPlaying = true;
+
         if (this.keepAliveCtx && this.keepAliveCtx.state === 'suspended') {
             try {
                 this.keepAliveCtx.resume().catch(() => {});
             } catch (e) {}
         }
-        this.updatePlayPauseUI(true);
-        this.safePlay('native_call_resume').catch(() => {});
+
+        if (wasCallPaused && this.currentTrack && this.audioPlayer && this.audioPlayer.src && this.audioPlayer.src.startsWith('http')) {
+            this._userRequestedPause = false;
+            this.isPlaying = true;
+            this.updatePlayPauseUI(true);
+            this.safePlay('native_call_resume', true).catch(() => {});
+        }
     }
 
     clearTransientTimers() {

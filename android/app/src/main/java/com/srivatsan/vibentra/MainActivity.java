@@ -97,10 +97,13 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    private boolean isCallPausedForActivity = false;
+
     private void handleActivityCallState(int state) {
         try {
             if (state == android.telephony.TelephonyManager.CALL_STATE_RINGING || state == android.telephony.TelephonyManager.CALL_STATE_OFFHOOK) {
                 Log.d(TAG, "ACTIVITY_CALL_PAUSE: Phone call active. Force pausing WebView audio.");
+                isCallPausedForActivity = true;
                 runOnUiThread(() -> {
                     try {
                         if (getBridge() != null && getBridge().getWebView() != null) {
@@ -111,16 +114,19 @@ public class MainActivity extends BridgeActivity {
                     }
                 });
             } else if (state == android.telephony.TelephonyManager.CALL_STATE_IDLE) {
-                Log.d(TAG, "ACTIVITY_CALL_RESUME: Phone call ended. Restoring WebView audio.");
-                runOnUiThread(() -> {
-                    try {
-                        if (getBridge() != null && getBridge().getWebView() != null) {
-                            getBridge().getWebView().evaluateJavascript("if(window.musicService) window.musicService.forceCallResume();", null);
+                if (isCallPausedForActivity) {
+                    isCallPausedForActivity = false;
+                    Log.d(TAG, "ACTIVITY_CALL_RESUME: Phone call ended. Restoring WebView audio.");
+                    runOnUiThread(() -> {
+                        try {
+                            if (getBridge() != null && getBridge().getWebView() != null) {
+                                getBridge().getWebView().evaluateJavascript("if(window.musicService) window.musicService.forceCallResume();", null);
+                            }
+                        } catch (Throwable t) {
+                            t.printStackTrace();
                         }
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                });
+                    });
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
