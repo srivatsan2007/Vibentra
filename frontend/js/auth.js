@@ -4,6 +4,7 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signInWithPopup, 
+    signInWithCredential,
     GoogleAuthProvider,
     sendPasswordResetEmail,
     updateProfile
@@ -42,15 +43,6 @@ const handleSuccessfulUser = async (user) => {
 };
 
 const initAuth = () => {
-    // Check redirect result on initialization if user was redirected back from Google Auth
-    try {
-        getRedirectResult(auth).then(async (result) => {
-            if (result && result.user) {
-                await handleSuccessfulUser(result.user);
-            }
-        }).catch((err) => console.warn("Auth redirect result check:", err));
-    } catch (e) {}
-
     // Preload Google Identity Services
     loadGoogleGSI().catch(() => {});
 
@@ -164,8 +156,24 @@ const initAuth = () => {
         }
     });
 
-    // Google Sign-In (In-app Popup)
+    // Google Sign-In (Native Android + Web Fallback)
     googleLoginBtn.addEventListener('click', async () => {
+        // 1. Check for Native Android Capacitor Plugin
+        if (window.Capacitor && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.FirebaseAuthentication) {
+            try {
+                const result = await window.Capacitor.Plugins.FirebaseAuthentication.signInWithGoogle();
+                if (result && result.credential && result.credential.idToken) {
+                    const credential = GoogleAuthProvider.credential(result.credential.idToken);
+                    const userCredential = await signInWithCredential(auth, credential);
+                    await handleSuccessfulUser(userCredential.user);
+                    return;
+                }
+            } catch (nativeErr) {
+                console.warn("Native Google Auth failed, trying web fallback:", nativeErr);
+            }
+        }
+
+        // 2. Web Fallback
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
         
@@ -178,7 +186,7 @@ const initAuth = () => {
             if (error.code === 'auth/popup-closed-by-user') {
                 msg = 'Google Sign-in was cancelled.';
             } else if (error.code === 'auth/popup-blocked') {
-                msg = 'Google Sign-in popup was blocked by browser. Please enable popups or log in with Email & Password.';
+                msg = 'Google Sign-in popup was blocked by browser. Please log in with Email & Password.';
             } else if (error.code === 'auth/unauthorized-domain') {
                 msg = 'Domain not authorized for Google Sign-in.';
             }

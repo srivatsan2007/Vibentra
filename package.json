@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/srivatsan2007/Vibentra#readme",
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.4.0",
     "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
