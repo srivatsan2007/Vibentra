@@ -147,14 +147,17 @@ class MusicService {
         });
     }
 
-    async safePlay(triggerTag = 'unknown') {
+    async safePlay(triggerTag = 'unknown', forcePlay = false) {
         this.logPlayRequest(triggerTag);
 
         if (this._isPlayPending) {
             console.log(`[PLAY_REQUEST] Ignored (${triggerTag}): play operation already pending for gen ${this._playbackGeneration}.`);
             return;
         }
-        if (!this.audioPlayer.paused) {
+
+        const isNewTrackPlay = forcePlay || triggerTag.includes('playSpecificTrack') || triggerTag.includes('repeat_one') || triggerTag.includes('togglePlayPause');
+
+        if (!isNewTrackPlay && !this.audioPlayer.paused) {
             console.log(`[PLAY_REQUEST] Ignored (${triggerTag}): audio element is already playing.`);
             return;
         }
