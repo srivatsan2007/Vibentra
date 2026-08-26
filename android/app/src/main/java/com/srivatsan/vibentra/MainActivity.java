@@ -68,17 +68,20 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    @androidx.annotation.RequiresApi(api = Build.VERSION_CODES.S)
+    private class ActivityCallStateCallback extends android.telephony.TelephonyCallback implements android.telephony.TelephonyCallback.CallStateListener {
+        @Override
+        public void onCallStateChanged(int state) {
+            handleActivityCallState(state);
+        }
+    }
+
     private void registerTelephonyCallbackInActivity() {
         try {
             android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             if (tm != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    tm.registerTelephonyCallback(getMainExecutor(), new android.telephony.TelephonyCallback() implements android.telephony.TelephonyCallback.CallStateListener {
-                        @Override
-                        public void onCallStateChanged(int state) {
-                            handleActivityCallState(state);
-                        }
-                    });
+                    tm.registerTelephonyCallback(getMainExecutor(), new ActivityCallStateCallback());
                 } else {
                     tm.listen(new android.telephony.PhoneStateListener() {
                         @Override
@@ -148,11 +151,6 @@ public class MainActivity extends BridgeActivity {
         keepWebViewActive();
     }
 
-    @Override
-    public void onWindowVisibilityChanged(int visibility) {
-        super.onWindowVisibilityChanged(visibility);
-        keepWebViewActive();
-    }
 
     private void keepWebViewActive() {
         try {
@@ -175,12 +173,18 @@ public class MainActivity extends BridgeActivity {
                 settings.setJavaScriptEnabled(true);
                 settings.setDomStorageEnabled(true);
                 settings.setDatabaseEnabled(true);
+                settings.setJavaScriptCanOpenWindowsAutomatically(true);
                 settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+                android.webkit.CookieManager cookieManager = android.webkit.CookieManager.getInstance();
+                cookieManager.setAcceptCookie(true);
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     settings.setOffscreenPreRaster(true);
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                    cookieManager.setAcceptThirdPartyCookies(webView, true);
                 }
             }
         } catch (Exception e) {

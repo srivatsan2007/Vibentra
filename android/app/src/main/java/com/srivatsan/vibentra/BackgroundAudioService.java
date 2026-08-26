@@ -21,6 +21,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import androidx.annotation.Nullable;
@@ -224,17 +225,20 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         }
     }
 
+    @androidx.annotation.RequiresApi(api = Build.VERSION_CODES.S)
+    private class ServiceCallStateCallback extends TelephonyCallback implements TelephonyCallback.CallStateListener {
+        @Override
+        public void onCallStateChanged(int state) {
+            processCallState(state);
+        }
+    }
+
     private void registerTelephonyListener() {
         try {
             TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             if (telephonyManager != null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    telephonyManager.registerTelephonyCallback(getMainExecutor(), new android.telephony.TelephonyCallback() implements android.telephony.TelephonyCallback.CallStateListener {
-                        @Override
-                        public void onCallStateChanged(int state) {
-                            processCallState(state);
-                        }
-                    });
+                    telephonyManager.registerTelephonyCallback(getMainExecutor(), new ServiceCallStateCallback());
                 } else {
                     telephonyManager.listen(new android.telephony.PhoneStateListener() {
                         @Override

@@ -6,6 +6,10 @@
   "server": {
     "url": "https://vibentra.vercel.app",
     "cleartext": true,
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "allowNavigation": [
+      "vibentra.vercel.app",
+      "*.vercel.app"
+    ]
   }
 }

@@ -4,6 +4,8 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signInWithPopup, 
+    signInWithRedirect,
+    getRedirectResult,
     GoogleAuthProvider,
     sendPasswordResetEmail,
     updateProfile
@@ -11,6 +13,27 @@ import {
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const initAuth = () => {
+    // Check redirect result on initialization if user was redirected back from Google Auth
+    try {
+        getRedirectResult(auth).then(async (result) => {
+            if (result && result.user) {
+                const user = result.user;
+                try {
+                    await setDoc(doc(db, "users", user.uid), {
+                        uid: user.uid,
+                        username: user.displayName || 'Google User',
+                        email: user.email,
+                        profileImage: user.photoURL || "",
+                        bio: "",
+                        createdAt: new Date().toISOString()
+                    }, { merge: true });
+                } catch (dbError) {}
+                showNotification('Google Sign-in successful!');
+                window.location.href = 'home.html';
+            }
+        }).catch((err) => console.warn("Auth redirect result check:", err));
+    } catch (e) {}
+
     // UI Elements
     const loginCard = document.getElementById('loginCard');
     const registerCard = document.getElementById('registerCard');
@@ -125,6 +148,7 @@ const initAuth = () => {
     // Google Sign-In
     googleLoginBtn.addEventListener('click', async () => {
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         try {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
@@ -146,6 +170,16 @@ const initAuth = () => {
             showNotification('Google Sign-in successful!');
             window.location.href = 'home.html';
         } catch (error) {
+            console.warn("Popup auth failed, attempting fallback:", error);
+            if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/operation-not-supported-in-this-environment' || (error.message && error.message.includes('missing initial state'))) {
+                try {
+                    await signInWithRedirect(auth, provider);
+                    return;
+                } catch (redirectErr) {
+                    showNotification(redirectErr.message, 'error');
+                    return;
+                }
+            }
             let msg = error.message;
             if (error.code === 'auth/popup-closed-by-user') msg = 'Google Sign-in was cancelled.';
             else if (error.code === 'auth/popup-blocked') msg = 'Google Sign-in popup was blocked by browser.';
