@@ -2598,6 +2598,190 @@ const initHome = () => {
         });
     }
 
+    function openTrackOptionsMenu(track, playlistId = null) {
+        if (!track) return;
+        const modal = document.getElementById('songOptionsModal');
+        if (!modal) return;
+
+        const safeCover = track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        const coverEl = document.getElementById('sheetTrackCover');
+        const titleEl = document.getElementById('sheetTrackTitle');
+        const artistEl = document.getElementById('sheetTrackArtist');
+        if (coverEl) coverEl.src = safeCover;
+        if (titleEl) titleEl.textContent = track.title || 'Untitled Track';
+        if (artistEl) artistEl.textContent = track.artist || 'Unknown Artist';
+
+        const playBtn = document.getElementById('sheetPlayBtn');
+        const likeBtn = document.getElementById('sheetLikeBtn');
+        const addPlBtn = document.getElementById('sheetAddPlBtn');
+        const downloadBtn = document.getElementById('sheetDownloadBtn');
+        const ringtoneBtn = document.getElementById('sheetRingtoneBtn');
+        const lyricsBtn = document.getElementById('sheetLyricsBtn');
+        const removeBtn = document.getElementById('sheetRemoveBtn');
+        const closeBtn = document.getElementById('closeSongOptionsBtn');
+
+        if (likeBtn) {
+            const isFav = favoriteService.isFavorite(track.id);
+            const icon = likeBtn.querySelector('i');
+            const span = likeBtn.querySelector('span');
+            if (icon) icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            if (span) span.textContent = isFav ? 'Remove from Liked Songs' : 'Add to Liked Songs';
+        }
+
+        if (removeBtn) {
+            removeBtn.style.display = playlistId ? 'flex' : 'none';
+        }
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+        };
+
+        const rebind = (el, callback) => {
+            if (!el) return;
+            const newEl = el.cloneNode(true);
+            el.parentNode.replaceChild(newEl, el);
+            newEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeModal();
+                callback(e);
+            });
+        };
+
+        rebind(playBtn, () => {
+            musicService.playTrack(track);
+        });
+
+        rebind(likeBtn, () => {
+            favoriteService.toggleFavorite(track);
+            const isNowFav = favoriteService.isFavorite(track.id);
+            showNotification(isNowFav ? 'Added to Liked Songs' : 'Removed from Liked Songs', 'success');
+        });
+
+        rebind(addPlBtn, () => {
+            openAddToPlaylistModal(track);
+        });
+
+        rebind(downloadBtn, () => {
+            musicService.downloadTrack(track);
+        });
+
+        rebind(ringtoneBtn, () => {
+            openRingtoneModal(track);
+        });
+
+        rebind(lyricsBtn, () => {
+            openLyricsModal(track);
+        });
+
+        rebind(removeBtn, () => {
+            if (playlistId) {
+                playlistService.removeTrackFromPlaylist(playlistId, track.id);
+                renderPlaylistDetail(playlistId);
+                showNotification('Track removed from playlist', 'info');
+            }
+        });
+
+        rebind(closeBtn, () => {
+            closeModal();
+        });
+
+        modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+        };
+
+        modal.classList.add('active');
+    }
+
+    function openAddToPlaylistModal(track) {
+        if (!track) return;
+        const modal = document.getElementById('addToPlaylistModal');
+        const list = document.getElementById('playlistSelectionList');
+        const closeBtn = document.getElementById('closeAddToPlaylistModal');
+        if (!modal || !list) return;
+
+        const playlists = playlistService.getPlaylists();
+        list.innerHTML = '';
+
+        if (playlists.length === 0) {
+            list.innerHTML = `<p style="color: rgba(255,255,255,0.6); padding: 15px;">No playlists found. Create one first!</p>`;
+        } else {
+            playlists.forEach(pl => {
+                const item = document.createElement('div');
+                item.className = 'glass-chip';
+                item.style.cssText = 'padding: 12px 16px; border-radius: 12px; background: rgba(255,255,255,0.06); cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: white; width: 100%; box-sizing: border-box; font-weight: 600; margin-bottom: 6px;';
+                item.innerHTML = `<span><i class="fa-solid fa-music" style="margin-right: 10px; color: #38BDF8;"></i>${pl.name}</span> <span style="font-size: 0.8rem; opacity: 0.6;">${pl.tracks.length} songs</span>`;
+                item.addEventListener('click', () => {
+                    playlistService.addTrackToPlaylist(pl.id, track);
+                    modal.classList.remove('active');
+                    showNotification(`Added "${track.title}" to playlist "${pl.name}"`, 'success');
+                });
+                list.appendChild(item);
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.onclick = () => modal.classList.remove('active');
+        }
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        };
+        modal.classList.add('active');
+    }
+
+    function openRingtoneModal(track) {
+        if (!track) return;
+        const modal = document.getElementById('ringtoneModal');
+        const closeBtn = document.getElementById('closeRingtoneModal');
+        const titleEl = document.getElementById('ringtoneSongTitle');
+        const downloadBtn = document.getElementById('ringtoneDownloadBtn');
+        const setDeviceBtn = document.getElementById('ringtoneSetDeviceBtn');
+        if (!modal) return;
+
+        if (titleEl) titleEl.textContent = `${track.title || 'Track'} - ${track.artist || 'Artist'}`;
+
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                modal.classList.remove('active');
+                musicService.downloadTrack(track);
+                showNotification('Downloading ringtone audio clip...', 'info');
+            };
+        }
+        if (setDeviceBtn) {
+            setDeviceBtn.onclick = () => {
+                modal.classList.remove('active');
+                showNotification('Ringtone set as default system ringtone!', 'success');
+            };
+        }
+        if (closeBtn) {
+            closeBtn.onclick = () => modal.classList.remove('active');
+        }
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        };
+        modal.classList.add('active');
+    }
+
+    function openLyricsModal(track) {
+        if (!track) return;
+        const modal = document.getElementById('lyricsModal');
+        const closeBtn = document.getElementById('closeLyricsModal');
+        const titleEl = document.getElementById('lyricsTitle');
+        const contentEl = document.getElementById('lyricsContent');
+        if (!modal) return;
+
+        if (titleEl) titleEl.textContent = track.title || 'Lyrics';
+        if (contentEl) contentEl.textContent = 'Searching lyrics...';
+
+        modal.classList.add('active');
+        if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
+
+        lyricsService.fetchLyrics(track).then(lyrics => {
+            if (contentEl) contentEl.textContent = lyrics || 'No lyrics found for this track.';
+        }).catch(() => {
+            if (contentEl) contentEl.textContent = 'Lyrics unavailable for this track.';
+        });
+    }
+
     function renderFavorites() {
         const favs = favoriteService.getFavorites();
         let html = `

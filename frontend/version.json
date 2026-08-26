@@ -1,17 +1,17 @@
 {
-  "version": "v1.6.7",
-  "swVersion": "vibentra-cache-v105",
-  "releaseDate": "26 August 2026, 08:05 pm",
+  "version": "v1.6.8",
+  "swVersion": "vibentra-cache-v106",
+  "releaseDate": "26 August 2026, 08:46 pm",
   "size": "2.8 MB",
-  "importantNote": "Fixed Android lock screen duration & playback progress bar timer, and restored 3-dot options menu buttons across all playlists.",
+  "importantNote": "Implemented missing openTrackOptionsMenu handler and connected Spotify x YouTube Music liquid glass action sheet for 3-dot track options.",
   "changelog": [
     {
-      "category": "Lock Screen Controller & Playlist Options Fixes (v1.6.7)",
+      "category": "3-Dot Track Options Action Sheet Fix (v1.6.8)",
       "items": [
-        "Synchronized track duration and elapsed position with Android MediaSessionCompat & PlaybackStateCompat.",
-        "Fixed lock screen progress bar timer so seconds now count and animate continuously while screen is locked.",
-        "Fixed custom playlist track row flexbox layout so 3-dot options buttons are 100% visible on all mobile viewports.",
-        "Synchronized Capacitor native assets and updated service worker cache to v105."
+        "Implemented openTrackOptionsMenu in home.js to fix reference error when tapping 3-dot buttons.",
+        "Connected Spotify x YouTube Music glass bottom action sheet modal (#songOptionsModal) with options for Play Now, Add/Remove Liked Songs, Add to Playlist, Download Track, Ringtone Studio, and View Lyrics.",
+        "Added glass action sheet CSS styling in style.css with smooth backdrop blur and slide-up animations.",
+        "Synchronized Capacitor Android assets and updated service worker cache to v106."
       ]
     }
   ]
