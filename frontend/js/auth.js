@@ -5,6 +5,7 @@ import {
     createUserWithEmailAndPassword, 
     signInWithPopup, 
     signInWithRedirect,
+    signInWithCredential,
     getRedirectResult,
     GoogleAuthProvider,
     sendPasswordResetEmail,
@@ -12,27 +13,49 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+const loadGoogleGSI = () => {
+    return new Promise((resolve) => {
+        if (window.google && window.google.accounts) return resolve(true);
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.head.appendChild(script);
+    });
+};
+
+const handleSuccessfulUser = async (user) => {
+    try {
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            username: user.displayName || 'Google User',
+            email: user.email,
+            profileImage: user.photoURL || "",
+            bio: "",
+            createdAt: new Date().toISOString()
+        }, { merge: true });
+    } catch (dbError) {
+        console.warn("Could not sync user to Firestore database:", dbError);
+    }
+
+    showNotification('Google Sign-in successful!');
+    window.location.href = 'home.html';
+};
+
 const initAuth = () => {
     // Check redirect result on initialization if user was redirected back from Google Auth
     try {
         getRedirectResult(auth).then(async (result) => {
             if (result && result.user) {
-                const user = result.user;
-                try {
-                    await setDoc(doc(db, "users", user.uid), {
-                        uid: user.uid,
-                        username: user.displayName || 'Google User',
-                        email: user.email,
-                        profileImage: user.photoURL || "",
-                        bio: "",
-                        createdAt: new Date().toISOString()
-                    }, { merge: true });
-                } catch (dbError) {}
-                showNotification('Google Sign-in successful!');
-                window.location.href = 'home.html';
+                await handleSuccessfulUser(result.user);
             }
         }).catch((err) => console.warn("Auth redirect result check:", err));
     } catch (e) {}
+
+    // Preload Google Identity Services
+    loadGoogleGSI().catch(() => {});
 
     // UI Elements
     const loginCard = document.getElementById('loginCard');
@@ -118,7 +141,6 @@ const initAuth = () => {
                 displayName: username
             });
 
-            // Save to Firestore (gracefully handle permission rules if locked)
             try {
                 await setDoc(doc(db, "users", user.uid), {
                     uid: user.uid,
@@ -145,46 +167,32 @@ const initAuth = () => {
         }
     });
 
-    // Google Sign-In
+    // Google Sign-In with robust fallback
     googleLoginBtn.addEventListener('click', async () => {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
+        
         try {
             const result = await signInWithPopup(auth, provider);
-            const user = result.user;
-            
-            // Check if it's a new user and add to Firestore (gracefully handle permission errors)
-            try {
-                await setDoc(doc(db, "users", user.uid), {
-                    uid: user.uid,
-                    username: user.displayName || 'Google User',
-                    email: user.email,
-                    profileImage: user.photoURL || "",
-                    bio: "",
-                    createdAt: new Date().toISOString()
-                }, { merge: true });
-            } catch (dbError) {
-                console.warn("Could not sync Google user to Firestore database:", dbError);
-            }
-
-            showNotification('Google Sign-in successful!');
-            window.location.href = 'home.html';
+            await handleSuccessfulUser(result.user);
         } catch (error) {
-            console.warn("Popup auth failed, attempting fallback:", error);
-            if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/operation-not-supported-in-this-environment' || (error.message && error.message.includes('missing initial state'))) {
+            console.warn("Standard Firebase popup failed, checking options:", error);
+            
+            // Try signInWithRedirect if popup fails or is blocked
+            if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/operation-not-supported-in-this-environment') {
                 try {
                     await signInWithRedirect(auth, provider);
                     return;
                 } catch (redirectErr) {
-                    showNotification(redirectErr.message, 'error');
-                    return;
+                    console.warn("Redirect auth error:", redirectErr);
                 }
             }
+            
             let msg = error.message;
             if (error.code === 'auth/popup-closed-by-user') msg = 'Google Sign-in was cancelled.';
             else if (error.code === 'auth/popup-blocked') msg = 'Google Sign-in popup was blocked by browser.';
-            else if (error.code === 'permission-denied' || error.message.includes('permissions')) {
-                msg = 'Firestore permissions error. Please update rules in Firebase console.';
+            else if (error.message && error.message.includes('missing initial state')) {
+                msg = 'Device storage policy blocked redirect. Please log in using Email & Password.';
             }
             showNotification(msg, 'error');
         }
