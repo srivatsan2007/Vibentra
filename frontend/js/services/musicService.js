@@ -1327,22 +1327,29 @@ class MusicService {
 
     updateMediaSession(track) {
         if (!track) return;
-        document.title = `${track.title} - ${track.artist || 'Unknown Artist'} | Vibentra`;
+        
+        const safeTitle = track.title || track.name || track.song || "Vibentra Music";
+        const safeArtist = track.artist || track.primaryArtists || track.singers || track.subtitle || "Unknown Artist";
+        const safeCover = track.cover || track.image || track.artwork || track.thumbnail || "";
+
+        document.title = `${safeTitle} - ${safeArtist} | Vibentra`;
 
         if ('mediaSession' in navigator) {
             try {
+                const artworkList = safeCover ? [
+                    { src: safeCover, sizes: '96x96', type: 'image/jpeg' },
+                    { src: safeCover, sizes: '128x128', type: 'image/jpeg' },
+                    { src: safeCover, sizes: '192x192', type: 'image/jpeg' },
+                    { src: safeCover, sizes: '256x256', type: 'image/jpeg' },
+                    { src: safeCover, sizes: '384x384', type: 'image/jpeg' },
+                    { src: safeCover, sizes: '512x512', type: 'image/jpeg' }
+                ] : [];
+
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: track.title,
-                    artist: track.artist || 'Unknown Artist',
+                    title: safeTitle,
+                    artist: safeArtist,
                     album: 'Vibentra',
-                    artwork: [
-                        { src: track.cover, sizes: '96x96', type: 'image/jpeg' },
-                        { src: track.cover, sizes: '128x128', type: 'image/jpeg' },
-                        { src: track.cover, sizes: '192x192', type: 'image/jpeg' },
-                        { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
-                        { src: track.cover, sizes: '384x384', type: 'image/jpeg' },
-                        { src: track.cover, sizes: '512x512', type: 'image/jpeg' }
-                    ]
+                    artwork: artworkList
                 });
 
                 navigator.mediaSession.setActionHandler('play', () => {
@@ -1383,9 +1390,9 @@ class MusicService {
                 const durMs = Math.floor((this.audioPlayer.duration || 0) * 1000);
                 const posMs = Math.floor((this.audioPlayer.currentTime || 0) * 1000);
                 window.Capacitor.Plugins.BackgroundAudio.startService({
-                    title: track.title || "Vibentra Music",
-                    artist: track.artist || "Playing...",
-                    cover: track.cover || "",
+                    title: safeTitle,
+                    artist: safeArtist,
+                    cover: safeCover,
                     isPlaying: this.isPlaying || this._isTransitioning,
                     duration: durMs > 0 ? durMs : 0,
                     position: posMs > 0 ? posMs : 0
