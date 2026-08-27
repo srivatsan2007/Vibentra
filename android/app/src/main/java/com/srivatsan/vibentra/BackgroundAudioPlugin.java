@@ -47,8 +47,32 @@ public class BackgroundAudioPlugin extends Plugin {
             String artist = call.getString("artist", "Playing...");
             String cover = call.getString("cover", "");
             Boolean isPlaying = call.getBoolean("isPlaying", true);
-            long duration = call.hasOption("duration") ? call.getLong("duration") : 0L;
-            long position = call.hasOption("position") ? call.getLong("position") : 0L;
+
+            long duration = 0L;
+            if (call.hasOption("duration")) {
+                try {
+                    Double d = call.getDouble("duration");
+                    if (d != null) duration = d.longValue();
+                } catch (Throwable t) {
+                    try {
+                        Long l = call.getLong("duration");
+                        if (l != null) duration = l;
+                    } catch (Throwable t2) {}
+                }
+            }
+
+            long position = 0L;
+            if (call.hasOption("position")) {
+                try {
+                    Double p = call.getDouble("position");
+                    if (p != null) position = p.longValue();
+                } catch (Throwable t) {
+                    try {
+                        Long l = call.getLong("position");
+                        if (l != null) position = l;
+                    } catch (Throwable t2) {}
+                }
+            }
 
             Context context = getContext();
             if (context != null) {
