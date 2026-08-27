@@ -1,17 +1,15 @@
 {
-  "version": "v1.6.9",
-  "swVersion": "vibentra-cache-v107",
-  "releaseDate": "27 August 2026, 07:35 am",
+  "version": "v1.7.0",
+  "swVersion": "vibentra-cache-v108",
+  "releaseDate": "27 August 2026, 11:15 am",
   "size": "2.8 MB",
-  "importantNote": "Restored 100% working lock screen media controls, song title, artist name, cover artwork thumbnail, and playback duration timer.",
+  "importantNote": "Force updated lock screen music shortcut and home screen widget media session handlers.",
   "changelog": [
     {
-      "category": "Lock Screen Media Controller Restoration (v1.6.9)",
+      "category": "Lock Screen & Widget OTA Update (v1.7.0)",
       "items": [
-        "Fixed missing updateNativeNotification method in musicService.js that was throwing JS errors during track metadata loading.",
-        "Synchronized downloaded album art cover bitmaps with Android MediaSessionCompat (METADATA_KEY_ALBUM_ART, METADATA_KEY_ART, METADATA_KEY_DISPLAY_ICON) so song artwork renders on all Android lock screen controls.",
-        "Preserved active track title and artist name in BackgroundAudioService during intent action triggers.",
-        "Synchronized Capacitor native Android assets and updated service worker cache to v107."
+        "Enforced over-the-air update trigger for lock screen music controller and track metadata.",
+        "Synchronized Android native assets and updated service worker cache to v108."
       ]
     }
   ]
