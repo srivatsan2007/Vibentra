@@ -1,16 +1,17 @@
 {
-  "version": "v1.7.4",
-  "swVersion": "vibentra-cache-v111",
-  "releaseDate": "27 August 2026, 07:20 pm",
+  "version": "v1.7.5",
+  "swVersion": "vibentra-cache-v112",
+  "releaseDate": "27 August 2026, 07:30 pm",
   "size": "2.8 MB",
-  "importantNote": "Removed zoom scaling constraint to eliminate blank side and bottom empty spaces, restoring full edge-to-edge layout coverage across all screen sizes.",
+  "importantNote": "Applied 90% UI scale with viewport width/height compensation to eliminate side and bottom gaps, while pinning 3-dot track options buttons on search page.",
   "changelog": [
     {
-      "category": "Edge-to-Edge Layout Fix (v1.7.4)",
+      "category": "90% UI Scaling & 3-Dot Options Button Fix (v1.7.5)",
       "items": [
-        "Eliminated zoom scaling viewport constraint from root stylesheet.",
-        "Restored 100% full screen width and 100vh height coverage on mobile and desktop viewports, removing empty side and bottom margins.",
-        "Bumped service worker cache version to v111."
+        "Enforced ytm-track-row flex layout constraints so track title & artist text never push options buttons off-screen.",
+        "Pinned 3-dot options button (search-row-opt-btn) to the right edge with flex-shrink: 0 and 44px clearance.",
+        "Applied 90% UI zoom with 111.111% viewport width/height compensation to fill screen edge-to-edge with ZERO side/bottom empty space.",
+        "Bumped service worker cache version to v112."
       ]
     }
   ]

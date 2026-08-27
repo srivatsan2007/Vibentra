@@ -29,6 +29,7 @@ html {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    background-color: var(--background);
 }
 
 body {
@@ -38,8 +39,9 @@ body {
     overflow-x: hidden;
     scroll-behavior: smooth !important;
     -webkit-overflow-scrolling: touch !important;
-    width: 100%;
-    min-height: 100vh;
+    zoom: 90%;
+    width: 111.111111%;
+    min-height: 111.111111vh;
     margin: 0;
     padding: 0;
 }
@@ -5450,6 +5452,7 @@ input:checked + .toggle-slider:before {
 }
 
 .spotify-track-row,
+.ytm-track-row,
 .ytm-search-row,
 .fav-track-row {
     width: 100% !important;
@@ -5459,14 +5462,16 @@ input:checked + .toggle-slider:before {
     align-items: center !important;
     justify-content: space-between !important;
     overflow: hidden !important;
+    position: relative !important;
 }
 
 .spotify-track-row > div:first-child,
+.ytm-track-row > div:first-child,
 .ytm-search-row > div:first-child,
 .fav-track-row > div:first-child {
     flex: 1 1 auto !important;
     min-width: 0 !important;
-    max-width: calc(100% - 48px) !important;
+    max-width: calc(100% - 44px) !important;
     overflow: hidden !important;
 }
 
@@ -5477,7 +5482,17 @@ input:checked + .toggle-slider:before {
 .fav-opt-btn,
 .remote-track-opt-btn {
     flex-shrink: 0 !important;
-    margin-left: 8px !important;
+    margin-left: 6px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 10 !important;
 }
 
 /* ==========================================================================
@@ -5599,10 +5614,14 @@ input:checked + .toggle-slider:before {
 
     /* Track Rows & List Adaptation */
     .spotify-track-row,
+    .ytm-track-row,
+    .ytm-search-row,
     .fav-track-row {
-        padding: 8px 10px !important;
+        padding: 8px 6px !important;
         border-radius: 12px !important;
-        gap: 10px !important;
+        gap: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Profile View Mobile Stack */
