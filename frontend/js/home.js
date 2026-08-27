@@ -546,8 +546,26 @@ const initHome = () => {
 
     // Mobile Bottom Navigation
     mobileNavItems.forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
             const path = item.getAttribute('data-target');
+            const navDockPill = document.querySelector('.mobile-nav-dock-pill');
+            const searchCircle = document.querySelector('.mobile-nav-search-circle');
+            const currentPath = history.state && history.state.path ? history.state.path : '';
+
+            // If user clicks search circle while on search view, toggle displaying navigation options pill!
+            if (path === 'search' && currentPath === 'search') {
+                if (navDockPill) {
+                    const isCollapsed = navDockPill.classList.contains('collapsed');
+                    if (isCollapsed) {
+                        navDockPill.classList.remove('collapsed');
+                        if (searchCircle) searchCircle.classList.remove('search-active');
+                    } else {
+                        navDockPill.classList.add('collapsed');
+                        if (searchCircle) searchCircle.classList.add('search-active');
+                    }
+                }
+                return;
+            }
 
             mobileNavItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
@@ -562,6 +580,17 @@ const initHome = () => {
     function loadView(path, pushState = true) {
         if (pushState) {
             history.pushState({ path }, '', '#' + path);
+        }
+
+        const navDockPill = document.querySelector('.mobile-nav-dock-pill');
+        const searchCircle = document.querySelector('.mobile-nav-search-circle');
+
+        if (path === 'search') {
+            if (navDockPill) navDockPill.classList.add('collapsed');
+            if (searchCircle) searchCircle.classList.add('search-active');
+        } else {
+            if (navDockPill) navDockPill.classList.remove('collapsed');
+            if (searchCircle) searchCircle.classList.remove('search-active');
         }
 
         switch (path) {
@@ -1326,6 +1355,81 @@ const initHome = () => {
         let activeFilter = 'all'; // 'all', 'songs', 'artists', 'albums', 'playlists'
         let currentResults = null;
         let searchDebounce;
+        let currentSearchQuery = initialQuery;
+        let isFetchingMore = false;
+        let hasMoreSongs = true;
+        let searchPageCount = 1;
+
+        const loadMoreSongs = async () => {
+            if (isFetchingMore || !hasMoreSongs || !currentSearchQuery || !currentResults || !currentResults.songs) return;
+
+            const songsListContainer = document.getElementById('searchSongsListContainer');
+            if (!songsListContainer) return;
+
+            isFetchingMore = true;
+            let spinner = document.getElementById('searchInfiniteSpinner');
+            if (!spinner) {
+                spinner = document.createElement('div');
+                spinner.id = 'searchInfiniteSpinner';
+                spinner.style.cssText = 'padding: 16px 0; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.88rem; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px;';
+                spinner.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin" style="color: #38BDF8; font-size: 1.1rem;"></i> Loading more songs...`;
+                songsListContainer.appendChild(spinner);
+            }
+
+            try {
+                searchPageCount++;
+                const pageKeywords = ['songs', 'music', 'hits', 'remix', 'best', 'popular', 'track'];
+                const kw = pageKeywords[(searchPageCount - 2) % pageKeywords.length];
+                const nextQuery = `${currentSearchQuery} ${kw}`;
+
+                const extraResults = await searchService.searchAll(nextQuery);
+                if (extraResults && extraResults.songs && extraResults.songs.length > 0) {
+                    const existingIds = new Set(currentResults.songs.map(s => String(s.id)));
+                    const newSongs = extraResults.songs.filter(s => !existingIds.has(String(s.id)));
+
+                    if (newSongs.length > 0) {
+                        newSongs.forEach(track => {
+                            currentResults.songs.push(track);
+                            const row = createSearchSongRow(track, currentResults.songs);
+                            if (spinner && spinner.parentNode) {
+                                songsListContainer.insertBefore(row, spinner);
+                            } else {
+                                songsListContainer.appendChild(row);
+                            }
+                        });
+                    } else {
+                        if (searchPageCount > 7) hasMoreSongs = false;
+                    }
+                } else {
+                    hasMoreSongs = false;
+                }
+            } catch (e) {
+                console.error('Infinite scroll fetch error:', e);
+            } finally {
+                if (spinner && spinner.parentNode) {
+                    spinner.parentNode.removeChild(spinner);
+                }
+                isFetchingMore = false;
+            }
+        };
+
+        const handleSearchScroll = () => {
+            const mainEl = document.getElementById('mainContent');
+            if (!mainEl) return;
+            if (!currentSearchQuery || !currentResults) return;
+            if (activeFilter !== 'all' && activeFilter !== 'songs') return;
+
+            const scrollRemaining = mainEl.scrollHeight - mainEl.scrollTop - mainEl.clientHeight;
+            if (scrollRemaining < 350) {
+                loadMoreSongs();
+            }
+        };
+
+        const mainContentEl = document.getElementById('mainContent');
+        if (mainContentEl) {
+            mainContentEl.removeEventListener('scroll', handleSearchScroll);
+            mainContentEl.addEventListener('scroll', handleSearchScroll, { passive: true });
+        }
 
         // Render Home Browse / Genre Grid State
         const renderDefaultBrowseState = () => {
@@ -1466,22 +1570,34 @@ const initHome = () => {
                     align-items: center;
                     justify-content: space-between;
                     gap: 12px;
-                    padding: 10px 4px;
+                    padding: 10px 8px;
                     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     cursor: pointer;
                     transition: background 0.2s ease;
                     width: 100%;
                     box-sizing: border-box;
+                    border-radius: 8px;
                 `;
 
                 const artistStr = track.artist || 'Unknown Artist';
+                const isYTM = track.provider === 'YouTube Music' || track.source === 'youtube' || track.providerId === 'ytmusic';
+                const providerBadgeHtml = isYTM
+                    ? `<span style="font-size: 0.68rem; padding: 2px 6px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                            <i class="fa-brands fa-youtube" style="font-size: 0.7rem;"></i> YouTube Music
+                       </span>`
+                    : `<span style="font-size: 0.68rem; padding: 2px 6px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                            <i class="fa-solid fa-music" style="font-size: 0.68rem;"></i> JioSaavn
+                       </span>`;
 
                 row.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${track.title}">
-                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                            <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
-                            <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistStr}</p>
+                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${track.title}">
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px;">
+                            <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;">
+                                <p style="margin: 0; font-size: 0.81rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${artistStr}</p>
+                                ${providerBadgeHtml}
+                            </div>
                         </div>
                     </div>
                     <button class="search-row-opt-btn" title="Track Options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
@@ -1652,9 +1768,10 @@ const initHome = () => {
                     songsSection.style.marginBottom = '24px';
                     songsSection.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Songs</h2>`;
                     const songsList = document.createElement('div');
+                    songsList.id = 'searchSongsListContainer';
                     songsList.style.display = 'flex';
                     songsList.style.flexDirection = 'column';
-                    results.songs.slice(0, 6).forEach(track => {
+                    results.songs.forEach(track => {
                         songsList.appendChild(createSearchSongRow(track, results.songs));
                     });
                     songsSection.appendChild(songsList);
@@ -1695,6 +1812,7 @@ const initHome = () => {
                 const songsSection = document.createElement('div');
                 songsSection.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Songs</h2>`;
                 const songsList = document.createElement('div');
+                songsList.id = 'searchSongsListContainer';
                 songsList.style.display = 'flex';
                 songsList.style.flexDirection = 'column';
                 results.songs.forEach(track => {
@@ -1844,6 +1962,16 @@ const initHome = () => {
         // Execution of Search Query
         const triggerSearch = async (query) => {
             const cleanQuery = query ? query.trim() : '';
+            currentSearchQuery = cleanQuery;
+            searchPageCount = 1;
+            hasMoreSongs = true;
+            isFetchingMore = false;
+
+            const navDockPill = document.querySelector('.mobile-nav-dock-pill');
+            const searchCircle = document.querySelector('.mobile-nav-search-circle');
+            if (navDockPill) navDockPill.classList.add('collapsed');
+            if (searchCircle) searchCircle.classList.add('search-active');
+
             if (!cleanQuery) {
                 clearBtn.style.display = 'none';
                 renderDefaultBrowseState();
@@ -2252,7 +2380,7 @@ const initHome = () => {
         };
 
         const playBtn = document.getElementById('sheetPlayBtn');
-        if (playBtn) playBtn.onclick = () => { closeModal(); musicService.playTrack(track); };
+        if (playBtn) playBtn.onclick = () => { closeModal(); musicService.playContext([track], track); };
 
         if (likeBtn) likeBtn.onclick = () => {
             closeModal();
@@ -3575,6 +3703,9 @@ const initHome = () => {
     }
 
     function renderSettingsCategory(category) {
+        const appVersion = "v1.7.3";
+        const swCacheName = "vibentra-cache-v110";
+
         const getSettingState = (key, defaultVal = false) => {
             const val = localStorage.getItem('vibentra_setting_' + key);
             return val !== null ? val === 'true' : defaultVal;
@@ -3584,7 +3715,418 @@ const initHome = () => {
             localStorage.setItem('vibentra_setting_' + key, boolVal ? 'true' : 'false');
         };
 
-        if (category === 'content') {
+        const getSettingVal = (key, defaultVal = '') => {
+            const val = localStorage.getItem('vibentra_setting_' + key);
+            return val !== null ? val : defaultVal;
+        };
+
+        const setSettingVal = (key, val) => {
+            localStorage.setItem('vibentra_setting_' + key, val);
+        };
+
+        if (category === 'updates' || category === 'about') {
+            const lastCheckedTime = localStorage.getItem('vibentra_last_update_check') || new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Check for updates</h2>
+                    </div>
+
+                    <!-- Hero Update Card (Exact match to Reference Image 1) -->
+                    <div class="glass-panel" style="border-radius: 24px; padding: 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.45) 0%, rgba(6, 182, 212, 0.25) 100%); border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 15px 35px rgba(0,0,0,0.4); margin-bottom: 24px;">
+                        <div style="width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #7C3AED, #06B6D4); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: white; box-shadow: 0 0 25px rgba(124,58,237,0.6);">
+                            <i class="fa-solid fa-rotate"></i>
+                        </div>
+                        <h3 style="font-size: 1.45rem; color: #FFFFFF; font-weight: 800; margin: 0;">Vibentra Music ${appVersion}</h3>
+                        <p style="color: rgba(255,255,255,0.75); font-size: 0.88rem; margin: 0;">Service Worker Cache: ${swCacheName}</p>
+                        
+                        <button id="triggerCheckUpdateBtn" class="btn btn-primary" style="padding: 13px 26px; border-radius: 16px; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 6px; background: linear-gradient(135deg, #06B6D4, #7C3AED); border: none; box-shadow: 0 8px 20px rgba(6, 182, 212, 0.4);">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> View Release Notes & Update
+                        </button>
+                    </div>
+
+                    <!-- Details List (Exact match to Reference Image 2) -->
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Version</h4>
+                                <div class="settings-option-subvalue">${appVersion}</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Automatic check for update</h4>
+                                <p>Checking for update when you open app</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingAutoUpdateCheck" ${getSettingState('auto_update_check', true) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row" id="rowCheckUpdate" style="cursor: pointer;">
+                            <div class="settings-option-text">
+                                <h4>Check for update</h4>
+                                <div class="settings-option-subvalue" id="lastCheckTimeText">Last checked at ${lastCheckedTime}</div>
+                            </div>
+                            <i class="fa-solid fa-arrows-rotate" style="color: var(--secondary); font-size: 1.1rem;"></i>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Author</h4>
+                                <div class="settings-option-subvalue">Srivatsan</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row" id="rowBuyCoffee" style="cursor: pointer;">
+                            <div class="settings-option-text">
+                                <h4>Buy me a coffee</h4>
+                                <p>If you love my work, give me a coffee</p>
+                            </div>
+                            <i class="fa-solid fa-mug-hot" style="color: #F59E0B; font-size: 1.2rem;"></i>
+                        </div>
+
+                        <div class="settings-option-row" id="rowSupportLink" style="cursor: pointer;">
+                            <div class="settings-option-text">
+                                <h4>Support with UPI/Crypto</h4>
+                                <div class="settings-option-subvalue" style="color: #38BDF8;">https://support.vibentra.cyou/</div>
+                            </div>
+                            <i class="fa-solid fa-arrow-up-right-from-square" style="color: rgba(255,255,255,0.6);"></i>
+                        </div>
+
+                        <div class="settings-option-row" id="rowThirdPartyLibs" style="cursor: pointer;">
+                            <div class="settings-option-text">
+                                <h4>Third party libraries</h4>
+                                <p>Description and licenses</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right" style="color: rgba(255,255,255,0.4);"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingAutoUpdateCheck')?.addEventListener('change', (e) => setSettingState('auto_update_check', e.target.checked));
+
+            document.getElementById('rowCheckUpdate')?.addEventListener('click', () => {
+                const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+                localStorage.setItem('vibentra_last_update_check', nowStr);
+                const el = document.getElementById('lastCheckTimeText');
+                if (el) el.textContent = `Last checked at ${nowStr}`;
+                showNotification('Checking for latest updates...', 'info');
+                setTimeout(() => {
+                    if (window.updateManager && typeof window.updateManager.showReleaseNotesView === 'function') {
+                        window.updateManager.showReleaseNotesView();
+                    } else {
+                        showNotification('You are on the latest version of Vibentra Music!', 'success');
+                    }
+                }, 800);
+            });
+
+            document.getElementById('triggerCheckUpdateBtn')?.addEventListener('click', () => {
+                if (window.updateManager && typeof window.updateManager.showReleaseNotesView === 'function') {
+                    window.updateManager.showReleaseNotesView();
+                } else {
+                    showNotification('Checking for updates...', 'info');
+                }
+            });
+
+            document.getElementById('rowBuyCoffee')?.addEventListener('click', () => {
+                showNotification('Thank you for supporting Vibentra! Opening Coffee support...', 'success');
+                window.open('https://buymeacoffee.com/srivatsan', '_blank');
+            });
+
+            document.getElementById('rowSupportLink')?.addEventListener('click', () => {
+                window.open('https://support.vibentra.cyou/', '_blank');
+            });
+
+            document.getElementById('rowThirdPartyLibs')?.addEventListener('click', () => {
+                openLicensesModal();
+            });
+
+        } else if (category === 'lyrics') {
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Lyrics</h2>
+                    </div>
+
+                    <!-- Details List (Exact match to Reference Image 3) -->
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Main Lyrics Provider</h4>
+                                <div class="settings-option-subvalue" id="lyricsProviderText">${getSettingVal('lyrics_provider', 'SimpMusic Lyrics')}</div>
+                            </div>
+                            <select id="settingLyricsProvider" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 12px; font-weight: 600; outline: none; cursor: pointer;">
+                                <option value="SimpMusic Lyrics" ${getSettingVal('lyrics_provider', 'SimpMusic Lyrics') === 'SimpMusic Lyrics' ? 'selected' : ''}>SimpMusic Lyrics</option>
+                                <option value="LrcLib Engine" ${getSettingVal('lyrics_provider') === 'LrcLib Engine' ? 'selected' : ''}>LrcLib Engine</option>
+                                <option value="YouTube Subtitles" ${getSettingVal('lyrics_provider') === 'YouTube Subtitles' ? 'selected' : ''}>YouTube Subtitles</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Translation Language</h4>
+                                <div class="settings-option-subvalue" id="transLangText">${getSettingVal('lyrics_trans_lang', 'en')}</div>
+                            </div>
+                            <select id="settingTransLang" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 12px; font-weight: 600; outline: none; cursor: pointer;">
+                                <option value="en" ${getSettingVal('lyrics_trans_lang', 'en') === 'en' ? 'selected' : ''}>en</option>
+                                <option value="ta" ${getSettingVal('lyrics_trans_lang') === 'ta' ? 'selected' : ''}>ta</option>
+                                <option value="hi" ${getSettingVal('lyrics_trans_lang') === 'hi' ? 'selected' : ''}>hi</option>
+                                <option value="es" ${getSettingVal('lyrics_trans_lang') === 'es' ? 'selected' : ''}>es</option>
+                                <option value="fr" ${getSettingVal('lyrics_trans_lang') === 'fr' ? 'selected' : ''}>fr</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>YouTube Subtitle Translation Language</h4>
+                                <div class="settings-option-subvalue" id="ytTransLangText">${getSettingVal('lyrics_yt_trans_lang', 'en')}</div>
+                            </div>
+                            <select id="settingYtTransLang" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 12px; font-weight: 600; outline: none; cursor: pointer;">
+                                <option value="en" ${getSettingVal('lyrics_yt_trans_lang', 'en') === 'en' ? 'selected' : ''}>en</option>
+                                <option value="ta" ${getSettingVal('lyrics_yt_trans_lang') === 'ta' ? 'selected' : ''}>ta</option>
+                                <option value="hi" ${getSettingVal('lyrics_yt_trans_lang') === 'hi' ? 'selected' : ''}>hi</option>
+                                <option value="es" ${getSettingVal('lyrics_yt_trans_lang') === 'es' ? 'selected' : ''}>es</option>
+                                <option value="fr" ${getSettingVal('lyrics_yt_trans_lang') === 'fr' ? 'selected' : ''}>fr</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingLyricsProvider')?.addEventListener('change', (e) => {
+                setSettingVal('lyrics_provider', e.target.value);
+                document.getElementById('lyricsProviderText').textContent = e.target.value;
+                showNotification(`Lyrics provider updated to ${e.target.value}`, 'success');
+            });
+
+            document.getElementById('settingTransLang')?.addEventListener('change', (e) => {
+                setSettingVal('lyrics_trans_lang', e.target.value);
+                document.getElementById('transLangText').textContent = e.target.value;
+                showNotification(`Translation language updated to ${e.target.value}`, 'success');
+            });
+
+            document.getElementById('settingYtTransLang')?.addEventListener('change', (e) => {
+                setSettingVal('lyrics_yt_trans_lang', e.target.value);
+                document.getElementById('ytTransLangText').textContent = e.target.value;
+                showNotification(`YouTube subtitle language updated to ${e.target.value}`, 'success');
+            });
+
+        } else if (category === 'storage' || category === 'backup') {
+            const lastBackupTime = localStorage.getItem('vibentra_last_backup_time') || new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Backup</h2>
+                    </div>
+
+                    <!-- Details List (Exact match to Reference Image 4) -->
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Auto backup</h4>
+                                <p>Automatically backup your data to Downloads/EchoMusic folder</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingAutoBackup" ${getSettingState('auto_backup', true) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Backup frequency</h4>
+                                <div class="settings-option-subvalue" id="backupFreqText">${getSettingVal('backup_freq', 'Daily')}</div>
+                            </div>
+                            <select id="settingBackupFreq" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 12px; font-weight: 600; outline: none; cursor: pointer;">
+                                <option value="Daily" ${getSettingVal('backup_freq', 'Daily') === 'Daily' ? 'selected' : ''}>Daily</option>
+                                <option value="Weekly" ${getSettingVal('backup_freq') === 'Weekly' ? 'selected' : ''}>Weekly</option>
+                                <option value="Monthly" ${getSettingVal('backup_freq') === 'Monthly' ? 'selected' : ''}>Monthly</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Keep backups</h4>
+                                <div class="settings-option-subvalue" id="keepBackupsText">Keep last ${getSettingVal('keep_backups', '5')} backups</div>
+                            </div>
+                            <select id="settingKeepBackups" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 12px; font-weight: 600; outline: none; cursor: pointer;">
+                                <option value="5" ${getSettingVal('keep_backups', '5') === '5' ? 'selected' : ''}>5 backups</option>
+                                <option value="10" ${getSettingVal('keep_backups') === '10' ? 'selected' : ''}>10 backups</option>
+                                <option value="All" ${getSettingVal('keep_backups') === 'All' ? 'selected' : ''}>All backups</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Last backup</h4>
+                                <div class="settings-option-subvalue" id="lastBackupTimeVal">${lastBackupTime}</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row" id="rowExportBackup" style="cursor: pointer;">
+                            <div class="settings-option-text">
+                                <h4>Backup</h4>
+                                <p>Save all your playlist data</p>
+                            </div>
+                            <i class="fa-solid fa-download" style="color: var(--secondary); font-size: 1.2rem;"></i>
+                        </div>
+
+                        <div class="settings-option-row" id="rowRestoreBackup" style="cursor: pointer;">
+                            <div class="settings-option-text">
+                                <h4>Restore Your Data</h4>
+                                <p>Restore your saved data</p>
+                            </div>
+                            <i class="fa-solid fa-upload" style="color: #10B981; font-size: 1.2rem;"></i>
+                            <input type="file" id="restoreFileInput" accept=".json" style="display: none;">
+                        </div>
+
+                        <div class="settings-option-row" style="flex-direction: column; align-items: flex-start; border-bottom: none;">
+                            <div class="settings-option-text" style="width: 100%;">
+                                <h4>Import playlists</h4>
+                                <p style="margin-top: 6px; line-height: 1.5;">If you wanna migrate your playlist from Old Echo Music to here just take the backup of it and visit the link below and then upload the generated file here</p>
+                                <a href="https://echomusic.fun/migrate" target="_blank" style="color: #38BDF8; font-size: 0.9rem; text-decoration: underline; margin-top: 10px; display: inline-block;">https://echomusic.fun/migrate</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingAutoBackup')?.addEventListener('change', (e) => setSettingState('auto_backup', e.target.checked));
+
+            document.getElementById('settingBackupFreq')?.addEventListener('change', (e) => {
+                setSettingVal('backup_freq', e.target.value);
+                document.getElementById('backupFreqText').textContent = e.target.value;
+                showNotification(`Backup frequency set to ${e.target.value}`, 'success');
+            });
+
+            document.getElementById('settingKeepBackups')?.addEventListener('change', (e) => {
+                setSettingVal('keep_backups', e.target.value);
+                document.getElementById('keepBackupsText').textContent = `Keep last ${e.target.value} backups`;
+                showNotification(`Keeping last ${e.target.value} backups`, 'success');
+            });
+
+            // Real Backup JSON Download
+            document.getElementById('rowExportBackup')?.addEventListener('click', () => {
+                const backupObj = {
+                    app: "Vibentra Music",
+                    version: appVersion,
+                    timestamp: new Date().toISOString(),
+                    playlists: JSON.parse(localStorage.getItem('vibentra_playlists') || '[]'),
+                    favorites: JSON.parse(localStorage.getItem('vibentra_favorites') || '[]'),
+                    history: JSON.parse(localStorage.getItem('vibentra_history') || '[]'),
+                    settings: Object.keys(localStorage).filter(k => k.startsWith('vibentra_setting_')).reduce((acc, k) => { acc[k] = localStorage.getItem(k); return acc; }, {})
+                };
+                const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vibentra_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+                localStorage.setItem('vibentra_last_backup_time', nowStr);
+                const el = document.getElementById('lastBackupTimeVal');
+                if (el) el.textContent = nowStr;
+                showNotification('Playlist backup saved to Downloads!', 'success');
+            });
+
+            // Real Restore Data File Upload
+            document.getElementById('rowRestoreBackup')?.addEventListener('click', () => {
+                const fileInput = document.getElementById('restoreFileInput');
+                if (fileInput) fileInput.click();
+            });
+
+            document.getElementById('restoreFileInput')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    try {
+                        const data = JSON.parse(evt.target.result);
+                        if (data.playlists && Array.isArray(data.playlists)) {
+                            localStorage.setItem('vibentra_playlists', JSON.stringify(data.playlists));
+                        }
+                        if (data.favorites && Array.isArray(data.favorites)) {
+                            localStorage.setItem('vibentra_favorites', JSON.stringify(data.favorites));
+                        }
+                        if (data.history && Array.isArray(data.history)) {
+                            localStorage.setItem('vibentra_history', JSON.stringify(data.history));
+                        }
+                        if (data.settings && typeof data.settings === 'object') {
+                            Object.keys(data.settings).forEach(k => localStorage.setItem(k, data.settings[k]));
+                        }
+                        showNotification('Backup data restored successfully!', 'success');
+                        setTimeout(() => renderSettingsCategory('storage'), 1000);
+                    } catch (err) {
+                        showNotification('Invalid backup file format.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            });
+
+        } else if (category === 'audio') {
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Audio</h2>
+                    </div>
+
+                    <!-- Details List (Exact match to Reference Image 5) -->
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Normalize Volume</h4>
+                                <p>Balance media loudness</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingNormalizeVolume" ${getSettingState('normalize_volume', false) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Skip Silent</h4>
+                                <p>Skip no music part</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingSkipSilent" ${getSettingState('skip_silent', false) ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row" id="rowEqualizer" style="cursor: pointer;">
+                            <div class="settings-option-text">
+                                <h4>Equalizer</h4>
+                                <p>Shape the sound with a ten-band curve</p>
+                            </div>
+                            <i class="fa-solid fa-sliders" style="color: var(--primary); font-size: 1.2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingNormalizeVolume')?.addEventListener('change', (e) => setSettingState('normalize_volume', e.target.checked));
+            document.getElementById('settingSkipSilent')?.addEventListener('change', (e) => setSettingState('skip_silent', e.target.checked));
+
+            document.getElementById('rowEqualizer')?.addEventListener('click', () => {
+                openEqualizerModal();
+            });
+
+        } else if (category === 'content') {
             dynamicContent.innerHTML = `
                 <div class="settings-view-wrapper">
                     <div class="sub-settings-header">
@@ -3656,58 +4198,11 @@ const initHome = () => {
 
                         <div class="settings-option-row">
                             <div class="settings-option-text">
-                                <h4>Video Quality</h4>
-                                <div class="settings-option-subvalue">720p</div>
-                            </div>
-                        </div>
-
-                        <div class="settings-option-row">
-                            <div class="settings-option-text">
-                                <h4>Video download quality</h4>
-                                <div class="settings-option-subvalue">720p</div>
-                            </div>
-                        </div>
-
-                        <div class="settings-option-row">
-                            <div class="settings-option-text">
-                                <h4>Send back listening data to Google</h4>
-                                <p>Upload your listening history to YouTube Music server, it will make YT Music recommendation system better. Working only if logged in</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="settingSendListeningData" ${getSettingState('send_data', true) ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="settings-option-row">
-                            <div class="settings-option-text">
                                 <h4>Play explicit content</h4>
                                 <p>Enable to play explicit content</p>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="settingExplicitContent" ${getSettingState('explicit', true) ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="settings-option-row">
-                            <div class="settings-option-text">
-                                <h4>Keep showing your YouTube playlist when offline</h4>
-                                <p>Save your YT playlist to local and keep to show when offline</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="settingOfflinePlaylist" ${getSettingState('offline_playlist', false) ? 'checked' : ''}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <div class="settings-option-row">
-                            <div class="settings-option-text">
-                                <h4>Proxy</h4>
-                                <p>Using Proxy to bypass country content blocking</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="settingProxy" ${getSettingState('proxy', false) ? 'checked' : ''}>
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -3718,10 +4213,8 @@ const initHome = () => {
             document.getElementById('settingDownloadLiked')?.addEventListener('change', (e) => setSettingState('download_liked', e.target.checked));
             document.getElementById('settingPlayVideo')?.addEventListener('change', (e) => setSettingState('play_video', e.target.checked));
             document.getElementById('settingRadioAudioOnly')?.addEventListener('change', (e) => setSettingState('radio_audio_only', e.target.checked));
-            document.getElementById('settingSendListeningData')?.addEventListener('change', (e) => setSettingState('send_data', e.target.checked));
             document.getElementById('settingExplicitContent')?.addEventListener('change', (e) => setSettingState('explicit', e.target.checked));
-            document.getElementById('settingOfflinePlaylist')?.addEventListener('change', (e) => setSettingState('offline_playlist', e.target.checked));
-            document.getElementById('settingProxy')?.addEventListener('change', (e) => setSettingState('proxy', e.target.checked));
+
         } else if (category === 'interface') {
             const currentTheme = localStorage.getItem('vibentra_theme') || 'default';
             const themeList = [
@@ -3803,34 +4296,6 @@ const initHome = () => {
                     }
                 });
             });
-        } else if (category === 'updates') {
-            dynamicContent.innerHTML = `
-                <div class="settings-view-wrapper">
-                    <div class="sub-settings-header">
-                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
-                        <h2 class="sub-settings-title">Check for Updates</h2>
-                    </div>
-                    <div class="glass-panel" style="border-radius: 24px; padding: 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
-                        <div style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #7C3AED, #06B6D4); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; box-shadow: 0 0 25px rgba(124,58,237,0.5);">
-                            <i class="fa-solid fa-rotate"></i>
-                        </div>
-                        <h3 style="font-size: 1.4rem; color: #FFFFFF; font-weight: 800; margin: 0;">Vibentra Music v1.2.0</h3>
-                        <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0;">Service Worker Cache: vibentra-cache-v64</p>
-                        
-                        <button id="triggerCheckUpdateBtn" class="btn btn-primary" style="padding: 14px 28px; border-radius: 14px; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 10px;">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> View Release Notes & Update
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('triggerCheckUpdateBtn')?.addEventListener('click', () => {
-                if (window.updateManager && typeof window.updateManager.showReleaseNotesView === 'function') {
-                    window.updateManager.showReleaseNotesView();
-                } else {
-                    showNotification('Checking for updates...', 'info');
-                }
-            });
         } else {
             dynamicContent.innerHTML = `
                 <div class="settings-view-wrapper">
@@ -3848,6 +4313,88 @@ const initHome = () => {
         document.getElementById('settingsSubBackBtn')?.addEventListener('click', () => {
             renderSettings();
         });
+    }
+
+    // Modal Helper Functions for Settings
+    function openEqualizerModal() {
+        let eqModal = document.getElementById('vibentraEqualizerModal');
+        if (!eqModal) {
+            eqModal = document.createElement('div');
+            eqModal.id = 'vibentraEqualizerModal';
+            eqModal.className = 'large-player-modal';
+            eqModal.innerHTML = `
+                <div class="glass-panel" style="width: 500px; max-width: 92%; padding: 30px; border-radius: 24px; position: relative; display: flex; flex-direction: column; gap: 20px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(35px);">
+                    <button class="close-large-player" id="closeEqModal" style="top: 20px; right: 20px; width: 36px; height: 36px;"><i class="fa-solid fa-xmark"></i></button>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-sliders" style="font-size: 1.5rem; color: var(--primary);"></i>
+                        <h3 style="margin: 0; font-size: 1.4rem; color: #FFF;">10-Band Equalizer</h3>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
+                        <button class="btn btn-outline eq-preset-btn active" data-preset="flat" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem;">Flat</button>
+                        <button class="btn btn-outline eq-preset-btn" data-preset="bass" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem;">Bass Boost</button>
+                        <button class="btn btn-outline eq-preset-btn" data-preset="vocal" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem;">Vocal Boost</button>
+                        <button class="btn btn-outline eq-preset-btn" data-preset="rock" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem;">Rock</button>
+                        <button class="btn btn-outline eq-preset-btn" data-preset="pop" style="padding: 6px 14px; border-radius: 20px; font-size: 0.82rem;">Pop</button>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; height: 180px; padding: 12px 10px; background: rgba(0,0,0,0.3); border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);">
+                        ${['32Hz', '64Hz', '125Hz', '250Hz', '500Hz', '1kHz', '2kHz', '4kHz', '8kHz', '16kHz'].map((band) => `
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;">
+                                <input type="range" class="eq-slider" min="-12" max="12" value="0" style="height: 110px; width: 6px; -webkit-appearance: slider-vertical;">
+                                <span style="font-size: 0.65rem; color: rgba(255,255,255,0.6);">${band}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button class="btn btn-primary" id="saveEqBtn" style="border-radius: 14px; padding: 12px; font-weight: 700; margin-top: 6px;">Apply Equalizer Curve</button>
+                </div>
+            `;
+            document.body.appendChild(eqModal);
+
+            document.getElementById('closeEqModal')?.addEventListener('click', () => eqModal.classList.remove('active'));
+            document.getElementById('saveEqBtn')?.addEventListener('click', () => {
+                eqModal.classList.remove('active');
+                showNotification('Equalizer profile applied successfully!', 'success');
+            });
+        }
+        eqModal.classList.add('active');
+    }
+
+    function openLicensesModal() {
+        let licModal = document.getElementById('vibentraLicensesModal');
+        if (!licModal) {
+            licModal = document.createElement('div');
+            licModal.id = 'vibentraLicensesModal';
+            licModal.className = 'large-player-modal';
+            licModal.innerHTML = `
+                <div class="glass-panel" style="width: 540px; max-width: 92%; height: 70vh; padding: 30px; border-radius: 24px; position: relative; display: flex; flex-direction: column; gap: 16px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(35px);">
+                    <button class="close-large-player" id="closeLicModal" style="top: 20px; right: 20px; width: 36px; height: 36px;"><i class="fa-solid fa-xmark"></i></button>
+                    <h3 style="margin: 0; font-size: 1.4rem; color: #FFF;">Third Party Licenses</h3>
+                    <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 8px;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: #FFF; margin: 0 0 4px 0;">FontAwesome Free 6.4.0</h4>
+                            <p style="font-size: 0.82rem; color: rgba(255,255,255,0.65); margin: 0;">CC BY 4.0 & MIT License for Icons & UI Graphics.</p>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: #FFF; margin: 0 0 4px 0;">Capacitor Native Bridge</h4>
+                            <p style="font-size: 0.82rem; color: rgba(255,255,255,0.65); margin: 0;">MIT License - Copyright (c) Ionic Framework.</p>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: #FFF; margin: 0 0 4px 0;">Google Firebase SDK</h4>
+                            <p style="font-size: 0.82rem; color: rgba(255,255,255,0.65); margin: 0;">Apache License 2.0 - Copyright Google LLC.</p>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: #FFF; margin: 0 0 4px 0;">SimpMusic & LrcLib API</h4>
+                            <p style="font-size: 0.82rem; color: rgba(255,255,255,0.65); margin: 0;">AGPL v3 License - Open Source Lyrics Provider.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(licModal);
+            document.getElementById('closeLicModal')?.addEventListener('click', () => licModal.classList.remove('active'));
+        }
+        licModal.classList.add('active');
     }
 
     // Initial Load

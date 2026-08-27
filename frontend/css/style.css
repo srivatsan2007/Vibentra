@@ -33,6 +33,7 @@ body {
     overflow-x: hidden;
     scroll-behavior: smooth !important;
     -webkit-overflow-scrolling: touch !important;
+    zoom: 90%;
 }
 
 /* Custom Smooth Glass Scrollbar Engine */
@@ -3900,7 +3901,7 @@ input {
         display: none !important;
     }
 
-    /* Liquid Glass Floating Navigation Dock (Exact match to Reference Image 2) */
+    /* Liquid Glass Floating Navigation Dock */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
@@ -3921,6 +3922,7 @@ input {
         padding: 0 !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+        transition: gap 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
     /* Left Combined Dock Pill */
@@ -3938,6 +3940,24 @@ input {
         box-shadow: 0 16px 38px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
         gap: 4px !important;
         box-sizing: border-box !important;
+        max-width: 320px !important;
+        opacity: 1 !important;
+        transform: scale(1) translateX(0) !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.4s ease, margin 0.4s ease !important;
+    }
+
+    /* Collapsed animation state when searching (Exact match to Reference Image 2) */
+    .mobile-nav-dock-pill.collapsed {
+        max-width: 0px !important;
+        opacity: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        transform: scale(0.6) translateX(-30px) !important;
+        pointer-events: none !important;
+        border-width: 0px !important;
+        box-shadow: none !important;
     }
 
     .mobile-nav-dock-pill .mobile-nav-item {
@@ -3955,6 +3975,7 @@ input {
         cursor: pointer !important;
         background: transparent !important;
         border: 1px solid transparent !important;
+        white-space: nowrap !important;
     }
 
     .mobile-nav-dock-pill .mobile-nav-item i {
@@ -3985,19 +4006,22 @@ input {
         cursor: pointer !important;
         color: #FFFFFF !important;
         font-size: 1.3rem !important;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
         box-sizing: border-box !important;
         flex-shrink: 0 !important;
     }
 
     .mobile-nav-search-circle:active {
-        transform: scale(0.92) !important;
+        transform: scale(0.90) !important;
     }
 
-    .mobile-nav-search-circle.active {
-        background: rgba(255, 255, 255, 0.22) !important;
-        border-color: rgba(255, 255, 255, 0.4) !important;
-        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+    .mobile-nav-search-circle.active,
+    .mobile-nav-search-circle.search-active {
+        background: radial-gradient(circle at 35% 35%, #EF4444 0%, #B91C1C 65%, #7F1D1D 100%) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+        box-shadow: 0 12px 35px rgba(220, 38, 38, 0.65), inset 0 2px 4px rgba(255, 255, 255, 0.4) !important;
+        color: #FFFFFF !important;
+        transform: scale(1.06) !important;
     }
 
     /* Sticky YTM Filter Chips Row */
