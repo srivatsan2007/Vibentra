@@ -1,18 +1,16 @@
 {
-  "version": "v1.7.3",
-  "swVersion": "vibentra-cache-v110",
-  "releaseDate": "27 August 2026, 07:10 pm",
+  "version": "v1.7.4",
+  "swVersion": "vibentra-cache-v111",
+  "releaseDate": "27 August 2026, 07:20 pm",
   "size": "2.8 MB",
-  "importantNote": "Modernized Vibentra Settings with dynamic real-world values (Updates, Lyrics, Backup, Audio Equalizer) and applied global 90% UI scale optimization.",
+  "importantNote": "Removed zoom scaling constraint to eliminate blank side and bottom empty spaces, restoring full edge-to-edge layout coverage across all screen sizes.",
   "changelog": [
     {
-      "category": "Settings Modernization & 90% UI Scale (v1.7.3)",
+      "category": "Edge-to-Edge Layout Fix (v1.7.4)",
       "items": [
-        "Populated Settings sub-pages with real dynamic data matching Echo Music standards (Check for Updates, Lyrics Provider, Backup & Restore, Audio Equalizer).",
-        "Implemented functional Backup & Restore system enabling JSON export/import for playlists, favorites, and user preferences.",
-        "Added interactive 10-band Equalizer curve modal and open-source Third-Party Licenses modal.",
-        "Applied global 90% UI viewport zoom scaling across root CSS container for enhanced desktop & mobile layout proportioning.",
-        "Bumped service worker cache version to v110."
+        "Eliminated zoom scaling viewport constraint from root stylesheet.",
+        "Restored 100% full screen width and 100vh height coverage on mobile and desktop viewports, removing empty side and bottom margins.",
+        "Bumped service worker cache version to v111."
       ]
     }
   ]
