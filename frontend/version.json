@@ -1,17 +1,17 @@
 {
-  "version": "v1.6.8",
-  "swVersion": "vibentra-cache-v106",
-  "releaseDate": "26 August 2026, 08:46 pm",
+  "version": "v1.6.9",
+  "swVersion": "vibentra-cache-v107",
+  "releaseDate": "27 August 2026, 07:35 am",
   "size": "2.8 MB",
-  "importantNote": "Implemented missing openTrackOptionsMenu handler and connected Spotify x YouTube Music liquid glass action sheet for 3-dot track options.",
+  "importantNote": "Restored 100% working lock screen media controls, song title, artist name, cover artwork thumbnail, and playback duration timer.",
   "changelog": [
     {
-      "category": "3-Dot Track Options Action Sheet Fix (v1.6.8)",
+      "category": "Lock Screen Media Controller Restoration (v1.6.9)",
       "items": [
-        "Implemented openTrackOptionsMenu in home.js to fix reference error when tapping 3-dot buttons.",
-        "Connected Spotify x YouTube Music glass bottom action sheet modal (#songOptionsModal) with options for Play Now, Add/Remove Liked Songs, Add to Playlist, Download Track, Ringtone Studio, and View Lyrics.",
-        "Added glass action sheet CSS styling in style.css with smooth backdrop blur and slide-up animations.",
-        "Synchronized Capacitor Android assets and updated service worker cache to v106."
+        "Fixed missing updateNativeNotification method in musicService.js that was throwing JS errors during track metadata loading.",
+        "Synchronized downloaded album art cover bitmaps with Android MediaSessionCompat (METADATA_KEY_ALBUM_ART, METADATA_KEY_ART, METADATA_KEY_DISPLAY_ICON) so song artwork renders on all Android lock screen controls.",
+        "Preserved active track title and artist name in BackgroundAudioService during intent action triggers.",
+        "Synchronized Capacitor native Android assets and updated service worker cache to v107."
       ]
     }
   ]

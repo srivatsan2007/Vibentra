@@ -342,9 +342,9 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 long duration = intent.getLongExtra("duration", -1L);
                 long position = intent.getLongExtra("position", -1L);
 
-                if (title != null) currentTitle = title;
-                if (artist != null) currentArtist = artist;
-                if (playing != this.isPlaying) this.isPlaying = playing;
+                if (title != null && !title.trim().isEmpty()) currentTitle = title;
+                if (artist != null && !artist.trim().isEmpty()) currentArtist = artist;
+                this.isPlaying = playing;
                 if (duration >= 0) currentDuration = duration;
                 if (position >= 0) currentPosition = position;
 
@@ -419,13 +419,18 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
 
             MediaMetadataCompat.Builder metadataBuilder = new MediaMetadataCompat.Builder()
                     .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
-                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist);
+                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
+                    .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "Vibentra")
+                    .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, currentTitle)
+                    .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, currentArtist);
 
             if (currentDuration > 0) {
                 metadataBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, currentDuration);
             }
             if (coverBitmap != null) {
                 metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, coverBitmap);
+                metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, coverBitmap);
+                metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, coverBitmap);
             }
             mediaSession.setMetadata(metadataBuilder.build());
 
@@ -486,21 +491,33 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     private void fetchCoverBitmap(String urlStr) {
         new Thread(() -> {
             try {
+                if (urlStr == null || urlStr.trim().isEmpty()) {
+                    coverBitmap = null;
+                    updateMediaSessionState();
+                    Notification notification = buildNotification();
+                    NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (nm != null) {
+                        nm.notify(NOTIFICATION_ID, notification);
+                    }
+                    return;
+                }
                 URL url = new URL(urlStr);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setDoInput(true);
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
+                conn.setConnectTimeout(6000);
+                conn.setReadTimeout(6000);
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36");
+                conn.setInstanceFollowRedirects(true);
                 conn.connect();
                 InputStream input = conn.getInputStream();
 
                 BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = 2; // Downsample bitmap to avoid OutOfMemoryError
-                Bitmap bitmap = BitmapFactory.decodeStream(input, null, options);
+                options.inSampleSize = 1;
+                Bitmap bitmap = BitmapFactory.decodeStream(input);
 
                 if (bitmap != null) {
                     coverBitmap = bitmap;
-                    VibentraWidgetProvider.updateWidgetState(BackgroundAudioService.this, currentTitle, currentArtist, isPlaying, coverBitmap);
+                    updateMediaSessionState();
                     Notification notification = buildNotification();
                     NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                     if (nm != null) {
@@ -508,7 +525,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                     }
                 }
             } catch (Throwable t) {
-                t.printStackTrace();
+                Log.w(TAG, "Error downloading cover bitmap: " + t.getMessage());
             }
         }).start();
     }

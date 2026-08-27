@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v106';
+const CACHE_NAME = 'vibentra-cache-v107';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',

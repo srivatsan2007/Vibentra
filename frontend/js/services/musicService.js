@@ -1396,6 +1396,12 @@ class MusicService {
         }
     }
 
+    updateNativeNotification(track = null) {
+        const targetTrack = track || this.currentTrack;
+        if (!targetTrack) return;
+        this.updateMediaSession(targetTrack);
+    }
+
     /**
      * Controlled Same-Song Stream Recovery
      */
