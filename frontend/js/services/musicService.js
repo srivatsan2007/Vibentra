@@ -5,6 +5,24 @@ import { historyService } from './historyService.js';
 import { connectService } from './connectService.js';
 import lyricsService from './lyricsService.js';
 
+function getBackgroundAudioPlugin() {
+    if (typeof window === 'undefined') return null;
+    if (window.Capacitor?.Plugins?.BackgroundAudio) {
+        return window.Capacitor.Plugins.BackgroundAudio;
+    }
+    if (window.Capacitor && typeof window.Capacitor.registerPlugin === 'function') {
+        try {
+            const plugin = window.Capacitor.registerPlugin('BackgroundAudio');
+            if (plugin) {
+                if (!window.Capacitor.Plugins) window.Capacitor.Plugins = {};
+                window.Capacitor.Plugins.BackgroundAudio = plugin;
+                return plugin;
+            }
+        } catch (e) { }
+    }
+    return null;
+}
+
 /**
  * Authoritative Playback Controller for Vibentra
  * Manages exact state machine, single HTML5 audio element, queue, and background audio synchronization.
@@ -58,19 +76,22 @@ class MusicService {
         this._isCallPaused = false;
 
         // Capacitor Native MediaAction listener
-        if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
-            window.Capacitor.Plugins.BackgroundAudio.addListener('mediaAction', (data) => {
-                console.log(`[Vibentra Native Action] Received: ${data?.action}`);
-                if (data?.action === 'play') {
-                    this.forceCallResume();
-                } else if (data?.action === 'pause') {
-                    this.forceCallPause();
-                } else if (data?.action === 'next') {
-                    this.playNext(false);
-                } else if (data?.action === 'previous') {
-                    this.playPrevious();
-                }
-            });
+        const bgPlugin = getBackgroundAudioPlugin();
+        if (bgPlugin && typeof bgPlugin.addListener === 'function') {
+            try {
+                bgPlugin.addListener('mediaAction', (data) => {
+                    console.log(`[Vibentra Native Action] Received: ${data?.action}`);
+                    if (data?.action === 'play') {
+                        if (!this.isPlaying) this.togglePlayPause();
+                    } else if (data?.action === 'pause') {
+                        if (this.isPlaying) this.togglePlayPause();
+                    } else if (data?.action === 'next') {
+                        this.playNext(false);
+                    } else if (data?.action === 'previous') {
+                        this.playPrevious();
+                    }
+                });
+            } catch (e) { }
         }
 
         // Network Reconnection Handler
@@ -1386,10 +1407,11 @@ class MusicService {
         }
 
         try {
-            if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio) {
+            const bgPlugin = getBackgroundAudioPlugin();
+            if (bgPlugin) {
                 const durMs = Math.floor((this.audioPlayer.duration || 0) * 1000);
                 const posMs = Math.floor((this.audioPlayer.currentTime || 0) * 1000);
-                window.Capacitor.Plugins.BackgroundAudio.startService({
+                bgPlugin.startService({
                     title: safeTitle,
                     artist: safeArtist,
                     cover: safeCover,
@@ -1784,13 +1806,18 @@ class MusicService {
         }
 
         try {
-            if (typeof window !== 'undefined' && window.Capacitor?.Plugins?.BackgroundAudio && this.currentTrack) {
+            const bgPlugin = getBackgroundAudioPlugin();
+            if (bgPlugin && this.currentTrack) {
+                const safeTitle = this.currentTrack.title || this.currentTrack.name || this.currentTrack.song || "Vibentra Music";
+                const safeArtist = this.currentTrack.artist || this.currentTrack.primaryArtists || this.currentTrack.singers || this.currentTrack.subtitle || "Unknown Artist";
+                const safeCover = this.currentTrack.cover || this.currentTrack.image || this.currentTrack.artwork || this.currentTrack.thumbnail || "";
+
                 const durMs = Math.floor((this.audioPlayer.duration || 0) * 1000);
                 const posMs = Math.floor((this.audioPlayer.currentTime || 0) * 1000);
-                window.Capacitor.Plugins.BackgroundAudio.startService({
-                    title: this.currentTrack.title || "Vibentra Music",
-                    artist: this.currentTrack.artist || "Playing...",
-                    cover: this.currentTrack.cover || "",
+                bgPlugin.startService({
+                    title: safeTitle,
+                    artist: safeArtist,
+                    cover: safeCover,
                     isPlaying: isPlaying,
                     duration: durMs > 0 ? durMs : 0,
                     position: posMs > 0 ? posMs : 0

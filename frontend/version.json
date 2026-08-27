@@ -1,15 +1,17 @@
 {
-  "version": "v1.7.0",
-  "swVersion": "vibentra-cache-v108",
-  "releaseDate": "27 August 2026, 11:15 am",
+  "version": "v1.7.1",
+  "swVersion": "vibentra-cache-v109",
+  "releaseDate": "27 August 2026, 11:20 am",
   "size": "2.8 MB",
-  "importantNote": "Force updated lock screen music shortcut and home screen widget media session handlers.",
+  "importantNote": "Fixed Capacitor BackgroundAudio plugin registration so active track metadata and artwork immediately display on Android lock screen & home widget.",
   "changelog": [
     {
-      "category": "Lock Screen & Widget OTA Update (v1.7.0)",
+      "category": "Lock Screen & Home Widget Sync Fix (v1.7.1)",
       "items": [
-        "Enforced over-the-air update trigger for lock screen music controller and track metadata.",
-        "Synchronized Android native assets and updated service worker cache to v108."
+        "Implemented dynamic getBackgroundAudioPlugin helper in musicService.js using Capacitor.registerPlugin to bind native bridge.",
+        "Synchronized track title, artist name, cover artwork, and duration in real-time across Android lock screen media controls and home widget.",
+        "Connected lock screen and widget play/pause/next/prev actions to musicService event listeners.",
+        "Synchronized Capacitor native Android assets and updated service worker cache to v109."
       ]
     }
   ]
