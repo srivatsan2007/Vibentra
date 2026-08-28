@@ -1,17 +1,17 @@
 {
-  "version": "v1.8.4",
-  "swVersion": "vibentra-cache-v121",
-  "releaseDate": "28 August 2026, 10:55 am",
+  "version": "v1.8.5",
+  "swVersion": "vibentra-cache-v122",
+  "releaseDate": "28 August 2026, 10:58 am",
   "size": "2.8 MB",
-  "importantNote": "Reduced zoom level in Search and Playlist pages to 88% with 113.6364% width calculation to preserve full-width layout without gaps.",
+  "importantNote": "Reduced zoom level in Search and Playlist pages to 80% with 125% width calculation to preserve full-width layout without gaps.",
   "changelog": [
     {
-      "category": "Search & Playlist 88% Zoom Scaling Optimization (v1.8.4)",
+      "category": "Search & Playlist 80% Zoom Scaling Optimization (v1.8.5)",
       "items": [
-        "Updated zoom scale to 88% (0.88) scoped to Search page (.spotify-search-page) and Playlist page (.spotify-playlist-view).",
-        "Applied 113.6364% canvas width calculation to ensure zero side gaps and zero bottom gaps.",
+        "Updated zoom scale to 80% (0.80) scoped to Search page (.spotify-search-page) and Playlist page (.spotify-playlist-view).",
+        "Applied 125% canvas width calculation to ensure zero side gaps and zero bottom gaps.",
         "Preserved 100% of music streaming backend logic.",
-        "Bumped service worker cache version to v121."
+        "Bumped service worker cache version to v122."
       ]
     }
   ]
