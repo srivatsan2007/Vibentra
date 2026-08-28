@@ -1,18 +1,18 @@
 {
-  "version": "v1.8.9",
-  "swVersion": "vibentra-cache-v126",
-  "releaseDate": "28 August 2026, 11:18 am",
+  "version": "v1.9.0",
+  "swVersion": "vibentra-cache-v127",
+  "releaseDate": "28 August 2026, 11:24 am",
   "size": "2.8 MB",
-  "importantNote": "Reduced Topbar width to 95% centered without changing zoom; increased height and upward positioning for Music Player & Nav dock.",
+  "importantNote": "Enabled global smooth scrolling and high-fidelity page fade & scale transitions across all views.",
   "changelog": [
     {
-      "category": "Topbar & Floating Player/Nav Height & Position Optimization (v1.8.9)",
+      "category": "Global Smooth Scroll & Page Transitions (v1.9.0)",
       "items": [
-        "Reduced Topbar (.topbar) width from 100% to 95% centered with margin 0 auto without modifying zoom.",
-        "Increased height of Music Mini-Player (.music-player) to 68px and shifted bottom position upward to 112px.",
-        "Increased height of Navigation Dock (.mobile-bottom-nav) to 68px and shifted bottom position upward to 28px.",
+        "Applied smooth scroll behavior (scroll-behavior: smooth !important;) globally to html, body, main-content, dynamicContent, and all view containers.",
+        "Implemented hardware-accelerated fluid page transitions (0.35s scale & fade curve) across all view switches.",
+        "Integrated automatic smooth scroll-to-top on page navigation.",
         "Preserved 100% of music streaming backend logic.",
-        "Bumped service worker cache version to v126."
+        "Bumped service worker cache version to v127."
       ]
     }
   ]

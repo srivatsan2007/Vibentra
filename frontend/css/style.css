@@ -72,7 +72,14 @@ body {
     background: var(--primary, #7C3AED);
 }
 
+html,
+body,
 .main-content,
+#dynamicContent,
+.view-container,
+.spotify-search-page,
+.spotify-playlist-view,
+.spotify-home-page,
 .sidebar,
 .dropdown-body,
 .cards-grid,
@@ -4843,25 +4850,28 @@ body {
 .profile-view,
 .settings-view,
 .playlist-detail-view,
-.remote-collection-view {
+.remote-collection-view,
+.spotify-search-page,
+.spotify-playlist-view,
+.spotify-home-page {
     width: 100%;
     min-height: 100%;
     flex: 1;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    animation: fadeInView 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: fadeInView 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    scroll-behavior: smooth !important;
 }
 
 @keyframes fadeInView {
-    from {
+    0% {
         opacity: 0;
-        transform: translateY(8px);
+        transform: translateY(12px) scale(0.985);
     }
-
-    to {
+    100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -5341,6 +5351,8 @@ input:checked+.toggle-slider:before {
     padding: 10px 4px 30px 4px !important;
     box-sizing: border-box !important;
     margin: 0 auto !important;
+    animation: fadeInView 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    scroll-behavior: smooth !important;
 }
 
 .spotify-search-title {

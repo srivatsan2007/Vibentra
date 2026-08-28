@@ -582,6 +582,15 @@ const initHome = () => {
             history.pushState({ path }, '', '#' + path);
         }
 
+        // Smooth scroll to top when switching views
+        try {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const mainContentEl = document.getElementById('mainContent');
+            if (mainContentEl) {
+                mainContentEl.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        } catch (e) {}
+
         const navDockPill = document.querySelector('.mobile-nav-dock-pill');
         const searchCircle = document.querySelector('.mobile-nav-search-circle');
 
