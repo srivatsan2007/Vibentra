@@ -5,12 +5,12 @@
     --primary: #7C3AED;
     --secondary: #06B6D4;
     --accent: #EC4899;
-    --background: #0F172A;
-    --cards: #1E293B;
+    --background: #000000;
+    --cards: #121212;
     --text: #FFFFFF;
-    --text-muted: #94A3B8;
-    --glass-bg: rgba(30, 41, 59, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-muted: #A7A7A7;
+    --glass-bg: rgba(18, 18, 18, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.12);
     --player-height: 90px;
     --sidebar-width: 250px;
 }
@@ -269,7 +269,7 @@ input {
     overflow: hidden;
     z-index: 0;
     pointer-events: none;
-    background: radial-gradient(ellipse at 50% 20%, #0c102b 0%, #070919 60%, #03040b 100%);
+    background: #000000 !important;
 }
 
 /* Multi-colored Floating Liquid Orbs */

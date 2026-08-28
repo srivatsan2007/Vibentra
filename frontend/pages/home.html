@@ -12,7 +12,7 @@
     <meta name="theme-color" content="#0F172A">
     <link rel="apple-touch-icon" href="../images/icon-512.png">
     <link rel="icon" href="../images/icon-192.png" type="image/png">
-    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=1.7.8">
+    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=1.7.9">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         // PWA Service Worker Registration & Update Logic
@@ -60,7 +60,7 @@
         // Immediately apply theme to prevent FOUC (Flash of Unstyled Content)
         const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
         const themes = {
-            'default': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: '#1E293B' },
+            'default': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#000000', cards: '#121212' },
             'ocean': { primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: '#0C4A6E' },
             'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
             'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
