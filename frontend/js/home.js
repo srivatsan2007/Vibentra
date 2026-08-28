@@ -1562,6 +1562,37 @@ const initHome = () => {
             const contentArea = document.getElementById('resultsContentArea');
             contentArea.innerHTML = '';
 
+            const createSearchArtistRow = (artistName, coverUrl) => {
+                const row = document.createElement('div');
+                row.className = 'ytm-artist-row';
+                row.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    padding: 10px 8px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    cursor: pointer;
+                    width: 100%;
+                    box-sizing: border-box;
+                    border-radius: 8px;
+                    transition: background 0.2s ease;
+                `;
+                row.innerHTML = `
+                    <img src="${coverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80'}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.4);" alt="${artistName}">
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistName}</h4>
+                        <p style="margin: 2px 0 0 0; font-size: 0.81rem; color: #aaaaaa;">Artists</p>
+                    </div>
+                `;
+                row.addEventListener('click', () => {
+                    if (searchInput) {
+                        searchInput.value = artistName;
+                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                });
+                return row;
+            };
+
             const createSearchSongRow = (track, contextTracks = []) => {
                 const row = document.createElement('div');
                 row.className = 'ytm-track-row';
@@ -1590,8 +1621,8 @@ const initHome = () => {
                        </span>`;
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${track.title}">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${track.title}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px;">
                             <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
                             <div style="display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;">
@@ -1600,7 +1631,7 @@ const initHome = () => {
                             </div>
                         </div>
                     </div>
-                    <button class="search-row-opt-btn" title="Track Options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                    <button class="search-row-opt-btn" title="Track Options" style="background: transparent; border: none; color: #FFFFFF; font-size: 1.35rem; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; margin-right: 4px; padding: 0; z-index: 10; transition: background 0.2s ease;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -1629,13 +1660,14 @@ const initHome = () => {
                     align-items: center;
                     justify-content: space-between;
                     gap: 12px;
-                    padding: 10px 4px;
+                    padding: 10px 8px;
                     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     cursor: pointer;
                     transition: background 0.2s ease;
                     width: 100%;
                     box-sizing: border-box;
                     overflow: hidden;
+                    border-radius: 8px;
                 `;
 
                 const titleStr = album.title || album.name || 'Untitled Album';
@@ -1643,14 +1675,14 @@ const initHome = () => {
                 const coverUrl = album.cover || album.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                        <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                        <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Album • ${artistStr}</p>
                         </div>
                     </div>
-                    <button class="search-album-opt-btn" title="Album Options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                    <button class="search-album-opt-btn" title="Album Options" style="background: transparent; border: none; color: #FFFFFF; font-size: 1.35rem; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; margin-right: 4px; padding: 0; z-index: 10; transition: background 0.2s ease;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -1689,13 +1721,14 @@ const initHome = () => {
                     align-items: center;
                     justify-content: space-between;
                     gap: 12px;
-                    padding: 10px 4px;
+                    padding: 10px 8px;
                     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
                     cursor: pointer;
                     transition: background 0.2s ease;
                     width: 100%;
                     box-sizing: border-box;
                     overflow: hidden;
+                    border-radius: 8px;
                 `;
 
                 const titleStr = pl.title || pl.name || 'Untitled Playlist';
@@ -1703,14 +1736,14 @@ const initHome = () => {
                 const coverUrl = pl.cover || pl.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                        <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                        <img src="${coverUrl}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0;" alt="${titleStr}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                             <h4 style="margin: 0 0 3px 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${titleStr}</h4>
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Playlist • ${creatorStr}</p>
                         </div>
                     </div>
-                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: transparent; border: none; color: #FFFFFF; font-size: 1.35rem; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; margin-right: 4px; padding: 0; z-index: 10; transition: background 0.2s ease;">
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 `;
@@ -1738,35 +1771,35 @@ const initHome = () => {
                 return row;
             };
 
+            // Extract unique artists from search songs for top Artist section
+            const artistMap = new Map();
+            if (hasSongs) {
+                results.songs.forEach(t => {
+                    if (t.artist && t.artist !== 'Unknown Artist') {
+                        const firstArtist = t.artist.split(',')[0].trim();
+                        if (firstArtist && !artistMap.has(firstArtist)) {
+                            artistMap.set(firstArtist, t.cover);
+                        }
+                    }
+                });
+            }
+
             // Filter: ALL
             if (filter === 'all') {
-                // Top Result Card (Song #1)
-                if (hasSongs) {
-                    const topTrack = results.songs[0];
-                    const topCard = document.createElement('div');
-                    topCard.className = 'spotify-top-result-card';
-                    topCard.innerHTML = `
-                        <img src="${topTrack.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" class="spotify-top-result-img" alt="${topTrack.title}">
-                        <div>
-                            <h2 class="spotify-top-result-title">${topTrack.title}</h2>
-                            <div class="spotify-top-result-sub">
-                                <span class="spotify-badge">Song</span>
-                                <span>${topTrack.artist || 'Unknown Artist'}</span>
-                            </div>
-                        </div>
-                        <div class="spotify-top-result-play-btn" title="Play ${topTrack.title}">
-                            <i class="fa-solid fa-play"></i>
-                        </div>
-                    `;
-                    topCard.addEventListener('click', () => {
-                        musicService.playContext(results.songs, topTrack);
+                // Artist Section (Top Circular Avatars matching reference design)
+                if (artistMap.size > 0) {
+                    const artistSec = document.createElement('div');
+                    artistSec.style.marginBottom = '16px';
+                    Array.from(artistMap.entries()).slice(0, 2).forEach(([artistName, coverUrl]) => {
+                        artistSec.appendChild(createSearchArtistRow(artistName, coverUrl));
                     });
-                    contentArea.appendChild(topCard);
+                    contentArea.appendChild(artistSec);
+                }
 
-                    // Songs Section (Vertical List)
+                // Songs Section (Vertical List matching reference image)
+                if (hasSongs) {
                     const songsSection = document.createElement('div');
                     songsSection.style.marginBottom = '24px';
-                    songsSection.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Songs</h2>`;
                     const songsList = document.createElement('div');
                     songsList.id = 'searchSongsListContainer';
                     songsList.style.display = 'flex';
@@ -1782,7 +1815,7 @@ const initHome = () => {
                 if (hasAlbums) {
                     const albumSec = document.createElement('div');
                     albumSec.style.marginBottom = '24px';
-                    albumSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Albums</h2>`;
+                    albumSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.15rem; font-weight: 800; color: #FFFFFF;">Albums</h2>`;
                     const albumList = document.createElement('div');
                     albumList.style.display = 'flex';
                     albumList.style.flexDirection = 'column';
@@ -1797,7 +1830,7 @@ const initHome = () => {
                 if (hasPlaylists) {
                     const plSec = document.createElement('div');
                     plSec.style.marginBottom = '24px';
-                    plSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.25rem; font-weight: 800;">Playlists</h2>`;
+                    plSec.innerHTML = `<h2 class="spotify-genre-section-title" style="margin-bottom: 12px; font-size: 1.15rem; font-weight: 800; color: #FFFFFF;">Playlists</h2>`;
                     const plList = document.createElement('div');
                     plList.style.display = 'flex';
                     plList.style.flexDirection = 'column';

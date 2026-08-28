@@ -1,19 +1,20 @@
 {
-  "version": "v1.8.1",
-  "swVersion": "vibentra-cache-v118",
-  "releaseDate": "28 August 2026, 10:33 am",
+  "version": "v1.8.2",
+  "swVersion": "vibentra-cache-v119",
+  "releaseDate": "28 August 2026, 10:45 am",
   "size": "2.8 MB",
-  "importantNote": "Fixed right-side navy column gap by scoping 92% zoom scaling to inner app container with pitch black background enforcement.",
+  "importantNote": "Redesigned search page matching YouTube Music reference layout with clean 3-dot vertical ellipsis buttons pinned safely on mobile.",
   "changelog": [
     {
-      "category": "Zero Gap Fix & Pitch Black Canvas Engine (v1.8.1)",
+      "category": "Search Page UI Redesign & 3-Dot Mobile Accessibility (v1.8.2)",
       "items": [
-        "Removed html root zoom to prevent browser viewport backdrop exposure.",
-        "Applied 92% zoom scaling to inner app container with 108.6956% width calculation.",
-        "Enforced #000000 pitch black background across html, body, main-content, and liquid bg canvas.",
-        "Completely eliminated side navy column gap and bottom gap.",
+        "Redesigned search row items with clean 3-dot vertical ellipsis buttons (⋮) pinned safely on the right.",
+        "Set max-width constraints on track title and artist text containers to prevent clipping of option buttons.",
+        "Added circular avatar Artist card section at top of search results.",
+        "Redesigned search bar with 28px rounded pill styling and dark #212121 theme.",
+        "Updated filter chips with checkmark icon and active dark grey styling.",
         "Preserved 100% of music streaming and backend logic.",
-        "Bumped service worker cache version to v118."
+        "Bumped service worker cache version to v119."
       ]
     }
   ]
