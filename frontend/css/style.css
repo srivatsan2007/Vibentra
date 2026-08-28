@@ -996,7 +996,9 @@ input {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 0 auto 2rem auto !important;
     position: sticky;
     top: 12px;
     z-index: 500;
@@ -3903,12 +3905,12 @@ input {
     /* Liquid Glass Floating Capsule Mini Player (Compact Floating Dock Match) */
     .music-player {
         position: fixed !important;
-        bottom: 86px !important;
+        bottom: 112px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
         width: calc(100% - 36px) !important;
         max-width: 420px !important;
-        height: 56px !important;
+        height: 68px !important;
         border-radius: 9999px !important;
         background: rgba(14, 15, 20, 0.92) !important;
         backdrop-filter: blur(40px) saturate(200%) !important;
@@ -3938,9 +3940,9 @@ input {
     }
 
     .music-player .now-playing-img {
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 10px !important;
+        width: 48px !important;
+        height: 48px !important;
+        border-radius: 12px !important;
         object-fit: cover !important;
         flex-shrink: 0 !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
@@ -4085,11 +4087,11 @@ input {
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
-        bottom: 16px !important;
+        bottom: 28px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
         width: auto !important;
-        height: 58px !important;
+        height: 68px !important;
         background: transparent !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
@@ -4109,9 +4111,9 @@ input {
     .mobile-nav-dock-pill {
         display: flex !important;
         align-items: center !important;
-        height: 58px !important;
-        padding: 4px 6px !important;
-        border-radius: 36px !important;
+        height: 68px !important;
+        padding: 5px 8px !important;
+        border-radius: 40px !important;
         background: rgba(14, 16, 24, 0.90) !important;
         backdrop-filter: blur(30px) saturate(190%) !important;
         -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
@@ -4120,7 +4122,7 @@ input {
         box-shadow: 0 16px 38px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
         gap: 4px !important;
         box-sizing: border-box !important;
-        max-width: 320px !important;
+        max-width: 340px !important;
         opacity: 1 !important;
         transform: scale(1) translateX(0) !important;
         overflow: hidden !important;
@@ -4145,10 +4147,10 @@ input {
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: 6px 20px !important;
-        border-radius: 28px !important;
+        padding: 8px 24px !important;
+        border-radius: 32px !important;
         color: rgba(255, 255, 255, 0.65) !important;
-        font-size: 0.72rem !important;
+        font-size: 0.78rem !important;
         font-weight: 600 !important;
         gap: 2px !important;
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -4159,7 +4161,7 @@ input {
     }
 
     .mobile-nav-dock-pill .mobile-nav-item i {
-        font-size: 1.2rem !important;
+        font-size: 1.3rem !important;
     }
 
     .mobile-nav-dock-pill .mobile-nav-item.active {
@@ -4171,8 +4173,8 @@ input {
 
     /* Right Separate Circular Search Button */
     .mobile-nav-search-circle {
-        width: 58px !important;
-        height: 58px !important;
+        width: 68px !important;
+        height: 68px !important;
         border-radius: 50% !important;
         background: rgba(14, 16, 24, 0.90) !important;
         backdrop-filter: blur(30px) saturate(190%) !important;
@@ -4185,7 +4187,7 @@ input {
         justify-content: center !important;
         cursor: pointer !important;
         color: #FFFFFF !important;
-        font-size: 1.3rem !important;
+        font-size: 1.45rem !important;
         transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
         box-sizing: border-box !important;
         flex-shrink: 0 !important;
@@ -5741,6 +5743,9 @@ input:checked+.toggle-slider:before {
 
     /* Topbar Mobile Touch Optimizations */
     .topbar {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 0 auto 1rem auto !important;
         padding: 0.6rem 0.9rem !important;
         gap: 8px !important;
     }

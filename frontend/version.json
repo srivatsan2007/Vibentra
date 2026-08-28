@@ -1,17 +1,18 @@
 {
-  "version": "v1.8.8",
-  "swVersion": "vibentra-cache-v125",
-  "releaseDate": "28 August 2026, 11:08 am",
+  "version": "v1.8.9",
+  "swVersion": "vibentra-cache-v126",
+  "releaseDate": "28 August 2026, 11:18 am",
   "size": "2.8 MB",
-  "importantNote": "Increased zoom scale to 89% across Home, Search, and Playlist pages with 93% canvas width.",
+  "importantNote": "Reduced Topbar width to 95% centered without changing zoom; increased height and upward positioning for Music Player & Nav dock.",
   "changelog": [
     {
-      "category": "Home, Search & Playlist 89% Zoom & 93% Width Optimization (v1.8.8)",
+      "category": "Topbar & Floating Player/Nav Height & Position Optimization (v1.8.9)",
       "items": [
-        "Updated zoom scale to 89% (0.89) across Home (.spotify-home-page), Search (.spotify-search-page), and Playlist (.spotify-playlist-view) pages.",
-        "Set canvas width to 93% (width: 93% !important; margin: 0 auto !important;).",
+        "Reduced Topbar (.topbar) width from 100% to 95% centered with margin 0 auto without modifying zoom.",
+        "Increased height of Music Mini-Player (.music-player) to 68px and shifted bottom position upward to 112px.",
+        "Increased height of Navigation Dock (.mobile-bottom-nav) to 68px and shifted bottom position upward to 28px.",
         "Preserved 100% of music streaming backend logic.",
-        "Bumped service worker cache version to v125."
+        "Bumped service worker cache version to v126."
       ]
     }
   ]
