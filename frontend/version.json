@@ -1,18 +1,17 @@
 {
-  "version": "v1.7.7",
-  "swVersion": "vibentra-cache-v114",
-  "releaseDate": "28 August 2026, 09:55 am",
+  "version": "v1.7.8",
+  "swVersion": "vibentra-cache-v115",
+  "releaseDate": "28 August 2026, 10:04 am",
   "size": "2.8 MB",
-  "importantNote": "Default dark theme applied with 92% default zoom level, zero side/bottom gaps, and Pure Liquid UI navigation and player controllers.",
+  "importantNote": "Removed zoom constraint to eliminate side column gaps, enforcing 100% full screen width dark mode coverage.",
   "changelog": [
     {
-      "category": "Default Dark Theme & Pure Liquid UI (v1.7.7)",
+      "category": "Zero Gap Fix & Full Screen Coverage (v1.7.8)",
       "items": [
-        "Enforced default dark theme (#0F172A) and 92% page zoom level across the music application.",
-        "Guaranteed 100% full screen width and height coverage with zero side or bottom whitespace gaps.",
-        "Redesigned navigation bar, topbar, floating dock, and music controllers to Pure Liquid UI aesthetics.",
-        "Preserved 100% of existing music streaming and playback logic.",
-        "Bumped service worker cache version to v114."
+        "Removed CSS zoom property scaling that caused the 8% side column gap on mobile viewports.",
+        "Enforced 100% width and 100% viewport coverage across html, body, and liquid background canvas.",
+        "Guaranteed default dark theme background seamlessly fills the entire display edge-to-edge.",
+        "Bumped service worker cache version to v115."
       ]
     }
   ]

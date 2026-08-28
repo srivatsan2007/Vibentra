@@ -25,27 +25,29 @@ html {
     scroll-behavior: smooth !important;
     -webkit-overflow-scrolling: touch !important;
     width: 100% !important;
-    min-height: 100vh;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow-x: hidden !important;
     background-color: var(--background, #0F172A) !important;
+    background: var(--background, #0F172A) !important;
     font-size: 90%;
-    zoom: 0.92;
 }
 
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--background, #0F172A) !important;
+    background: var(--background, #0F172A) !important;
     color: var(--text);
     overflow-x: hidden !important;
     scroll-behavior: smooth !important;
     -webkit-overflow-scrolling: touch !important;
     width: 100% !important;
+    max-width: 100vw !important;
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    zoom: 0.92;
 }
 
 /* Custom Smooth Glass Scrollbar Engine */
@@ -3495,9 +3497,8 @@ input {
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        max-width: 100% !important;
+        max-width: 100vw !important;
         overflow-x: hidden !important;
-        zoom: 0.92;
     }
 
     /* Fixed Bottom Player Dock on Desktop - Pure Liquid UI */
