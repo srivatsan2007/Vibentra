@@ -1,18 +1,18 @@
 {
-  "version": "v1.7.9",
-  "swVersion": "vibentra-cache-v116",
-  "releaseDate": "28 August 2026, 10:20 am",
+  "version": "v1.8.0",
+  "swVersion": "vibentra-cache-v117",
+  "releaseDate": "28 August 2026, 10:27 am",
   "size": "2.8 MB",
-  "importantNote": "Default pure black (#000000) theme applied with 100% functional 3-dot options buttons across search and playlist pages.",
+  "importantNote": "Reduced zoom level from 100% to 92% while mathematically maintaining 100% full screen app width without side gaps.",
   "changelog": [
     {
-      "category": "Pitch Black Theme & 3-Dot Options Parity (v1.7.9)",
+      "category": "92% Zoom Level & 100% Width Parity (v1.8.0)",
       "items": [
-        "Enforced default pure pitch black (#000000) background matching Echo Music design.",
-        "Verified 100% identical 3-dot options menu functionality across Search, Playlists, Liked Songs, and Home views.",
-        "Guaranteed 100% full screen edge-to-edge layout with zero side columns or bottom gaps.",
+        "Reduced viewport zoom level to 92% (zoom: 0.92) across document body.",
+        "Adjusted container width to 108.6956% so that the zoomed canvas spans 100% of full screen width edge-to-edge.",
+        "Guaranteed zero side gaps while rendering compact 92% scaled UI.",
         "Preserved 100% of music streaming and backend logic.",
-        "Bumped service worker cache version to v116."
+        "Bumped service worker cache version to v117."
       ]
     }
   ]
