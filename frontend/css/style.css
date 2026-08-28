@@ -5329,12 +5329,12 @@ input:checked+.toggle-slider:before {
    SPOTIFY & YOUTUBE MUSIC REDESIGN (SEARCH & PLAYLIST PAGES)
    ============================================================ */
 
-/* 1. SEARCH PAGE & PLAYLIST PAGE REDESIGN WITH 80% ZOOM & 99% CANVAS WIDTH */
+/* 1. SEARCH PAGE & PLAYLIST PAGE REDESIGN WITH 80% ZOOM & 95% CANVAS WIDTH */
 .spotify-search-page,
 .spotify-playlist-view {
     zoom: 0.80 !important;
-    width: 99% !important;
-    max-width: 99% !important;
+    width: 95% !important;
+    max-width: 95% !important;
     padding: 10px 4px 30px 4px !important;
     box-sizing: border-box !important;
     margin: 0 auto !important;
