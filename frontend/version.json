@@ -1,18 +1,19 @@
 {
-  "version": "v1.8.0",
-  "swVersion": "vibentra-cache-v117",
-  "releaseDate": "28 August 2026, 10:27 am",
+  "version": "v1.8.1",
+  "swVersion": "vibentra-cache-v118",
+  "releaseDate": "28 August 2026, 10:33 am",
   "size": "2.8 MB",
-  "importantNote": "Reduced zoom level from 100% to 92% while mathematically maintaining 100% full screen app width without side gaps.",
+  "importantNote": "Fixed right-side navy column gap by scoping 92% zoom scaling to inner app container with pitch black background enforcement.",
   "changelog": [
     {
-      "category": "92% Zoom Level & 100% Width Parity (v1.8.0)",
+      "category": "Zero Gap Fix & Pitch Black Canvas Engine (v1.8.1)",
       "items": [
-        "Reduced viewport zoom level to 92% (zoom: 0.92) across document body.",
-        "Adjusted container width to 108.6956% so that the zoomed canvas spans 100% of full screen width edge-to-edge.",
-        "Guaranteed zero side gaps while rendering compact 92% scaled UI.",
+        "Removed html root zoom to prevent browser viewport backdrop exposure.",
+        "Applied 92% zoom scaling to inner app container with 108.6956% width calculation.",
+        "Enforced #000000 pitch black background across html, body, main-content, and liquid bg canvas.",
+        "Completely eliminated side navy column gap and bottom gap.",
         "Preserved 100% of music streaming and backend logic.",
-        "Bumped service worker cache version to v117."
+        "Bumped service worker cache version to v118."
       ]
     }
   ]

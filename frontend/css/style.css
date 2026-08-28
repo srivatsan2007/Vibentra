@@ -4768,30 +4768,34 @@ input {
 /* ==========================================================================
    IMMERSIVE FULL SCREEN VIEW ENGINE FOR ALL PAGES (HOME, SEARCH, PLAYLISTS, ETC)
    ========================================================================== */
-
 html,
 body {
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: var(--background, #0F172A);
+    width: 100% !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+    background-color: #000000 !important;
+    background: #000000 !important;
 }
 
 .app-layout {
     display: flex;
-    width: 100vw;
-    height: 100vh;
+    width: 108.6956% !important;
+    min-width: 108.6956% !important;
+    min-height: 108.6956vh !important;
+    zoom: 0.92;
     overflow: hidden;
     position: relative;
     box-sizing: border-box;
+    background: #000000 !important;
 }
 
 .main-content {
     flex: 1;
     height: 100vh;
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 1.5rem 2rem 170px 2rem;
@@ -4801,6 +4805,7 @@ body {
     position: relative;
     z-index: 2;
     -webkit-overflow-scrolling: touch;
+    background: #000000 !important;
 }
 
 #dynamicContent {
@@ -5700,14 +5705,18 @@ input:checked+.toggle-slider:before {
     /* Global Layout & Touch Viewport Bounds */
     body,
     html {
-        width: 100vw !important;
+        width: 100% !important;
         overflow-x: hidden !important;
+        background: #000000 !important;
+        background-color: #000000 !important;
     }
 
     .main-content {
         padding: 0.75rem 0.85rem 170px 0.85rem !important;
-        width: 100vw !important;
+        width: 100% !important;
+        max-width: 100% !important;
         box-sizing: border-box !important;
+        background: #000000 !important;
     }
 
     /* Topbar Mobile Touch Optimizations */
