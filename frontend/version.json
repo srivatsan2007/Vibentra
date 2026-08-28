@@ -1,17 +1,18 @@
 {
-  "version": "v1.7.6",
-  "swVersion": "vibentra-cache-v113",
-  "releaseDate": "27 August 2026, 07:35 pm",
+  "version": "v1.7.7",
+  "swVersion": "vibentra-cache-v114",
+  "releaseDate": "28 August 2026, 09:55 am",
   "size": "2.8 MB",
-  "importantNote": "Switched to root font-size scaling (90%) for compact UI scaling with zero canvas side or bottom empty space across all viewports.",
+  "importantNote": "Default dark theme applied with 92% default zoom level, zero side/bottom gaps, and Pure Liquid UI navigation and player controllers.",
   "changelog": [
     {
-      "category": "Root Font Sizing (90% Compact UI) & Zero Gap Fix (v1.7.6)",
+      "category": "Default Dark Theme & Pure Liquid UI (v1.7.7)",
       "items": [
-        "Replaced viewport zoom property with root HTML 90% font-size scaling for standard web-compliant compact UI proportioning.",
-        "Guaranteed 100% full screen width and 100vh height coverage with zero blank gaps on the right edge or bottom margin.",
-        "Maintained permanent right-edge visibility for 3-dot track options buttons across search results and playlists.",
-        "Bumped service worker cache version to v113."
+        "Enforced default dark theme (#0F172A) and 92% page zoom level across the music application.",
+        "Guaranteed 100% full screen width and height coverage with zero side or bottom whitespace gaps.",
+        "Redesigned navigation bar, topbar, floating dock, and music controllers to Pure Liquid UI aesthetics.",
+        "Preserved 100% of existing music streaming and playback logic.",
+        "Bumped service worker cache version to v114."
       ]
     }
   ]
