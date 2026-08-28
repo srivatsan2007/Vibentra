@@ -2476,7 +2476,7 @@ const initHome = () => {
         const avatarInitial = username.charAt(0).toUpperCase();
 
         let html = `
-            <div class="spotify-playlist-view" style="max-width: 850px; margin: 0 auto; padding-bottom: 90px;">
+            <div class="spotify-playlist-view" style="width: 100%; box-sizing: border-box; padding-bottom: 90px;">
                 <!-- Top Back Header -->
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
                     <button class="btn btn-outline" id="backToPlaylistsBtn" style="border-radius: 50%; width: 42px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer;">

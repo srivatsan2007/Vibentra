@@ -5329,9 +5329,15 @@ input:checked+.toggle-slider:before {
    SPOTIFY & YOUTUBE MUSIC REDESIGN (SEARCH & PLAYLIST PAGES)
    ============================================================ */
 
-/* 1. SEARCH PAGE REDESIGN */
-.spotify-search-page {
+/* 1. SEARCH PAGE & PLAYLIST PAGE REDESIGN WITH 92% ZOOM & 108.6956% CANVAS WIDTH */
+.spotify-search-page,
+.spotify-playlist-view {
+    zoom: 0.92 !important;
+    width: 108.6956% !important;
+    max-width: 108.6956% !important;
     padding: 10px 4px 30px 4px !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
 }
 
 .spotify-search-title {
@@ -5347,16 +5353,16 @@ input:checked+.toggle-slider:before {
     display: flex !important;
     align-items: center !important;
     width: 100% !important;
-    max-width: 680px !important;
+    max-width: 100% !important;
     margin-bottom: 24px !important;
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: #212121 !important;
     border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: 50px !important;
     padding: 6px 16px !important;
     box-sizing: border-box !important;
     backdrop-filter: blur(16px) !important;
     transition: all 0.25s ease !important;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
 }
 
 .spotify-search-bar-container:focus-within {

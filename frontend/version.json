@@ -1,20 +1,17 @@
 {
-  "version": "v1.8.2",
-  "swVersion": "vibentra-cache-v119",
-  "releaseDate": "28 August 2026, 10:45 am",
+  "version": "v1.8.3",
+  "swVersion": "vibentra-cache-v120",
+  "releaseDate": "28 August 2026, 10:52 am",
   "size": "2.8 MB",
-  "importantNote": "Redesigned search page matching YouTube Music reference layout with clean 3-dot vertical ellipsis buttons pinned safely on mobile.",
+  "importantNote": "Reduced zoom level in Search and Playlist pages to 92% with 108.6956% width calculation to eliminate side and bottom gaps.",
   "changelog": [
     {
-      "category": "Search Page UI Redesign & 3-Dot Mobile Accessibility (v1.8.2)",
+      "category": "Search & Playlist Zoom & Gapless Canvas Optimization (v1.8.3)",
       "items": [
-        "Redesigned search row items with clean 3-dot vertical ellipsis buttons (⋮) pinned safely on the right.",
-        "Set max-width constraints on track title and artist text containers to prevent clipping of option buttons.",
-        "Added circular avatar Artist card section at top of search results.",
-        "Redesigned search bar with 28px rounded pill styling and dark #212121 theme.",
-        "Updated filter chips with checkmark icon and active dark grey styling.",
-        "Preserved 100% of music streaming and backend logic.",
-        "Bumped service worker cache version to v119."
+        "Applied 92% zoom scale scoped to Search page (.spotify-search-page) and Playlist page (.spotify-playlist-view).",
+        "Applied 108.6956% canvas width calculation to ensure zero side gaps and zero bottom gaps when zoomed.",
+        "Preserved 100% of music streaming backend logic.",
+        "Bumped service worker cache version to v120."
       ]
     }
   ]
