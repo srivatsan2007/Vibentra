@@ -964,68 +964,70 @@ const initHome = () => {
     // Views Rendering
     async function renderHome() {
         dynamicContent.innerHTML = `
-            <!-- Sticky Filter Chips (YouTube Music & Spotify Hybrid) -->
-            <div class="mobile-filter-chips-wrapper" id="homeFilterChips">
-                <button class="mobile-filter-chip active" data-filter="all">All</button>
-                <button class="mobile-filter-chip" data-filter="music">Music</button>
-                <button class="mobile-filter-chip" data-filter="podcasts">Podcasts</button>
-                <button class="mobile-filter-chip" data-filter="chill">Chill</button>
-                <button class="mobile-filter-chip" data-filter="workout">Workout</button>
-                <button class="mobile-filter-chip" data-filter="tamil">Tamil Hits</button>
-            </div>
-
-            <!-- Spotify 2-Column Quick Grid (Mobile & Desktop) -->
-            <div class="spotify-quick-grid" id="desktopQuickGrid">
-            </div>
-
-            <!-- YouTube Music Quick Tune Mix Hero Banner -->
-            <div class="hero-mix-card" id="heroMixCard">
-                <div class="mix-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> QUICK TUNE MIX</div>
-                <h2>Your Daily Radio Mix</h2>
-                <p>Non-stop music stream powered by YouTube Music & JioSaavn</p>
-                <button class="btn-play-mix" id="homePlayMixBtn"><i class="fa-solid fa-play"></i> Play Mix</button>
-            </div>
-
-            <div class="welcome-banner" style="margin-bottom: 20px;">
-                <div>
-                    <h1 style="font-size: 2rem; margin-bottom: 6px;">Good evening</h1>
-                    <p style="opacity: 0.8;">Ready for some new tunes?</p>
+            <div class="spotify-home-page">
+                <!-- Sticky Filter Chips (YouTube Music & Spotify Hybrid) -->
+                <div class="mobile-filter-chips-wrapper" id="homeFilterChips">
+                    <button class="mobile-filter-chip active" data-filter="all">All</button>
+                    <button class="mobile-filter-chip" data-filter="music">Music</button>
+                    <button class="mobile-filter-chip" data-filter="podcasts">Podcasts</button>
+                    <button class="mobile-filter-chip" data-filter="chill">Chill</button>
+                    <button class="mobile-filter-chip" data-filter="workout">Workout</button>
+                    <button class="mobile-filter-chip" data-filter="tamil">Tamil Hits</button>
                 </div>
-            </div>
 
-            <div id="homeRecentSection" style="display: none;">
+                <!-- Spotify 2-Column Quick Grid (Mobile & Desktop) -->
+                <div class="spotify-quick-grid" id="desktopQuickGrid">
+                </div>
+
+                <!-- YouTube Music Quick Tune Mix Hero Banner -->
+                <div class="hero-mix-card" id="heroMixCard">
+                    <div class="mix-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> QUICK TUNE MIX</div>
+                    <h2>Your Daily Radio Mix</h2>
+                    <p>Non-stop music stream powered by YouTube Music & JioSaavn</p>
+                    <button class="btn-play-mix" id="homePlayMixBtn"><i class="fa-solid fa-play"></i> Play Mix</button>
+                </div>
+
+                <div class="welcome-banner" style="margin-bottom: 20px;">
+                    <div>
+                        <h1 style="font-size: 2rem; margin-bottom: 6px;">Good evening</h1>
+                        <p style="opacity: 0.8;">Ready for some new tunes?</p>
+                    </div>
+                </div>
+
+                <div id="homeRecentSection" style="display: none;">
+                    <div class="section-header">
+                        <h2>Jump back in</h2>
+                    </div>
+                    <div class="cards-grid horizontal-shelf" id="homeRecentGrid">
+                    </div>
+                </div>
+
                 <div class="section-header">
-                    <h2>Jump back in</h2>
+                    <h2>Top Charts Today</h2>
+                    <select id="langPrefSelect" style="background: var(--cards); color: white; border: 1px solid var(--glass-border); padding: 5px 10px; border-radius: 8px; outline: none; cursor: pointer;">
+                        <option value="English">English</option>
+                        <option value="Tamil">Tamil</option>
+                        <option value="Hindi">Hindi</option>
+                    </select>
                 </div>
-                <div class="cards-grid horizontal-shelf" id="homeRecentGrid">
+                <div class="cards-grid horizontal-shelf" id="homeTrendingGrid">
+                    <p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>
                 </div>
-            </div>
 
-            <div class="section-header">
-                <h2>Top Charts Today</h2>
-                <select id="langPrefSelect" style="background: var(--cards); color: white; border: 1px solid var(--glass-border); padding: 5px 10px; border-radius: 8px; outline: none; cursor: pointer;">
-                    <option value="English">English</option>
-                    <option value="Tamil">Tamil</option>
-                    <option value="Hindi">Hindi</option>
-                </select>
-            </div>
-            <div class="cards-grid horizontal-shelf" id="homeTrendingGrid">
-                <p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>
-            </div>
+                <div class="section-header" style="margin-top: 2rem; display: flex; align-items: baseline; justify-content: space-between;">
+                    <h2>Latest Albums & New Releases</h2>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">YouTube Music & JioSaavn</span>
+                </div>
+                <div class="cards-grid horizontal-shelf" id="homeLatestAlbumsGrid">
+                    <p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>
+                </div>
 
-            <div class="section-header" style="margin-top: 2rem; display: flex; align-items: baseline; justify-content: space-between;">
-                <h2>Latest Albums & New Releases</h2>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">YouTube Music & JioSaavn</span>
-            </div>
-            <div class="cards-grid horizontal-shelf" id="homeLatestAlbumsGrid">
-                <p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>
-            </div>
-
-            <div class="section-header" style="margin-top: 2rem;">
-                <h2>Popular Artists</h2>
-            </div>
-            <div class="cards-grid horizontal-shelf" id="homeArtistsGrid">
-                <p style="color: var(--primary); padding: 20px;">Loading artists...</p>
+                <div class="section-header" style="margin-top: 2rem;">
+                    <h2>Popular Artists</h2>
+                </div>
+                <div class="cards-grid horizontal-shelf" id="homeArtistsGrid">
+                    <p style="color: var(--primary); padding: 20px;">Loading artists...</p>
+                </div>
             </div>
         `;
 
