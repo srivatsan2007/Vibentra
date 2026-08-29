@@ -205,6 +205,10 @@
                 </div>
                 
                 <div class="topbar-actions">
+                    <div class="notification-btn" id="batterySaverToggleBtn" title="Toggle Battery Optimization Mode">
+                        <i class="fa-solid fa-battery-half" id="topBatteryIcon"></i>
+                    </div>
+
                     <div class="notification-btn" id="fullScreenToggleBtn" title="Toggle Fullscreen Mode">
                         <i class="fa-solid fa-expand"></i>
                     </div>
@@ -445,20 +449,24 @@
         </div>
     </div>
 
-    <!-- Liquid Glass Floating Dock Navigation (Redesigned v1.6.2) -->
+    <!-- Modern Liquid Glass 5-Item Floating Dock Navigation -->
     <div class="mobile-bottom-nav" id="mobileBottomNav">
-        <div class="mobile-nav-dock-pill">
-            <div class="mobile-nav-item active" data-target="home">
+        <div class="neon-floating-dock">
+            <button class="neon-dock-item active mobile-nav-item" data-target="home" title="Home">
                 <i class="fa-solid fa-house"></i>
-                <span>Home</span>
-            </div>
-            <div class="mobile-nav-item" data-target="playlists">
+            </button>
+            <button class="neon-dock-item mobile-nav-item" data-target="search" title="Search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <button class="neon-dock-item mobile-nav-item" data-target="playlists" title="Library">
                 <i class="fa-solid fa-layer-group"></i>
-                <span>Library</span>
-            </div>
-        </div>
-        <div class="mobile-nav-search-circle mobile-nav-item" data-target="search" title="Search">
-            <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <button class="neon-dock-item mobile-nav-item" data-target="favorites" title="Favorites">
+                <i class="fa-solid fa-heart"></i>
+            </button>
+            <button class="neon-dock-item mobile-nav-item" data-target="settings" title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </button>
         </div>
     </div>
 

@@ -15,6 +15,81 @@ const initHome = () => {
     // Initialize New Update Release Notes & SW Manager
     initUpdateManager();
 
+    // Initialize Battery Optimization & Power Saver Engine
+    const initBatteryOptimization = () => {
+        let isBatterySaver = localStorage.getItem('vibentra_battery_saver') === 'true';
+        const batteryBtn = document.getElementById('batterySaverToggleBtn');
+        const topBatteryIcon = document.getElementById('topBatteryIcon');
+
+        const applyBatteryMode = (enabled, notify = false) => {
+            isBatterySaver = enabled;
+            localStorage.setItem('vibentra_battery_saver', enabled ? 'true' : 'false');
+            if (enabled) {
+                document.documentElement.classList.add('battery-saver-active');
+                document.body.classList.add('battery-saver-active');
+                if (topBatteryIcon) topBatteryIcon.className = 'fa-solid fa-battery-empty';
+                if (batteryBtn) {
+                    batteryBtn.style.color = '#34D399';
+                    batteryBtn.title = 'Battery Saver: Active (Tap to Disable)';
+                }
+                if (notify) showNotification('Battery Saver: ON (OLED Pure Black & Animations Paused)', 'success');
+            } else {
+                document.documentElement.classList.remove('battery-saver-active');
+                document.body.classList.remove('battery-saver-active');
+                if (topBatteryIcon) topBatteryIcon.className = 'fa-solid fa-battery-half';
+                if (batteryBtn) {
+                    batteryBtn.style.color = '';
+                    batteryBtn.title = 'Battery Optimization (Tap to Enable)';
+                }
+                if (notify) showNotification('High-Performance Mode: ON (Full Glass Effects)', 'info');
+            }
+        };
+
+        // Apply saved mode on startup
+        applyBatteryMode(isBatterySaver, false);
+
+        if (batteryBtn) {
+            batteryBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                applyBatteryMode(!isBatterySaver, true);
+            });
+        }
+
+        // Real Device Battery Status Monitoring
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                const updateBatteryState = () => {
+                    const level = Math.round(battery.level * 100);
+                    const isCharging = battery.charging;
+
+                    if (topBatteryIcon) {
+                        if (isCharging) {
+                            topBatteryIcon.className = 'fa-solid fa-battery-bolt';
+                        } else if (level <= 20) {
+                            topBatteryIcon.className = 'fa-solid fa-battery-empty';
+                        } else if (level <= 60) {
+                            topBatteryIcon.className = 'fa-solid fa-battery-half';
+                        } else {
+                            topBatteryIcon.className = 'fa-solid fa-battery-full';
+                        }
+                    }
+
+                    // Auto-enable when battery < 20% and not charging if user hasn't explicitly disabled
+                    if (level <= 20 && !isCharging && localStorage.getItem('vibentra_battery_saver') === null) {
+                        applyBatteryMode(true, true);
+                    }
+                };
+
+                updateBatteryState();
+                battery.addEventListener('levelchange', updateBatteryState);
+                battery.addEventListener('chargingchange', updateBatteryState);
+            }).catch(() => {});
+        }
+
+        window.applyBatteryMode = applyBatteryMode;
+    };
+    initBatteryOptimization();
+
     // Apply Theme
     const themes = {
         'default': {
@@ -970,327 +1045,357 @@ const initHome = () => {
         }
     });
 
+    // Shared Helper to create Modern Squircle Track Rows (Matching Reference Design)
+    function createSquircleTrackRow(track, contextList = []) {
+        const row = document.createElement('div');
+        row.className = 'squircle-track-row';
+        row.setAttribute('data-id', track.id);
+
+        const cover = track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        const title = track.title || 'Untitled Track';
+        const artist = track.artist || 'Unknown Artist';
+        const providerName = track.provider || (track.source === 'youtube' ? 'YouTube Music' : 'JioSaavn');
+        const metaText = track.duration ? `By ${artist} • ${track.duration}` : `By ${artist} • ${providerName}`;
+
+        row.innerHTML = `
+            <div class="squircle-track-left">
+                <img src="${cover}" alt="${title}" class="squircle-track-cover" loading="lazy">
+                <div class="squircle-track-info">
+                    <h4 class="squircle-track-title" title="${title}">${title}</h4>
+                    <p class="squircle-track-meta" title="${metaText}">${metaText}</p>
+                </div>
+            </div>
+            <button class="squircle-mini-play" title="Play ${title}">
+                <i class="fa-solid fa-play"></i>
+            </button>
+        `;
+
+        const triggerPlay = (e) => {
+            e.stopPropagation();
+            musicService.playContext(contextList.length ? contextList : [track], track);
+        };
+
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('.squircle-mini-play')) return;
+            triggerPlay(e);
+        });
+
+        row.querySelector('.squircle-mini-play').addEventListener('click', triggerPlay);
+
+        return row;
+    }
+
+    // Shared Helper for Horizontal Album Cards
+    function createSquircleAlbumCard(album) {
+        const card = document.createElement('div');
+        card.className = 'squircle-album-card';
+        const cover = (album.cover && String(album.cover).trim() !== '') ? album.cover : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        const title = album.title || 'Latest Album';
+        const artist = album.artist || 'Featured Artist';
+
+        card.innerHTML = `
+            <img src="${cover}" alt="${title}" loading="lazy">
+            <h4 title="${title}">${title}</h4>
+            <p title="${artist}">${artist}</p>
+        `;
+
+        card.addEventListener('click', async () => {
+            showNotification(`Loading '${title}'...`);
+            const pId = album.providerId || (album.source === 'youtube' ? 'youtube' : 'jiosaavn');
+            const albumTracks = await providerManager.getAlbum(pId, album.id);
+            if (albumTracks && albumTracks.length > 0) {
+                musicService.playContext(albumTracks, albumTracks[0]);
+            } else {
+                renderRemoteCollectionDetail(album, 'album');
+            }
+        });
+
+        return card;
+    }
+
     // Views Rendering
     async function renderHome() {
+        const currentUsername = document.getElementById('welcomeName')?.textContent || 'Samantha';
+        const currentAvatar = document.getElementById('topProfileImg')?.src || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
+
         dynamicContent.innerHTML = `
-            <div class="spotify-home-page">
-                <!-- Sticky Filter Chips (YouTube Music & Spotify Hybrid) -->
-                <div class="mobile-filter-chips-wrapper" id="homeFilterChips">
-                    <button class="mobile-filter-chip active" data-filter="all">All</button>
-                    <button class="mobile-filter-chip" data-filter="music">Music</button>
-                    <button class="mobile-filter-chip" data-filter="podcasts">Podcasts</button>
-                    <button class="mobile-filter-chip" data-filter="chill">Chill</button>
-                    <button class="mobile-filter-chip" data-filter="workout">Workout</button>
-                    <button class="mobile-filter-chip" data-filter="tamil">Tamil Hits</button>
-                </div>
-
-                <!-- Spotify 2-Column Quick Grid (Mobile & Desktop) -->
-                <div class="spotify-quick-grid" id="desktopQuickGrid">
-                </div>
-
-                <!-- YouTube Music Quick Tune Mix Hero Banner -->
-                <div class="hero-mix-card" id="heroMixCard">
-                    <div class="mix-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> QUICK TUNE MIX</div>
-                    <h2>Your Daily Radio Mix</h2>
-                    <p>Non-stop music stream powered by YouTube Music & JioSaavn</p>
-                    <button class="btn-play-mix" id="homePlayMixBtn"><i class="fa-solid fa-play"></i> Play Mix</button>
-                </div>
-
-                <div class="welcome-banner" style="margin-bottom: 20px;">
-                    <div>
-                        <h1 style="font-size: 2rem; margin-bottom: 6px;">Good evening</h1>
-                        <p style="opacity: 0.8;">Ready for some new tunes?</p>
+            <div class="home-neon-page view-fade-in">
+                <!-- Top Neon Header (Avatar with Glow, Quick Search & Favorites) -->
+                <div class="home-neon-header">
+                    <div class="home-header-avatar-wrap" id="homeAvatarBtn" title="View Profile">
+                        <img src="${currentAvatar}" alt="Profile" class="home-header-avatar" id="homeNeonAvatar">
+                    </div>
+                    <div class="home-header-actions">
+                        <button class="home-circle-action-btn" id="homeQuickSearchBtn" title="Search Songs">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <button class="home-circle-action-btn" id="homeQuickFavBtn" title="Liked Songs">
+                            <i class="fa-regular fa-heart"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div id="homeRecentSection" style="display: none;">
-                    <div class="section-header">
-                        <h2>Jump back in</h2>
+                <!-- Personalized Greeting -->
+                <div class="home-greeting-text">
+                    <h1>Hi, <span id="homeDynamicGreetingName">${currentUsername}</span></h1>
+                </div>
+
+                <!-- Sticky Neon Pill Filter Chips Row -->
+                <div class="neon-chips-shelf" id="homeNeonFilterChips">
+                    <button class="neon-chip active" data-filter="all">All</button>
+                    <button class="neon-chip" data-filter="new-release">New Release</button>
+                    <button class="neon-chip" data-filter="trending">Trending</button>
+                    <button class="neon-chip" data-filter="top-hits">Top Hits</button>
+                    <button class="neon-chip" data-filter="chill">Chill</button>
+                    <button class="neon-chip" data-filter="workout">Workout</button>
+                    <button class="neon-chip" data-filter="tamil">Tamil Hits</button>
+                    <button class="neon-chip" data-filter="bollywood">Bollywood</button>
+                </div>
+
+                <!-- Curated & Trending Hero Card (Lavender Pastel Aesthetic) -->
+                <div class="curated-hero-section">
+                    <div class="curated-hero-title-row">
+                        <h2>Curated & trending</h2>
                     </div>
-                    <div class="cards-grid horizontal-shelf" id="homeRecentGrid">
+                    <div class="curated-hero-card" id="homeCuratedHeroCard">
+                        <div class="curated-hero-info">
+                            <span class="curated-hero-tag">FEATURED MIX</span>
+                            <h3 class="curated-hero-name" id="curatedHeroTitle">Discover weekly</h3>
+                            <p class="curated-hero-desc" id="curatedHeroDesc">The original slow instrumental best playlists.</p>
+                            <div class="curated-hero-actions">
+                                <button class="curated-hero-play-btn" id="curatedHeroPlayBtn" title="Play Featured Mix">
+                                    <i class="fa-solid fa-play"></i>
+                                </button>
+                                <button class="curated-hero-action-icon" id="curatedHeroLikeBtn" title="Like">
+                                    <i class="fa-regular fa-heart"></i>
+                                </button>
+                                <button class="curated-hero-action-icon" id="curatedHeroDownloadBtn" title="Download">
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </button>
+                                <button class="curated-hero-action-icon" id="curatedHeroMoreBtn" title="More Options">
+                                    <i class="fa-solid fa-ellipsis"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80" alt="Curated Artwork" class="curated-hero-artwork" id="curatedHeroArtwork">
                     </div>
                 </div>
 
-                <div class="section-header">
-                    <h2>Top Charts Today</h2>
-                    <select id="langPrefSelect" style="background: var(--cards); color: white; border: 1px solid var(--glass-border); padding: 5px 10px; border-radius: 8px; outline: none; cursor: pointer;">
-                        <option value="English">English</option>
-                        <option value="Tamil">Tamil</option>
-                        <option value="Hindi">Hindi</option>
-                    </select>
-                </div>
-                <div class="cards-grid horizontal-shelf" id="homeTrendingGrid">
-                    <p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>
-                </div>
-
-                <div class="section-header" style="margin-top: 2rem; display: flex; align-items: baseline; justify-content: space-between;">
-                    <h2>Latest Albums & New Releases</h2>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">YouTube Music & JioSaavn</span>
-                </div>
-                <div class="cards-grid horizontal-shelf" id="homeLatestAlbumsGrid">
-                    <p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>
+                <!-- Top Daily Playlists / Trending Hits (Squircle Row UI) -->
+                <div class="squircle-section">
+                    <div class="squircle-section-header">
+                        <h2>Top daily playlists</h2>
+                        <span class="squircle-see-all" id="seeAllTrendingBtn">See all</span>
+                    </div>
+                    <div class="squircle-track-list" id="homeTopDailyList">
+                        <p style="color: var(--primary); padding: 20px;">Loading daily hits...</p>
+                    </div>
                 </div>
 
-                <div class="section-header" style="margin-top: 2rem;">
-                    <h2>Popular Artists</h2>
+                <!-- Latest Albums & New Releases Shelf -->
+                <div class="squircle-section">
+                    <div class="squircle-section-header">
+                        <h2>New Releases & Albums</h2>
+                    </div>
+                    <div class="squircle-shelf-scroll" id="homeLatestAlbumsGrid">
+                        <p style="color: var(--primary); padding: 15px;">Loading latest albums...</p>
+                    </div>
                 </div>
-                <div class="cards-grid horizontal-shelf" id="homeArtistsGrid">
-                    <p style="color: var(--primary); padding: 20px;">Loading artists...</p>
+
+                <!-- Popular Artists Shelf -->
+                <div class="squircle-section">
+                    <div class="squircle-section-header">
+                        <h2>Popular Artists</h2>
+                    </div>
+                    <div class="squircle-shelf-scroll" id="homeArtistsGrid">
+                        <p style="color: var(--primary); padding: 15px;">Loading artists...</p>
+                    </div>
                 </div>
             </div>
         `;
 
-        // Handle YTM Filter Chips
-        const filterChips = document.querySelectorAll('#homeFilterChips .mobile-filter-chip');
-        filterChips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                filterChips.forEach(c => c.classList.remove('active'));
-                chip.classList.add('active');
-                const filterType = chip.getAttribute('data-filter');
-                if (filterType === 'all' || filterType === 'music') {
-                    loadTrendingData(localStorage.getItem('vibentra_lang_pref') || 'English');
-                } else if (filterType === 'tamil') {
-                    loadTrendingData('Tamil');
-                } else {
-                    searchService.searchSongs(`${filterType} songs 2026`).then(res => {
-                        const trendingGrid = document.getElementById('homeTrendingGrid');
-                        if (trendingGrid && res.length > 0) {
-                            trendingGrid.innerHTML = '';
-                            res.slice(0, 10).forEach(track => trendingGrid.appendChild(createSongCard(track, res)));
-                        }
-                    });
-                }
-            });
-        });
-
-        const renderDesktopQuickGrid = (trendingSongs = []) => {
-            const container = document.getElementById('desktopQuickGrid');
-            if (!container) return;
-
-            const history = historyService.getHistory() || [];
-            const favorites = favoriteService.getFavorites() || [];
-            const combined = [...history, ...favorites];
-
-            const uniqueTracks = [];
-            const seen = new Set();
-            combined.forEach(t => {
-                if (t && t.id && !seen.has(String(t.id))) {
-                    seen.add(String(t.id));
-                    uniqueTracks.push(t);
-                }
-            });
-
-            if (uniqueTracks.length < 8 && trendingSongs.length > 0) {
-                trendingSongs.forEach(t => {
-                    if (t && t.id && !seen.has(String(t.id)) && uniqueTracks.length < 8) {
-                        seen.add(String(t.id));
-                        uniqueTracks.push(t);
-                    }
-                });
-            }
-
-            container.innerHTML = '';
-            const sliceTracks = uniqueTracks.slice(0, 8);
-            sliceTracks.forEach(track => {
-                const card = document.createElement('div');
-                card.className = 'spotify-quick-card';
-                const cover = (track.cover && String(track.cover).trim() !== '') ? track.cover : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80';
-                card.innerHTML = `
-                    <img src="${cover}" alt="cover">
-                    <span>${track.title || 'Dynamic Song'}</span>
-                    <button class="spotify-quick-play-btn" title="Play"><i class="fa-solid fa-play"></i></button>
-                `;
-                card.addEventListener('click', () => {
-                    musicService.playContext(sliceTracks, track);
-                });
-                container.appendChild(card);
-            });
-        };
-
-        // Render initial quick grid from history/favorites
-        renderDesktopQuickGrid([]);
-
-        const history = historyService.getHistory();
-        if (history.length > 0) {
-            document.getElementById('homeRecentSection').style.display = 'block';
-            const recentGrid = document.getElementById('homeRecentGrid');
-            recentGrid.innerHTML = '';
-
-            history.slice(0, 6).forEach(track => {
-                recentGrid.appendChild(createSongCard(track, history));
-            });
-        }
-
-        const langPrefSelect = document.getElementById('langPrefSelect');
-        const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
-        langPrefSelect.value = storedLang;
+        // Quick Action Navigators
+        document.getElementById('homeAvatarBtn')?.addEventListener('click', () => loadView('profile'));
+        document.getElementById('homeQuickSearchBtn')?.addEventListener('click', () => loadView('search'));
+        document.getElementById('homeQuickFavBtn')?.addEventListener('click', () => loadView('favorites'));
+        document.getElementById('seeAllTrendingBtn')?.addEventListener('click', () => loadView('search'));
 
         let activeTrendingTracks = [];
+        let heroTrack = null;
 
-        const renderInitialAlbums = (lang = 'Tamil') => {
-            const targetGrid = document.getElementById('homeLatestAlbumsGrid');
-            if (!targetGrid) return;
-            const defaultAlbums = [
-                { title: 'Dragon', artist: 'Leon James • Tamil 2026', cover: 'https://c.saavncdn.com/712/Dragon-Tamil-2025-20250201121045-500x500.jpg', provider: 'YouTube Music' },
-                { title: 'Kanguva', artist: 'Devi Sri Prasad • Tamil 2026', cover: 'https://c.saavncdn.com/393/Kanguva-Tamil-2024-20241113203402-500x500.jpg', provider: 'JioSaavn' },
-                { title: 'Vettaiyan', artist: 'Anirudh Ravichander', cover: 'https://c.saavncdn.com/970/Vettaiyan-Tamil-2024-20241008133515-500x500.jpg', provider: 'YouTube Music' },
-                { title: 'GOAT - Greatest Of All Time', artist: 'Yuvan Shankar Raja', cover: 'https://c.saavncdn.com/640/The-Greatest-Of-All-Time-Tamil-2024-20240903173114-500x500.jpg', provider: 'JioSaavn' },
-                { title: 'Amaran', artist: 'G.V. Prakash Kumar', cover: 'https://c.saavncdn.com/366/Amaran-Tamil-2024-20241030173629-500x500.jpg', provider: 'YouTube Music' },
-                { title: 'Viduthalai Part 2', artist: 'Ilaiyaraaja', cover: 'https://c.saavncdn.com/475/Viduthalai-Part-2-Tamil-2024-20241219191040-500x500.jpg', provider: 'JioSaavn' }
-            ];
-            targetGrid.innerHTML = '';
-            defaultAlbums.forEach(album => targetGrid.appendChild(createAlbumCard(album)));
-        };
+        // Dynamic Trending Data Loader
+        const loadTrendingData = async (queryParam = 'latest top hits 2026') => {
+            const listContainer = document.getElementById('homeTopDailyList');
+            const artistsContainer = document.getElementById('homeArtistsGrid');
+            const albumsContainer = document.getElementById('homeLatestAlbumsGrid');
 
-        renderInitialAlbums(storedLang);
-
-        const loadTrendingData = async (language) => {
-            const queryMap = {
-                'English': 'latest english top hits 2026',
-                'Tamil': 'latest tamil top hits 2026',
-                'Hindi': 'latest hindi bollywood top hits 2026'
-            };
-            const searchQuery = queryMap[language] || 'trending hits';
-
-            const trendingGrid = document.getElementById('homeTrendingGrid');
-            const artistsGrid = document.getElementById('homeArtistsGrid');
-            const albumsGrid = document.getElementById('homeLatestAlbumsGrid');
-
-            if (trendingGrid) trendingGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>';
-            if (artistsGrid) artistsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading artists...</p>';
-            if (albumsGrid && albumsGrid.children.length === 0) albumsGrid.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading latest albums...</p>';
-
-            // Load Latest Albums concurrently
-            searchService.searchAll(`latest album ${language} 2026`).then(albumRes => {
-                const targetGrid = document.getElementById('homeLatestAlbumsGrid');
-                if (!targetGrid) return;
-                targetGrid.innerHTML = '';
-                if (albumRes && albumRes.albums && albumRes.albums.length > 0) {
-                    albumRes.albums.slice(0, 8).forEach(album => {
-                        targetGrid.appendChild(createAlbumCard(album));
-                    });
-                } else if (albumRes && albumRes.tracks && albumRes.tracks.length > 0) {
-                    const trackAlbums = [];
-                    const seenCovers = new Set();
-                    albumRes.tracks.forEach(t => {
-                        if (t.cover && !seenCovers.has(t.cover) && trackAlbums.length < 8) {
-                            seenCovers.add(t.cover);
-                            trackAlbums.push({
-                                title: t.album || t.title,
-                                artist: t.artist,
-                                cover: t.cover,
-                                provider: t.provider || 'YouTube Music'
-                            });
-                        }
-                    });
-                    trackAlbums.forEach(album => targetGrid.appendChild(createAlbumCard(album)));
-                } else {
-                    targetGrid.innerHTML = '<p style="color: var(--text-muted);">No new release albums found.</p>';
-                }
-            }).catch(err => {
-                console.error("Latest albums fetch error:", err);
-                const targetGrid = document.getElementById('homeLatestAlbumsGrid');
-                if (targetGrid) targetGrid.innerHTML = '<p style="color: var(--text-muted);">Failed to load albums.</p>';
-            });
+            if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading daily hits...</p>';
 
             try {
-                const trendingResults = await searchService.searchSongs(searchQuery);
-                if (!document.getElementById('homeTrendingGrid')) return; // Check if still on home
+                const results = await searchService.searchSongs(queryParam);
+                if (!document.getElementById('homeTopDailyList')) return; // Check if still on home
 
-                activeTrendingTracks = trendingResults;
+                activeTrendingTracks = results && results.length > 0 ? results : [];
 
-                // Dynamically update Desktop & Mobile Quick Grid with real live trending songs
-                renderDesktopQuickGrid(trendingResults);
+                if (activeTrendingTracks.length > 0) {
+                    heroTrack = activeTrendingTracks[0];
 
-                trendingGrid.innerHTML = '';
-                if (trendingResults.length === 0) {
-                    trendingGrid.innerHTML = '<p style="color: var(--text-muted);">No trending songs found.</p>';
-                    if (artistsGrid) artistsGrid.innerHTML = '<p style="color: var(--text-muted);">No artists found.</p>';
-                    return;
-                }
+                    // Update Curated Hero Card
+                    const heroTitle = document.getElementById('curatedHeroTitle');
+                    const heroDesc = document.getElementById('curatedHeroDesc');
+                    const heroArtwork = document.getElementById('curatedHeroArtwork');
+                    const heroLikeBtn = document.getElementById('curatedHeroLikeBtn');
 
-                trendingResults.slice(0, 10).forEach((track, index) => {
-                    const card = createSongCard(track, trendingResults);
-                    if (index < 5) {
-                        card.classList.add('ranked-chart-card');
-                        const imgWrapper = card.querySelector('.card-img-wrapper');
-                        if (imgWrapper) {
-                            const badge = document.createElement('div');
-                            badge.className = 'ranked-badge';
-                            badge.textContent = `${index + 1}`;
-                            imgWrapper.appendChild(badge);
-                        }
+                    if (heroTitle) heroTitle.textContent = heroTrack.title || 'Discover weekly';
+                    if (heroDesc) heroDesc.textContent = `The original slow instrumental best playlists • ${heroTrack.artist || 'Curated'}`;
+                    if (heroArtwork && heroTrack.cover) heroArtwork.src = heroTrack.cover;
+
+                    if (heroLikeBtn) {
+                        const isFav = favoriteService.isFavorite(heroTrack.id);
+                        heroLikeBtn.innerHTML = isFav ? '<i class="fa-solid fa-heart" style="color: #EC4899;"></i>' : '<i class="fa-regular fa-heart"></i>';
                     }
-                    trendingGrid.appendChild(card);
-                });
 
-                // Hook up Play Mix button
-                const playMixBtn = document.getElementById('homePlayMixBtn');
-                if (playMixBtn) {
-                    playMixBtn.onclick = () => {
-                        if (activeTrendingTracks.length > 0) {
-                            musicService.playContext(activeTrendingTracks, activeTrendingTracks[0]);
-                        }
-                    };
-                }
+                    // Curated Hero Interactive Actions
+                    const playHeroBtn = document.getElementById('curatedHeroPlayBtn');
+                    if (playHeroBtn) {
+                        playHeroBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            musicService.playContext(activeTrendingTracks, heroTrack);
+                        };
+                    }
 
-                // Extract and render dynamic artists
-                if (artistsGrid) {
-                    const artistNames = new Set();
-                    trendingResults.forEach(track => {
-                        if (track.artist) {
-                            track.artist.split(',').forEach(a => artistNames.add(a.trim()));
-                        }
-                    });
-                    const topArtists = Array.from(artistNames).filter(a => a.length > 0 && a.toLowerCase() !== 'unknown').slice(0, 4);
+                    const heroCard = document.getElementById('homeCuratedHeroCard');
+                    if (heroCard) {
+                        heroCard.onclick = (e) => {
+                            if (e.target.closest('.curated-hero-action-icon')) return;
+                            musicService.playContext(activeTrendingTracks, heroTrack);
+                        };
+                    }
 
-                    artistsGrid.innerHTML = '';
-                    topArtists.forEach(artistName => {
-                        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(artistName)}&background=random&color=fff&size=150&font-size=0.33`;
-                        const card = document.createElement('div');
-                        card.className = 'music-card';
-                        card.style.cursor = 'pointer';
-                        card.innerHTML = `
-                            <div class="card-img-wrapper" style="border-radius: 50%; overflow: hidden; margin-bottom: 10px; aspect-ratio: 1;">
-                                <img src="${avatarUrl}" alt="Artist" style="width: 100%; height: 100%; object-fit: cover;">
-                            </div>
-                            <div class="card-info" style="text-align: center;">
-                                <h3 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistName}</h3>
+                    if (heroLikeBtn) {
+                        heroLikeBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            favoriteService.toggleFavorite(heroTrack);
+                            const isNowFav = favoriteService.isFavorite(heroTrack.id);
+                            heroLikeBtn.innerHTML = isNowFav ? '<i class="fa-solid fa-heart" style="color: #EC4899;"></i>' : '<i class="fa-regular fa-heart"></i>';
+                            showNotification(isNowFav ? 'Added to Liked Songs' : 'Removed from Liked Songs', 'success');
+                        };
+                    }
+
+                    const heroDownloadBtn = document.getElementById('curatedHeroDownloadBtn');
+                    if (heroDownloadBtn) {
+                        heroDownloadBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            musicService.downloadTrack(heroTrack);
+                        };
+                    }
+
+                    const heroMoreBtn = document.getElementById('curatedHeroMoreBtn');
+                    if (heroMoreBtn) {
+                        heroMoreBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            openTrackOptionsMenu(heroTrack);
+                        };
+                    }
+
+                    // Render Top Daily Playlists / Tracks
+                    if (listContainer) {
+                        listContainer.innerHTML = '';
+                        activeTrendingTracks.slice(0, 8).forEach(track => {
+                            listContainer.appendChild(createSquircleTrackRow(track, activeTrendingTracks));
+                        });
+                    }
+
+                    // Extract and render Popular Artists
+                    if (artistsContainer) {
+                        const artistNames = new Set();
+                        activeTrendingTracks.forEach(t => {
+                            if (t.artist) t.artist.split(',').forEach(a => artistNames.add(a.trim()));
+                        });
+                        const topArtists = Array.from(artistNames).filter(a => a.length > 0 && a.toLowerCase() !== 'unknown').slice(0, 6);
+
+                        artistsContainer.innerHTML = '';
+                        topArtists.forEach(artistName => {
+                            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(artistName)}&background=random&color=fff&size=150&font-size=0.33`;
+                            const card = document.createElement('div');
+                            card.className = 'squircle-artist-card';
+                            card.innerHTML = `
+                                <img src="${avatarUrl}" alt="${artistName}">
+                                <h4 title="${artistName}">${artistName}</h4>
                                 <p>Artist</p>
-                            </div>
-                        `;
-                        card.addEventListener('click', () => {
-                            const searchNavBtn = document.querySelector('.nav-item[data-path="search"]');
-                            if (searchNavBtn) {
-                                searchNavBtn.click();
+                            `;
+                            card.addEventListener('click', () => {
+                                loadView('search');
                                 setTimeout(() => {
                                     const searchInput = document.getElementById('searchInput');
                                     if (searchInput) {
                                         searchInput.value = artistName;
                                         searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                                     }
-                                }, 50);
-                            }
+                                }, 80);
+                            });
+                            artistsContainer.appendChild(card);
                         });
-                        artistsGrid.appendChild(card);
-                    });
-                    if (topArtists.length === 0) artistsGrid.innerHTML = '<p style="color: var(--text-muted);">No artists found.</p>';
-                }
+                    }
 
-            } catch (e) {
-                if (trendingGrid) trendingGrid.innerHTML = '<p style="color: var(--text-muted);">Failed to load trending songs.</p>';
-                if (artistsGrid) artistsGrid.innerHTML = '<p style="color: var(--text-muted);">Failed to load artists.</p>';
+                } else {
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--text-muted);">No trending songs found.</p>';
+                }
+            } catch (err) {
+                console.error("Home trending error:", err);
+                if (listContainer) listContainer.innerHTML = '<p style="color: var(--text-muted);">Failed to load daily hits.</p>';
+            }
+
+            // Load Latest Albums
+            if (albumsContainer) {
+                searchService.searchAll('latest new album release 2026').then(albumRes => {
+                    if (!document.getElementById('homeLatestAlbumsGrid')) return;
+                    albumsContainer.innerHTML = '';
+                    if (albumRes && albumRes.albums && albumRes.albums.length > 0) {
+                        albumRes.albums.slice(0, 8).forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                    } else {
+                        const defaultAlbums = [
+                            { title: 'Dragon', artist: 'Leon James • 2026', cover: 'https://c.saavncdn.com/712/Dragon-Tamil-2025-20250201121045-500x500.jpg', provider: 'YouTube Music' },
+                            { title: 'Kanguva', artist: 'Devi Sri Prasad • 2026', cover: 'https://c.saavncdn.com/393/Kanguva-Tamil-2024-20241113203402-500x500.jpg', provider: 'JioSaavn' },
+                            { title: 'Vettaiyan', artist: 'Anirudh Ravichander', cover: 'https://c.saavncdn.com/970/Vettaiyan-Tamil-2024-20241008133515-500x500.jpg', provider: 'YouTube Music' },
+                            { title: 'GOAT', artist: 'Yuvan Shankar Raja', cover: 'https://c.saavncdn.com/640/The-Greatest-Of-All-Time-Tamil-2024-20240903173114-500x500.jpg', provider: 'JioSaavn' }
+                        ];
+                        defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                    }
+                }).catch(() => {});
             }
         };
 
-        langPrefSelect.addEventListener('change', (e) => {
-            const newLang = e.target.value;
-            localStorage.setItem('vibentra_lang_pref', newLang);
-            loadTrendingData(newLang); // Update grids instantly without page reload
+        // Handle Neon Filter Chips
+        const filterChips = document.querySelectorAll('#homeNeonFilterChips .neon-chip');
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                filterChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const filterType = chip.getAttribute('data-filter');
+
+                if (filterType === 'all') {
+                    loadTrendingData('latest top hits 2026');
+                } else if (filterType === 'new-release') {
+                    loadTrendingData('new release english tamil songs 2026');
+                } else if (filterType === 'trending') {
+                    loadTrendingData('global viral trending songs 2026');
+                } else if (filterType === 'top-hits') {
+                    loadTrendingData('billboard top 50 hits 2026');
+                } else if (filterType === 'chill') {
+                    loadTrendingData('chill lofi acoustic slow songs');
+                } else if (filterType === 'workout') {
+                    loadTrendingData('high energy workout gym hits');
+                } else if (filterType === 'tamil') {
+                    loadTrendingData('latest tamil top hits 2026');
+                } else if (filterType === 'bollywood') {
+                    loadTrendingData('latest hindi bollywood top hits 2026');
+                }
+            });
         });
 
         // Initial Load
-        loadTrendingData(storedLang);
+        loadTrendingData('latest top hits 2026');
     }    function renderSearch(initialQuery = '') {
         const moodsAndMoments = [
             { id: 'chill', title: 'Chill', gradient: 'linear-gradient(135deg, #d95c47, #e08353)', query: 'Chill Coffee Blend', img: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&q=80' },
@@ -1342,7 +1447,7 @@ const initHome = () => {
         };
 
         dynamicContent.innerHTML = `
-            <div class="spotify-search-page">
+            <div class="spotify-search-page view-fade-in">
                 <div class="spotify-search-bar-container">
                     <i class="fa-solid fa-magnifying-glass spotify-search-icon"></i>
                     <input type="text" class="spotify-search-input" id="searchInput" value="${initialQuery}" placeholder="Search for artists..." autocomplete="off">
@@ -2293,6 +2398,7 @@ const initHome = () => {
         const favCount = (favoriteService.getFavorites() || []).length;
 
         let html = `
+            <div class="playlists-view-page view-fade-in">
             <div class="liked-songs-hero-card" id="heroLikedSongsCard">
                 <div class="liked-songs-hero-info">
                     <h2><i class="fa-solid fa-heart" style="color: #EC4899; margin-right: 12px;"></i> Liked Songs</h2>
@@ -2331,7 +2437,7 @@ const initHome = () => {
             `;
         });
 
-        html += `</div>`;
+        html += `</div></div>`;
         dynamicContent.innerHTML = html;
 
         // Liked Songs Hero Card click
@@ -2957,6 +3063,7 @@ const initHome = () => {
     function renderFavorites() {
         const favs = favoriteService.getFavorites();
         let html = `
+            <div class="favorites-view-page view-fade-in">
             <div class="liked-songs-hero-card" style="margin-bottom: 24px;">
                 <div class="liked-songs-hero-info">
                     <h2><i class="fa-solid fa-heart" style="color: #EC4899; margin-right: 10px;"></i> Liked Songs</h2>
@@ -2990,7 +3097,7 @@ const initHome = () => {
             });
         }
 
-        html += `</div>`;
+        html += `</div></div>`;
         dynamicContent.innerHTML = html;
 
         document.getElementById('playAllFavsBtn')?.addEventListener('click', () => {
@@ -3662,6 +3769,14 @@ const initHome = () => {
                         <i class="fa-solid fa-chevron-right chevron"></i>
                     </div>
 
+                    <div class="settings-card-item" data-category="battery">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-battery-half" style="color: #34D399;"></i>
+                            <span>Battery & Performance</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
                     <div class="settings-card-item" data-category="content">
                         <div class="settings-card-left">
                             <i class="fa-solid fa-bars-staggered"></i>
@@ -3766,6 +3881,74 @@ const initHome = () => {
         const setSettingVal = (key, val) => {
             localStorage.setItem('vibentra_setting_' + key, val);
         };
+
+        if (category === 'battery') {
+            const isSaverOn = localStorage.getItem('vibentra_battery_saver') === 'true';
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper view-fade-in">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Battery & Performance</h2>
+                    </div>
+
+                    <div class="glass-panel" style="border-radius: 24px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #10B981, #06B6D4); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);">
+                            <i class="fa-solid fa-battery-half"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; color: #FFFFFF; font-weight: 800; margin: 0;">Power Saver Engine</h3>
+                        <p style="color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; line-height: 1.4;">Optimizes CPU/GPU load, enables pure AMOLED black, and pauses liquid background animations.</p>
+                    </div>
+
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Battery Saver Mode</h4>
+                                <p>Pauses visual animations & turns on OLED pure black</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingBatterySaverToggle" ${isSaverOn ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Auto-Enable below 20%</h4>
+                                <p>Automatically switch when mobile battery is low</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingAutoBatteryToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Display Optimization</h4>
+                                <div class="settings-option-subvalue">Pure AMOLED Pure Black (#000000)</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>GPU Shaders</h4>
+                                <div class="settings-option-subvalue">${isSaverOn ? 'Optimized (Fast Render)' : 'High Quality Glass Blur'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingsSubBackBtn')?.addEventListener('click', () => renderSettings());
+
+            document.getElementById('settingBatterySaverToggle')?.addEventListener('change', (e) => {
+                if (window.applyBatteryMode) {
+                    window.applyBatteryMode(e.target.checked, true);
+                }
+            });
+
+            return;
+        }
 
         if (category === 'updates' || category === 'about') {
             const lastCheckedTime = localStorage.getItem('vibentra_last_update_check') || new Date().toISOString().replace('T', ' ').slice(0, 19);
