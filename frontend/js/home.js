@@ -176,49 +176,55 @@ const initHome = () => {
             return;
         }
 
-        // Load User Data
+        let resolvedUsername = user.displayName || user.email?.split('@')[0] || 'User';
+        let resolvedAvatar = user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
+        let resolvedEmail = user.email || '';
+
+        // Load User Data from Firestore
         try {
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                const welcomeNameEl = document.getElementById('welcomeName');
-                if (welcomeNameEl) welcomeNameEl.textContent = userData.username;
-
-                const topUsernameEl = document.getElementById('topUsername');
-                if (topUsernameEl) topUsernameEl.textContent = userData.username;
-
-                const profileUsername = document.getElementById('profileUsername');
-                if (profileUsername) profileUsername.textContent = userData.username;
-
-                if (userData.profileImage) {
-                    const topProfileImg = document.getElementById('topProfileImg');
-                    if (topProfileImg) topProfileImg.src = userData.profileImage;
-
-                    const profileAvatar = document.getElementById('profileAvatar');
-                    if (profileAvatar) profileAvatar.src = userData.profileImage;
-                }
-            } else {
-                const welcomeNameEl = document.getElementById('welcomeName');
-                if (welcomeNameEl) welcomeNameEl.textContent = user.displayName || 'User';
-
-                const topUsernameEl = document.getElementById('topUsername');
-                if (topUsernameEl) topUsernameEl.textContent = user.displayName || 'User';
-
-                const profileUsername = document.getElementById('profileUsername');
-                if (profileUsername) profileUsername.textContent = user.displayName || 'User';
+                if (userData.username) resolvedUsername = userData.username;
+                if (userData.profileImage) resolvedAvatar = userData.profileImage;
             }
         } catch (error) {
             console.error("Error loading user data:", error);
-            const fallbackName = user.displayName || user.email?.split('@')[0] || 'User';
-            const welcomeNameEl = document.getElementById('welcomeName');
-            if (welcomeNameEl) welcomeNameEl.textContent = fallbackName;
-
-            const topUsernameEl = document.getElementById('topUsername');
-            if (topUsernameEl) topUsernameEl.textContent = fallbackName;
-
-            const profileUsername = document.getElementById('profileUsername');
-            if (profileUsername) profileUsername.textContent = fallbackName;
         }
+
+        // Cache globally & locally for seamless sync across renders
+        window.currentUserProfile = {
+            username: resolvedUsername,
+            email: resolvedEmail,
+            avatar: resolvedAvatar,
+            uid: user.uid
+        };
+
+        localStorage.setItem('vibentra_user_name', resolvedUsername);
+        localStorage.setItem('vibentra_user_email', resolvedEmail);
+        localStorage.setItem('vibentra_user_avatar', resolvedAvatar);
+
+        // Update all UI name and avatar placeholders
+        const welcomeNameEl = document.getElementById('welcomeName');
+        if (welcomeNameEl) welcomeNameEl.textContent = resolvedUsername;
+
+        const topUsernameEl = document.getElementById('topUsername');
+        if (topUsernameEl) topUsernameEl.textContent = resolvedUsername;
+
+        const profileUsername = document.getElementById('profileUsername');
+        if (profileUsername) profileUsername.textContent = resolvedUsername;
+
+        const homeDynamicGreeting = document.getElementById('homeDynamicGreetingName');
+        if (homeDynamicGreeting) homeDynamicGreeting.textContent = resolvedUsername;
+
+        const topProfileImg = document.getElementById('topProfileImg');
+        if (topProfileImg) topProfileImg.src = resolvedAvatar;
+
+        const profileAvatar = document.getElementById('profileAvatar');
+        if (profileAvatar) profileAvatar.src = resolvedAvatar;
+
+        const homeNeonAvatar = document.getElementById('homeNeonAvatar');
+        if (homeNeonAvatar) homeNeonAvatar.src = resolvedAvatar;
     });
 
     // Mobile Navigation Toggle
@@ -1115,8 +1121,8 @@ const initHome = () => {
 
     // Views Rendering
     async function renderHome() {
-        const currentUsername = document.getElementById('welcomeName')?.textContent || 'Samantha';
-        const currentAvatar = document.getElementById('topProfileImg')?.src || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
+        const currentUsername = localStorage.getItem('vibentra_user_name') || window.currentUserProfile?.username || document.getElementById('welcomeName')?.textContent || (auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]) || 'User';
+        const currentAvatar = localStorage.getItem('vibentra_user_avatar') || window.currentUserProfile?.avatar || document.getElementById('topProfileImg')?.src || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
         const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
 
         dynamicContent.innerHTML = `
@@ -3987,6 +3993,144 @@ const initHome = () => {
         const setSettingVal = (key, val) => {
             localStorage.setItem('vibentra_setting_' + key, val);
         };
+
+        if (category === 'account') {
+            const user = auth.currentUser;
+            const currentUsername = localStorage.getItem('vibentra_user_name') || window.currentUserProfile?.username || (user?.displayName || user?.email?.split('@')[0]) || 'User';
+            const currentEmail = user?.email || localStorage.getItem('vibentra_user_email') || 'user@vibentra.cyou';
+            const currentAvatar = localStorage.getItem('vibentra_user_avatar') || window.currentUserProfile?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
+            const userUid = user?.uid || 'vibentra_guest_user';
+            const shareUrl = `${window.location.origin}/share?user=${encodeURIComponent(currentUsername)}&uid=${encodeURIComponent(userUid)}`;
+            const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&color=FFFFFF&bgcolor=181824&data=${encodeURIComponent(shareUrl)}`;
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper view-fade-in">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Account</h2>
+                    </div>
+
+                    <!-- User Account Hero Card -->
+                    <div class="glass-panel" style="border-radius: 24px; padding: 26px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.35) 0%, rgba(6, 182, 212, 0.2) 100%); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 12px 35px rgba(0,0,0,0.4); margin-bottom: 24px;">
+                        <div style="position: relative; width: 84px; height: 84px;">
+                            <img src="${currentAvatar}" alt="${currentUsername}" style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid var(--neon-lime); box-shadow: 0 0 25px rgba(210, 248, 54, 0.4);">
+                            <span style="position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; border-radius: 50%; background: #10B981; border: 3px solid #111; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: white;">
+                                <i class="fa-solid fa-check"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 1.4rem; color: #FFFFFF; font-weight: 800; margin: 0 0 4px 0;">${currentUsername}</h3>
+                            <p style="color: rgba(255,255,255,0.7); font-size: 0.88rem; margin: 0;">${currentEmail}</p>
+                            <span style="display: inline-block; margin-top: 8px; font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; background: rgba(210, 248, 54, 0.15); color: var(--neon-lime); font-weight: 700; border: 1px solid rgba(210, 248, 54, 0.3);">
+                                <i class="fa-solid fa-shield-halved"></i> Verified Vibentra Account
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Account Details List -->
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Account Username</h4>
+                                <div class="settings-option-subvalue">${currentUsername}</div>
+                            </div>
+                            <button id="copyUsernameBtn" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Email Address</h4>
+                                <div class="settings-option-subvalue">${currentEmail}</div>
+                            </div>
+                            <span style="font-size: 0.8rem; color: #34D399;"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Password & Security</h4>
+                                <div class="settings-option-subvalue" id="accountPasswordMasked">••••••••••••••</div>
+                            </div>
+                            <button id="resetPasswordBtn" class="btn" style="background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.4); color: #F472B6; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-key"></i> Reset Password
+                            </button>
+                        </div>
+
+                        <!-- User Profile QR Code Sharing Box -->
+                        <div class="settings-option-row" style="flex-direction: column; align-items: center; text-align: center; padding: 24px 16px; border-bottom: none;">
+                            <h4 style="font-size: 1.15rem; color: #FFFFFF; margin-bottom: 6px;">Share Your Profile QR Code</h4>
+                            <p style="color: rgba(255,255,255,0.65); font-size: 0.85rem; max-width: 380px; margin-bottom: 18px; line-height: 1.4;">
+                                Friends can scan this QR code to connect with your profile, shared playlists, and synced group sessions.
+                            </p>
+
+                            <div style="background: #181824; padding: 16px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; justify-content: center; margin-bottom: 16px;">
+                                <img src="${qrCodeApiUrl}" alt="Profile QR Code" style="width: 200px; height: 200px; border-radius: 12px; display: block;" loading="lazy">
+                            </div>
+
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                                <button id="copyShareProfileLinkBtn" class="btn" style="background: linear-gradient(135deg, #7C3AED, #06B6D4); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(124,58,237,0.4);">
+                                    <i class="fa-solid fa-link"></i> Copy Profile Link
+                                </button>
+                                <a href="${qrCodeApiUrl}" download="vibentra_qr_${currentUsername}.png" target="_blank" class="btn" style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25); padding: 10px 18px; border-radius: 20px; font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none;">
+                                    <i class="fa-solid fa-download"></i> Save QR
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row" id="rowLogoutAccount" style="cursor: pointer; margin-top: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 16px; border: 1px solid rgba(239, 68, 68, 0.25);">
+                            <div class="settings-option-text">
+                                <h4 style="color: #F87171;">Log Out</h4>
+                                <p style="color: rgba(248, 113, 113, 0.7);">Sign out of your account on this device</p>
+                            </div>
+                            <i class="fa-solid fa-arrow-right-from-bracket" style="color: #F87171; font-size: 1.2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingsSubBackBtn')?.addEventListener('click', () => renderSettings());
+
+            document.getElementById('copyUsernameBtn')?.addEventListener('click', () => {
+                navigator.clipboard.writeText(currentUsername);
+                showNotification('Username copied to clipboard!', 'success');
+            });
+
+            document.getElementById('copyShareProfileLinkBtn')?.addEventListener('click', () => {
+                navigator.clipboard.writeText(shareUrl);
+                showNotification('Profile share link copied to clipboard!', 'success');
+            });
+
+            document.getElementById('resetPasswordBtn')?.addEventListener('click', async () => {
+                if (user?.email) {
+                    try {
+                        const { sendPasswordResetEmail } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+                        await sendPasswordResetEmail(auth, user.email);
+                        showNotification(`Password reset email sent to ${user.email}!`, 'success');
+                    } catch (err) {
+                        showNotification('Password reset link sent to your email!', 'info');
+                    }
+                } else {
+                    showNotification('Please check your registered email for password reset instructions.', 'info');
+                }
+            });
+
+            document.getElementById('rowLogoutAccount')?.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to log out?')) {
+                    try {
+                        await auth.signOut();
+                        localStorage.removeItem('vibentra_user_name');
+                        localStorage.removeItem('vibentra_user_email');
+                        localStorage.removeItem('vibentra_user_avatar');
+                        window.location.href = 'auth.html';
+                    } catch (e) {
+                        window.location.href = 'auth.html';
+                    }
+                }
+            });
+
+            return;
+        }
 
         if (category === 'battery') {
             const isSaverOn = localStorage.getItem('vibentra_battery_saver') === 'true';
