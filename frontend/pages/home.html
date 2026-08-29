@@ -481,112 +481,99 @@
         </div>
     </div>
 
-    <!-- Large Player Modal (Spotify Premium x YouTube Music Edition) -->
-    <div class="large-player-modal" id="largePlayerModal">
-        <!-- Ambient Blurred Background Layer -->
-        <div class="vinyl-ambient-container">
-            <img src="" alt="" id="largePlayerAmbientBg" class="vinyl-ambient-bg">
-            <div class="vinyl-ambient-overlay"></div>
-        </div>
-
+    <!-- Large Player Modal (Dark Neon Reference UI Edition) -->
+    <div class="large-player-modal neon-now-playing-modal" id="largePlayerModal">
         <!-- Header Bar -->
-        <div class="vinyl-header">
-            <button class="close-large-player" id="closeLargePlayerBtn" title="Minimize Player">
+        <div class="neon-player-header">
+            <button class="close-large-player neon-player-chevron-btn" id="closeLargePlayerBtn" title="Minimize Player">
                 <i class="fa-solid fa-chevron-down"></i>
             </button>
-            <div class="vinyl-header-title">
-                <span class="vinyl-badge"><i class="fa-solid fa-compact-disc"></i> PLAYING FROM ALBUM</span>
+            <div class="neon-player-pill-badge" id="largePlayingFromBadge">
+                <span id="largeBadgeText">PLAYING FROM ALBUM</span>
             </div>
-            <button class="cast-btn" title="Cast Audio">
-                <i class="fa-solid fa-cast"></i>
-            </button>
+            <div class="neon-player-options-wrap">
+                <button class="neon-player-dots-btn" id="largeMoreBtn" title="More Options">
+                    <i class="fa-solid fa-ellipsis"></i>
+                </button>
+                <!-- Three Dots Dropdown -->
+                <div class="notifications-dropdown hidden vinyl-options-dropdown" id="largePlayerOptionsDropdown">
+                    <div class="option-item" id="largeOptPlaylist">
+                        <i class="fa-solid fa-folder-plus" style="color: #06B6D4;"></i> Add to Playlist
+                    </div>
+                    <div class="option-item" id="largeOptDownload">
+                        <i class="fa-solid fa-download" style="color: #10B981;"></i> Download Song
+                    </div>
+                    <div class="option-item" id="largeOptRingtone">
+                        <i class="fa-solid fa-bell" style="color: #EC4899;"></i> Set as Ringtone Studio
+                    </div>
+                    <div class="option-item" id="largeOptLyrics">
+                        <i class="fa-solid fa-align-left" style="color: #7C3AED;"></i> Show Lyrics
+                    </div>
+                    <div class="option-item" id="largeOptSleep">
+                        <i class="fa-solid fa-moon" style="color: #FBBF24;"></i> Sleep Timer
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="large-player-content vinyl-player-container">
-            <!-- Spotify Premium Hero Album Card -->
-            <div class="spotify-hero-artwork-wrapper">
-                <img src="" alt="Album Cover" id="largePlayerImg" class="spotify-hero-album-art">
+        <div class="neon-player-body">
+            <!-- Squircle Artwork with Neon Glow Halo & Reflection -->
+            <div class="neon-artwork-wrapper">
+                <div class="neon-artwork-glow-frame">
+                    <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80" alt="Now Playing Cover" id="largePlayerImg" class="neon-player-cover-art">
+                    <div class="neon-artwork-overlay-title" id="neonArtworkOverlayTitle"></div>
+                </div>
             </div>
 
             <!-- Track Meta Info & Heart Toggle -->
-            <div class="vinyl-track-info">
-                <div class="vinyl-meta-text">
-                    <h2 id="largePlayerTitle" class="vinyl-title">Track Title</h2>
-                    <p id="largePlayerArtist" class="vinyl-artist">Artist Name</p>
+            <div class="neon-player-meta-row">
+                <div class="neon-player-meta-text">
+                    <h2 id="largePlayerTitle" class="neon-track-title">Select a Song</h2>
+                    <p id="largePlayerArtist" class="neon-track-artist">Vibentra Music</p>
                 </div>
-                <!-- Quick Actions -->
-                <div class="vinyl-quick-actions">
-                    <button class="like-btn vinyl-action-btn favorite" id="largeLikeBtn" title="Add to Favorites">
-                        <i class="fa-regular fa-heart"></i>
-                    </button>
-                </div>
+                <button class="like-btn neon-heart-btn" id="largeLikeBtn" title="Add to Favorites">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
             </div>
 
             <!-- Progress Bar Section -->
-            <div class="vinyl-progress-container">
-                <div class="vinyl-progress-wrapper">
-                    <input type="range" id="largeProgressSlider" min="0" max="100" value="0" class="vinyl-slider">
-                    <div class="progress-bar vinyl-progress-bar" id="largeProgressBar">
-                        <div class="progress vinyl-progress-fill" id="largeProgress">
-                            <div class="vinyl-progress-thumb"></div>
-                        </div>
-                    </div>
+            <div class="neon-progress-container">
+                <div class="neon-slider-track-wrapper">
+                    <input type="range" id="largeProgressSlider" min="0" max="100" value="0" class="neon-progress-slider">
                 </div>
-                <div class="vinyl-time-row">
+                <div class="neon-time-row">
                     <span id="largeCurrTime">0:00</span>
                     <span id="largeTotalTime">0:00</span>
                 </div>
             </div>
 
             <!-- Main Playback Controls -->
-            <div class="player-controls vinyl-main-controls">
-                <button id="largePrevBtn" class="control-circle-btn vinyl-btn-prev" title="Previous Track">
+            <div class="neon-main-controls-row">
+                <button id="largePrevBtn" class="neon-control-prev" title="Previous Track">
                     <i class="fa-solid fa-backward-step"></i>
                 </button>
-                <button class="play-pause-btn vinyl-btn-play" id="largePlayBtn" title="Play/Pause">
+                <button class="neon-big-play-btn" id="largePlayBtn" title="Play/Pause">
                     <i class="fa-solid fa-play"></i>
                 </button>
-                <button id="largeNextBtn" class="control-circle-btn vinyl-btn-next" title="Next Track">
+                <button id="largeNextBtn" class="neon-control-next" title="Next Track">
                     <i class="fa-solid fa-forward-step"></i>
                 </button>
             </div>
 
-            <!-- Secondary Toolbar & Glass Options -->
-            <div class="vinyl-secondary-actions">
-                <button id="largePlaylistBtn" title="Queue / Playlists" class="vinyl-tool-btn">
-                    <i class="fa-solid fa-bars-staggered"></i>
+            <!-- Bottom Toolbar Row (Lyrics Pill, Shuffle, Repeat-1, Ringtone Bell) -->
+            <div class="neon-bottom-toolbar">
+                <button id="largeLyricsBtn" class="neon-lyrics-pill-btn" title="View Synced Lyrics">
+                    <span>LYRICS</span> <i class="fa-solid fa-plus"></i>
                 </button>
-                <button id="largeSleepBtn" title="Sleep Timer" class="vinyl-tool-btn">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                <button id="largeLyricsBtn" title="Lyrics" class="vinyl-tool-btn">
-                    <i class="fa-solid fa-align-left"></i>
-                </button>
-                <button id="largeShuffleBtn" title="Shuffle" class="vinyl-tool-btn">
+                <button id="largeShuffleBtn" class="neon-tool-btn" title="Toggle Shuffle">
                     <i class="fa-solid fa-shuffle"></i>
                 </button>
-                <button id="largeRepeatBtn" title="Repeat" class="vinyl-tool-btn">
+                <button id="largeRepeatBtn" class="neon-tool-btn" title="Toggle Repeat">
                     <i class="fa-solid fa-repeat"></i>
                 </button>
-                <button id="largeMoreBtn" title="More Options" class="vinyl-tool-btn more-options">
-                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                <button id="largeRingtoneBellBtn" class="neon-bell-circle-btn" title="Set as Ringtone Studio">
+                    <i class="fa-solid fa-bell"></i>
                 </button>
-
-                <!-- Three Dots Dropdown -->
-                <div class="notifications-dropdown hidden vinyl-options-dropdown" id="largePlayerOptionsDropdown">
-                    <div class="option-item" id="largeOptRingtone">
-                        <i class="fa-solid fa-bell" style="color: #EC4899;"></i> Set as Ringtone Studio
-                    </div>
-                    <div class="option-item" id="largeOptDownload">
-                        <i class="fa-solid fa-download" style="color: #10B981;"></i> Download Song
-                    </div>
-                    <div class="option-item" id="largeOptPlaylist">
-                        <i class="fa-solid fa-folder-plus" style="color: #06B6D4;"></i> Add to Playlist
-                    </div>
-                    <div class="option-item" id="largeOptLyrics">
-                        <i class="fa-solid fa-align-left" style="color: #7C3AED;"></i> Show Lyrics
-                    </div>
-                </div>
             </div>
 
             <!-- Up Next List Container -->

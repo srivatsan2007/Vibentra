@@ -695,9 +695,20 @@ class MusicService {
         if (downloadRingtoneOpt) downloadRingtoneOpt.addEventListener('click', (e) => handleRingtoneClick(e, playerOptionsDropdown));
         if (mobileRingtoneOpt) mobileRingtoneOpt.addEventListener('click', (e) => handleRingtoneClick(e, mobileFabDropdown));
         if (largeOptRingtone) largeOptRingtone.addEventListener('click', (e) => handleRingtoneClick(e, largePlayerOptionsDropdown));
+        const largeRingtoneBellBtn = document.getElementById('largeRingtoneBellBtn');
+        if (largeRingtoneBellBtn) largeRingtoneBellBtn.addEventListener('click', (e) => handleRingtoneClick(e, null));
 
         if (largeDownloadBtn) largeDownloadBtn.addEventListener('click', (e) => handleDownloadClick(e, null));
         if (largeOptDownload) largeOptDownload.addEventListener('click', (e) => handleDownloadClick(e, largePlayerOptionsDropdown));
+
+        const largeOptSleep = document.getElementById('largeOptSleep');
+        if (largeOptSleep) {
+            largeOptSleep.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (largePlayerOptionsDropdown) largePlayerOptionsDropdown.classList.add('hidden');
+                this.openSleepTimerModal();
+            });
+        }
 
         // Save / Add to Playlist Options
         const addToPlaylistOpt = document.getElementById('addToPlaylistOpt');
@@ -1871,8 +1882,28 @@ class MusicService {
         if (imgEl) imgEl.src = safeCover;
         const ambientEl = document.getElementById('largePlayerAmbientBg');
         if (ambientEl) ambientEl.src = safeCover;
-        document.getElementById('largePlayerTitle').textContent = this.currentTrack.title || 'Untitled Track';
-        document.getElementById('largePlayerArtist').textContent = this.currentTrack.artist || 'Unknown Artist';
+
+        const badgeText = document.getElementById('largeBadgeText');
+        if (badgeText) {
+            const albumOrProvider = this.currentTrack.album || (this.currentTrack.source === 'youtube' ? 'YOUTUBE MUSIC' : 'PLAYING FROM ALBUM');
+            badgeText.textContent = `PLAYING FROM ${albumOrProvider.toUpperCase()}`;
+        }
+
+        const titleEl = document.getElementById('largePlayerTitle');
+        if (titleEl) titleEl.textContent = this.currentTrack.title || 'Untitled Track';
+
+        const artistEl = document.getElementById('largePlayerArtist');
+        if (artistEl) artistEl.textContent = this.currentTrack.artist || 'Unknown Artist';
+
+        const overlayTitle = document.getElementById('neonArtworkOverlayTitle');
+        if (overlayTitle) overlayTitle.textContent = this.currentTrack.title || '';
+
+        const largeLikeBtn = document.getElementById('largeLikeBtn');
+        if (largeLikeBtn) {
+            const isFav = favoriteService.isFavorite(this.currentTrack.id);
+            largeLikeBtn.classList.toggle('active', isFav);
+            largeLikeBtn.innerHTML = isFav ? '<i class="fa-solid fa-heart"></i>' : '<i class="fa-regular fa-heart"></i>';
+        }
 
         const upNextList = document.getElementById('upNextList');
         if (!upNextList) return;
