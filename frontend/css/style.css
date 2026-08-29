@@ -278,54 +278,9 @@ input {
     background: #000000 !important;
 }
 
-/* Multi-colored Floating Liquid Orbs */
+/* Multi-colored Floating Liquid Orbs (Disabled for pure solid black background) */
 .ambient-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.6;
-    animation: floatOrb 18s ease-in-out infinite alternate;
-}
-
-.orb-1 {
-    width: 450px;
-    height: 450px;
-    background: radial-gradient(circle, #7C3AED 0%, #3B82F6 100%);
-    top: -100px;
-    left: -100px;
-    animation-duration: 22s;
-}
-
-.orb-2 {
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, #06B6D4 0%, #2563EB 100%);
-    bottom: -150px;
-    right: -100px;
-    animation-duration: 26s;
-    animation-delay: -5s;
-}
-
-.orb-3 {
-    width: 350px;
-    height: 350px;
-    background: radial-gradient(circle, #EC4899 0%, #8B5CF6 100%);
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.35;
-    animation-duration: 18s;
-    animation-delay: -10s;
-}
-
-.orb-4 {
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, #3B82F6 0%, #06B6D4 100%);
-    bottom: 20%;
-    left: 10%;
-    opacity: 0.3;
-    animation-duration: 24s;
+    display: none !important;
 }
 
 @keyframes floatOrb {
@@ -1684,16 +1639,16 @@ input {
     width: calc(100% - 60px);
     max-width: 1350px;
     height: var(--player-height);
-    background: rgba(12, 16, 43, 0.82);
-    backdrop-filter: blur(35px) saturate(200%);
-    -webkit-backdrop-filter: blur(35px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(18, 22, 38, 0.45) 100%);
+    backdrop-filter: blur(30px) saturate(210%) brightness(110%);
+    -webkit-backdrop-filter: blur(30px) saturate(210%) brightness(110%);
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.65);
     border-radius: 26px;
     box-shadow:
-        0 25px 60px rgba(0, 0, 0, 0.7),
-        0 0 35px rgba(124, 58, 237, 0.15),
-        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+        0 25px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1.5px 2px rgba(255, 255, 255, 0.45),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.2);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3932,7 +3887,7 @@ input {
         margin-bottom: 12px !important;
     }
 
-    /* Liquid Glass Floating Capsule Mini Player (Compact Floating Dock Match) */
+    /* Liquid Glass Floating Capsule Mini Player (Apple iOS Liquid Glass UI) */
     .music-player {
         position: fixed !important;
         bottom: 112px !important;
@@ -3942,14 +3897,14 @@ input {
         max-width: 420px !important;
         height: 68px !important;
         border-radius: 9999px !important;
-        background: rgba(14, 15, 20, 0.92) !important;
-        backdrop-filter: blur(40px) saturate(200%) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.22) !important;
-        border-top: 1.5px solid rgba(255, 255, 255, 0.4) !important;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(20, 24, 38, 0.40) 100%) !important;
+        backdrop-filter: blur(28px) saturate(220%) brightness(110%) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(110%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.38) !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.72) !important;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.55), inset 0 -1px 2px rgba(0, 0, 0, 0.2) !important;
         z-index: 2500 !important;
-        padding: 0 14px 0 8px !important;
+        padding: 0 14px 0 10px !important;
         margin: 0 !important;
         display: flex !important;
         align-items: center !important;
@@ -3975,7 +3930,8 @@ input {
         border-radius: 12px !important;
         object-fit: cover !important;
         flex-shrink: 0 !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
     }
 
     .music-player .now-playing-info {
@@ -3997,13 +3953,14 @@ input {
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         letter-spacing: -0.2px !important;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5) !important;
     }
 
     .music-player .now-playing-info p,
     .music-player #playerArtist {
         font-size: 0.74rem !important;
         font-weight: 500 !important;
-        color: rgba(255, 255, 255, 0.72) !important;
+        color: rgba(255, 255, 255, 0.75) !important;
         margin: 1px 0 0 0 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
@@ -4040,6 +3997,7 @@ input {
     .music-player #playerLikeBtn.active i,
     .music-player .like-btn.active i {
         color: #EC4899 !important;
+        filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.8)) !important;
     }
 
     /* Player Controls Container (Prev, Play, Next) */
@@ -4113,7 +4071,7 @@ input {
         display: none !important;
     }
 
-    /* Liquid Glass Floating Navigation Dock */
+    /* Liquid Glass Floating Navigation Dock (Apple iOS Liquid Glass UI) */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
@@ -4142,15 +4100,15 @@ input {
         display: flex !important;
         align-items: center !important;
         height: 68px !important;
-        padding: 5px 8px !important;
-        border-radius: 40px !important;
-        background: rgba(14, 16, 24, 0.90) !important;
-        backdrop-filter: blur(30px) saturate(190%) !important;
-        -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
-        gap: 4px !important;
+        padding: 6px 8px !important;
+        border-radius: 9999px !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(20, 24, 38, 0.40) 100%) !important;
+        backdrop-filter: blur(28px) saturate(220%) brightness(110%) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(110%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.38) !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.72) !important;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.55), inset 0 -1px 2px rgba(0, 0, 0, 0.2) !important;
+        gap: 6px !important;
         box-sizing: border-box !important;
         max-width: 340px !important;
         opacity: 1 !important;
@@ -4178,8 +4136,8 @@ input {
         align-items: center !important;
         justify-content: center !important;
         padding: 8px 24px !important;
-        border-radius: 32px !important;
-        color: rgba(255, 255, 255, 0.65) !important;
+        border-radius: 9999px !important;
+        color: rgba(255, 255, 255, 0.72) !important;
         font-size: 0.78rem !important;
         font-weight: 600 !important;
         gap: 2px !important;
@@ -4195,10 +4153,10 @@ input {
     }
 
     .mobile-nav-dock-pill .mobile-nav-item.active {
-        background: rgba(255, 255, 255, 0.16) !important;
+        background: rgba(255, 255, 255, 0.26) !important;
         color: #FFFFFF !important;
-        border-color: rgba(255, 255, 255, 0.25) !important;
-        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.45) !important;
+        box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.6), 0 4px 14px rgba(0, 0, 0, 0.2) !important;
     }
 
     /* Right Separate Circular Search Button */
@@ -4206,12 +4164,12 @@ input {
         width: 68px !important;
         height: 68px !important;
         border-radius: 50% !important;
-        background: rgba(14, 16, 24, 0.90) !important;
-        backdrop-filter: blur(30px) saturate(190%) !important;
-        -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(20, 24, 38, 0.40) 100%) !important;
+        backdrop-filter: blur(28px) saturate(220%) brightness(110%) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(110%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.38) !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.72) !important;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.55), inset 0 -1px 2px rgba(0, 0, 0, 0.2) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -4946,7 +4904,7 @@ body {
 .settings-view-wrapper {
     max-width: 680px;
     margin: 0 auto;
-    width: 100%;
+    width: 90% !important;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -5901,6 +5859,9 @@ input:checked+.toggle-slider:before {
 
     /* Settings Cards Mobile */
     .settings-view-wrapper {
+        width: 90% !important;
+        max-width: 90% !important;
+        margin: 0 auto !important;
         padding-bottom: 80px !important;
     }
 

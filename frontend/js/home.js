@@ -3641,11 +3641,10 @@ const initHome = () => {
 
     function renderSettings() {
         dynamicContent.innerHTML = `
-            <div class="section-header">
-                <h2>Settings</h2>
-            </div>
-            
             <div class="settings-view-wrapper">
+                <div class="section-header" style="margin-bottom: 8px;">
+                    <h2>Settings</h2>
+                </div>
                 <div class="settings-categories-list">
                     <div class="settings-card-item" data-category="account">
                         <div class="settings-card-left">
