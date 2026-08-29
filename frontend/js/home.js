@@ -1117,15 +1117,21 @@ const initHome = () => {
     async function renderHome() {
         const currentUsername = document.getElementById('welcomeName')?.textContent || 'Samantha';
         const currentAvatar = document.getElementById('topProfileImg')?.src || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
+        const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
 
         dynamicContent.innerHTML = `
             <div class="home-neon-page view-fade-in">
-                <!-- Top Neon Header (Avatar with Glow, Quick Search & Favorites) -->
+                <!-- Top Neon Header (Avatar with Glow, Language Selector, Quick Search & Favorites) -->
                 <div class="home-neon-header">
                     <div class="home-header-avatar-wrap" id="homeAvatarBtn" title="View Profile">
                         <img src="${currentAvatar}" alt="Profile" class="home-header-avatar" id="homeNeonAvatar">
                     </div>
                     <div class="home-header-actions">
+                        <select id="langPrefSelect" class="neon-lang-dropdown" title="Select Music Language">
+                            <option value="English" ${storedLang === 'English' ? 'selected' : ''}>English</option>
+                            <option value="Tamil" ${storedLang === 'Tamil' ? 'selected' : ''}>Tamil</option>
+                            <option value="Hindi" ${storedLang === 'Hindi' ? 'selected' : ''}>Hindi</option>
+                        </select>
                         <button class="home-circle-action-btn" id="homeQuickSearchBtn" title="Search Songs">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </button>
@@ -1159,7 +1165,7 @@ const initHome = () => {
                     </div>
                     <div class="curated-hero-card" id="homeCuratedHeroCard">
                         <div class="curated-hero-info">
-                            <span class="curated-hero-tag">FEATURED MIX</span>
+                            <span class="curated-hero-tag" id="curatedHeroTag">FEATURED MIX</span>
                             <h3 class="curated-hero-name" id="curatedHeroTitle">Discover weekly</h3>
                             <p class="curated-hero-desc" id="curatedHeroDesc">The original slow instrumental best playlists.</p>
                             <div class="curated-hero-actions">
@@ -1223,16 +1229,64 @@ const initHome = () => {
         let activeTrendingTracks = [];
         let heroTrack = null;
 
-        // Dynamic Trending Data Loader
-        const loadTrendingData = async (queryParam = 'latest top hits 2026') => {
+        const getLanguageConfig = (lang) => {
+            if (lang === 'Tamil') {
+                return {
+                    trendingQuery: 'latest tamil top hits 2026',
+                    albumsQuery: 'latest tamil movie album songs 2026',
+                    tag: 'TAMIL HITS',
+                    defaultDesc: 'Top Trending Kollywood & Tamil Melodies',
+                    defaultAlbums: [
+                        { title: 'Dragon', artist: 'Leon James • 2026', cover: 'https://c.saavncdn.com/712/Dragon-Tamil-2025-20250201121045-500x500.jpg', provider: 'YouTube Music' },
+                        { title: 'Kanguva', artist: 'Devi Sri Prasad • 2026', cover: 'https://c.saavncdn.com/393/Kanguva-Tamil-2024-20241113203402-500x500.jpg', provider: 'JioSaavn' },
+                        { title: 'Vettaiyan', artist: 'Anirudh Ravichander', cover: 'https://c.saavncdn.com/970/Vettaiyan-Tamil-2024-20241008133515-500x500.jpg', provider: 'YouTube Music' },
+                        { title: 'Amaran', artist: 'G.V. Prakash Kumar', cover: 'https://c.saavncdn.com/366/Amaran-Tamil-2024-20241030173629-500x500.jpg', provider: 'YouTube Music' },
+                        { title: 'GOAT', artist: 'Yuvan Shankar Raja', cover: 'https://c.saavncdn.com/640/The-Greatest-Of-All-Time-Tamil-2024-20240903173114-500x500.jpg', provider: 'JioSaavn' }
+                    ]
+                };
+            } else if (lang === 'Hindi') {
+                return {
+                    trendingQuery: 'latest hindi bollywood top hits 2026',
+                    albumsQuery: 'latest hindi bollywood album songs 2026',
+                    tag: 'BOLLYWOOD HITS',
+                    defaultDesc: 'Top Trending Hindi & Bollywood Blockbusters',
+                    defaultAlbums: [
+                        { title: 'Stree 2', artist: 'Sachin-Jigar • 2024', cover: 'https://c.saavncdn.com/488/Stree-2-Hindi-2024-20240830154108-500x500.jpg', provider: 'JioSaavn' },
+                        { title: 'Animal', artist: 'Pritam, JAM8, Vishal Mishra', cover: 'https://c.saavncdn.com/791/Animal-Hindi-2023-20231124191336-500x500.jpg', provider: 'YouTube Music' },
+                        { title: 'Fighter', artist: 'Vishal & Shekhar', cover: 'https://c.saavncdn.com/480/Fighter-Hindi-2024-20240123154109-500x500.jpg', provider: 'JioSaavn' },
+                        { title: 'Jawan', artist: 'Anirudh Ravichander', cover: 'https://c.saavncdn.com/022/Jawan-Hindi-2023-20230905033608-500x500.jpg', provider: 'YouTube Music' }
+                    ]
+                };
+            } else {
+                return {
+                    trendingQuery: 'latest english top hits 2026',
+                    albumsQuery: 'latest english billboard pop albums 2026',
+                    tag: 'FEATURED MIX',
+                    defaultDesc: 'The original slow instrumental best playlists.',
+                    defaultAlbums: [
+                        { title: 'Hit Me Hard and Soft', artist: 'Billie Eilish', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80', provider: 'YouTube Music' },
+                        { title: 'Short n Sweet', artist: 'Sabrina Carpenter', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80', provider: 'JioSaavn' },
+                        { title: 'The Tortured Poets', artist: 'Taylor Swift', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80', provider: 'YouTube Music' }
+                    ]
+                };
+            }
+        };
+
+        // Dynamic Trending Data Loader based on Language
+        const loadLanguageData = async (language) => {
+            const config = getLanguageConfig(language);
             const listContainer = document.getElementById('homeTopDailyList');
             const artistsContainer = document.getElementById('homeArtistsGrid');
             const albumsContainer = document.getElementById('homeLatestAlbumsGrid');
+            const heroTag = document.getElementById('curatedHeroTag');
 
-            if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading daily hits...</p>';
+            if (heroTag) heroTag.textContent = config.tag;
+            if (listContainer) listContainer.innerHTML = `<p style="color: var(--primary); padding: 20px;">Loading ${language} hits...</p>`;
+            if (albumsContainer) albumsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;">Loading ${language} albums...</p>`;
+            if (artistsContainer) artistsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;">Loading ${language} artists...</p>`;
 
             try {
-                const results = await searchService.searchSongs(queryParam);
+                const results = await searchService.searchSongs(config.trendingQuery);
                 if (!document.getElementById('homeTopDailyList')) return; // Check if still on home
 
                 activeTrendingTracks = results && results.length > 0 ? results : [];
@@ -1247,7 +1301,7 @@ const initHome = () => {
                     const heroLikeBtn = document.getElementById('curatedHeroLikeBtn');
 
                     if (heroTitle) heroTitle.textContent = heroTrack.title || 'Discover weekly';
-                    if (heroDesc) heroDesc.textContent = `The original slow instrumental best playlists • ${heroTrack.artist || 'Curated'}`;
+                    if (heroDesc) heroDesc.textContent = `${config.defaultDesc} • ${heroTrack.artist || 'Curated'}`;
                     if (heroArtwork && heroTrack.cover) heroArtwork.src = heroTrack.cover;
 
                     if (heroLikeBtn) {
@@ -1339,32 +1393,44 @@ const initHome = () => {
                     }
 
                 } else {
-                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--text-muted);">No trending songs found.</p>';
+                    if (listContainer) listContainer.innerHTML = `<p style="color: var(--text-muted);">No ${language} songs found.</p>`;
                 }
             } catch (err) {
                 console.error("Home trending error:", err);
                 if (listContainer) listContainer.innerHTML = '<p style="color: var(--text-muted);">Failed to load daily hits.</p>';
             }
 
-            // Load Latest Albums
+            // Load Latest Albums for the Language
             if (albumsContainer) {
-                searchService.searchAll('latest new album release 2026').then(albumRes => {
+                searchService.searchAll(config.albumsQuery).then(albumRes => {
                     if (!document.getElementById('homeLatestAlbumsGrid')) return;
                     albumsContainer.innerHTML = '';
                     if (albumRes && albumRes.albums && albumRes.albums.length > 0) {
                         albumRes.albums.slice(0, 8).forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                    } else if (config.defaultAlbums && config.defaultAlbums.length > 0) {
+                        config.defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
                     } else {
-                        const defaultAlbums = [
-                            { title: 'Dragon', artist: 'Leon James • 2026', cover: 'https://c.saavncdn.com/712/Dragon-Tamil-2025-20250201121045-500x500.jpg', provider: 'YouTube Music' },
-                            { title: 'Kanguva', artist: 'Devi Sri Prasad • 2026', cover: 'https://c.saavncdn.com/393/Kanguva-Tamil-2024-20241113203402-500x500.jpg', provider: 'JioSaavn' },
-                            { title: 'Vettaiyan', artist: 'Anirudh Ravichander', cover: 'https://c.saavncdn.com/970/Vettaiyan-Tamil-2024-20241008133515-500x500.jpg', provider: 'YouTube Music' },
-                            { title: 'GOAT', artist: 'Yuvan Shankar Raja', cover: 'https://c.saavncdn.com/640/The-Greatest-Of-All-Time-Tamil-2024-20240903173114-500x500.jpg', provider: 'JioSaavn' }
-                        ];
-                        defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                        albumsContainer.innerHTML = `<p style="color: var(--text-muted);">No ${language} albums found.</p>`;
                     }
-                }).catch(() => {});
+                }).catch(() => {
+                    if (config.defaultAlbums) {
+                        albumsContainer.innerHTML = '';
+                        config.defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                    }
+                });
             }
         };
+
+        // Wire Language Dropdown
+        const langSelect = document.getElementById('langPrefSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => {
+                const newLang = e.target.value;
+                localStorage.setItem('vibentra_lang_pref', newLang);
+                showNotification(`Language set to ${newLang}`, 'info');
+                loadLanguageData(newLang);
+            });
+        }
 
         // Handle Neon Filter Chips
         const filterChips = document.querySelectorAll('#homeNeonFilterChips .neon-chip');
@@ -1373,29 +1439,69 @@ const initHome = () => {
                 filterChips.forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
                 const filterType = chip.getAttribute('data-filter');
+                const currentLang = localStorage.getItem('vibentra_lang_pref') || 'English';
 
                 if (filterType === 'all') {
-                    loadTrendingData('latest top hits 2026');
+                    loadLanguageData(currentLang);
                 } else if (filterType === 'new-release') {
-                    loadTrendingData('new release english tamil songs 2026');
+                    const listContainer = document.getElementById('homeTopDailyList');
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading new releases...</p>';
+                    searchService.searchSongs(`new release ${currentLang} songs 2026`).then(res => {
+                        if (listContainer && res.length > 0) {
+                            listContainer.innerHTML = '';
+                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                        }
+                    });
                 } else if (filterType === 'trending') {
-                    loadTrendingData('global viral trending songs 2026');
+                    const listContainer = document.getElementById('homeTopDailyList');
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>';
+                    searchService.searchSongs(`viral trending ${currentLang} songs 2026`).then(res => {
+                        if (listContainer && res.length > 0) {
+                            listContainer.innerHTML = '';
+                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                        }
+                    });
                 } else if (filterType === 'top-hits') {
-                    loadTrendingData('billboard top 50 hits 2026');
+                    const listContainer = document.getElementById('homeTopDailyList');
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading top hits...</p>';
+                    searchService.searchSongs(`top 50 ${currentLang} hits 2026`).then(res => {
+                        if (listContainer && res.length > 0) {
+                            listContainer.innerHTML = '';
+                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                        }
+                    });
                 } else if (filterType === 'chill') {
-                    loadTrendingData('chill lofi acoustic slow songs');
+                    const listContainer = document.getElementById('homeTopDailyList');
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading chill vibes...</p>';
+                    searchService.searchSongs(`chill lofi acoustic slow ${currentLang} songs`).then(res => {
+                        if (listContainer && res.length > 0) {
+                            listContainer.innerHTML = '';
+                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                        }
+                    });
                 } else if (filterType === 'workout') {
-                    loadTrendingData('high energy workout gym hits');
+                    const listContainer = document.getElementById('homeTopDailyList');
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading workout hits...</p>';
+                    searchService.searchSongs(`high energy workout gym ${currentLang} hits`).then(res => {
+                        if (listContainer && res.length > 0) {
+                            listContainer.innerHTML = '';
+                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                        }
+                    });
                 } else if (filterType === 'tamil') {
-                    loadTrendingData('latest tamil top hits 2026');
+                    if (langSelect) langSelect.value = 'Tamil';
+                    localStorage.setItem('vibentra_lang_pref', 'Tamil');
+                    loadLanguageData('Tamil');
                 } else if (filterType === 'bollywood') {
-                    loadTrendingData('latest hindi bollywood top hits 2026');
+                    if (langSelect) langSelect.value = 'Hindi';
+                    localStorage.setItem('vibentra_lang_pref', 'Hindi');
+                    loadLanguageData('Hindi');
                 }
             });
         });
 
-        // Initial Load
-        loadTrendingData('latest top hits 2026');
+        // Initial Load with Stored Language Preference
+        loadLanguageData(storedLang);
     }    function renderSearch(initialQuery = '') {
         const moodsAndMoments = [
             { id: 'chill', title: 'Chill', gradient: 'linear-gradient(135deg, #d95c47, #e08353)', query: 'Chill Coffee Blend', img: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&q=80' },

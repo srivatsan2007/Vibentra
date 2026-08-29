@@ -6773,4 +6773,46 @@ html.battery-saver-active .neon-floating-dock {
 
 html.battery-saver-active * {
     text-shadow: none !important;
-}
+}
+
+/* ==========================================================================
+   PAGE-SPECIFIC WIDTH (HOME & FAVORITES PAGES ONLY) & LANGUAGE DROPDOWN
+   ========================================================================== */
+
+.home-neon-page,
+.favorites-view-page {
+    width: 90% !important;
+    max-width: 90% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.neon-lang-dropdown {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.neon-lang-dropdown:hover,
+.neon-lang-dropdown:focus {
+    border-color: var(--neon-lime);
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--neon-lime);
+}
+
+.neon-lang-dropdown option {
+    background: #18181f;
+    color: #FFFFFF;
+    font-weight: 600;
+}
+
