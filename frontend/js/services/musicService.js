@@ -769,7 +769,7 @@ class MusicService {
         }
 
         // Like Button
-        const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn')];
+        const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn'), document.getElementById('desktopRightLikeBtn')];
         likeBtns.forEach(btn => {
             if (btn) {
                 btn.addEventListener('click', (e) => {
@@ -792,6 +792,9 @@ class MusicService {
                     });
 
                     document.dispatchEvent(new CustomEvent('favoritesChanged'));
+                    document.dispatchEvent(new CustomEvent('showNotification', {
+                        detail: isNowFav ? `❤️ Added "${this.currentTrack.title}" to Favorites` : `🤍 Removed from Favorites`
+                    }));
                 });
             }
         });

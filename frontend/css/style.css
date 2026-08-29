@@ -6826,17 +6826,22 @@ html.battery-saver-active * {
     left: 0;
     width: 100vw;
     height: 100vh;
+    max-height: 100vh;
     background: #08080c !important;
-    background: radial-gradient(circle at 50% 12%, #1a1c28 0%, #09090e 65%, #000000 100%) !important;
+    background: radial-gradient(circle at 50% 10%, #1a1c28 0%, #09090e 65%, #000000 100%) !important;
     z-index: 99999;
     display: none;
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: clamp(16px, 3vh, 32px) clamp(18px, 4vw, 36px);
+    padding-top: max(56px, env(safe-area-inset-top, 56px)) !important;
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px)) !important;
+    padding-left: clamp(16px, 4vw, 24px);
+    padding-right: clamp(16px, 4vw, 24px);
     box-sizing: border-box;
     font-family: 'Outfit', sans-serif;
     color: #FFFFFF;
+    justify-content: flex-start;
 }
 
 .neon-now-playing-modal.active {
@@ -6860,8 +6865,9 @@ html.battery-saver-active * {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    max-width: 440px;
-    margin: 0 auto clamp(12px, 2.5vh, 24px) auto;
+    max-width: 400px;
+    margin: 0 auto 10px auto;
+    flex-shrink: 0;
 }
 
 .neon-player-chevron-btn {
@@ -6870,7 +6876,7 @@ html.battery-saver-active * {
     color: #FFFFFF;
     font-size: 1.35rem;
     cursor: pointer;
-    padding: 8px;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6885,14 +6891,19 @@ html.battery-saver-active * {
 .neon-player-pill-badge {
     background: rgba(210, 248, 54, 0.12);
     border: 1px solid rgba(210, 248, 54, 0.35);
-    padding: 6px 16px;
+    padding: 4px 12px;
     border-radius: 20px;
     color: var(--neon-lime);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 800;
-    letter-spacing: 1.2px;
+    letter-spacing: 1px;
     text-transform: uppercase;
+    max-width: 55vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     box-shadow: 0 0 15px rgba(210, 248, 54, 0.15);
+    text-align: center;
 }
 
 .neon-player-options-wrap {
@@ -6905,7 +6916,7 @@ html.battery-saver-active * {
     color: #FFFFFF;
     font-size: 1.35rem;
     cursor: pointer;
-    padding: 8px;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6921,10 +6932,11 @@ html.battery-saver-active * {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 440px;
+    max-width: 380px;
     margin: 0 auto;
     flex: 1;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 4px;
 }
 
 .neon-artwork-wrapper {
@@ -6932,17 +6944,18 @@ html.battery-saver-active * {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: clamp(16px, 3vh, 28px);
+    margin-bottom: 8px;
+    margin-top: 2px;
 }
 
 .neon-artwork-glow-frame {
     position: relative;
-    width: min(80vw, 330px);
+    width: min(65vw, 245px);
     aspect-ratio: 1;
-    border-radius: 38px;
-    padding: 4px;
+    border-radius: 28px;
+    padding: 3px;
     border: 2px solid var(--neon-lime);
-    box-shadow: 0 0 35px rgba(210, 248, 54, 0.45), 0 25px 60px rgba(0, 0, 0, 0.85);
+    box-shadow: 0 0 25px rgba(210, 248, 54, 0.4), 0 15px 35px rgba(0, 0, 0, 0.85);
     background: #000000;
     display: flex;
     align-items: center;
@@ -6953,20 +6966,20 @@ html.battery-saver-active * {
 .neon-player-cover-art {
     width: 100%;
     height: 100%;
-    border-radius: 34px;
+    border-radius: 25px;
     object-fit: cover;
     display: block;
 }
 
 .neon-artwork-overlay-title {
     position: absolute;
-    bottom: 24px;
-    left: 20px;
-    right: 20px;
+    bottom: 16px;
+    left: 14px;
+    right: 14px;
     text-align: center;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.9);
     text-shadow: 0 2px 10px rgba(0,0,0,0.9);
@@ -6978,21 +6991,21 @@ html.battery-saver-active * {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin-bottom: clamp(14px, 2.5vh, 24px);
+    margin-bottom: 6px;
     padding: 0 4px;
 }
 
 .neon-player-meta-text {
     flex: 1;
     min-width: 0;
-    padding-right: 16px;
+    padding-right: 14px;
 }
 
 .neon-track-title {
-    font-size: clamp(1.4rem, 4.5vw, 1.85rem);
+    font-size: clamp(1.2rem, 3.8vw, 1.55rem);
     font-weight: 800;
     color: #FFFFFF;
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -7000,7 +7013,7 @@ html.battery-saver-active * {
 }
 
 .neon-track-artist {
-    font-size: clamp(0.95rem, 3vw, 1.15rem);
+    font-size: clamp(0.85rem, 2.6vw, 0.98rem);
     font-weight: 500;
     color: rgba(255, 255, 255, 0.6);
     margin: 0;
@@ -7012,10 +7025,10 @@ html.battery-saver-active * {
 .neon-heart-btn {
     background: transparent;
     border: none;
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     color: rgba(255, 255, 255, 0.3);
     cursor: pointer;
-    padding: 8px;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -7023,15 +7036,17 @@ html.battery-saver-active * {
 }
 
 .neon-heart-btn.active,
+.neon-heart-btn.active i,
+.neon-heart-btn i.fa-solid,
 .neon-heart-btn:hover {
     color: var(--neon-lime) !important;
-    filter: drop-shadow(0 0 14px rgba(210, 248, 54, 0.8));
-    transform: scale(1.15);
+    filter: drop-shadow(0 0 14px rgba(210, 248, 54, 0.85)) !important;
+    transform: scale(1.12);
 }
 
 .neon-progress-container {
     width: 100%;
-    margin-bottom: clamp(14px, 2.5vh, 24px);
+    margin-bottom: 6px;
 }
 
 .neon-slider-track-wrapper {
@@ -7060,8 +7075,8 @@ html.battery-saver-active * {
 .neon-progress-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     border-radius: 50%;
     background: var(--neon-lime);
     cursor: pointer;
@@ -7077,8 +7092,8 @@ html.battery-saver-active * {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    margin-top: 8px;
-    font-size: 0.82rem;
+    margin-top: 4px;
+    font-size: 0.78rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.45);
 }
@@ -7088,18 +7103,18 @@ html.battery-saver-active * {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    max-width: 320px;
-    margin: 0 auto clamp(16px, 3vh, 32px) auto;
+    max-width: 270px;
+    margin: 2px auto 8px auto;
 }
 
 .neon-control-prev,
 .neon-control-next {
     background: transparent;
     border: none;
-    font-size: 1.85rem;
+    font-size: 1.6rem;
     color: var(--neon-lime);
     cursor: pointer;
-    padding: 12px;
+    padding: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -7114,24 +7129,24 @@ html.battery-saver-active * {
 }
 
 .neon-big-play-btn {
-    width: 82px;
-    height: 82px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     background: var(--neon-lime);
     border: none;
     color: #000000;
-    font-size: 2rem;
+    font-size: 1.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 0 35px rgba(210, 248, 54, 0.65), 0 10px 25px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 30px rgba(210, 248, 54, 0.65), 0 8px 20px rgba(0, 0, 0, 0.6);
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
 }
 
 .neon-big-play-btn:hover {
     transform: scale(1.08);
-    box-shadow: 0 0 45px rgba(210, 248, 54, 0.85), 0 12px 30px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 40px rgba(210, 248, 54, 0.85), 0 10px 25px rgba(0, 0, 0, 0.7);
 }
 
 .neon-big-play-btn:active {
@@ -7143,6 +7158,8 @@ html.battery-saver-active * {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
     padding: 0 4px;
 }
 
@@ -7150,9 +7167,9 @@ html.battery-saver-active * {
     background: rgba(255, 255, 255, 0.05);
     border: 1.5px solid var(--neon-lime);
     color: var(--neon-lime);
-    padding: 8px 18px;
+    padding: 7px 16px;
     border-radius: 24px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 800;
     letter-spacing: 1px;
     display: inline-flex;
@@ -7173,7 +7190,7 @@ html.battery-saver-active * {
     background: transparent;
     border: none;
     color: rgba(255, 255, 255, 0.6);
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     cursor: pointer;
     padding: 8px;
     position: relative;
@@ -7190,13 +7207,13 @@ html.battery-saver-active * {
 }
 
 .neon-bell-circle-btn {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: transparent;
     border: 1.5px solid var(--neon-lime);
     color: var(--neon-lime);
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -7211,5 +7228,15 @@ html.battery-saver-active * {
     box-shadow: 0 0 25px rgba(210, 248, 54, 0.6);
     transform: scale(1.08);
 }
+
+/* Modals triggered from inside Now Playing player */
+#lyricsModal,
+#ringtoneModal,
+#addToPlaylistModal,
+#playlistModal,
+#songOptionsModal {
+    z-index: 100005 !important;
+}
+
 
 
