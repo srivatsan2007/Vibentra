@@ -710,10 +710,46 @@ class MusicService {
             });
         }
 
+        // Three Dots "Add to Favorites" Option
+        const largeOptFavorite = document.getElementById('largeOptFavorite');
+        if (largeOptFavorite) {
+            largeOptFavorite.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (largePlayerOptionsDropdown) largePlayerOptionsDropdown.classList.add('hidden');
+                if (!this.currentTrack) return;
+
+                const isNowFav = favoriteService.toggleFavorite(this.currentTrack);
+                const likeBtns = [document.getElementById('playerLikeBtn'), document.getElementById('largeLikeBtn'), document.getElementById('desktopRightLikeBtn')];
+                likeBtns.forEach(b => {
+                    if (!b) return;
+                    const icon = b.querySelector('i');
+                    if (icon) {
+                        if (isNowFav) {
+                            b.classList.add('active');
+                            icon.className = 'fa-solid fa-heart';
+                        } else {
+                            b.classList.remove('active');
+                            icon.className = 'fa-regular fa-heart';
+                        }
+                    }
+                });
+
+                const favText = document.getElementById('largeOptFavoriteText');
+                if (favText) favText.textContent = isNowFav ? 'Remove from Favorites' : 'Add to Favorites';
+
+                document.dispatchEvent(new CustomEvent('favoritesChanged'));
+                document.dispatchEvent(new CustomEvent('showNotification', {
+                    detail: isNowFav ? `❤️ Added "${this.currentTrack.title}" to Favorites` : `🤍 Removed from Favorites`
+                }));
+            });
+        }
+
         // Save / Add to Playlist Options
         const addToPlaylistOpt = document.getElementById('addToPlaylistOpt');
         const mobileAddToPlaylistOpt = document.getElementById('mobileAddToPlaylistOpt');
         const largeOptPlaylist = document.getElementById('largeOptPlaylist');
+        const addToPlaylistModal = document.getElementById('addToPlaylistModal');
+        const closeAddToPlaylistModal = document.getElementById('closeAddToPlaylistModal');
 
         const handlePlaylistClick = (e, dropdownElem) => {
             e.stopPropagation();
@@ -728,6 +764,20 @@ class MusicService {
         if (addToPlaylistOpt) addToPlaylistOpt.addEventListener('click', (e) => handlePlaylistClick(e, playerOptionsDropdown));
         if (mobileAddToPlaylistOpt) mobileAddToPlaylistOpt.addEventListener('click', (e) => handlePlaylistClick(e, mobileFabDropdown));
         if (largeOptPlaylist) largeOptPlaylist.addEventListener('click', (e) => handlePlaylistClick(e, largePlayerOptionsDropdown));
+
+        if (closeAddToPlaylistModal && addToPlaylistModal) {
+            closeAddToPlaylistModal.addEventListener('click', () => {
+                addToPlaylistModal.classList.remove('active');
+            });
+        }
+
+        if (addToPlaylistModal) {
+            addToPlaylistModal.addEventListener('click', (e) => {
+                if (e.target === addToPlaylistModal) {
+                    addToPlaylistModal.classList.remove('active');
+                }
+            });
+        }
 
         // Show Lyrics Option
         const showLyricsOpt = document.getElementById('showLyricsOpt');
@@ -834,30 +884,104 @@ class MusicService {
         const listContainer = document.getElementById('playlistSelectionList');
         if (!modal || !listContainer) return;
 
+        if (!trackToAdd) {
+            document.dispatchEvent(new CustomEvent('showNotification', { detail: '⚠️ Play or select a song first!' }));
+            return;
+        }
+
         const playlists = playlistService.getPlaylists();
         listContainer.innerHTML = '';
 
         if (playlists.length === 0) {
-            listContainer.innerHTML = '<p style="color: var(--text-muted); padding: 10px; text-align: center;">You have no custom playlists yet.</p>';
+            listContainer.innerHTML = `
+                <div style="padding: 20px 10px; text-align: center;">
+                    <i class="fa-solid fa-folder-open" style="font-size: 2.2rem; color: rgba(255,255,255,0.25); margin-bottom: 10px; display: block;"></i>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.88rem; margin-bottom: 14px;">No playlists found yet</p>
+                    <button id="createNewPlaylistQuickBtn" class="btn" style="background: var(--neon-lime); color: black; font-weight: 800; border-radius: 20px; padding: 9px 20px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(210,248,54,0.3);">
+                        <i class="fa-solid fa-plus"></i> Create Playlist
+                    </button>
+                </div>
+            `;
+            document.getElementById('createNewPlaylistQuickBtn')?.addEventListener('click', () => {
+                modal.classList.remove('active');
+                const plName = prompt('Enter a name for your new playlist:');
+                if (plName && plName.trim()) {
+                    const newPl = playlistService.createPlaylist(plName.trim());
+                    if (newPl) {
+                        playlistService.addTrackToPlaylist(newPl.id, trackToAdd);
+                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `📁 Created "${newPl.name}" & saved "${trackToAdd.title}"!` }));
+                        document.dispatchEvent(new CustomEvent('playlistsChanged'));
+                    }
+                }
+            });
         } else {
             playlists.forEach(pl => {
                 const btn = document.createElement('button');
-                btn.className = 'btn btn-outline';
+                btn.className = 'btn';
                 btn.style.width = '100%';
-                btn.style.justifyContent = 'flex-start';
-                btn.style.textAlign = 'left';
-                btn.style.padding = '12px 18px';
-                btn.style.borderRadius = '12px';
-                btn.innerHTML = `<i class="fa-solid fa-folder-plus" style="margin-right: 10px; color: var(--primary);"></i> ${pl.name}`;
+                btn.style.padding = '12px 16px';
+                btn.style.borderRadius = '14px';
+                btn.style.background = 'rgba(255, 255, 255, 0.06)';
+                btn.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+                btn.style.color = '#FFFFFF';
+                btn.style.cursor = 'pointer';
+                btn.style.display = 'flex';
+                btn.style.alignItems = 'center';
+                btn.style.gap = '12px';
+                btn.style.transition = 'all 0.2s ease';
+
+                const trackCount = pl.tracks ? pl.tracks.length : 0;
+                btn.innerHTML = `
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #06B6D4, #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; flex-shrink: 0;">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <div style="flex: 1; text-align: left; overflow: hidden;">
+                        <div style="font-weight: 700; font-size: 0.92rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.name}</div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${trackCount} ${trackCount === 1 ? 'track' : 'tracks'}</div>
+                    </div>
+                    <i class="fa-solid fa-plus" style="color: var(--neon-lime); font-size: 0.95rem;"></i>
+                `;
+
                 btn.addEventListener('click', () => {
-                    if (trackToAdd) {
-                        playlistService.addTrackToPlaylist(pl.id, trackToAdd);
-                        modal.classList.remove('active');
-                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `Added "${trackToAdd.title}" to ${pl.name}` }));
-                    }
+                    playlistService.addTrackToPlaylist(pl.id, trackToAdd);
+                    modal.classList.remove('active');
+                    document.dispatchEvent(new CustomEvent('showNotification', { detail: `📁 Added "${trackToAdd.title}" to ${pl.name}` }));
+                    document.dispatchEvent(new CustomEvent('playlistsChanged'));
                 });
+
                 listContainer.appendChild(btn);
             });
+
+            // Create New Playlist button option
+            const newBtn = document.createElement('button');
+            newBtn.className = 'btn';
+            newBtn.style.width = '100%';
+            newBtn.style.padding = '10px 16px';
+            newBtn.style.borderRadius = '14px';
+            newBtn.style.background = 'rgba(210, 248, 54, 0.12)';
+            newBtn.style.border = '1px solid rgba(210, 248, 54, 0.35)';
+            newBtn.style.color = 'var(--neon-lime)';
+            newBtn.style.fontWeight = '700';
+            newBtn.style.cursor = 'pointer';
+            newBtn.style.marginTop = '6px';
+            newBtn.style.display = 'flex';
+            newBtn.style.alignItems = 'center';
+            newBtn.style.justifyContent = 'center';
+            newBtn.style.gap = '8px';
+            newBtn.innerHTML = `<i class="fa-solid fa-plus"></i> Create New Playlist`;
+            newBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                const plName = prompt('Enter a name for your new playlist:');
+                if (plName && plName.trim()) {
+                    const newPl = playlistService.createPlaylist(plName.trim());
+                    if (newPl) {
+                        playlistService.addTrackToPlaylist(newPl.id, trackToAdd);
+                        document.dispatchEvent(new CustomEvent('showNotification', { detail: `📁 Created "${newPl.name}" & saved "${trackToAdd.title}"!` }));
+                        document.dispatchEvent(new CustomEvent('playlistsChanged'));
+                    }
+                }
+            });
+            listContainer.appendChild(newBtn);
         }
 
         modal.classList.add('active');
@@ -1902,10 +2026,18 @@ class MusicService {
         if (overlayTitle) overlayTitle.textContent = this.currentTrack.title || '';
 
         const largeLikeBtn = document.getElementById('largeLikeBtn');
+        const isFav = favoriteService.isFavorite(this.currentTrack.id);
         if (largeLikeBtn) {
-            const isFav = favoriteService.isFavorite(this.currentTrack.id);
             largeLikeBtn.classList.toggle('active', isFav);
             largeLikeBtn.innerHTML = isFav ? '<i class="fa-solid fa-heart"></i>' : '<i class="fa-regular fa-heart"></i>';
+        }
+
+        const favText = document.getElementById('largeOptFavoriteText');
+        const favIcon = document.getElementById('largeOptFavoriteIcon');
+        if (favText) favText.textContent = isFav ? 'Remove from Favorites' : 'Add to Favorites';
+        if (favIcon) {
+            favIcon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            favIcon.style.color = isFav ? 'var(--neon-lime)' : 'rgba(255,255,255,0.7)';
         }
 
         const upNextList = document.getElementById('upNextList');
