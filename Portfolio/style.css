@@ -1211,17 +1211,24 @@ h1, h2, h3, h4, h5, h6 {
 
 .dev-avatar-wrap {
     position: relative;
-    width: 140px;
-    height: 140px;
+    width: 150px;
+    height: 150px;
 }
 
 .dev-avatar {
-    width: 140px;
-    height: 140px;
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
     object-fit: cover;
+    object-position: center top;
     border: 4px solid var(--primary);
-    box-shadow: 0 0 35px rgba(124, 58, 237, 0.5);
+    box-shadow: 0 0 35px rgba(124, 58, 237, 0.6), 0 0 15px rgba(6, 182, 212, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dev-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 45px rgba(124, 58, 237, 0.8), 0 0 25px rgba(6, 182, 212, 0.6);
 }
 
 .dev-badge {
