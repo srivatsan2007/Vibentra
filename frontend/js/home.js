@@ -4279,7 +4279,7 @@ const initHome = () => {
                         <div class="settings-option-row">
                             <div class="settings-option-text">
                                 <h4>Author</h4>
-                                <div class="settings-option-subvalue">Srivatsan</div>
+                                <div class="settings-option-subvalue">SRIVATSAN R</div>
                             </div>
                         </div>
 
@@ -4294,7 +4294,7 @@ const initHome = () => {
                         <div class="settings-option-row" id="rowSupportLink" style="cursor: pointer;">
                             <div class="settings-option-text">
                                 <h4>Support with UPI/Crypto</h4>
-                                <div class="settings-option-subvalue" style="color: #38BDF8;">https://support.vibentra.cyou/</div>
+                                <div class="settings-option-subvalue" style="color: #38BDF8;">https://vibentra-rgaq.vercel.app/</div>
                             </div>
                             <i class="fa-solid fa-arrow-up-right-from-square" style="color: rgba(255,255,255,0.6);"></i>
                         </div>
@@ -4341,7 +4341,7 @@ const initHome = () => {
             });
 
             document.getElementById('rowSupportLink')?.addEventListener('click', () => {
-                window.open('https://support.vibentra.cyou/', '_blank');
+                window.open('https://vibentra-rgaq.vercel.app/', '_blank');
             });
 
             document.getElementById('rowThirdPartyLibs')?.addEventListener('click', () => {
@@ -4494,7 +4494,7 @@ const initHome = () => {
                             <div class="settings-option-text" style="width: 100%;">
                                 <h4>Import playlists</h4>
                                 <p style="margin-top: 6px; line-height: 1.5;">If you wanna migrate your playlist from Old Echo Music to here just take the backup of it and visit the link below and then upload the generated file here</p>
-                                <a href="https://echomusic.fun/migrate" target="_blank" style="color: #38BDF8; font-size: 0.9rem; text-decoration: underline; margin-top: 10px; display: inline-block;">https://echomusic.fun/migrate</a>
+                                <a href="https://vibentra-rgaq.vercel.app/" target="_blank" style="color: #38BDF8; font-size: 0.9rem; text-decoration: underline; margin-top: 10px; display: inline-block;">https://vibentra-rgaq.vercel.app/</a>
                             </div>
                         </div>
                     </div>
