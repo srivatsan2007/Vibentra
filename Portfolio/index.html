@@ -4,48 +4,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vibentra - Music Platform Showcase & Portfolio</title>
+    <title>Vibentra - Next-Gen Music Streaming Experience | Portfolio</title>
     <meta name="description"
-        content="Discover Vibentra - A next-generation high-fidelity music streaming platform featuring custom theme studio, Spotify-style playlist engine, vinyl player, and background playback.">
+        content="Vibentra is a next-generation high-fidelity music streaming ecosystem with 10-Band Equalizer, AI DJ Engine, Sleep Timer, Spotify 2x2 Mosaics, Vinyl Turntable Studio, and zero-stutter background playback. Created by SRIVATSAN R.">
     <link rel="icon" href="./images/vibentra-logo.png" type="image/png">
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
         rel="stylesheet">
 
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FontAwesome 6.5.0 Pro/Free Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Custom CSS -->
+    <!-- Custom Portfolio Stylesheet -->
     <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
-    <!-- Ambient Liquid Background Orbs -->
+    <!-- Ambient Liquid Aurora Glow Orbs -->
     <div class="ambient-background">
         <div class="glow-orb orb-1"></div>
         <div class="glow-orb orb-2"></div>
         <div class="glow-orb orb-3"></div>
+        <div class="glow-orb orb-4"></div>
         <div class="grid-overlay"></div>
+        <div class="particles-container" id="particlesContainer"></div>
     </div>
 
-    <!-- Navigation Header -->
-    <header class="navbar">
+    <!-- Navigation Header Bar -->
+    <header class="navbar" id="navbar">
         <div class="nav-container">
             <a href="#" class="brand-logo">
-                <img src="./images/vibentra-logo.png" alt="Vibentra Logo">
-                <span class="brand-name">VIBENTRA</span>
+                <div class="logo-wrapper">
+                    <img src="./images/vibentra-logo.png" alt="Vibentra Logo">
+                    <span class="logo-pulse"></span>
+                </div>
+                <div class="brand-text-col">
+                    <span class="brand-name">VIBENTRA</span>
+                    <span class="brand-sub">MUSIC ECOSYSTEM</span>
+                </div>
             </a>
 
             <nav class="nav-links">
-                <a href="#about">About</a>
-                <a href="#features">Features</a>
-                <a href="#architecture">Architecture</a>
-                <a href="#releases">Releases</a>
+                <a href="#about" class="nav-link active">About</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#demo" class="nav-link">Live Demo</a>
+                <a href="#architecture" class="nav-link">Tech Stack</a>
+                <a href="#developer" class="nav-link">Creator</a>
+                <a href="#releases" class="nav-link">Releases</a>
             </nav>
 
             <div class="nav-actions">
@@ -54,10 +64,10 @@
                     <i class="fa-brands fa-github"></i>
                     <span>GitHub</span>
                 </a>
-                <a href="https://vibentra.vercel.app/" target="_blank" rel="noopener noreferrer"
-                    class="btn btn-primary">
-                    <i class="fa-solid fa-globe"></i>
-                    <span>Live Web App</span>
+                <a href="https://vibentra-rgaq.vercel.app/" target="_blank" rel="noopener noreferrer"
+                    class="btn btn-primary glow-btn">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Launch App</span>
                 </a>
             </div>
 
@@ -67,23 +77,34 @@
         </div>
     </header>
 
-    <!-- Mobile Drawer Navigation -->
+    <!-- Mobile Navigation Drawer -->
     <div class="mobile-drawer" id="mobileDrawer">
-        <a href="#about" class="drawer-link">About</a>
-        <a href="#features" class="drawer-link">Features</a>
-        <a href="#architecture" class="drawer-link">Architecture</a>
-        <a href="#releases" class="drawer-link">Releases</a>
+        <div class="drawer-header">
+            <div class="brand-logo">
+                <img src="./images/vibentra-logo.png" alt="Vibentra">
+                <span class="brand-name">VIBENTRA</span>
+            </div>
+            <button class="drawer-close" id="drawerCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="drawer-links">
+            <a href="#about" class="drawer-link"><i class="fa-solid fa-house"></i> About</a>
+            <a href="#features" class="drawer-link"><i class="fa-solid fa-sparkles"></i> Feature Hub</a>
+            <a href="#demo" class="drawer-link"><i class="fa-solid fa-compact-disc"></i> Interactive Demo</a>
+            <a href="#architecture" class="drawer-link"><i class="fa-solid fa-layer-group"></i> Architecture</a>
+            <a href="#developer" class="drawer-link"><i class="fa-solid fa-user-astronaut"></i> Creator Bio</a>
+            <a href="#releases" class="drawer-link"><i class="fa-solid fa-code-branch"></i> Releases (v1.9.0)</a>
+        </div>
         <div class="drawer-actions">
-            <a href="https://vibentra.vercel.app/" target="_blank" rel="noopener noreferrer"
+            <a href="https://vibentra-rgaq.vercel.app/" target="_blank" rel="noopener noreferrer"
                 class="btn btn-primary btn-full">
                 <i class="fa-solid fa-globe"></i> Launch Web App
             </a>
-            <a href="app-debug.apk" download="app-debug.apk" class="btn btn-apk btn-full">
-                <i class="fa-solid fa-download"></i> Download Android APK (app-debug.apk)
+            <a href="Vibentra.apk" download="Vibentra.apk" class="btn btn-apk btn-full">
+                <i class="fa-brands fa-android"></i> Download Android APK
             </a>
             <a href="https://github.com/srivatsan2007/Vibentra" target="_blank" rel="noopener noreferrer"
                 class="btn btn-github btn-full">
-                <i class="fa-brands fa-github"></i> GitHub Repository
+                <i class="fa-brands fa-github"></i> GitHub Source Code
             </a>
         </div>
     </div>
@@ -94,8 +115,8 @@
             <div class="hero-content">
                 <div class="version-badge">
                     <span class="badge-pulse"></span>
-                    <i class="fa-solid fa-sparkles"></i>
-                    <span>Version 1.7.6 Live</span>
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <span>Vibentra v1.9.0 Live Release</span>
                 </div>
 
                 <h1 class="hero-title">
@@ -104,21 +125,21 @@
                 </h1>
 
                 <p class="hero-subtitle">
-                    Vibentra is a modern, high-fidelity music platform built with HTML5, CSS3, JavaScript, Node.js, and
-                    Capacitor. Experience dynamic 2x2 mosaic playlists, personalized custom theme engine, vinyl
-                    turntable UI, and zero-stutter background audio playback.
+                    Vibentra is a next-generation high-fidelity music streaming ecosystem. Engineered with seamless 
+                    <strong>10-Band Graphic Equalizer</strong>, <strong>Sleep Timer Automation</strong>, <strong>AI Smart Queue Engine</strong>, 
+                    <strong>Spotify-style 2x2 Mosaic Playlists</strong>, and zero-stutter native background playback.
                 </p>
 
                 <div class="hero-buttons">
-                    <a href="https://vibentra.vercel.app/" target="_blank" rel="noopener noreferrer"
-                        class="btn btn-hero-primary">
+                    <a href="https://vibentra-rgaq.vercel.app/" target="_blank" rel="noopener noreferrer"
+                        class="btn btn-hero-primary glow-btn">
                         <i class="fa-solid fa-rocket"></i>
-                        <span>Launch Web App</span>
+                        <span>Launch Live Web App</span>
                     </a>
 
-                    <a href="app-debug.apk" download="app-debug.apk" class="btn btn-hero-apk">
-                        <i class="fa-solid fa-android"></i>
-                        <span>Download APK (app-debug.apk)</span>
+                    <a href="Vibentra.apk" download="Vibentra.apk" class="btn btn-hero-apk">
+                        <i class="fa-brands fa-android"></i>
+                        <span>Download Android APK</span>
                     </a>
 
                     <a href="https://github.com/srivatsan2007/Vibentra" target="_blank" rel="noopener noreferrer"
@@ -130,13 +151,18 @@
 
                 <div class="hero-stats">
                     <div class="stat-item">
-                        <span class="stat-number">v1.7.6</span>
-                        <span class="stat-label">Current Version</span>
+                        <span class="stat-number">v1.9.0</span>
+                        <span class="stat-label">Engine Version</span>
                     </div>
                     <div class="stat-divider"></div>
                     <div class="stat-item">
-                        <span class="stat-number">100%</span>
-                        <span class="stat-label">Background Audio Sync</span>
+                        <span class="stat-number">15+</span>
+                        <span class="stat-label">Settings Modules</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number">320kbps</span>
+                        <span class="stat-label">Lossless HQ Audio</span>
                     </div>
                     <div class="stat-divider"></div>
                     <div class="stat-item">
@@ -146,6 +172,7 @@
                 </div>
             </div>
 
+            <!-- Hero Interactive Glass Player Preview -->
             <div class="hero-visual">
                 <div class="mockup-card glass-panel">
                     <div class="mockup-header">
@@ -154,28 +181,61 @@
                             <span class="dot dot-yellow"></span>
                             <span class="dot dot-green"></span>
                         </div>
-                        <div class="mockup-url">vibentra.vercel.app</div>
+                        <div class="mockup-url">
+                            <i class="fa-solid fa-lock"></i> vibentra-rgaq.vercel.app
+                        </div>
+                        <div class="mockup-live-indicator">
+                            <span class="pulse-dot"></span> LIVE
+                        </div>
                     </div>
+
                     <div class="mockup-body">
                         <div class="player-mockup-inner">
-                            <div class="mockup-album-art">
-                                <img src="./images/vibentra-logo.png" alt="Vibentra Album Art">
-                                <div class="playing-equalizer">
+                            <div class="mockup-album-art" id="mockupAlbumArt">
+                                <img src="./images/vibentra-logo.png" alt="Vibentra Playing Track" id="mockupCoverImg">
+                                <div class="playing-equalizer active" id="mockupEqualizer">
+                                    <span class="eq-bar"></span>
+                                    <span class="eq-bar"></span>
                                     <span class="eq-bar"></span>
                                     <span class="eq-bar"></span>
                                     <span class="eq-bar"></span>
                                     <span class="eq-bar"></span>
                                 </div>
+                                <div class="vinyl-overlay" id="mockupVinylOverlay"></div>
                             </div>
+
                             <div class="mockup-info">
-                                <h3>Vibentra Player v1.1.7</h3>
-                                <p>Where Vibes Connect • Sound of India</p>
+                                <div class="mockup-track-meta">
+                                    <h3 id="mockupTrackTitle">Vibentra Theme Flow</h3>
+                                    <p id="mockupTrackArtist">SRIVATSAN R • Sound Sanctuary Mix</p>
+                                </div>
+
+                                <!-- Mini Progress Bar -->
+                                <div class="mockup-progress-wrap">
+                                    <div class="mockup-progress-bar">
+                                        <div class="mockup-progress-fill" id="mockupProgressFill" style="width: 48%;"></div>
+                                    </div>
+                                    <div class="mockup-time-row">
+                                        <span id="mockupCurrentTime">1:42</span>
+                                        <span id="mockupTotalTime">3:30</span>
+                                    </div>
+                                </div>
+
+                                <!-- Interactive Controls -->
                                 <div class="mockup-controls">
-                                    <button class="mock-btn"><i class="fa-solid fa-shuffle"></i></button>
-                                    <button class="mock-btn"><i class="fa-solid fa-backward-step"></i></button>
-                                    <button class="mock-btn play-main"><i class="fa-solid fa-play"></i></button>
-                                    <button class="mock-btn"><i class="fa-solid fa-forward-step"></i></button>
-                                    <button class="mock-btn"><i class="fa-solid fa-repeat"></i></button>
+                                    <button class="mock-btn" id="mockShuffleBtn" title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
+                                    <button class="mock-btn" id="mockPrevBtn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+                                    <button class="mock-btn play-main glow-btn" id="mockPlayBtn" title="Play/Pause">
+                                        <i class="fa-solid fa-pause" id="mockPlayIcon"></i>
+                                    </button>
+                                    <button class="mock-btn" id="mockNextBtn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+                                    <button class="mock-btn" id="mockRepeatBtn" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
+                                </div>
+
+                                <div class="mockup-badges">
+                                    <span class="mock-badge"><i class="fa-solid fa-sliders"></i> 10-Band DSP</span>
+                                    <span class="mock-badge"><i class="fa-solid fa-moon"></i> Sleep Timer</span>
+                                    <span class="mock-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> AI DJ</span>
                                 </div>
                             </div>
                         </div>
@@ -185,112 +245,292 @@
         </div>
     </section>
 
-    <!-- Key Features Section -->
+    <!-- Key Features Suite Section -->
     <section class="features-section" id="features">
         <div class="section-container">
             <div class="section-header text-center">
-                <span class="section-tag">ENGINEERING HIGHLIGHTS</span>
+                <span class="section-tag"><i class="fa-solid fa-microchip"></i> INNOVATION SUITE</span>
                 <h2>Crafted for Ultimate Audio & UI Performance</h2>
-                <p>Designed with liquid glass aesthetics, real-time personalization, and robust audio state management.
-                </p>
+                <p>Designed with liquid glass aesthetics, real-time personalization, native background threading, and high-fidelity DSP processing.</p>
             </div>
 
             <div class="features-grid">
-                <!-- Feature 1 -->
+                <!-- Feature 1: Sound DSP Studio -->
                 <div class="feature-card glass-card">
-                    <div class="feature-icon icon-purple">
-                        <i class="fa-solid fa-palette"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon icon-pink">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <span class="feature-pill">NEW in v1.9</span>
                     </div>
-                    <h3>Custom Theme Studio</h3>
-                    <p>Allows users to define custom primary, secondary, highlight, and background color schemes with
-                        real-time live preview and persistent anti-flicker loading.</p>
+                    <h3>Sound & DSP Studio</h3>
+                    <p>10-Band Graphic Equalizer, sub-bass drive booster (0 to +15 dB), 3D spatial virtualizer, pitch preservation, and 0.5x–2.0x playback tempo tuning.</p>
                 </div>
 
-                <!-- Feature 2 -->
+                <!-- Feature 2: Sleep Timer & Fade-Out -->
                 <div class="feature-card glass-card">
-                    <div class="feature-icon icon-green">
-                        <i class="fa-brands fa-spotify"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon icon-purple">
+                            <i class="fa-solid fa-moon"></i>
+                        </div>
+                        <span class="feature-pill">NEW in v1.9</span>
                     </div>
-                    <h3>Spotify-Style Playlist UI</h3>
-                    <p>Features dynamic 2x2 mosaic cover generation, hero header metadata, giant single-tap play/pause
-                        action bar, and quick track management.</p>
+                    <h3>Smart Sleep Timer</h3>
+                    <p>Automated sleep countdowns (15m to 90m), custom duration inputs, stop-after-current-track triggers, and smooth 30-second volume fade-out.</p>
                 </div>
 
-                <!-- Feature 3 -->
+                <!-- Feature 3: AI & Smart Engine -->
                 <div class="feature-card glass-card">
-                    <div class="feature-icon icon-cyan">
-                        <i class="fa-solid fa-compact-disc"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <span class="feature-pill">AI Core</span>
                     </div>
-                    <h3>Vinyl Turntable Interface</h3>
-                    <p>Interactive spinning turntable record modal with fluid tonearm animations, ambient artwork
-                        blurring, and full media control bindings.</p>
+                    <h3>AI DJ & Smart Queue</h3>
+                    <p>Dynamic acoustic queue generation based on mood, tempo, and harmonic keys. Real-time multilingual lyric translation for global tracks.</p>
                 </div>
 
-                <!-- Feature 4 -->
+                <!-- Feature 4: Incognito & Privacy Hub -->
                 <div class="feature-card glass-card">
-                    <div class="feature-icon icon-pink">
-                        <i class="fa-solid fa-bell"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon icon-amber">
+                            <i class="fa-solid fa-user-secret"></i>
+                        </div>
+                        <span class="feature-pill">Privacy</span>
                     </div>
-                    <h3>Ringtone Studio</h3>
-                    <p>Select custom start positions and clip durations (15s, 30s, 45s) to generate, slice, and save
-                        audio ringtones directly to your device.</p>
+                    <h3>Incognito Mode & History</h3>
+                    <p>Temporary private listening session mode with zero history logging, quick cache wiping, and persistent export/restore JSON data backups.</p>
                 </div>
 
-                <!-- Feature 5 -->
+                <!-- Feature 5: Spotify Mosaic Playlists -->
                 <div class="feature-card glass-card">
-                    <div class="feature-icon icon-amber">
-                        <i class="fa-solid fa-shield-halved"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon icon-green">
+                            <i class="fa-brands fa-spotify"></i>
+                        </div>
+                        <span class="feature-pill">UI Design</span>
                     </div>
-                    <h3>Generation-Locked Audio</h3>
-                    <p>Authoritative state machine architecture (`_playbackRequestId`) preventing stream duplication,
-                        race conditions, and mid-track playback stalls.</p>
+                    <h3>Spotify-Style 2x2 Mosaics</h3>
+                    <p>Dynamic 4-quadrant mosaic cover generation, hero metadata headers, giant one-tap action bars, and drag-and-drop playlist organization.</p>
                 </div>
 
-                <!-- Feature 6 -->
+                <!-- Feature 6: Vinyl Turntable Studio -->
                 <div class="feature-card glass-card">
-                    <div class="feature-icon icon-blue">
-                        <i class="fa-solid fa-mobile-screen"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon icon-blue">
+                            <i class="fa-solid fa-compact-disc"></i>
+                        </div>
+                        <span class="feature-pill">Retro Audio</span>
                     </div>
-                    <h3>Screen-OFF Persistence</h3>
-                    <p>WebAudio keep-alive thread and native MediaSession handlers ensuring audio streams continuously
-                        when screen is locked or OFF.</p>
+                    <h3>Vinyl Turntable Studio</h3>
+                    <p>Interactive rotating vinyl disc with fluid tonearm needle animations, ambient record reflection glow, and high-res album label centering.</p>
+                </div>
+
+                <!-- Feature 7: Ringtone Trimmer Studio -->
+                <div class="feature-card glass-card">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-red">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <span class="feature-pill">Utility</span>
+                    </div>
+                    <h3>Ringtone Studio Trimmer</h3>
+                    <p>Pick custom start positions and slice 15s, 30s, or 45s high-quality MP3 audio ringtones directly for mobile calls and alerts.</p>
+                </div>
+
+                <!-- Feature 8: Screen-OFF Persistence -->
+                <div class="feature-card glass-card">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-emerald">
+                            <i class="fa-solid fa-mobile-screen"></i>
+                        </div>
+                        <span class="feature-pill">Engine</span>
+                    </div>
+                    <h3>Screen-OFF Keep-Alive</h3>
+                    <p>WebAudio active PCM keep-alive thread and native MediaSession handlers ensuring audio streams flawlessly with screen locked or app in background.</p>
+                </div>
+
+                <!-- Feature 9: AMOLED Battery Saver -->
+                <div class="feature-card glass-card">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-lime">
+                            <i class="fa-solid fa-battery-half"></i>
+                        </div>
+                        <span class="feature-pill">Eco Mode</span>
+                    </div>
+                    <h3>AMOLED Battery Saver</h3>
+                    <p>Instant switch to pure `#000000` AMOLED dark mode with GPU shader optimization to extend mobile battery life during long listening sessions.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Tech Stack & Architecture Section -->
+    <!-- Interactive Live Demo & Turntable Showcase Section -->
+    <section class="demo-section" id="demo">
+        <div class="section-container">
+            <div class="demo-wrapper glass-panel">
+                <div class="demo-left">
+                    <span class="section-tag"><i class="fa-solid fa-compact-disc"></i> INTERACTIVE AUDIO DEMO</span>
+                    <h2>Feel the Vinyl Turntable Physics</h2>
+                    <p>Experience how Vibentra bridges retro analog vinyl aesthetics with cutting-edge web audio architecture.</p>
+                    
+                    <div class="demo-feature-list">
+                        <div class="demo-feature-item">
+                            <div class="demo-bullet"><i class="fa-solid fa-check"></i></div>
+                            <div>
+                                <h4>Interactive Tonearm Needle</h4>
+                                <p>Tonearm glides onto the vinyl record when playing, and rests when paused.</p>
+                            </div>
+                        </div>
+                        <div class="demo-feature-item">
+                            <div class="demo-bullet"><i class="fa-solid fa-check"></i></div>
+                            <div>
+                                <h4>33⅓ RPM Realistic Spin</h4>
+                                <p>Hardware-accelerated CSS3 matrix keyframe spinning with ambient light reflection.</p>
+                            </div>
+                        </div>
+                        <div class="demo-feature-item">
+                            <div class="demo-bullet"><i class="fa-solid fa-check"></i></div>
+                            <div>
+                                <h4>Lossless Stream Resolution</h4>
+                                <p>Integrated with JioSaavn & YouTube Music lossless streaming backends.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="demo-cta-row">
+                        <a href="https://vibentra-rgaq.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn btn-primary glow-btn">
+                            <i class="fa-solid fa-play"></i> Experience Full App
+                        </a>
+                        <button class="btn btn-outline" id="demoTurntableToggleBtn">
+                            <i class="fa-solid fa-rotate"></i> Toggle Turntable Spin
+                        </button>
+                    </div>
+                </div>
+
+                <div class="demo-right">
+                    <div class="turntable-deck">
+                        <div class="turntable-platter" id="demoPlatter">
+                            <div class="vinyl-disc spinning" id="demoVinylDisc">
+                                <div class="vinyl-groove g-1"></div>
+                                <div class="vinyl-groove g-2"></div>
+                                <div class="vinyl-groove g-3"></div>
+                                <div class="vinyl-label">
+                                    <img src="./images/vibentra-logo.png" alt="Vinyl Label">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="turntable-tonearm active" id="demoTonearm">
+                            <div class="arm-base"></div>
+                            <div class="arm-rod"></div>
+                            <div class="arm-head"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture & Tech Stack Section -->
     <section class="architecture-section" id="architecture">
         <div class="section-container">
             <div class="section-header text-center">
-                <span class="section-tag">TECHNOLOGY STACK</span>
-                <h2>Robust Cross-Platform Architecture</h2>
-                <p>Seamlessly bridging modern web technologies with native Android integration.</p>
+                <span class="section-tag"><i class="fa-solid fa-layer-group"></i> ENGINEERING ARCHITECTURE</span>
+                <h2>Robust Multi-Tier Technology Stack</h2>
+                <p>Designed for high performance, zero audio latency, and seamless multi-platform execution.</p>
             </div>
 
             <div class="tech-grid">
                 <div class="tech-card glass-card">
-                    <i class="fa-brands fa-html5 tech-icon color-html"></i>
+                    <div class="tech-icon-circle color-html">
+                        <i class="fa-brands fa-html5"></i>
+                    </div>
                     <h4>Frontend Core</h4>
-                    <p>HTML5, Vanilla CSS3 (Custom Design Tokens), JavaScript ES6+</p>
+                    <p class="tech-sub">HTML5 • Vanilla CSS3 • ES6+ Modules</p>
+                    <p class="tech-desc">Custom design tokens, fluid glassmorphic styling, responsive layout grids, and hardware-accelerated animations.</p>
                 </div>
 
                 <div class="tech-card glass-card">
-                    <i class="fa-brands fa-node-js tech-icon color-node"></i>
-                    <h4>Backend & API</h4>
-                    <p>Node.js, Express REST API, JioSaavn & YT Provider Managers</p>
+                    <div class="tech-icon-circle color-node">
+                        <i class="fa-brands fa-node-js"></i>
+                    </div>
+                    <h4>Backend & Audio APIs</h4>
+                    <p class="tech-sub">Node.js • Express • JioSaavn & YT</p>
+                    <p class="tech-desc">Multi-provider song aggregation, dynamic metadata extraction, high-res lyrics scraping, and audio stream routing.</p>
                 </div>
 
                 <div class="tech-card glass-card">
-                    <i class="fa-brands fa-google tech-icon color-firebase"></i>
-                    <h4>Authentication</h4>
-                    <p>Firebase Auth (Email/Password & Google Sign-In), LocalStorage State</p>
+                    <div class="tech-icon-circle color-firebase">
+                        <i class="fa-brands fa-google"></i>
+                    </div>
+                    <h4>Cloud & Auth Engine</h4>
+                    <p class="tech-sub">Firebase Auth • Firestore • Sync</p>
+                    <p class="tech-desc">Secure Google Sign-In, Email/Password authentication, QR profile sharing, and multi-device cloud playlist sync.</p>
                 </div>
 
                 <div class="tech-card glass-card">
-                    <i class="fa-brands fa-android tech-icon color-android"></i>
-                    <h4>Mobile Runtime</h4>
-                    <p>Capacitor 8 Android Bridge, Service Worker PWA v19</p>
+                    <div class="tech-icon-circle color-android">
+                        <i class="fa-brands fa-android"></i>
+                    </div>
+                    <h4>Mobile Runtime & PWA</h4>
+                    <p class="tech-sub">Capacitor 8 • Service Worker PWA</p>
+                    <p class="tech-desc">Native Android Java bridge for Background Audio, notification drawer controllers, and offline PWA caching.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Creator & Developer Spotlight Section -->
+    <section class="developer-section" id="developer">
+        <div class="section-container">
+            <div class="developer-card glass-panel">
+                <div class="dev-left">
+                    <div class="dev-avatar-wrap">
+                        <img src="./images/vibentra-logo.png" alt="SRIVATSAN R" class="dev-avatar">
+                        <span class="dev-badge"><i class="fa-solid fa-code"></i></span>
+                    </div>
+                    <div class="dev-socials">
+                        <a href="https://github.com/srivatsan2007" target="_blank" rel="noopener noreferrer" class="social-btn" title="GitHub"><i class="fa-brands fa-github"></i></a>
+                        <a href="https://vibentra-rgaq.vercel.app/" target="_blank" rel="noopener noreferrer" class="social-btn" title="Vibentra App"><i class="fa-solid fa-globe"></i></a>
+                        <a href="https://buymeacoffee.com/srivatsan" target="_blank" rel="noopener noreferrer" class="social-btn" title="Buy Me a Coffee"><i class="fa-solid fa-mug-hot"></i></a>
+                    </div>
+                </div>
+
+                <div class="dev-right">
+                    <span class="section-tag"><i class="fa-solid fa-user-astronaut"></i> ARCHITECT & LEAD DEVELOPER</span>
+                    <h2 class="dev-name">SRIVATSAN R</h2>
+                    <p class="dev-role">Full-Stack Engineer & Audio Systems Architect</p>
+                    
+                    <p class="dev-bio">
+                        Passionate developer crafting cutting-edge web and mobile applications with high-fidelity UI/UX, 
+                        liquid aesthetics, and robust real-time audio systems. Vibentra was engineered from the ground up 
+                        to solve mobile background streaming constraints and offer a genuinely free, ad-free, and customizable music sanctuary.
+                    </p>
+
+                    <div class="dev-stats-row">
+                        <div class="dev-stat">
+                            <span class="num">100%</span>
+                            <span class="lbl">Open Source</span>
+                        </div>
+                        <div class="dev-stat">
+                            <span class="num">v1.9.0</span>
+                            <span class="lbl">Latest Build</span>
+                        </div>
+                        <div class="dev-stat">
+                            <span class="num">India</span>
+                            <span class="lbl">Built with ❤️</span>
+                        </div>
+                    </div>
+
+                    <div class="dev-cta-row">
+                        <a href="https://github.com/srivatsan2007/Vibentra" target="_blank" rel="noopener noreferrer" class="btn btn-github">
+                            <i class="fa-brands fa-github"></i> Star on GitHub
+                        </a>
+                        <a href="https://buymeacoffee.com/srivatsan" target="_blank" rel="noopener noreferrer" class="btn btn-coffee">
+                            <i class="fa-solid fa-mug-hot"></i> Support with Coffee / UPI
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -302,31 +542,53 @@
             <div class="release-box glass-card">
                 <div class="release-header">
                     <div>
-                        <span class="release-status">LATEST STABLE RELEASE</span>
-                        <h2 class="release-title">Vibentra v1.7.6</h2>
+                        <span class="release-status"><i class="fa-solid fa-circle-check"></i> LATEST STABLE RELEASE</span>
+                        <h2 class="release-title">Vibentra v1.9.0</h2>
+                        <p class="release-date"><i class="fa-regular fa-calendar"></i> August 2026 • Build vibentra-cache-v127</p>
                     </div>
                     <div class="release-actions">
-                        <a href="app-debug.apk" download="app-debug.apk" class="btn btn-primary">
-                            <i class="fa-solid fa-download"></i> Download APK (app-debug.apk)
+                        <a href="Vibentra.apk" download="Vibentra.apk" class="btn btn-primary glow-btn">
+                            <i class="fa-brands fa-android"></i> Download APK (Vibentra.apk)
                         </a>
-                        <a href="https://vibentra.vercel.app/" target="_blank" rel="noopener noreferrer"
+                        <a href="https://vibentra-rgaq.vercel.app/" target="_blank" rel="noopener noreferrer"
                             class="btn btn-github">
-                            <i class="fa-solid fa-globe"></i> Open Web Version
+                            <i class="fa-solid fa-globe"></i> Launch Web Version
                         </a>
                     </div>
                 </div>
 
                 <div class="release-changelog">
-                    <h4>Changelog Highlights:</h4>
-                    <ul>
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>Full-Bleed 90% Scaling</strong>:
-                            Root font-size scaling for compact UI with zero canvas side/bottom gaps.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>3-Dot Options Visibility</strong>:
-                            Track option buttons pinned to the right edge across all search result rows.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>Dynamic Settings Suite</strong>: Equalizer, Lyrics translation, and local JSON backup/restore.</li>
-                        <li><i class="fa-solid fa-check text-success"></i> <strong>Screen-OFF Persistence</strong>:
-                            WebAudio keep-alive thread & native media control bridge.</li>
-                    </ul>
+                    <h4>v1.9.0 Milestone Highlights:</h4>
+                    <div class="changelog-grid">
+                        <div class="changelog-item">
+                            <i class="fa-solid fa-sliders text-cyan"></i>
+                            <div>
+                                <strong>Sound & DSP Studio</strong>
+                                <p>Integrated 10-Band Graphic Equalizer, bass boost slider (+15 dB), and 3D spatial audio virtualizer.</p>
+                            </div>
+                        </div>
+                        <div class="changelog-item">
+                            <i class="fa-solid fa-moon text-purple"></i>
+                            <div>
+                                <strong>Sleep Timer & Automation</strong>
+                                <p>Preset and custom minute sleep timers with automated 30-second volume fade-out and stop-after-track triggers.</p>
+                            </div>
+                        </div>
+                        <div class="changelog-item">
+                            <i class="fa-solid fa-wand-magic-sparkles text-pink"></i>
+                            <div>
+                                <strong>AI DJ & Smart Queue Engine</strong>
+                                <p>Harmonic queue transitions, mood-based sensitivity presets, and real-time multilingual lyrics translation.</p>
+                            </div>
+                        </div>
+                        <div class="changelog-item">
+                            <i class="fa-solid fa-user-secret text-amber"></i>
+                            <div>
+                                <strong>Listening History & Incognito Privacy</strong>
+                                <p>Incognito private sessions, paused history logging, and one-click JSON backup & restore manager.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -340,25 +602,25 @@
                     <img src="./images/vibentra-logo.png" alt="Vibentra Logo">
                     <span>VIBENTRA</span>
                 </div>
-                <p>Designed & Developed by <strong>Srivatsan</strong> • Where Vibes Connect.</p>
+                <p>Designed & Developed by <strong>SRIVATSAN R</strong> • Where Vibes Connect.</p>
             </div>
 
             <div class="footer-links">
-                <a href="https://vibentra.vercel.app/" target="_blank" rel="noopener noreferrer"><i
-                        class="fa-solid fa-globe"></i> Web App</a>
+                <a href="https://vibentra-rgaq.vercel.app/" target="_blank" rel="noopener noreferrer"><i
+                        class="fa-solid fa-globe"></i> Live Web App</a>
                 <a href="https://github.com/srivatsan2007/Vibentra" target="_blank" rel="noopener noreferrer"><i
-                        class="fa-brands fa-github"></i> GitHub</a>
-                <a href="app-debug.apk" download="app-debug.apk"><i class="fa-solid fa-android"></i>
-                    Android APK (app-debug.apk)</a>
+                        class="fa-brands fa-github"></i> GitHub Repository</a>
+                <a href="Vibentra.apk" download="Vibentra.apk"><i class="fa-brands fa-android"></i>
+                    Android APK Download</a>
             </div>
 
             <div class="footer-copyright">
-                <p>&copy; 2026 Vibentra Music. All rights reserved.</p>
+                <p>&copy; 2026 Vibentra Music Ecosystem. Built by SRIVATSAN R. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    <!-- Custom Script -->
+    <!-- Custom Portfolio Interactive JS -->
     <script src="./script.js"></script>
 </body>
 
