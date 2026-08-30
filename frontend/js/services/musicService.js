@@ -96,10 +96,20 @@ class MusicService {
 
         // Network Reconnection Handler
         if (typeof window !== 'undefined') {
+            window.musicService = this;
             window.addEventListener('online', () => {
                 console.log("[PLAYBACK_ONLINE] Network connection restored.");
                 if (this.isPlaying && this.currentTrack && !this._userRequestedPause && this.audioPlayer.paused && this.audioPlayer.readyState >= 2) {
                     this.safePlay('online_reconnect');
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                if (localStorage.getItem('vibentra_setting_stop_on_exit') === 'true') {
+                    if (this.audioPlayer) {
+                        this.audioPlayer.pause();
+                        this.audioPlayer.src = '';
+                    }
                 }
             });
         }
@@ -1414,6 +1424,18 @@ class MusicService {
                 this.audioPlayer.currentTime = 0;
             }
 
+            // Apply DSP / Playback rate settings
+            try {
+                const savedRate = parseFloat(localStorage.getItem('vibentra_setting_playback_speed') || '1');
+                if (!isNaN(savedRate) && savedRate > 0) {
+                    this.audioPlayer.playbackRate = savedRate;
+                }
+                const preservePitch = localStorage.getItem('vibentra_setting_preserve_pitch') !== 'false';
+                this.audioPlayer.preservesPitch = preservePitch;
+            } catch (rateErr) {
+                console.warn('Playback rate setting error:', rateErr);
+            }
+
             try {
                 await this.safePlay('playSpecificTrack');
 
@@ -1639,6 +1661,13 @@ class MusicService {
         this.audioPlayer.loop = false;
         console.log(`[TRACK_END] Gen ${currentGen}: Processing completion. Index: ${this.currentIndex}, Queue size: ${this.queue?.length}, RepeatMode: ${this.repeatMode}`);
 
+        // Check if Sleep Timer Stop-After-Current-Track is active
+        if (typeof window !== 'undefined' && window.sleepTimerService) {
+            if (window.sleepTimerService.handleTrackFinished(this)) {
+                return;
+            }
+        }
+
         if (this.repeatMode === 'one') {
             this.audioPlayer.currentTime = 0;
             this.safePlay('repeat_one').catch(e => console.error("Repeat ONE play error:", e));
@@ -1685,6 +1714,37 @@ class MusicService {
                     nextIndex = 0;
                 } else if (this.repeatMode === 'off') {
                     if (isAutomatic) {
+                        // Check Autoplay Similar Songs setting
+                        if (localStorage.getItem('vibentra_setting_autoplay_similar') === 'true' && this.currentTrack) {
+                            console.log(`[AUTOPLAY_SIMILAR] Queue ended. Auto-fetching recommendations for "${this.currentTrack.title}"...`);
+                            const query = this.currentTrack.artist || this.currentTrack.title;
+                            providerManager.searchSongs(query).then(results => {
+                                if (results && results.length > 0) {
+                                    const filtered = results.filter(r => String(r.id) !== String(this.currentTrack?.id));
+                                    if (filtered.length > 0) {
+                                        const newTracks = filtered.slice(0, 8);
+                                        const startIdx = this.queue.length;
+                                        this.queue.push(...newTracks);
+                                        this.playSpecificTrack(this.queue[startIdx], startIdx);
+                                        if (typeof window !== 'undefined' && window.showNotification) {
+                                            window.showNotification('✨ AI Autoplay enqueued similar tracks!', 'info');
+                                        }
+                                        return;
+                                    }
+                                }
+                                this._isTransitioning = false;
+                                this.isPlaying = false;
+                                this.playbackState = 'PAUSED';
+                                this.updatePlayPauseUI(false);
+                            }).catch(() => {
+                                this._isTransitioning = false;
+                                this.isPlaying = false;
+                                this.playbackState = 'PAUSED';
+                                this.updatePlayPauseUI(false);
+                            });
+                            return;
+                        }
+
                         console.log(`[TRACK_TRANSITION] Reached end of queue with Repeat OFF (index ${validCurrentIndex} of ${this.queue.length}). Stopping playback.`);
                         this._isTransitioning = false;
                         this.isPlaying = false;

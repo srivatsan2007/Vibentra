@@ -8,6 +8,7 @@ import providerManager from './providers/providerManager.js';
 import { favoriteService } from './services/favoriteService.js';
 import { playlistService } from './services/playlistService.js';
 import { historyService } from './services/historyService.js';
+import { sleepTimerService } from './services/sleepTimerService.js';
 import { connectService } from './services/connectService.js';
 import { initUpdateManager } from './updateManager.js';
 
@@ -3907,7 +3908,7 @@ const initHome = () => {
 
                     <div class="settings-card-item" data-category="playback">
                         <div class="settings-card-left">
-                            <i class="fa-solid fa-circle-play"></i>
+                            <i class="fa-solid fa-circle-play" style="color: #38BDF8;"></i>
                             <span>Playback</span>
                         </div>
                         <i class="fa-solid fa-chevron-right chevron"></i>
@@ -3915,7 +3916,7 @@ const initHome = () => {
 
                     <div class="settings-card-item" data-category="history">
                         <div class="settings-card-left">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <i class="fa-solid fa-clock-rotate-left" style="color: #F472B6;"></i>
                             <span>Listening history</span>
                         </div>
                         <i class="fa-solid fa-chevron-right chevron"></i>
@@ -3923,7 +3924,7 @@ const initHome = () => {
 
                     <div class="settings-card-item" data-category="lyrics">
                         <div class="settings-card-left">
-                            <i class="fa-solid fa-message"></i>
+                            <i class="fa-solid fa-message" style="color: #A78BFA;"></i>
                             <span>Lyrics</span>
                         </div>
                         <i class="fa-solid fa-chevron-right chevron"></i>
@@ -3931,15 +3932,39 @@ const initHome = () => {
 
                     <div class="settings-card-item" data-category="ai">
                         <div class="settings-card-left">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>AI</span>
+                            <i class="fa-solid fa-wand-magic-sparkles" style="color: #06B6D4;"></i>
+                            <span>AI & Smart Engine</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="sleep">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-moon" style="color: #A78BFA;"></i>
+                            <span>Sleep Timer & Automation</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="dsp">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-sliders" style="color: #F472B6;"></i>
+                            <span>Sound & DSP Studio</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+
+                    <div class="settings-card-item" data-category="notifications">
+                        <div class="settings-card-left">
+                            <i class="fa-solid fa-bell" style="color: #FBBF24;"></i>
+                            <span>Notifications & Lock Screen</span>
                         </div>
                         <i class="fa-solid fa-chevron-right chevron"></i>
                     </div>
 
                     <div class="settings-card-item" data-category="sources">
                         <div class="settings-card-left">
-                            <i class="fa-solid fa-compact-disc"></i>
+                            <i class="fa-solid fa-compact-disc" style="color: #E879F9;"></i>
                             <span>Music Sources</span>
                         </div>
                         <i class="fa-solid fa-chevron-right chevron"></i>
@@ -3947,7 +3972,7 @@ const initHome = () => {
 
                     <div class="settings-card-item" data-category="storage">
                         <div class="settings-card-left">
-                            <i class="fa-solid fa-download"></i>
+                            <i class="fa-solid fa-download" style="color: #60A5FA;"></i>
                             <span>Storage & Cache</span>
                         </div>
                         <i class="fa-solid fa-chevron-right chevron"></i>
@@ -3955,7 +3980,7 @@ const initHome = () => {
 
                     <div class="settings-card-item" data-category="updates">
                         <div class="settings-card-left">
-                            <i class="fa-solid fa-rotate"></i>
+                            <i class="fa-solid fa-rotate" style="color: #34D399;"></i>
                             <span>Check for Updates</span>
                         </div>
                         <i class="fa-solid fa-chevron-right chevron"></i>
@@ -3973,8 +3998,8 @@ const initHome = () => {
     }
 
     function renderSettingsCategory(category) {
-        const appVersion = "v1.7.3";
-        const swCacheName = "vibentra-cache-v110";
+        const appVersion = "v1.9.0";
+        const swCacheName = "vibentra-cache-v127";
 
         const getSettingState = (key, defaultVal = false) => {
             const val = localStorage.getItem('vibentra_setting_' + key);
@@ -4772,6 +4797,686 @@ const initHome = () => {
                     }
                 });
             });
+        } else if (category === 'playback') {
+            const gapless = getSettingState('gapless', true);
+            const crossfade = parseInt(getSettingVal('crossfade', '0'), 10) || 0;
+            const autoplaySimilar = getSettingState('autoplay_similar', true);
+            const stopOnExit = getSettingState('stop_on_exit', false);
+            const preloadNext = getSettingState('preload_next', true);
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper view-fade-in">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Playback</h2>
+                    </div>
+
+                    <div class="glass-panel" style="border-radius: 24px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.35) 0%, rgba(6, 182, 212, 0.2) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #7C3AED, #06B6D4); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 0 25px rgba(124,58,237,0.5);">
+                            <i class="fa-solid fa-circle-play"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; color: #FFFFFF; font-weight: 800; margin: 0;">Playback & Stream Engine</h3>
+                        <p style="color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; line-height: 1.4;">Configure seamless transitions, smart auto-queue, crossfade, and background streaming behavior.</p>
+                    </div>
+
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Gapless Playback</h4>
+                                <p>Eliminate silent gaps between consecutive songs for non-stop listening</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingGaplessToggle" ${gapless ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <div class="settings-option-text">
+                                    <h4>Crossfade Duration</h4>
+                                    <p>Smoothly blend the ending of current track into the start of next track</p>
+                                </div>
+                                <span class="settings-slider-badge" id="crossfadeValText">${crossfade}s</span>
+                            </div>
+                            <div style="width: 100%; display: flex; align-items: center; gap: 14px;">
+                                <input type="range" class="settings-range-slider" id="settingCrossfadeSlider" min="0" max="12" step="1" value="${crossfade}">
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Autoplay Similar Songs</h4>
+                                <p>Automatically discover and queue matching tracks when current queue reaches end</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingAutoplaySimilarToggle" ${autoplaySimilar ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Stop Music on App Exit</h4>
+                                <p>Immediately pause and close media background engine when app is closed</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingStopOnExitToggle" ${stopOnExit ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Preload Next Track Buffer</h4>
+                                <p>Fetch audio streams ahead of time for instant 0-second song transitions</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingPreloadNextToggle" ${preloadNext ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingGaplessToggle')?.addEventListener('change', (e) => {
+                setSettingState('gapless', e.target.checked);
+                showNotification(`Gapless playback ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            const crossfadeSlider = document.getElementById('settingCrossfadeSlider');
+            const crossfadeText = document.getElementById('crossfadeValText');
+            crossfadeSlider?.addEventListener('input', (e) => {
+                if (crossfadeText) crossfadeText.textContent = `${e.target.value}s`;
+            });
+            crossfadeSlider?.addEventListener('change', (e) => {
+                setSettingVal('crossfade', e.target.value);
+                showNotification(`Crossfade set to ${e.target.value} seconds`, 'success');
+            });
+
+            document.getElementById('settingAutoplaySimilarToggle')?.addEventListener('change', (e) => {
+                setSettingState('autoplay_similar', e.target.checked);
+                showNotification(`Autoplay similar songs ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingStopOnExitToggle')?.addEventListener('change', (e) => {
+                setSettingState('stop_on_exit', e.target.checked);
+                showNotification(`Stop music on exit ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingPreloadNextToggle')?.addEventListener('change', (e) => {
+                setSettingState('preload_next', e.target.checked);
+                showNotification(`Track preloading ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+        } else if (category === 'history') {
+            const isIncognito = getSettingState('incognito_mode', false);
+            const isHistoryPaused = getSettingState('pause_history', false);
+            const historyList = historyService.getHistory();
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper view-fade-in">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Listening History & Privacy</h2>
+                    </div>
+
+                    <div class="glass-panel" style="border-radius: 24px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(124, 58, 237, 0.2) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #EC4899, #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 0 25px rgba(236,72,153,0.5);">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; color: #FFFFFF; font-weight: 800; margin: 0;">History & Private Sessions</h3>
+                        <p style="color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; line-height: 1.4;">Manage private listening mode, pause history logging, and clean local cached records.</p>
+                        <div style="margin-top: 4px;">
+                            ${isIncognito ? '<span class="settings-status-badge incognito pulse"><i class="fa-solid fa-user-secret"></i> Incognito Active</span>' : (isHistoryPaused ? '<span class="settings-status-badge" style="background: rgba(245, 158, 11, 0.18); color: #FBBF24; border-color: rgba(245, 158, 11, 0.4);"><i class="fa-solid fa-pause"></i> History Paused</span>' : '<span class="settings-status-badge"><i class="fa-solid fa-circle-check"></i> History Logging Active</span>')}
+                        </div>
+                    </div>
+
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Incognito / Private Session</h4>
+                                <p>Temporarily listen privately. Played songs will not appear in history, top stats, or algorithm mix</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingIncognitoToggle" ${isIncognito ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Pause Listening History</h4>
+                                <p>Temporarily suspend recording played tracks to your history</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingPauseHistoryToggle" ${isHistoryPaused ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Total Songs in History</h4>
+                                <div class="settings-option-subvalue" id="historyCountText">${historyList.length} tracks recorded</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4 style="color: #F87171;">Clear Playback History</h4>
+                                <p>Wipe all stored playback history from this device</p>
+                            </div>
+                            <button class="settings-action-btn danger" id="clearHistoryBtn">
+                                <i class="fa-solid fa-trash-can"></i> Clear History
+                            </button>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Clear Search Cache</h4>
+                                <p>Clear recent search queries and cached search results</p>
+                            </div>
+                            <button class="settings-action-btn" id="clearSearchCacheBtn">
+                                <i class="fa-solid fa-eraser"></i> Clear Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingIncognitoToggle')?.addEventListener('change', (e) => {
+                setSettingState('incognito_mode', e.target.checked);
+                showNotification(e.target.checked ? '🕵️ Incognito Mode turned ON - history will not be saved' : 'Incognito Mode turned OFF', 'info');
+                renderSettingsCategory('history');
+            });
+
+            document.getElementById('settingPauseHistoryToggle')?.addEventListener('change', (e) => {
+                setSettingState('pause_history', e.target.checked);
+                showNotification(e.target.checked ? 'Listening history paused' : 'Listening history resumed', 'info');
+                renderSettingsCategory('history');
+            });
+
+            document.getElementById('clearHistoryBtn')?.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear your entire listening history?')) {
+                    historyService.clearHistory();
+                    const countEl = document.getElementById('historyCountText');
+                    if (countEl) countEl.textContent = '0 tracks recorded';
+                    showNotification('Listening history wiped successfully!', 'success');
+                }
+            });
+
+            document.getElementById('clearSearchCacheBtn')?.addEventListener('click', () => {
+                historyService.clearSearchHistory();
+                showNotification('Search history and caches cleared!', 'success');
+            });
+
+        } else if (category === 'ai') {
+            const aiDj = getSettingState('ai_dj_mode', false);
+            const smartQueue = getSettingState('ai_smart_queue', true);
+            const moodSensitivity = getSettingVal('ai_mood_sensitivity', 'Balanced Dynamic');
+            const aiTranslation = getSettingState('ai_lyrics_translation', true);
+            const targetLang = getSettingVal('ai_target_lang', 'en');
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper view-fade-in">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">AI & Smart Engine</h2>
+                    </div>
+
+                    <div class="glass-panel" style="border-radius: 24px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(124, 58, 237, 0.3) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #06B6D4, #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 0 25px rgba(6,182,212,0.5);">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; color: #FFFFFF; font-weight: 800; margin: 0;">Vibentra AI Engine</h3>
+                        <p style="color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; line-height: 1.4;">Empower your music experience with contextual mood curation, AI DJ mixing, and automated lyric translations.</p>
+                    </div>
+
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>AI DJ Voice Mode</h4>
+                                <p>Smart audio DJ introduces special playlist mixes and announces upcoming favorites</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingAiDjToggle" ${aiDj ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Smart Queue Auto-Generation</h4>
+                                <p>Dynamically sequence upcoming songs based on tempo, BPM, and acoustic harmonic compatibility</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingSmartQueueToggle" ${smartQueue ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Mood Sensitivity Preset</h4>
+                                <p>Tune how aggressively the algorithm adapts to your current listening mood</p>
+                            </div>
+                            <select id="settingMoodSensitivitySelect" class="settings-select">
+                                <option value="Balanced Dynamic" ${moodSensitivity === 'Balanced Dynamic' ? 'selected' : ''}>Balanced Dynamic</option>
+                                <option value="High Energy (Workout/Party)" ${moodSensitivity === 'High Energy (Workout/Party)' ? 'selected' : ''}>High Energy (Workout/Party)</option>
+                                <option value="Chill & Ambient (Relax)" ${moodSensitivity === 'Chill & Ambient (Relax)' ? 'selected' : ''}>Chill & Ambient (Relax)</option>
+                                <option value="Deep Focus & Instrumental" ${moodSensitivity === 'Deep Focus & Instrumental' ? 'selected' : ''}>Deep Focus & Instrumental</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>AI Real-time Lyrics Translation</h4>
+                                <p>Automatically translate foreign lyric lines in real-time inside the lyrics viewer</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingAiTranslationToggle" ${aiTranslation ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Target Translation Language</h4>
+                                <p>Default target language for instant lyric translation</p>
+                            </div>
+                            <select id="settingAiTargetLangSelect" class="settings-select">
+                                <option value="en" ${targetLang === 'en' ? 'selected' : ''}>English (en)</option>
+                                <option value="ta" ${targetLang === 'ta' ? 'selected' : ''}>Tamil (ta)</option>
+                                <option value="hi" ${targetLang === 'hi' ? 'selected' : ''}>Hindi (hi)</option>
+                                <option value="es" ${targetLang === 'es' ? 'selected' : ''}>Spanish (es)</option>
+                                <option value="fr" ${targetLang === 'fr' ? 'selected' : ''}>French (fr)</option>
+                                <option value="de" ${targetLang === 'de' ? 'selected' : ''}>German (de)</option>
+                                <option value="ja" ${targetLang === 'ja' ? 'selected' : ''}>Japanese (ja)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingAiDjToggle')?.addEventListener('change', (e) => {
+                setSettingState('ai_dj_mode', e.target.checked);
+                showNotification(`AI DJ Voice ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingSmartQueueToggle')?.addEventListener('change', (e) => {
+                setSettingState('ai_smart_queue', e.target.checked);
+                showNotification(`Smart Queue ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingMoodSensitivitySelect')?.addEventListener('change', (e) => {
+                setSettingVal('ai_mood_sensitivity', e.target.value);
+                showNotification(`Mood sensitivity set to ${e.target.value}`, 'success');
+            });
+
+            document.getElementById('settingAiTranslationToggle')?.addEventListener('change', (e) => {
+                setSettingState('ai_lyrics_translation', e.target.checked);
+                showNotification(`AI Lyrics Translation ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingAiTargetLangSelect')?.addEventListener('change', (e) => {
+                setSettingVal('ai_target_lang', e.target.value);
+                showNotification(`Translation target set to ${e.target.value}`, 'success');
+            });
+
+        } else if (category === 'sleep') {
+            const renderSleepView = () => {
+                const currentStatus = sleepTimerService.getStatus();
+                const isFadeOut = getSettingState('sleep_fadeout', true);
+
+                dynamicContent.innerHTML = `
+                    <div class="settings-view-wrapper view-fade-in">
+                        <div class="sub-settings-header">
+                            <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                            <h2 class="sub-settings-title">Sleep Timer & Automation</h2>
+                        </div>
+
+                        <div class="glass-panel" style="border-radius: 24px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(167, 139, 250, 0.25) 0%, rgba(99, 102, 241, 0.2) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px;">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #A78BFA, #6366F1); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 0 25px rgba(167, 139, 250, 0.5);">
+                                <i class="fa-solid fa-moon"></i>
+                            </div>
+                            <h3 style="font-size: 1.35rem; color: #FFFFFF; font-weight: 800; margin: 0;">Smart Sleep Assistant</h3>
+                            <p style="color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; line-height: 1.4;">Drift off peacefully. Vibentra automatically pauses playback and gently fades out volume when the timer expires.</p>
+                            <div style="margin-top: 4px;">
+                                ${currentStatus.active ? `<span class="settings-status-badge pulse" style="background: rgba(167, 139, 250, 0.2); color: #C4B5FD; border-color: rgba(167, 139, 250, 0.4);"><i class="fa-solid fa-hourglass-half"></i> ${currentStatus.stopAfterTrack ? 'Stop after current track' : `Timer Active: ${currentStatus.formattedRemaining}`}</span>` : '<span class="settings-status-badge" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.15);"><i class="fa-solid fa-bed"></i> No Active Sleep Timer</span>'}
+                            </div>
+                        </div>
+
+                        <div class="sub-settings-container">
+                            ${currentStatus.active ? `
+                                <div class="settings-option-row" style="background: rgba(167, 139, 250, 0.1); border-radius: 16px; padding: 16px; border: 1px solid rgba(167, 139, 250, 0.25);">
+                                    <div class="settings-option-text">
+                                        <h4 style="color: #C4B5FD;">Active Timer Running</h4>
+                                        <p style="color: rgba(255,255,255,0.75);">${currentStatus.stopAfterTrack ? 'Playback will stop when the current track finishes' : `Remaining: ${currentStatus.formattedRemaining}`}</p>
+                                    </div>
+                                    <button class="settings-action-btn danger" id="cancelSleepTimerBtn">
+                                        <i class="fa-solid fa-ban"></i> Cancel Timer
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            <div class="settings-option-row" style="flex-direction: column; align-items: flex-start;">
+                                <div class="settings-option-text">
+                                    <h4>Quick Countdown Presets</h4>
+                                    <p>Choose a timer duration to auto-pause music</p>
+                                </div>
+                                <div class="settings-pill-group">
+                                    <button class="settings-pill-btn timer-preset-btn" data-minutes="15">15 min</button>
+                                    <button class="settings-pill-btn timer-preset-btn" data-minutes="30">30 min</button>
+                                    <button class="settings-pill-btn timer-preset-btn" data-minutes="45">45 min</button>
+                                    <button class="settings-pill-btn timer-preset-btn" data-minutes="60">60 min</button>
+                                    <button class="settings-pill-btn timer-preset-btn" data-minutes="90">90 min</button>
+                                </div>
+                            </div>
+
+                            <div class="settings-option-row">
+                                <div class="settings-option-text">
+                                    <h4>Stop After Current Track Finishes</h4>
+                                    <p>Allow the current song to play through to the end, then stop automatically</p>
+                                </div>
+                                <button class="settings-action-btn ${currentStatus.stopAfterTrack ? 'danger' : 'primary'}" id="stopAfterTrackBtn">
+                                    <i class="fa-solid fa-stop"></i> ${currentStatus.stopAfterTrack ? 'Disable' : 'Set Track End'}
+                                </button>
+                            </div>
+
+                            <div class="settings-option-row">
+                                <div class="settings-option-text">
+                                    <h4>Custom Duration</h4>
+                                    <p>Enter any custom minutes for the countdown</p>
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="number" id="customTimerMinsInput" min="1" max="720" placeholder="Mins" style="width: 75px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: white; padding: 8px 12px; font-weight: 700; text-align: center; outline: none;">
+                                    <button class="settings-action-btn primary" id="startCustomTimerBtn">Start</button>
+                                </div>
+                            </div>
+
+                            <div class="settings-option-row">
+                                <div class="settings-option-text">
+                                    <h4>Smooth 30s Volume Fade-Out</h4>
+                                    <p>Gently ramp down master volume during the last 30 seconds before sleep</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="settingSleepFadeoutToggle" ${isFadeOut ? 'checked' : ''}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('settingsSubBackBtn')?.addEventListener('click', () => renderSettings());
+
+                document.getElementById('cancelSleepTimerBtn')?.addEventListener('click', () => {
+                    sleepTimerService.cancelTimer();
+                    showNotification('Sleep timer cancelled.', 'info');
+                    renderSleepView();
+                });
+
+                document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const mins = parseInt(btn.getAttribute('data-minutes'), 10);
+                        const fade = getSettingState('sleep_fadeout', true);
+                        sleepTimerService.startTimer(mins, fade);
+                        showNotification(`🌙 Sleep timer set for ${mins} minutes!`, 'success');
+                        renderSleepView();
+                    });
+                });
+
+                document.getElementById('stopAfterTrackBtn')?.addEventListener('click', () => {
+                    if (currentStatus.stopAfterTrack) {
+                        sleepTimerService.setStopAfterCurrentTrack(false);
+                        showNotification('Stop-after-track cancelled.', 'info');
+                    } else {
+                        sleepTimerService.setStopAfterCurrentTrack(true);
+                        showNotification('🌙 Music will stop after current track finishes!', 'success');
+                    }
+                    renderSleepView();
+                });
+
+                document.getElementById('startCustomTimerBtn')?.addEventListener('click', () => {
+                    const input = document.getElementById('customTimerMinsInput');
+                    const mins = parseFloat(input?.value);
+                    if (!mins || mins <= 0) {
+                        showNotification('Please enter a valid number of minutes.', 'error');
+                        return;
+                    }
+                    const fade = getSettingState('sleep_fadeout', true);
+                    sleepTimerService.startTimer(mins, fade);
+                    showNotification(`🌙 Sleep timer set for ${mins} minutes!`, 'success');
+                    renderSleepView();
+                });
+
+                document.getElementById('settingSleepFadeoutToggle')?.addEventListener('change', (e) => {
+                    setSettingState('sleep_fadeout', e.target.checked);
+                    showNotification(`Volume fade-out ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+                });
+            };
+
+            renderSleepView();
+
+        } else if (category === 'dsp') {
+            const currentSpeed = parseFloat(getSettingVal('playback_speed', '1')) || 1;
+            const preservePitch = getSettingState('preserve_pitch', true);
+            const bassBoost = parseInt(getSettingVal('bass_boost', '0'), 10) || 0;
+            const virtualizer = parseInt(getSettingVal('virtualizer', '0'), 10) || 0;
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper view-fade-in">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Sound & DSP Studio</h2>
+                    </div>
+
+                    <div class="glass-panel" style="border-radius: 24px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(244, 114, 182, 0.25) 0%, rgba(124, 58, 237, 0.25) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #F472B6, #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 0 25px rgba(244,114,182,0.5);">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; color: #FFFFFF; font-weight: 800; margin: 0;">Audio DSP Processing</h3>
+                        <p style="color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; line-height: 1.4;">Studio-grade tempo control, master pitch lock, bass boost, and 3D spatial surround virtualizer.</p>
+                    </div>
+
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row" style="flex-direction: column; align-items: flex-start;">
+                            <div class="settings-option-text">
+                                <h4>Playback Tempo / Speed</h4>
+                                <p>Adjust audio speed from 0.5x to 2.0x without pitch distortion</p>
+                            </div>
+                            <div class="settings-pill-group">
+                                ${[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map(s => `
+                                    <button class="settings-pill-btn speed-pill-btn ${currentSpeed === s ? 'active' : ''}" data-speed="${s}">${s}x${s === 1.0 ? ' (Normal)' : ''}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Preserve Pitch (Master Tempo Lock)</h4>
+                                <p>Keep natural musical key and pitch unaltered when changing speed</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingPreservePitchToggle" ${preservePitch ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <div class="settings-option-text">
+                                    <h4>Bass Boost (Sub-Bass Drive)</h4>
+                                    <p>Enhance sub-woofer frequency punch for rich low-end acoustics</p>
+                                </div>
+                                <span class="settings-slider-badge" id="bassBoostValText">+${bassBoost} dB</span>
+                            </div>
+                            <div style="width: 100%; display: flex; align-items: center; gap: 14px;">
+                                <input type="range" class="settings-range-slider" id="settingBassBoostSlider" min="0" max="15" step="1" value="${bassBoost}">
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <div class="settings-option-text">
+                                    <h4>3D Surround / Spatial Virtualizer</h4>
+                                    <p>Expands audio soundstage for immersive headphone spatial acoustics</p>
+                                </div>
+                                <span class="settings-slider-badge" id="virtualizerValText">${virtualizer}%</span>
+                            </div>
+                            <div style="width: 100%; display: flex; align-items: center; gap: 14px;">
+                                <input type="range" class="settings-range-slider" id="settingVirtualizerSlider" min="0" max="100" step="5" value="${virtualizer}">
+                            </div>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>10-Band Graphic Equalizer</h4>
+                                <p>Launch the full graphical equalizer studio with custom frequency curve presets</p>
+                            </div>
+                            <button class="settings-action-btn primary" id="openEqStudioBtn">
+                                <i class="fa-solid fa-sliders"></i> Open Equalizer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.querySelectorAll('.speed-pill-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const speed = parseFloat(btn.getAttribute('data-speed'));
+                    setSettingVal('playback_speed', speed.toString());
+                    if (musicService && musicService.audioPlayer) {
+                        musicService.audioPlayer.playbackRate = speed;
+                    }
+                    showNotification(`Playback speed set to ${speed}x`, 'success');
+                    renderSettingsCategory('dsp');
+                });
+            });
+
+            document.getElementById('settingPreservePitchToggle')?.addEventListener('change', (e) => {
+                setSettingState('preserve_pitch', e.target.checked);
+                if (musicService && musicService.audioPlayer) {
+                    musicService.audioPlayer.preservesPitch = e.target.checked;
+                }
+                showNotification(`Pitch lock ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            const bassSlider = document.getElementById('settingBassBoostSlider');
+            const bassText = document.getElementById('bassBoostValText');
+            bassSlider?.addEventListener('input', (e) => {
+                if (bassText) bassText.textContent = `+${e.target.value} dB`;
+            });
+            bassSlider?.addEventListener('change', (e) => {
+                setSettingVal('bass_boost', e.target.value);
+                showNotification(`Bass boost set to +${e.target.value} dB`, 'success');
+            });
+
+            const virtSlider = document.getElementById('settingVirtualizerSlider');
+            const virtText = document.getElementById('virtualizerValText');
+            virtSlider?.addEventListener('input', (e) => {
+                if (virtText) virtText.textContent = `${e.target.value}%`;
+            });
+            virtSlider?.addEventListener('change', (e) => {
+                setSettingVal('virtualizer', e.target.value);
+                showNotification(`Spatial virtualizer set to ${e.target.value}%`, 'success');
+            });
+
+            document.getElementById('openEqStudioBtn')?.addEventListener('click', () => {
+                openEqualizerModal();
+            });
+
+        } else if (category === 'notifications') {
+            const lockArtwork = getSettingState('lockscreen_artwork', true);
+            const richControls = getSettingState('rich_mediasession', true);
+            const liveLyrics = getSettingState('notif_lyrics', true);
+            const persistent = getSettingState('notif_persistent', true);
+
+            dynamicContent.innerHTML = `
+                <div class="settings-view-wrapper view-fade-in">
+                    <div class="sub-settings-header">
+                        <button class="settings-sub-back-btn" id="settingsSubBackBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 class="sub-settings-title">Notifications & Lock Screen</h2>
+                    </div>
+
+                    <div class="glass-panel" style="border-radius: 24px; padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(249, 115, 22, 0.2) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #FBBF24, #F97316); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 0 25px rgba(251,191,36,0.5);">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; color: #FFFFFF; font-weight: 800; margin: 0;">MediaSession & Lock Screen</h3>
+                        <p style="color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; line-height: 1.4;">Customize background notifications, lock screen HD artwork, and media controller actions.</p>
+                    </div>
+
+                    <div class="sub-settings-container">
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Dynamic Lock Screen Artwork</h4>
+                                <p>Display full-resolution artist artwork and album cover on device lock screen</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingLockArtworkToggle" ${lockArtwork ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Rich Media Controls</h4>
+                                <p>Provide seek forward/backward, next, and previous buttons in system notification</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingRichControlsToggle" ${richControls ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Live Synced Lyrics in Subtitle</h4>
+                                <p>Stream real-time vocal lyrics line in the notification subtitle when available</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingLiveLyricsToggle" ${liveLyrics ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-option-row">
+                            <div class="settings-option-text">
+                                <h4>Persistent Notification</h4>
+                                <p>Keep the media notification pinned during playback to prevent OS from killing audio</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingPersistentNotifToggle" ${persistent ? 'checked' : ''}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('settingLockArtworkToggle')?.addEventListener('change', (e) => {
+                setSettingState('lockscreen_artwork', e.target.checked);
+                showNotification(`Lock screen artwork ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingRichControlsToggle')?.addEventListener('change', (e) => {
+                setSettingState('rich_mediasession', e.target.checked);
+                showNotification(`Rich media controls ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingLiveLyricsToggle')?.addEventListener('change', (e) => {
+                setSettingState('notif_lyrics', e.target.checked);
+                showNotification(`Notification lyrics ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
+            document.getElementById('settingPersistentNotifToggle')?.addEventListener('change', (e) => {
+                setSettingState('notif_persistent', e.target.checked);
+                showNotification(`Persistent notification ${e.target.checked ? 'enabled' : 'disabled'}`, 'info');
+            });
+
         } else {
             dynamicContent.innerHTML = `
                 <div class="settings-view-wrapper">
