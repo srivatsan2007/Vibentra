@@ -178,5 +178,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // 6. Interactive FAQ Accordion
+    const faqCards = document.querySelectorAll('.faq-card');
+    faqCards.forEach(card => {
+        const questionBtn = card.querySelector('.faq-question');
+        questionBtn?.addEventListener('click', () => {
+            const isOpen = card.classList.contains('open');
+            faqCards.forEach(c => {
+                c.classList.remove('open');
+                c.querySelector('.faq-question')?.setAttribute('aria-expanded', 'false');
+            });
+            if (!isOpen) {
+                card.classList.add('open');
+                questionBtn.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
     console.log("🚀 Vibentra Portfolio v1.9.0 loaded successfully! Created by SRIVATSAN R.");
 });

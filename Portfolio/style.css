@@ -1422,6 +1422,115 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==========================================================================
+   FAQ & HELP HUB SECTION
+   ========================================================================== */
+.faq-section {
+    padding: 60px 0 100px 0;
+}
+
+.faq-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.faq-card {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.faq-card:hover {
+    border-color: rgba(124, 58, 237, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.faq-card.open {
+    background: var(--bg-card-hover);
+    border-color: var(--glass-border-glow);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 25px var(--primary-glow);
+}
+
+.faq-question {
+    width: 100%;
+    padding: 22px 26px;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    font-size: 1.12rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.faq-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.faq-title i {
+    font-size: 1.15rem;
+    width: 24px;
+    flex-shrink: 0;
+}
+
+.faq-chevron {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.faq-card.open .faq-chevron {
+    transform: rotate(180deg);
+    color: var(--secondary);
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s ease;
+    padding: 0 26px;
+}
+
+.faq-card.open .faq-answer {
+    max-height: 250px;
+    padding: 0 26px 22px 26px;
+}
+
+.faq-answer p {
+    color: var(--text-secondary);
+    font-size: 0.96rem;
+    line-height: 1.65;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 14px;
+}
+
+.faq-answer p strong {
+    color: #FFFFFF;
+}
+
+.faq-answer code {
+    background: rgba(255, 255, 255, 0.1);
+    color: #38BDF8;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+}
+
+/* ==========================================================================
    FOOTER
    ========================================================================== */
 .footer {
