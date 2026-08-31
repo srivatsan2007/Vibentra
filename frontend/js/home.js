@@ -84,7 +84,7 @@ const initHome = () => {
                 updateBatteryState();
                 battery.addEventListener('levelchange', updateBatteryState);
                 battery.addEventListener('chargingchange', updateBatteryState);
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         window.applyBatteryMode = applyBatteryMode;
@@ -325,9 +325,9 @@ const initHome = () => {
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 const docEl = document.documentElement;
                 if (docEl.requestFullscreen) {
-                    docEl.requestFullscreen().catch(() => {});
+                    docEl.requestFullscreen().catch(() => { });
                 } else if (docEl.webkitRequestFullscreen) {
-                    docEl.webkitRequestFullscreen().catch(() => {});
+                    docEl.webkitRequestFullscreen().catch(() => { });
                 }
             }
         };
@@ -342,9 +342,9 @@ const initHome = () => {
                     showNotification('Entered Fullscreen Mode', 'info');
                 } else {
                     if (document.exitFullscreen) {
-                        document.exitFullscreen().catch(() => {});
+                        document.exitFullscreen().catch(() => { });
                     } else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen().catch(() => {});
+                        document.webkitExitFullscreen().catch(() => { });
                     }
                     fullScreenToggleBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
                     showNotification('Exited Fullscreen Mode', 'info');
@@ -690,7 +690,7 @@ const initHome = () => {
             if (mainContentEl) {
                 mainContentEl.scrollTo({ top: 0, behavior: 'smooth' });
             }
-        } catch (e) {}
+        } catch (e) { }
 
         const navDockPill = document.querySelector('.mobile-nav-dock-pill');
         const searchCircle = document.querySelector('.mobile-nav-search-circle');
@@ -1762,7 +1762,7 @@ const initHome = () => {
                             config.defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
                         }
                     }
-                }).catch(() => {});
+                }).catch(() => { });
             }
         };
 
@@ -1858,7 +1858,7 @@ const initHome = () => {
 
         // Initial Load with Stored Language Preference
         loadLanguageData(storedLang);
-    }    function renderSearch(initialQuery = '') {
+    } function renderSearch(initialQuery = '') {
         const moodsAndMoments = [
             { id: 'chill', title: 'Chill', gradient: 'linear-gradient(135deg, #d95c47, #e08353)', query: 'Chill Coffee Blend', img: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&q=80' },
             { id: 'commute', title: 'Commute', gradient: 'linear-gradient(135deg, #cc3370, #882255)', query: 'Commute Feel Good', img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&q=80' },

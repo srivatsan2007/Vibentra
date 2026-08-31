@@ -4933,18 +4933,18 @@ body {
         position: sticky !important;
         top: 0 !important;
         z-index: 900 !important;
-        margin-left: -1rem !important;
-        margin-right: -1rem !important;
-        margin-top: -0.75rem !important;
-        width: calc(100% + 2rem) !important;
+        margin: 0 0 1rem 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
         border-radius: 0 0 20px 20px !important;
         border-left: none !important;
         border-right: none !important;
         border-top: none !important;
         padding: 0.8rem 1.2rem !important;
-        background: rgba(12, 16, 43, 0.88) !important;
+        background: rgba(14, 53, 56, 0.85) !important;
         backdrop-filter: blur(30px) saturate(190%) !important;
         -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+        box-sizing: border-box !important;
     }
 
     #dynamicContent {
@@ -5380,16 +5380,15 @@ input:checked+.toggle-slider:before {
    SPOTIFY & YOUTUBE MUSIC REDESIGN (SEARCH & PLAYLIST PAGES)
    ============================================================ */
 
-/* 1. SEARCH PAGE, PLAYLIST PAGE & HOME PAGE REDESIGN WITH 89% ZOOM & 93% CANVAS WIDTH */
+/* 1. SEARCH PAGE, PLAYLIST PAGE & HOME PAGE REDESIGN WITH BALANCED CANVAS WIDTH */
 .spotify-search-page,
 .spotify-playlist-view,
 .spotify-home-page {
-    zoom: 0.89 !important;
-    width: 93% !important;
-    max-width: 93% !important;
-    padding: 10px 4px 30px 4px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 0 30px 0 !important;
     box-sizing: border-box !important;
-    margin: 0 auto !important;
+    margin: 0 !important;
     animation: fadeInView 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
     scroll-behavior: smooth !important;
 }
@@ -5785,19 +5784,21 @@ input:checked+.toggle-slider:before {
     }
 
     .main-content {
-        padding: 0.75rem 0.85rem 170px 0.85rem !important;
+        padding: 0.75rem 1rem 170px 1rem !important;
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
         background: transparent !important;
+        overflow-x: hidden !important;
     }
 
     /* Topbar Mobile Touch Optimizations */
     .topbar {
-        width: 95% !important;
-        max-width: 95% !important;
-        margin: 0 auto 1rem auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 1rem 0 !important;
         padding: 0.6rem 0.9rem !important;
+        box-sizing: border-box !important;
         gap: 8px !important;
     }
 
@@ -5916,10 +5917,11 @@ input:checked+.toggle-slider:before {
 
     /* Settings Cards Mobile */
     .settings-view-wrapper {
-        width: 90% !important;
-        max-width: 90% !important;
-        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
         padding-bottom: 80px !important;
+        box-sizing: border-box !important;
     }
 
     .settings-card-item {
@@ -6837,10 +6839,10 @@ html.battery-saver-active * {
 
 .home-neon-page,
 .favorites-view-page {
-    width: 94% !important;
-    max-width: 94% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
 }
 
 .neon-lang-dropdown {

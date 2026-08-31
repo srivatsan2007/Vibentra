@@ -1,18 +1,17 @@
 {
-  "version": "v2.0.0",
-  "swVersion": "vibentra-cache-v128",
-  "releaseDate": "31 August 2026, 8:45 pm",
+  "version": "v2.0.1",
+  "swVersion": "vibentra-cache-v129",
+  "releaseDate": "31 August 2026, 9:02 pm",
   "size": "2.8 MB",
-  "importantNote": "Universal Nordic Teal Gradient (#138086), wide squircle cards, and rich collection detail browsing for mobile & desktop.",
+  "importantNote": "Fixed right-side mobile layout gap, perfectly symmetrical viewport padding without altering zoom levels.",
   "changelog": [
     {
-      "category": "Nordic Teal Theme & Mobile Engine Update (v2.0.0)",
+      "category": "Mobile Symmetrical Alignment & Gap Fix (v2.0.1)",
       "items": [
-        "Enforced Nordic Teal radial gradient (#138086 -> #061A1C) across all mobile and desktop layouts.",
-        "Removed opaque black viewport overlays in mobile queries.",
-        "Fixed card sizing in horizontal shelves to prevent flex shrinking.",
-        "Clicking any album, playlist, artist mix, or chart opens full tracklist view before playing.",
-        "Bumped Service Worker cache to v128 to immediately purge stale mobile cache."
+        "Eliminated the right-side gap on mobile views by unifying container padding and removing double width narrowing.",
+        "Maintained 100% natural 1.0x zoom and aspect ratio across all devices.",
+        "Symmetrically aligned topbar, curated hero card, horizontal shelves, and settings.",
+        "Bumped Service Worker cache to v129."
       ]
     }
   ]
