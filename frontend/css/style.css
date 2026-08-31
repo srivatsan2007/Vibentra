@@ -3173,7 +3173,7 @@ input {
     }
 
     body {
-        background-color: #000000 !important;
+        background-color: transparent !important;
         overflow: hidden;
     }
 
@@ -3184,7 +3184,7 @@ input {
         gap: 8px;
         padding: 8px;
         height: calc(100vh - 90px);
-        background: #000000;
+        background: transparent !important;
     }
 
     /* Left Library Sidebar Panel */
@@ -3195,14 +3195,16 @@ input {
         left: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        background: #121212 !important;
-        border-radius: 12px;
+        background: rgba(14, 53, 56, 0.65) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(19, 128, 134, 0.25) !important;
+        border-radius: 16px;
         padding: 16px;
         display: flex;
         flex-direction: column;
         gap: 16px;
-        border: none !important;
-        box-shadow: none !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
         overflow-y: auto;
     }
 
@@ -3250,8 +3252,11 @@ input {
     .main-content {
         margin: 0 !important;
         height: 100% !important;
-        background: #121212 !important;
-        border-radius: 12px;
+        background: rgba(6, 26, 28, 0.55) !important;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(19, 128, 134, 0.2) !important;
+        border-radius: 16px;
         padding: 0 !important;
         display: flex;
         flex-direction: column;
@@ -3262,11 +3267,12 @@ input {
         position: sticky;
         top: 0;
         z-index: 50;
-        background: rgba(18, 18, 18, 0.95) !important;
-        backdrop-filter: blur(12px);
+        background: rgba(6, 26, 28, 0.85) !important;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         padding: 12px 24px !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 12px 12px 0 0;
+        border-bottom: 1px solid rgba(19, 128, 134, 0.2) !important;
+        border-radius: 16px 16px 0 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -3430,8 +3436,11 @@ input {
     /* Right Now-Playing Panel */
     .now-playing-sidebar {
         height: 100%;
-        background: #121212 !important;
-        border-radius: 12px;
+        background: rgba(14, 53, 56, 0.65) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(19, 128, 134, 0.25) !important;
+        border-radius: 16px;
         padding: 16px;
         display: flex;
         flex-direction: column;
@@ -4827,20 +4836,19 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     overflow-x: hidden !important;
-    background-color: #000000 !important;
-    background: #000000 !important;
+    background: radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%) !important;
+    background-attachment: fixed !important;
 }
 
 .app-layout {
     display: flex;
-    width: 108.6956% !important;
-    min-width: 108.6956% !important;
-    min-height: 108.6956vh !important;
-    zoom: 0.92;
+    width: 100% !important;
+    min-width: 100% !important;
+    min-height: 100vh !important;
     overflow: hidden;
     position: relative;
     box-sizing: border-box;
-    background: #000000 !important;
+    background: transparent !important;
 }
 
 .main-content {
@@ -4857,7 +4865,7 @@ body {
     position: relative;
     z-index: 2;
     -webkit-overflow-scrolling: touch;
-    background: #000000 !important;
+    background: transparent !important;
 }
 
 #dynamicContent {
@@ -5772,8 +5780,8 @@ input:checked+.toggle-slider:before {
     html {
         width: 100% !important;
         overflow-x: hidden !important;
-        background: #000000 !important;
-        background-color: #000000 !important;
+        background: radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%) !important;
+        background-attachment: fixed !important;
     }
 
     .main-content {
@@ -5781,7 +5789,7 @@ input:checked+.toggle-slider:before {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
-        background: #000000 !important;
+        background: transparent !important;
     }
 
     /* Topbar Mobile Touch Optimizations */
