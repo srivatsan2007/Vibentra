@@ -290,6 +290,81 @@ const downloadAudio = async (req, res) => {
     }
 };
 
+const getLaunchModules = async (req, res) => {
+    const lang = (req.query.lang || req.query.language || 'english').toLowerCase();
+    try {
+        const url = `https://www.jiosaavn.com/api.php?__call=webapi.getLaunchData&api_version=4&_format=json&_marker=0&ctx=web6dot0`;
+        const headers = {
+            ...DEFAULT_HEADERS,
+            'Cookie': `L=${encodeURIComponent(lang)};`
+        };
+
+        const json = await new Promise((resolve) => {
+            try {
+                const parsedUrl = new URL(url);
+                const options = {
+                    hostname: parsedUrl.hostname,
+                    path: parsedUrl.pathname + parsedUrl.search,
+                    headers: headers,
+                    timeout: 7000
+                };
+                const request = https.get(options, (response) => {
+                    let data = '';
+                    response.on('data', chunk => data += chunk);
+                    response.on('end', () => {
+                        try {
+                            resolve(JSON.parse(data));
+                        } catch(e) {
+                            resolve({});
+                        }
+                    });
+                });
+                request.on('error', () => resolve({}));
+                request.on('timeout', () => { request.destroy(); resolve({}); });
+            } catch(e) {
+                resolve({});
+            }
+        });
+
+        const formatItem = (item, defaultType = 'playlist') => {
+            if (!item) return null;
+            let cover = item.image ? (typeof item.image === 'string' ? item.image.replace('150x150', '500x500') : '') : '';
+            return {
+                id: item.id,
+                title: item.title ? item.title.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&') : (item.name || ''),
+                subtitle: item.subtitle ? item.subtitle.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&') : (item.header_desc || item.artist || item.more_info?.firstname || ''),
+                cover: cover,
+                type: item.type || defaultType,
+                provider: 'JioSaavn',
+                providerId: 'jiosaavn',
+                count: item.more_info?.song_count || item.count || '',
+                query: item.more_info?.query || item.title
+            };
+        };
+
+        const trending = (json.new_trending || []).map(t => {
+            if (t.type === 'song') return formatTrack(t);
+            return formatItem(t, 'album');
+        }).filter(Boolean);
+
+        const charts = (json.charts || []).map(c => formatItem(c, 'playlist')).filter(Boolean);
+        const playlists = (json.top_playlists || []).map(p => formatItem(p, 'playlist')).filter(Boolean);
+        const albums = (json.new_albums || []).map(a => formatItem(a, 'album')).filter(Boolean);
+        const artists = (json.artist_recos || []).map(ar => formatItem(ar, 'artist')).filter(Boolean);
+
+        return res.json({
+            trending,
+            charts,
+            playlists,
+            albums,
+            artists
+        });
+    } catch (err) {
+        console.error("getLaunchModules error:", err);
+        res.status(500).json({ error: "Failed to load launch modules" });
+    }
+};
+
 module.exports = {
     searchJioSaavn,
     searchAllJioSaavn,
@@ -298,6 +373,8 @@ module.exports = {
     getLyrics,
     recognizeAudio,
     getSongDetails,
-    downloadAudio
+    downloadAudio,
+    getLaunchModules
 };
+
 

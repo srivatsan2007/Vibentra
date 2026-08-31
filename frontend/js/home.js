@@ -94,6 +94,16 @@ const initHome = () => {
     // Apply Theme
     const themes = {
         'default': {
+            primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)',
+            orb1: '#138086', orb2: '#22D3EE', orb3: '#0D9488', orb4: '#14B8A6'
+        },
+        'teal': {
+            primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)',
+            bgGradient: 'radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)',
+            orb1: '#138086', orb2: '#22D3EE', orb3: '#0D9488', orb4: '#14B8A6'
+        },
+        'purple': {
             primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: 'rgba(30, 41, 59, 0.7)',
             bgGradient: 'radial-gradient(circle at 20% 20%, #1A1F4C 0%, #0C102B 50%, #07091B 100%)',
             orb1: '#7C3AED', orb2: '#06B6D4', orb3: '#EC4899', orb4: '#3B82F6'
@@ -166,7 +176,7 @@ const initHome = () => {
         }
     };
 
-    const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
+    const savedTheme = localStorage.getItem('vibentra_theme') || 'teal';
     window.applyTheme(savedTheme);
 
     // Check Auth State
@@ -1120,6 +1130,115 @@ const initHome = () => {
         return card;
     }
 
+    // Helper to create Trending Mix Cards
+    function createTrendingMixCard(mix) {
+        const card = document.createElement('div');
+        card.className = 'trending-mix-card';
+        card.style.setProperty('--mix-c1', mix.color1 || '#7C3AED');
+        card.style.setProperty('--mix-c2', mix.color2 || '#06B6D4');
+
+        card.innerHTML = `
+            <div class="trending-mix-header">
+                <span class="trending-mix-tag">${mix.tag || 'TRENDING MIX'}</span>
+                <div class="trending-mix-icon">
+                    <i class="${mix.icon || 'fa-solid fa-bolt'}"></i>
+                </div>
+            </div>
+            <div class="trending-mix-body">
+                <h4 title="${mix.title}">${mix.title}</h4>
+                <p title="${mix.subtitle}">${mix.subtitle}</p>
+            </div>
+            <div class="trending-mix-footer">
+                <span><i class="fa-solid fa-headphones"></i> ${mix.plays || '50K+ plays'}</span>
+                <span><i class="fa-solid fa-play"></i> Tap to Play</span>
+            </div>
+        `;
+
+        card.addEventListener('click', async () => {
+            showNotification(`Loading '${mix.title}'...`);
+            const tracks = await searchService.searchSongs(mix.query);
+            if (tracks && tracks.length > 0) {
+                musicService.playContext(tracks, tracks[0]);
+            } else {
+                showNotification(`No songs found for ${mix.title}`, 'error');
+            }
+        });
+
+        return card;
+    }
+
+    // Helper to create Artist Mix Playlist Cards
+    function createArtistMixCard(artist) {
+        const card = document.createElement('div');
+        card.className = 'artist-mix-card';
+        const cover = artist.cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=7C3AED&color=fff&size=200`;
+
+        card.innerHTML = `
+            <div class="artist-mix-img-wrap">
+                <img src="${cover}" alt="${artist.name}" loading="lazy">
+                <span class="artist-mix-badge">${artist.badge || 'ARTIST MIX'}</span>
+                <button class="artist-mix-play-btn" title="Play ${artist.name} Hits">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+            <h4 title="${artist.name}">${artist.name}</h4>
+            <p title="${artist.subtitle || 'Essential Hits'}">${artist.subtitle || 'Essential Hits'}</p>
+        `;
+
+        const playArtistHits = async (e) => {
+            if (e) e.stopPropagation();
+            showNotification(`Loading ${artist.name} Hits...`);
+            const query = artist.query || `${artist.name} top hits songs`;
+            const tracks = await searchService.searchSongs(query);
+            if (tracks && tracks.length > 0) {
+                musicService.playContext(tracks, tracks[0]);
+            } else {
+                showNotification(`Could not load tracks for ${artist.name}`, 'error');
+            }
+        };
+
+        card.querySelector('.artist-mix-play-btn')?.addEventListener('click', playArtistHits);
+        card.addEventListener('click', playArtistHits);
+
+        return card;
+    }
+
+    // Helper to create Community Playlist Cards
+    function createCommunityPlaylistCard(community) {
+        const card = document.createElement('div');
+        card.className = 'community-playlist-card';
+        const cover = community.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
+
+        card.innerHTML = `
+            <div class="community-playlist-img-wrap">
+                <img src="${cover}" alt="${community.title}" loading="lazy">
+                <span class="community-tag-badge">${community.tag || 'COMMUNITY'}</span>
+                <button class="community-play-btn" title="Play ${community.title}">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+            <h4 title="${community.title}">${community.title}</h4>
+            <p title="${community.subtitle}">${community.subtitle}</p>
+        `;
+
+        const playCommunityPlaylist = async (e) => {
+            if (e) e.stopPropagation();
+            showNotification(`Loading '${community.title}'...`);
+            const query = community.query || community.title;
+            const tracks = await searchService.searchSongs(query);
+            if (tracks && tracks.length > 0) {
+                musicService.playContext(tracks, tracks[0]);
+            } else {
+                showNotification(`Could not load ${community.title}`, 'error');
+            }
+        };
+
+        card.querySelector('.community-play-btn')?.addEventListener('click', playCommunityPlaylist);
+        card.addEventListener('click', playCommunityPlaylist);
+
+        return card;
+    }
+
     // Views Rendering
     async function renderHome() {
         const currentUsername = localStorage.getItem('vibentra_user_name') || window.currentUserProfile?.username || document.getElementById('welcomeName')?.textContent || (auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]) || 'User';
@@ -1156,10 +1275,12 @@ const initHome = () => {
                 <!-- Sticky Neon Pill Filter Chips Row -->
                 <div class="neon-chips-shelf" id="homeNeonFilterChips">
                     <button class="neon-chip active" data-filter="all">All</button>
-                    <button class="neon-chip" data-filter="new-release">New Release</button>
+                    <button class="neon-chip" data-filter="new-release">New Releases</button>
+                    <button class="neon-chip" data-filter="artist-mix">Artist Mixes</button>
                     <button class="neon-chip" data-filter="trending">Trending</button>
+                    <button class="neon-chip" data-filter="community">Community Vibes</button>
                     <button class="neon-chip" data-filter="top-hits">Top Hits</button>
-                    <button class="neon-chip" data-filter="chill">Chill</button>
+                    <button class="neon-chip" data-filter="chill">Chill & Relax</button>
                     <button class="neon-chip" data-filter="workout">Workout</button>
                     <button class="neon-chip" data-filter="tamil">Tamil Hits</button>
                     <button class="neon-chip" data-filter="bollywood">Bollywood</button>
@@ -1194,10 +1315,24 @@ const initHome = () => {
                     </div>
                 </div>
 
+                <!-- 1. TRENDING SONGS MIX SHELF -->
+                <div class="squircle-section">
+                    <div class="squircle-section-header">
+                        <div class="section-title-wrap">
+                            <h2>Trending Songs Mix</h2>
+                            <span class="section-badge-pill hot"><i class="fa-solid fa-fire"></i> Hot Mix</span>
+                        </div>
+                        <span class="squircle-see-all" id="seeAllTrendingMixBtn">Explore all</span>
+                    </div>
+                    <div class="squircle-shelf-scroll" id="homeTrendingMixGrid">
+                        <p style="color: var(--primary); padding: 15px;">Loading trending mixes...</p>
+                    </div>
+                </div>
+
                 <!-- Top Daily Playlists / Trending Hits (Squircle Row UI) -->
                 <div class="squircle-section">
                     <div class="squircle-section-header">
-                        <h2>Top daily playlists</h2>
+                        <h2>Top daily hits & charts</h2>
                         <span class="squircle-see-all" id="seeAllTrendingBtn">See all</span>
                     </div>
                     <div class="squircle-track-list" id="homeTopDailyList">
@@ -1205,23 +1340,54 @@ const initHome = () => {
                     </div>
                 </div>
 
-                <!-- Latest Albums & New Releases Shelf -->
+                <!-- 2. NEWLY RELEASED PLAYLISTS & ALBUMS SHELF -->
                 <div class="squircle-section">
                     <div class="squircle-section-header">
-                        <h2>New Releases & Albums</h2>
+                        <div class="section-title-wrap">
+                            <h2>Newly Released Playlists & Albums</h2>
+                            <span class="section-badge-pill fresh"><i class="fa-solid fa-sparkles"></i> Fresh</span>
+                        </div>
+                        <span class="squircle-see-all" id="seeAllNewReleasesBtn">Browse all</span>
                     </div>
                     <div class="squircle-shelf-scroll" id="homeLatestAlbumsGrid">
-                        <p style="color: var(--primary); padding: 15px;">Loading latest albums...</p>
+                        <p style="color: var(--primary); padding: 15px;">Loading latest new releases...</p>
                     </div>
                 </div>
 
-                <!-- Popular Artists Shelf -->
+                <!-- 3. ARTIST PLAYLISTS & SPOTLIGHT SHELF -->
                 <div class="squircle-section">
                     <div class="squircle-section-header">
-                        <h2>Popular Artists</h2>
+                        <div class="section-title-wrap">
+                            <h2>Artist Playlists & Essentials</h2>
+                            <span class="section-badge-pill"><i class="fa-solid fa-star"></i> Curated</span>
+                        </div>
+                    </div>
+                    <div class="squircle-shelf-scroll" id="homeArtistPlaylistsGrid">
+                        <p style="color: var(--primary); padding: 15px;">Loading artist playlists...</p>
+                    </div>
+                </div>
+
+                <!-- Popular Artists Round Shelf -->
+                <div class="squircle-section">
+                    <div class="squircle-section-header">
+                        <h2>Spotlight Artists</h2>
                     </div>
                     <div class="squircle-shelf-scroll" id="homeArtistsGrid">
                         <p style="color: var(--primary); padding: 15px;">Loading artists...</p>
+                    </div>
+                </div>
+
+                <!-- 4. TRENDING COMMUNITY PLAYLISTS SHELF -->
+                <div class="squircle-section">
+                    <div class="squircle-section-header">
+                        <div class="section-title-wrap">
+                            <h2>Trending Community Playlists</h2>
+                            <span class="section-badge-pill community"><i class="fa-solid fa-users"></i> Vibes</span>
+                        </div>
+                        <span class="squircle-see-all" id="seeAllCommunityBtn">View vibes</span>
+                    </div>
+                    <div class="squircle-shelf-scroll" id="homeCommunityPlaylistsGrid">
+                        <p style="color: var(--primary); padding: 15px;">Loading community playlists...</p>
                     </div>
                 </div>
             </div>
@@ -1232,6 +1398,9 @@ const initHome = () => {
         document.getElementById('homeQuickSearchBtn')?.addEventListener('click', () => loadView('search'));
         document.getElementById('homeQuickFavBtn')?.addEventListener('click', () => loadView('favorites'));
         document.getElementById('seeAllTrendingBtn')?.addEventListener('click', () => loadView('search'));
+        document.getElementById('seeAllTrendingMixBtn')?.addEventListener('click', () => loadView('search'));
+        document.getElementById('seeAllNewReleasesBtn')?.addEventListener('click', () => loadView('search'));
+        document.getElementById('seeAllCommunityBtn')?.addEventListener('click', () => loadView('search'));
 
         let activeTrendingTracks = [];
         let heroTrack = null;
@@ -1243,6 +1412,28 @@ const initHome = () => {
                     albumsQuery: 'latest tamil movie album songs 2026',
                     tag: 'TAMIL HITS',
                     defaultDesc: 'Top Trending Kollywood & Tamil Melodies',
+                    trendingMixes: [
+                        { title: 'Kollywood Viral 50', subtitle: 'Top trending Tamil songs right now', query: 'latest tamil viral hit songs 2026', tag: 'VIRAL 50', color1: '#EF4444', color2: '#F59E0B', icon: 'fa-solid fa-fire', plays: '120K+ plays' },
+                        { title: 'Anirudh vs Santhosh Beat Mix', subtitle: 'High energy dance & mass tracks', query: 'anirudh santhosh narayanan dance songs', tag: 'DANCE MIX', color1: '#7C3AED', color2: '#EC4899', icon: 'fa-solid fa-compact-disc', plays: '95K+ plays' },
+                        { title: '2K Romantic Melodies', subtitle: 'Soulful Yuvan & Harris love classics', query: 'tamil 2k love melodies yuvan harris', tag: 'MELODIES', color1: '#06B6D4', color2: '#3B82F6', icon: 'fa-solid fa-heart', plays: '88K+ plays' },
+                        { title: 'Midnight Drive Tamil Lo-Fi', subtitle: 'Slowed + Reverb late night bliss', query: 'tamil lofi slow reverb midnight songs', tag: 'LO-FI VIBE', color1: '#8B5CF6', color2: '#06B6D4', icon: 'fa-solid fa-moon', plays: '64K+ plays' },
+                        { title: 'Acoustic Sunset Chill', subtitle: 'Calm unplugged acoustic melodies', query: 'tamil acoustic unplugged guitar songs', tag: 'SUNSET', color1: '#F97316', color2: '#EC4899', icon: 'fa-solid fa-guitar', plays: '45K+ plays' }
+                    ],
+                    artistMixes: [
+                        { name: 'Anirudh Ravichander', subtitle: 'Rockstar Anthems & Mass Hits', query: 'anirudh ravichander top songs', cover: 'https://c.saavncdn.com/artists/Anirudh_Ravichander_004_20230324075147_500x500.jpg', badge: 'ROCKSTAR' },
+                        { name: 'A.R. Rahman', subtitle: 'Isai Puyal Evergreen Classics', query: 'ar rahman tamil superhit songs', cover: 'https://c.saavncdn.com/artists/A_R_Rahman_004_20231124115304_500x500.jpg', badge: 'MAESTRO' },
+                        { name: 'Yuvan Shankar Raja', subtitle: 'U1 Signature Drugs & Melodies', query: 'yuvan shankar raja top hits', cover: 'https://c.saavncdn.com/artists/Yuvan_Shankar_Raja_003_20221019053805_500x500.jpg', badge: 'DRUG U1' },
+                        { name: 'Harris Jayaraj', subtitle: 'Pure 2000s Ear Candy Vibes', query: 'harris jayaraj evergreen hits', cover: 'https://c.saavncdn.com/artists/Harris_Jayaraj_002_20230221094002_500x500.jpg', badge: 'CLASSIC' },
+                        { name: 'Sid Sriram', subtitle: 'Soul-stirring Vocals & Hits', query: 'sid sriram tamil love melodies', cover: 'https://c.saavncdn.com/artists/Sid_Sriram_003_20230221093952_500x500.jpg', badge: 'VOCALIST' },
+                        { name: 'G.V. Prakash Kumar', subtitle: 'Soulful Blockbuster Tunes', query: 'gv prakash kumar hit songs', cover: 'https://c.saavncdn.com/artists/G_V_Prakash_Kumar_002_20220614131553_500x500.jpg', badge: 'HITMAKER' }
+                    ],
+                    communityPlaylists: [
+                        { title: 'Chennai Midnight Drive', subtitle: 'Curated by @VibentraTN • 45 Tracks', query: 'tamil night drive songs', cover: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&q=80', tag: 'NIGHT DRIVE' },
+                        { title: 'Monsoon Rain & Coffee Melodies', subtitle: 'Curated by SoundHaven • 32 Tracks', query: 'tamil rain acoustic melodies', cover: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500&q=80', tag: 'RAINY CAFE' },
+                        { title: 'Gym Beast Mode Tamil Hype', subtitle: 'Curated by IronBeats • 50 Tracks', query: 'tamil workout gym mass songs', cover: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500&q=80', tag: 'WORKOUT HYPE' },
+                        { title: '90s Nostalgia Radio', subtitle: 'Curated by VintageTN • 60 Tracks', query: '90s tamil hits ilaiyaraaja spb', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80', tag: '90s RETRO' },
+                        { title: 'Coding Focus Beats Tamil', subtitle: 'Curated by DevBeats • 38 Tracks', query: 'tamil instrumental lofi chill', cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80', tag: 'DEEP FOCUS' }
+                    ],
                     defaultAlbums: [
                         { title: 'Dragon', artist: 'Leon James • 2026', cover: 'https://c.saavncdn.com/712/Dragon-Tamil-2025-20250201121045-500x500.jpg', provider: 'YouTube Music' },
                         { title: 'Kanguva', artist: 'Devi Sri Prasad • 2026', cover: 'https://c.saavncdn.com/393/Kanguva-Tamil-2024-20241113203402-500x500.jpg', provider: 'JioSaavn' },
@@ -1257,6 +1448,28 @@ const initHome = () => {
                     albumsQuery: 'latest hindi bollywood album songs 2026',
                     tag: 'BOLLYWOOD HITS',
                     defaultDesc: 'Top Trending Hindi & Bollywood Blockbusters',
+                    trendingMixes: [
+                        { title: 'Bollywood Mega Chartbusters', subtitle: 'The biggest Bollywood hits right now', query: 'latest bollywood top hits 2026', tag: 'TOP 50', color1: '#EF4444', color2: '#F59E0B', icon: 'fa-solid fa-fire', plays: '150K+ plays' },
+                        { title: 'Arijit & Pritam Love Mix', subtitle: 'Pure soulful romance and emotions', query: 'arijit singh pritam romantic songs', tag: 'ROMANCE', color1: '#EC4899', color2: '#8B5CF6', icon: 'fa-solid fa-heart', plays: '130K+ plays' },
+                        { title: 'Desi Party & Club Hype', subtitle: 'Non-stop DJ dance anthems', query: 'bollywood party club dance songs', tag: 'PARTY MIX', color1: '#7C3AED', color2: '#06B6D4', icon: 'fa-solid fa-compact-disc', plays: '98K+ plays' },
+                        { title: 'Midnight Lo-Fi Bollywood', subtitle: 'Slowed reverb night drive essentials', query: 'bollywood slow reverb lofi songs', tag: 'LO-FI VIBE', color1: '#06B6D4', color2: '#3B82F6', icon: 'fa-solid fa-moon', plays: '75K+ plays' },
+                        { title: 'Sufi Soul Sanctuary', subtitle: 'Ethereal acoustic sufi melodies', query: 'bollywood sufi acoustic guitar songs', tag: 'SUFI CHILL', color1: '#10B981', color2: '#06B6D4', icon: 'fa-solid fa-leaf', plays: '52K+ plays' }
+                    ],
+                    artistMixes: [
+                        { name: 'Arijit Singh', subtitle: 'Voice of a Generation', query: 'arijit singh top hits', cover: 'https://c.saavncdn.com/artists/Arijit_Singh_002_20230323062147_500x500.jpg', badge: 'KING' },
+                        { name: 'Pritam', subtitle: 'Blockbuster Melodies & Hits', query: 'pritam superhit bollywood songs', cover: 'https://c.saavncdn.com/artists/Pritam_003_20230221094017_500x500.jpg', badge: 'HITMAKER' },
+                        { name: 'Shreya Ghoshal', subtitle: 'Nightingale Evergreen Classics', query: 'shreya ghoshal best songs', cover: 'https://c.saavncdn.com/artists/Shreya_Ghoshal_004_20230323062157_500x500.jpg', badge: 'LEGEND' },
+                        { name: 'Atif Aslam', subtitle: 'Heartfelt Romance & Ballads', query: 'atif aslam romantic hits', cover: 'https://c.saavncdn.com/artists/Atif_Aslam_004_20230323062206_500x500.jpg', badge: 'SOUL' },
+                        { name: 'Vishal-Shekhar', subtitle: 'Electrifying Party Energy', query: 'vishal shekhar party hits', cover: 'https://c.saavncdn.com/artists/Vishal_Shekhar_002_20230221094031_500x500.jpg', badge: 'ENERGY' },
+                        { name: 'Sachin-Jigar', subtitle: 'Folk, Modern & Soul Fusion', query: 'sachin jigar latest songs', cover: 'https://c.saavncdn.com/artists/Sachin_Jigar_002_20230221094042_500x500.jpg', badge: 'MASTERS' }
+                    ],
+                    communityPlaylists: [
+                        { title: 'Marine Drive Late Night Drive', subtitle: 'Curated by DesiVibes • 40 Tracks', query: 'hindi midnight car drive songs', cover: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&q=80', tag: 'NIGHT DRIVE' },
+                        { title: 'Chai Pe Charcha Lo-Fi Beats', subtitle: 'Curated by ChaiLovers • 35 Tracks', query: 'hindi lofi chill beats', cover: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=500&q=80', tag: 'CHILL BEATS' },
+                        { title: 'Bollywood Gym Beast Mode', subtitle: 'Curated by DesiFit • 48 Tracks', query: 'hindi workout gym high energy songs', cover: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500&q=80', tag: 'PUMP UP' },
+                        { title: '2000s Nostalgia Rewind', subtitle: 'Curated by RetroDesi • 55 Tracks', query: '2000s bollywood superhits kk shaan', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80', tag: '2000s HITS' },
+                        { title: 'Monsoon Rain Chai Melodies', subtitle: 'Curated by MonsoonPulse • 30 Tracks', query: 'hindi romantic rain melodies', cover: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500&q=80', tag: 'MONSOON' }
+                    ],
                     defaultAlbums: [
                         { title: 'Stree 2', artist: 'Sachin-Jigar • 2024', cover: 'https://c.saavncdn.com/488/Stree-2-Hindi-2024-20240830154108-500x500.jpg', provider: 'JioSaavn' },
                         { title: 'Animal', artist: 'Pritam, JAM8, Vishal Mishra', cover: 'https://c.saavncdn.com/791/Animal-Hindi-2023-20231124191336-500x500.jpg', provider: 'YouTube Music' },
@@ -1270,6 +1483,28 @@ const initHome = () => {
                     albumsQuery: 'latest english billboard pop albums 2026',
                     tag: 'FEATURED MIX',
                     defaultDesc: 'The original slow instrumental best playlists.',
+                    trendingMixes: [
+                        { title: 'Billboard Global Hot 50', subtitle: 'The worldwide chart topping tracks', query: 'billboard hot 100 top pop songs 2026', tag: 'HOT 50', color1: '#EF4444', color2: '#F59E0B', icon: 'fa-solid fa-fire', plays: '200K+ plays' },
+                        { title: 'Pop Pulse & Hits', subtitle: 'Top global pop anthems & bangers', query: 'top global pop hits 2026', tag: 'POP PULSE', color1: '#7C3AED', color2: '#EC4899', icon: 'fa-solid fa-bolt', plays: '140K+ plays' },
+                        { title: 'EDM & Club Festival Hype', subtitle: 'Massive festival drops and bass', query: 'edm dance festival hits 2026', tag: 'CLUB BEATS', color1: '#06B6D4', color2: '#3B82F6', icon: 'fa-solid fa-compact-disc', plays: '110K+ plays' },
+                        { title: 'Late Night Lofi Loft', subtitle: 'Chill hip-hop beats for night souls', query: 'lofi hip hop chill beats aesthetic', tag: 'LO-FI VIBE', color1: '#8B5CF6', color2: '#06B6D4', icon: 'fa-solid fa-moon', plays: '92K+ plays' },
+                        { title: 'Sunset Acoustic Chill', subtitle: 'Calm acoustic guitar & vocal blend', query: 'acoustic indie pop chill guitar songs', tag: 'SUNSET', color1: '#F97316', color2: '#EC4899', icon: 'fa-solid fa-sun', plays: '68K+ plays' }
+                    ],
+                    artistMixes: [
+                        { name: 'The Weeknd', subtitle: 'Starboy & After Hours Classics', query: 'the weeknd greatest hits', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80', badge: 'XO' },
+                        { name: 'Taylor Swift', subtitle: 'Eras Anthems & Pop Hits', query: 'taylor swift top hits', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80', badge: 'SWIFTIE' },
+                        { name: 'Billie Eilish', subtitle: 'Visionary Dark Pop & Ballads', query: 'billie eilish hits', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80', badge: 'VISIONARY' },
+                        { name: 'Dua Lipa', subtitle: 'Disco Pop & Dancefloor Anthems', query: 'dua lipa dance pop hits', cover: 'https://images.unsplash.com/photo-1499417265504-37060e8d5144?w=500&q=80', badge: 'CLUB QUEEN' },
+                        { name: 'Ed Sheeran', subtitle: 'Acoustic Magic & Melodies', query: 'ed sheeran top acoustic hits', cover: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=500&q=80', badge: 'ACOUSTIC' },
+                        { name: 'Bruno Mars', subtitle: 'Silk Sonic & 24K Groove', query: 'bruno mars silk sonic hits', cover: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500&q=80', badge: 'GROOVE' }
+                    ],
+                    communityPlaylists: [
+                        { title: 'Midnight Highway Cruiser', subtitle: 'Curated by NeonDrive • 42 Tracks', query: 'synthwave night drive retrowave', cover: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&q=80', tag: 'SYNTHWAVE' },
+                        { title: 'Acoustic Coffee Shop', subtitle: 'Curated by IndieHaven • 35 Tracks', query: 'acoustic indie coffee chill', cover: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=500&q=80', tag: 'COFFEE SHOP' },
+                        { title: 'Beast Mode Workout EDM', subtitle: 'Curated by PumpSociety • 50 Tracks', query: 'high energy gym workout edm', cover: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500&q=80', tag: 'BEAST MODE' },
+                        { title: 'Deep Focus Coding Beats', subtitle: 'Curated by CodeBeats • 40 Tracks', query: 'lofi study focus code beats', cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&q=80', tag: 'DEEP FOCUS' },
+                        { title: 'Golden Hour Sunset Lounge', subtitle: 'Curated by BeachClub • 36 Tracks', query: 'chill tropical house sunset summer', cover: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&q=80', tag: 'SUNSET VIBE' }
+                    ],
                     defaultAlbums: [
                         { title: 'Hit Me Hard and Soft', artist: 'Billie Eilish', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80', provider: 'YouTube Music' },
                         { title: 'Short n Sweet', artist: 'Sabrina Carpenter', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80', provider: 'JioSaavn' },
@@ -1285,12 +1520,75 @@ const initHome = () => {
             const listContainer = document.getElementById('homeTopDailyList');
             const artistsContainer = document.getElementById('homeArtistsGrid');
             const albumsContainer = document.getElementById('homeLatestAlbumsGrid');
+            const trendingMixContainer = document.getElementById('homeTrendingMixGrid');
+            const artistPlaylistsContainer = document.getElementById('homeArtistPlaylistsGrid');
+            const communityPlaylistsContainer = document.getElementById('homeCommunityPlaylistsGrid');
             const heroTag = document.getElementById('curatedHeroTag');
 
             if (heroTag) heroTag.textContent = config.tag;
-            if (listContainer) listContainer.innerHTML = `<p style="color: var(--primary); padding: 20px;">Loading ${language} hits...</p>`;
-            if (albumsContainer) albumsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;">Loading ${language} albums...</p>`;
-            if (artistsContainer) artistsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;">Loading ${language} artists...</p>`;
+            if (listContainer) listContainer.innerHTML = `<p style="color: var(--primary); padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading live ${language} hits...</p>`;
+            if (albumsContainer) albumsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading live new releases...</p>`;
+            if (artistsContainer) artistsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading live artists...</p>`;
+            if (trendingMixContainer) trendingMixContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading live trending mixes...</p>`;
+            if (artistPlaylistsContainer) artistPlaylistsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading live artist playlists...</p>`;
+            if (communityPlaylistsContainer) communityPlaylistsContainer.innerHTML = `<p style="color: var(--primary); padding: 15px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading live community vibes...</p>`;
+
+            // 1. Initial responsive populate with high-speed presets
+            if (trendingMixContainer && config.trendingMixes) {
+                trendingMixContainer.innerHTML = '';
+                config.trendingMixes.forEach(mix => trendingMixContainer.appendChild(createTrendingMixCard(mix)));
+            }
+            if (artistPlaylistsContainer && config.artistMixes) {
+                artistPlaylistsContainer.innerHTML = '';
+                config.artistMixes.forEach(artistMix => artistPlaylistsContainer.appendChild(createArtistMixCard(artistMix)));
+            }
+            if (communityPlaylistsContainer && config.communityPlaylists) {
+                communityPlaylistsContainer.innerHTML = '';
+                config.communityPlaylists.forEach(commPl => communityPlaylistsContainer.appendChild(createCommunityPlaylistCard(commPl)));
+            }
+
+            // 2. Fetch 100% Real-Time Live Discovery Modules from JioSaavn & YouTube Music
+            providerManager.getLaunchModules(language).then(liveModules => {
+                if (!liveModules || !document.getElementById('homeTrendingMixGrid')) return;
+
+                // Live Trending Charts & Mixes
+                if (trendingMixContainer && liveModules.charts && liveModules.charts.length > 0) {
+                    trendingMixContainer.innerHTML = '';
+                    liveModules.charts.slice(0, 10).forEach(chart => {
+                        trendingMixContainer.appendChild(createPlaylistCard(chart));
+                    });
+                }
+
+                // Live Real-Time Artist Stations & Recos
+                if (artistPlaylistsContainer && liveModules.artists && liveModules.artists.length > 0) {
+                    artistPlaylistsContainer.innerHTML = '';
+                    liveModules.artists.slice(0, 8).forEach(art => {
+                        artistPlaylistsContainer.appendChild(createArtistMixCard({
+                            name: art.title || art.name,
+                            subtitle: art.subtitle || 'Artist Radio • Live',
+                            query: art.query || `${art.title || art.name} top hits songs`,
+                            cover: art.cover || art.image,
+                            badge: 'LIVE ARTIST'
+                        }));
+                    });
+                }
+
+                // Live Real-Time Top Curated & Community Playlists
+                if (communityPlaylistsContainer && liveModules.playlists && liveModules.playlists.length > 0) {
+                    communityPlaylistsContainer.innerHTML = '';
+                    liveModules.playlists.slice(0, 10).forEach(pl => {
+                        communityPlaylistsContainer.appendChild(createPlaylistCard(pl));
+                    });
+                }
+
+                // Live Real-Time Newly Released Albums
+                if (albumsContainer && liveModules.albums && liveModules.albums.length > 0) {
+                    albumsContainer.innerHTML = '';
+                    liveModules.albums.slice(0, 12).forEach(album => {
+                        albumsContainer.appendChild(createSquircleAlbumCard(album));
+                    });
+                }
+            }).catch(e => console.warn("Live launch modules sync warning:", e));
 
             try {
                 const results = await searchService.searchSongs(config.trendingQuery);
@@ -1407,26 +1705,25 @@ const initHome = () => {
                 if (listContainer) listContainer.innerHTML = '<p style="color: var(--text-muted);">Failed to load daily hits.</p>';
             }
 
-            // Load Latest Albums for the Language
+            // Load Latest Albums & New Releases for the Language from Provider if not already filled by live modules
             if (albumsContainer) {
                 searchService.searchAll(config.albumsQuery).then(albumRes => {
                     if (!document.getElementById('homeLatestAlbumsGrid')) return;
-                    albumsContainer.innerHTML = '';
                     if (albumRes && albumRes.albums && albumRes.albums.length > 0) {
-                        albumRes.albums.slice(0, 8).forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                        if (albumsContainer.children.length === 0 || albumsContainer.querySelector('p')) {
+                            albumsContainer.innerHTML = '';
+                            albumRes.albums.slice(0, 10).forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                        }
                     } else if (config.defaultAlbums && config.defaultAlbums.length > 0) {
-                        config.defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
-                    } else {
-                        albumsContainer.innerHTML = `<p style="color: var(--text-muted);">No ${language} albums found.</p>`;
+                        if (albumsContainer.children.length === 0 || albumsContainer.querySelector('p')) {
+                            albumsContainer.innerHTML = '';
+                            config.defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
+                        }
                     }
-                }).catch(() => {
-                    if (config.defaultAlbums) {
-                        albumsContainer.innerHTML = '';
-                        config.defaultAlbums.forEach(album => albumsContainer.appendChild(createSquircleAlbumCard(album)));
-                    }
-                });
+                }).catch(() => {});
             }
         };
+
 
         // Wire Language Dropdown
         const langSelect = document.getElementById('langPrefSelect');
@@ -1452,20 +1749,30 @@ const initHome = () => {
                     loadLanguageData(currentLang);
                 } else if (filterType === 'new-release') {
                     const listContainer = document.getElementById('homeTopDailyList');
-                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading new releases...</p>';
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading new releases from provider...</p>';
                     searchService.searchSongs(`new release ${currentLang} songs 2026`).then(res => {
                         if (listContainer && res.length > 0) {
                             listContainer.innerHTML = '';
-                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                            res.slice(0, 12).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
                         }
                     });
+                } else if (filterType === 'artist-mix') {
+                    const artistSection = document.getElementById('homeArtistPlaylistsGrid');
+                    if (artistSection) {
+                        artistSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else if (filterType === 'community') {
+                    const commSection = document.getElementById('homeCommunityPlaylistsGrid');
+                    if (commSection) {
+                        commSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                 } else if (filterType === 'trending') {
                     const listContainer = document.getElementById('homeTopDailyList');
-                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading trending hits...</p>';
+                    if (listContainer) listContainer.innerHTML = '<p style="color: var(--primary); padding: 20px;">Loading trending hits from provider...</p>';
                     searchService.searchSongs(`viral trending ${currentLang} songs 2026`).then(res => {
                         if (listContainer && res.length > 0) {
                             listContainer.innerHTML = '';
-                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                            res.slice(0, 12).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
                         }
                     });
                 } else if (filterType === 'top-hits') {
@@ -1474,7 +1781,7 @@ const initHome = () => {
                     searchService.searchSongs(`top 50 ${currentLang} hits 2026`).then(res => {
                         if (listContainer && res.length > 0) {
                             listContainer.innerHTML = '';
-                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                            res.slice(0, 12).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
                         }
                     });
                 } else if (filterType === 'chill') {
@@ -1483,7 +1790,7 @@ const initHome = () => {
                     searchService.searchSongs(`chill lofi acoustic slow ${currentLang} songs`).then(res => {
                         if (listContainer && res.length > 0) {
                             listContainer.innerHTML = '';
-                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                            res.slice(0, 12).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
                         }
                     });
                 } else if (filterType === 'workout') {
@@ -1492,7 +1799,7 @@ const initHome = () => {
                     searchService.searchSongs(`high energy workout gym ${currentLang} hits`).then(res => {
                         if (listContainer && res.length > 0) {
                             listContainer.innerHTML = '';
-                            res.slice(0, 8).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
+                            res.slice(0, 12).forEach(t => listContainer.appendChild(createSquircleTrackRow(t, res)));
                         }
                     });
                 } else if (filterType === 'tamil') {
@@ -4720,6 +5027,7 @@ const initHome = () => {
             const currentTheme = localStorage.getItem('vibentra_theme') || 'default';
             const themeList = [
                 { id: 'default', name: 'Midnight Purple', color: '#7C3AED' },
+                { id: 'teal', name: 'Nordic Teal', color: '#138086' },
                 { id: 'ocean', name: 'Ocean Blue', color: '#0284C7' },
                 { id: 'forest', name: 'Forest Green', color: '#16A34A' },
                 { id: 'sunset', name: 'Sunset Orange', color: '#EA580C' },

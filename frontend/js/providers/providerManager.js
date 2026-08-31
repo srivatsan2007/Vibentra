@@ -173,8 +173,22 @@ class ProviderManager {
         if (!provider || !provider.enabled || !provider.getLyrics) return null;
         return await provider.getLyrics(trackId);
     }
+
+    async getLaunchModules(language = 'english') {
+        const jiosaavn = this.getProvider('jiosaavn');
+        if (jiosaavn && jiosaavn.enabled && jiosaavn.getLaunchModules) {
+            try {
+                const modules = await this.withTimeout(jiosaavn.getLaunchModules(language), 7500, null);
+                if (modules) return modules;
+            } catch (e) {
+                console.warn("ProviderManager getLaunchModules error:", e);
+            }
+        }
+        return null;
+    }
 }
 
 // Export a singleton instance
 const providerManager = new ProviderManager();
 export default providerManager;
+

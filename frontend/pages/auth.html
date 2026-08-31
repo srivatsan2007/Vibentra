@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Vibentra">
-    <meta name="theme-color" content="#0F172A">
+    <meta name="theme-color" content="#061A1C">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3659/3659784.png" type="image/png">
     <link rel="stylesheet" id="mainCss" href="../css/style.css">
@@ -33,14 +33,14 @@
                 updatePopup.id = 'pwa-update-popup';
                 updatePopup.style.cssText = `
                     position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-                    background: var(--cards, #1E293B); color: white; padding: 15px 20px;
+                    background: var(--cards, #0E3538); color: white; padding: 15px 20px;
                     border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
                     display: none; align-items: center; gap: 15px; z-index: 9999;
-                    border: 1px solid var(--primary, #7C3AED); font-family: sans-serif;
+                    border: 1px solid var(--primary, #138086); font-family: sans-serif;
                 `;
                 updatePopup.innerHTML = `
                     <span style="font-size: 0.95rem;">A new version is available!</span>
-                    <button id="pwa-update-btn" style="background: var(--primary, #7C3AED); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;">Update</button>
+                    <button id="pwa-update-btn" style="background: var(--primary, #138086); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;">Update</button>
                 `;
                 document.body.appendChild(updatePopup);
 

@@ -58,9 +58,11 @@
         });
         
         // Immediately apply theme to prevent FOUC (Flash of Unstyled Content)
-        const savedTheme = localStorage.getItem('vibentra_theme') || 'default';
+        const savedTheme = localStorage.getItem('vibentra_theme') || 'teal';
         const themes = {
-            'default': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#000000', cards: '#121212' },
+            'default': { primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)' },
+            'teal': { primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)' },
+            'purple': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#000000', cards: '#121212' },
             'ocean': { primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: '#0C4A6E' },
             'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
             'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
@@ -68,7 +70,7 @@
             'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' },
             'india': { primary: '#F97316', secondary: '#10B981', accent: '#3B82F6', background: '#0B132B', cards: 'rgba(15, 23, 42, 0.7)' }
         };
-        let theme = themes[savedTheme] || themes['default'];
+        let theme = themes[savedTheme] || themes['teal'] || themes['default'];
         if (savedTheme === 'custom') {
             try {
                 const customObj = JSON.parse(localStorage.getItem('vibentra_custom_theme'));
@@ -80,7 +82,7 @@
         document.documentElement.style.setProperty('--accent', theme.accent);
         document.documentElement.style.setProperty('--background', theme.background);
         document.documentElement.style.setProperty('--cards', theme.cards);
-        document.documentElement.style.backgroundColor = '#000000';
+        document.documentElement.style.backgroundColor = theme.background || '#061A1C';
     </script>
 </head>
 <body>
@@ -248,115 +250,65 @@
 
             <!-- Dashboard Content -->
             <div id="dynamicContent">
-                <!-- Category Chips (Mobile) -->
-                <div class="category-chips mobile-only-chips" style="display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 5px;">
-                    <div class="glass-chip">Podcasts</div>
-                    <div class="glass-chip">Workout</div>
-                    <div class="glass-chip">Feel good</div>
-                    <div class="glass-chip">Romance</div>
-                    <div class="glass-chip">Relax</div>
-                </div>
-                
-                <!-- Welcome Banner -->
-                <div class="section-header" style="margin-bottom: 2rem;">
-                    <h2 style="font-size: 2.5rem; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                        Good Morning, <span id="welcomeName">User</span>!
-                    </h2>
-                </div>
+                <!-- Fallback Loading State (Hydrated dynamically by home.js) -->
+                <div class="home-neon-page view-fade-in" style="padding: 10px 0;">
+                    <div class="squircle-section">
+                        <div class="squircle-section-header">
+                            <div class="section-title-wrap">
+                                <h2>Trending Songs Mix</h2>
+                                <span class="section-badge-pill hot"><i class="fa-solid fa-fire"></i> Hot Mix</span>
+                            </div>
+                        </div>
+                        <div class="squircle-shelf-scroll" id="homeTrendingMixGrid">
+                            <p style="color: var(--primary); padding: 15px;">Loading trending mixes...</p>
+                        </div>
+                    </div>
 
-                <!-- Trending Songs -->
-                <div class="section-header">
-                    <h2>Trending Now</h2>
-                    <a href="#">See All</a>
-                </div>
-                <div class="cards-grid" id="trendingGrid">
-                    <!-- Dummy Cards, to be populated by JS -->
-                    <div class="music-card">
-                        <div class="card-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" alt="Cover">
-                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                    <div class="squircle-section">
+                        <div class="squircle-section-header">
+                            <h2>Top daily hits & charts</h2>
                         </div>
-                        <div class="card-info">
-                            <h3>Midnight City</h3>
-                            <p>M83</p>
+                        <div class="squircle-track-list" id="homeTopDailyList">
+                            <p style="color: var(--primary); padding: 20px;">Loading daily hits...</p>
                         </div>
                     </div>
-                    <div class="music-card">
-                        <div class="card-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80" alt="Cover">
-                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3>Blinding Lights</h3>
-                            <p>The Weeknd</p>
-                        </div>
-                    </div>
-                    <div class="music-card">
-                        <div class="card-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" alt="Cover">
-                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3>Starboy</h3>
-                            <p>The Weeknd, Daft Punk</p>
-                        </div>
-                    </div>
-                    <div class="music-card">
-                        <div class="card-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80" alt="Cover">
-                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3>Levitating</h3>
-                            <p>Dua Lipa</p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Featured Playlists -->
-                <div class="section-header">
-                    <h2>Featured Playlists</h2>
-                    <a href="#">See All</a>
-                </div>
-                <div class="cards-grid">
-                    <div class="music-card">
-                        <div class="card-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80" alt="Playlist">
-                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
+                    <div class="squircle-section">
+                        <div class="squircle-section-header">
+                            <div class="section-title-wrap">
+                                <h2>Newly Released Playlists & Albums</h2>
+                                <span class="section-badge-pill fresh"><i class="fa-solid fa-sparkles"></i> Fresh</span>
+                            </div>
                         </div>
-                        <div class="card-info">
-                            <h3>Chill Vibes</h3>
-                            <p>Vibentra Curated</p>
+                        <div class="squircle-shelf-scroll" id="homeLatestAlbumsGrid">
+                            <p style="color: var(--primary); padding: 15px;">Loading latest new releases...</p>
                         </div>
                     </div>
-                    <div class="music-card">
-                        <div class="card-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80" alt="Playlist">
-                            <div class="play-btn-overlay"><i class="fa-solid fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3>Workout Mix</h3>
-                            <p>High Energy</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Popular Artists -->
-                <div class="section-header">
-                    <h2>Popular Artists</h2>
-                </div>
-                <div class="cards-grid">
-                    <div class="music-card artist-card">
-                        <div class="card-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1549834125-82d3c48159a3?w=500&q=80" alt="Artist">
-                        </div>
-                        <div class="card-info">
-                            <h3>The Weeknd</h3>
-                            <p>Artist</p>
-                        </div>
-                    </div>
-                </div>
 
+                    <div class="squircle-section">
+                        <div class="squircle-section-header">
+                            <div class="section-title-wrap">
+                                <h2>Artist Playlists & Essentials</h2>
+                                <span class="section-badge-pill"><i class="fa-solid fa-star"></i> Curated</span>
+                            </div>
+                        </div>
+                        <div class="squircle-shelf-scroll" id="homeArtistPlaylistsGrid">
+                            <p style="color: var(--primary); padding: 15px;">Loading artist playlists...</p>
+                        </div>
+                    </div>
+
+                    <div class="squircle-section">
+                        <div class="squircle-section-header">
+                            <div class="section-title-wrap">
+                                <h2>Trending Community Playlists</h2>
+                                <span class="section-badge-pill community"><i class="fa-solid fa-users"></i> Vibes</span>
+                            </div>
+                        </div>
+                        <div class="squircle-shelf-scroll" id="homeCommunityPlaylistsGrid">
+                            <p style="color: var(--primary); padding: 15px;">Loading community playlists...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 

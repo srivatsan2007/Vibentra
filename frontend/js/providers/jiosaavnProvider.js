@@ -310,5 +310,53 @@ export default class JioSaavnProvider extends ProviderInterface {
             return null;
         }
     }
+
+    async getLaunchModules(language = 'english') {
+        const lang = String(language).toLowerCase();
+        try {
+            // Try backend /modules endpoint first
+            const data = await this.safeFetch(`/modules?lang=${encodeURIComponent(lang)}`);
+            if (data && (data.charts || data.trending || data.playlists || data.albums || data.artists)) {
+                return data;
+            }
+
+            // Client-side fallback to direct JioSaavn launch API
+            const directUrl = `https://www.jiosaavn.com/api.php?__call=webapi.getLaunchData&api_version=4&_format=json&_marker=0&ctx=web6dot0`;
+            const res = await fetch(directUrl, { headers: { 'Cookie': `L=${lang};` } });
+            if (res.ok) {
+                const json = await res.json();
+                const formatItem = (item, defaultType = 'playlist') => {
+                    if (!item) return null;
+                    let cover = item.image ? (typeof item.image === 'string' ? item.image.replace('150x150', '500x500') : '') : '';
+                    return {
+                        id: item.id,
+                        title: item.title ? item.title.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&') : (item.name || ''),
+                        subtitle: item.subtitle ? item.subtitle.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&') : (item.header_desc || item.artist || item.more_info?.firstname || ''),
+                        cover: cover,
+                        type: item.type || defaultType,
+                        provider: 'JioSaavn',
+                        providerId: 'jiosaavn',
+                        count: item.more_info?.song_count || item.count || '',
+                        query: item.more_info?.query || item.title
+                    };
+                };
+
+                return {
+                    trending: (json.new_trending || []).map(t => {
+                        if (t.type === 'song') return this.standardizeTrack(t);
+                        return formatItem(t, 'album');
+                    }).filter(Boolean),
+                    charts: (json.charts || []).map(c => formatItem(c, 'playlist')).filter(Boolean),
+                    playlists: (json.top_playlists || []).map(p => formatItem(p, 'playlist')).filter(Boolean),
+                    albums: (json.new_albums || []).map(a => formatItem(a, 'album')).filter(Boolean),
+                    artists: (json.artist_recos || []).map(ar => formatItem(ar, 'artist')).filter(Boolean)
+                };
+            }
+        } catch (e) {
+            console.warn("[JioSaavn] getLaunchModules fallback error:", e);
+        }
+        return null;
+    }
 }
+
 
