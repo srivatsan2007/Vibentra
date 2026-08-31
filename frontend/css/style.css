@@ -4961,7 +4961,7 @@ body {
 .settings-view-wrapper {
     max-width: 680px;
     margin: 0 auto;
-    width: 90% !important;
+    width: 94% !important;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -6837,8 +6837,8 @@ html.battery-saver-active * {
 
 .home-neon-page,
 .favorites-view-page {
-    width: 90% !important;
-    max-width: 90% !important;
+    width: 94% !important;
+    max-width: 94% !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
