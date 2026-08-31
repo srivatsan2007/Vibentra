@@ -159,7 +159,16 @@ const initHome = () => {
         document.documentElement.style.setProperty('--background', theme.background);
         document.documentElement.style.setProperty('--cards', theme.cards);
 
-        document.body.style.background = theme.bgGradient || `radial-gradient(circle at 20% 20%, ${theme.primary}33 0%, ${theme.background} 60%, #000000 100%)`;
+        const bgGrad = theme.bgGradient || `radial-gradient(circle at 20% 20%, ${theme.primary} 0%, ${theme.background} 50%, #010A0B 100%)`;
+        document.documentElement.style.background = bgGrad;
+        document.documentElement.style.backgroundColor = theme.background || '#061A1C';
+        document.body.style.background = bgGrad;
+        document.body.style.backgroundColor = theme.background || '#061A1C';
+
+        const liquidBg = document.querySelector('.liquid-bg-container');
+        if (liquidBg) {
+            liquidBg.style.background = bgGrad;
+        }
 
         const orb1 = document.querySelector('.orb-1');
         if (orb1) orb1.style.background = theme.orb1 || theme.primary;

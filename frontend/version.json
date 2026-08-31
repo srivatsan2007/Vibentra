@@ -1,18 +1,18 @@
 {
-  "version": "v1.9.0",
-  "swVersion": "vibentra-cache-v127",
-  "releaseDate": "28 August 2026, 11:24 am",
+  "version": "v2.0.0",
+  "swVersion": "vibentra-cache-v128",
+  "releaseDate": "31 August 2026, 8:45 pm",
   "size": "2.8 MB",
-  "importantNote": "Enabled global smooth scrolling and high-fidelity page fade & scale transitions across all views.",
+  "importantNote": "Universal Nordic Teal Gradient (#138086), wide squircle cards, and rich collection detail browsing for mobile & desktop.",
   "changelog": [
     {
-      "category": "Global Smooth Scroll & Page Transitions (v1.9.0)",
+      "category": "Nordic Teal Theme & Mobile Engine Update (v2.0.0)",
       "items": [
-        "Applied smooth scroll behavior (scroll-behavior: smooth !important;) globally to html, body, main-content, dynamicContent, and all view containers.",
-        "Implemented hardware-accelerated fluid page transitions (0.35s scale & fade curve) across all view switches.",
-        "Integrated automatic smooth scroll-to-top on page navigation.",
-        "Preserved 100% of music streaming backend logic.",
-        "Bumped service worker cache version to v127."
+        "Enforced Nordic Teal radial gradient (#138086 -> #061A1C) across all mobile and desktop layouts.",
+        "Removed opaque black viewport overlays in mobile queries.",
+        "Fixed card sizing in horizontal shelves to prevent flex shrinking.",
+        "Clicking any album, playlist, artist mix, or chart opens full tracklist view before playing.",
+        "Bumped Service Worker cache to v128 to immediately purge stale mobile cache."
       ]
     }
   ]

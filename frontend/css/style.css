@@ -6785,19 +6785,16 @@ input:checked+.toggle-slider:before {
     color: #34D399;
 }
 
-/* Pure Black & Paused GPU State */
+/* Power Saver Optimized State */
 html.battery-saver-active,
 body.battery-saver-active {
-    background: #000000 !important;
-    background-color: #000000 !important;
+    background: radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%) !important;
+    background-attachment: fixed !important;
 }
 
-html.battery-saver-active .liquid-bg-container,
-html.battery-saver-active .ambient-orb,
-html.battery-saver-active .liquid-equalizer-bg,
-html.battery-saver-active .floating-notes-bg {
-    display: none !important;
-    animation: none !important;
+html.battery-saver-active .ambient-orb {
+    animation-play-state: paused !important;
+    opacity: 0.2 !important;
 }
 
 html.battery-saver-active .curated-hero-card {
