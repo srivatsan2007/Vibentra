@@ -1239,6 +1239,47 @@ const initHome = () => {
         return card;
     }
 
+    // Helper to create Live Chart Cards (with full squircle artwork & 1-tap playback)
+    function createLiveChartCard(chart) {
+        const card = document.createElement('div');
+        card.className = 'community-playlist-card';
+        const cover = chart.cover || chart.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
+
+        card.innerHTML = `
+            <div class="community-playlist-img-wrap">
+                <img src="${cover}" alt="${chart.title || chart.name || 'Chart'}" loading="lazy">
+                <span class="community-tag-badge" style="color: #FCD34D; border-color: rgba(252, 211, 77, 0.4);"><i class="fa-solid fa-chart-simple"></i> CHART</span>
+                <button class="community-play-btn" title="Play ${chart.title || chart.name}">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+            <h4 title="${chart.title || chart.name}">${chart.title || chart.name}</h4>
+            <p title="${chart.subtitle || 'Official Top Chart'}">${chart.subtitle || 'Official Top Chart'}</p>
+        `;
+
+        const playChart = async (e) => {
+            if (e) e.stopPropagation();
+            showNotification(`Loading '${chart.title || chart.name}'...`);
+            const pId = chart.providerId || 'jiosaavn';
+            let tracks = [];
+            if (chart.id) {
+                tracks = await providerManager.getPlaylist(pId, chart.id);
+            }
+            if (!tracks || tracks.length === 0) {
+                tracks = await searchService.searchSongs(chart.query || chart.title || chart.name);
+            }
+            if (tracks && tracks.length > 0) {
+                musicService.playContext(tracks, tracks[0]);
+            } else {
+                showNotification('Could not load chart tracks', 'error');
+            }
+        };
+
+        card.querySelector('.community-play-btn')?.addEventListener('click', playChart);
+        card.addEventListener('click', playChart);
+        return card;
+    }
+
     // Views Rendering
     async function renderHome() {
         const currentUsername = localStorage.getItem('vibentra_user_name') || window.currentUserProfile?.username || document.getElementById('welcomeName')?.textContent || (auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]) || 'User';
@@ -1555,7 +1596,7 @@ const initHome = () => {
                 if (trendingMixContainer && liveModules.charts && liveModules.charts.length > 0) {
                     trendingMixContainer.innerHTML = '';
                     liveModules.charts.slice(0, 10).forEach(chart => {
-                        trendingMixContainer.appendChild(createPlaylistCard(chart));
+                        trendingMixContainer.appendChild(createLiveChartCard(chart));
                     });
                 }
 
@@ -1577,7 +1618,7 @@ const initHome = () => {
                 if (communityPlaylistsContainer && liveModules.playlists && liveModules.playlists.length > 0) {
                     communityPlaylistsContainer.innerHTML = '';
                     liveModules.playlists.slice(0, 10).forEach(pl => {
-                        communityPlaylistsContainer.appendChild(createPlaylistCard(pl));
+                        communityPlaylistsContainer.appendChild(createCommunityPlaylistCard(pl));
                     });
                 }
 

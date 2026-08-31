@@ -7487,9 +7487,9 @@ html.battery-saver-active * {
     letter-spacing: 0.6px;
     padding: 3px 8px;
     border-radius: 20px;
-    background: rgba(124, 58, 237, 0.2);
-    color: #A78BFA;
-    border: 1px solid rgba(124, 58, 237, 0.35);
+    background: rgba(19, 128, 134, 0.25);
+    color: #22D3EE;
+    border: 1px solid rgba(19, 128, 134, 0.4);
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -7513,22 +7513,61 @@ html.battery-saver-active * {
     border-color: rgba(6, 182, 212, 0.35);
 }
 
+/* Horizontal Shelf Scroll Containers */
+.squircle-shelf-scroll {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 16px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 10px 4px 18px 4px !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.squircle-shelf-scroll::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.squircle-shelf-scroll > * {
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+}
+
+.squircle-shelf-scroll .music-card,
+.squircle-shelf-scroll .playlist-card {
+    min-width: 180px !important;
+    max-width: 180px !important;
+    width: 180px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
 /* Trending Mix Card */
 .trending-mix-card {
-    min-width: 220px;
-    max-width: 220px;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    width: 240px !important;
+    min-height: 140px !important;
     border-radius: var(--squircle-radius, 20px);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    padding: 14px;
+    background: linear-gradient(145deg, rgba(14, 53, 56, 0.65), rgba(6, 26, 28, 0.85)) !important;
+    border: 1px solid rgba(19, 128, 134, 0.3) !important;
+    padding: 16px !important;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .trending-mix-card::before {
@@ -7538,15 +7577,15 @@ html.battery-saver-active * {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--mix-c1, #7C3AED), var(--mix-c2, #06B6D4));
-    opacity: 0.8;
+    background: linear-gradient(90deg, var(--mix-c1, #138086), var(--mix-c2, #22D3EE));
+    opacity: 0.9;
 }
 
 .trending-mix-card:hover {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+    background: linear-gradient(145deg, rgba(19, 128, 134, 0.35), rgba(6, 26, 28, 0.9)) !important;
     transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 58, 237, 0.2);
+    border-color: rgba(34, 211, 238, 0.4) !important;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(19, 128, 134, 0.3);
 }
 
 .trending-mix-header {
@@ -7560,7 +7599,7 @@ html.battery-saver-active * {
     font-size: 0.7rem;
     font-weight: 800;
     letter-spacing: 0.5px;
-    color: var(--mix-c2, #06B6D4);
+    color: var(--mix-c2, #22D3EE);
     text-transform: uppercase;
 }
 
@@ -7568,7 +7607,7 @@ html.battery-saver-active * {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -7578,7 +7617,7 @@ html.battery-saver-active * {
 }
 
 .trending-mix-card:hover .trending-mix-icon {
-    background: linear-gradient(135deg, var(--mix-c1, #7C3AED), var(--mix-c2, #06B6D4));
+    background: linear-gradient(135deg, var(--mix-c1, #138086), var(--mix-c2, #22D3EE));
     color: #FFFFFF;
     transform: scale(1.1);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
@@ -7594,7 +7633,7 @@ html.battery-saver-active * {
 
 .trending-mix-body p {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.7);
     margin: 0 0 12px 0;
     line-height: 1.35;
 }
@@ -7604,29 +7643,31 @@ html.battery-saver-active * {
     align-items: center;
     justify-content: space-between;
     font-size: 0.74rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.6);
     padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Artist Playlist Mix Card */
 .artist-mix-card {
-    min-width: 155px;
-    max-width: 155px;
+    min-width: 170px !important;
+    max-width: 170px !important;
+    width: 170px !important;
     border-radius: var(--squircle-radius, 20px);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 10px;
+    background: rgba(14, 53, 56, 0.55) !important;
+    border: 1px solid rgba(19, 128, 134, 0.25) !important;
+    padding: 12px !important;
     cursor: pointer;
     transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
 .artist-mix-card:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(19, 128, 134, 0.3) !important;
     transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    border-color: rgba(34, 211, 238, 0.35) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
 }
 
 .artist-mix-img-wrap {
@@ -7635,7 +7676,7 @@ html.battery-saver-active * {
     aspect-ratio: 1;
     border-radius: 16px;
     overflow: hidden;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -7658,7 +7699,7 @@ html.battery-saver-active * {
     font-weight: 800;
     padding: 3px 7px;
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     color: #FCD34D;
     border: 1px solid rgba(252, 211, 77, 0.3);
@@ -7674,7 +7715,7 @@ html.battery-saver-active * {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: var(--primary, #7C3AED);
+    background: var(--primary, #138086);
     color: #FFFFFF;
     display: flex;
     align-items: center;
@@ -7685,7 +7726,7 @@ html.battery-saver-active * {
     opacity: 0;
     transform: translateY(8px);
     transition: all 0.25s ease;
-    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.6);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     z-index: 3;
 }
 
@@ -7700,10 +7741,10 @@ html.battery-saver-active * {
 }
 
 .artist-mix-card h4 {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #FFFFFF;
-    margin: 0 0 3px 0;
+    margin: 0 0 4px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -7711,7 +7752,7 @@ html.battery-saver-active * {
 
 .artist-mix-card p {
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -7720,22 +7761,24 @@ html.battery-saver-active * {
 
 /* Community Playlist Card */
 .community-playlist-card {
-    min-width: 165px;
-    max-width: 165px;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    width: 180px !important;
     border-radius: var(--squircle-radius, 20px);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 10px;
+    background: rgba(14, 53, 56, 0.55) !important;
+    border: 1px solid rgba(19, 128, 134, 0.25) !important;
+    padding: 12px !important;
     cursor: pointer;
     transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
 .community-playlist-card:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(19, 128, 134, 0.3) !important;
     transform: translateY(-4px);
-    border-color: rgba(6, 182, 212, 0.35);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    border-color: rgba(34, 211, 238, 0.35) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
 }
 
 .community-playlist-img-wrap {
@@ -7744,7 +7787,7 @@ html.battery-saver-active * {
     aspect-ratio: 1;
     border-radius: 16px;
     overflow: hidden;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -7767,7 +7810,7 @@ html.battery-saver-active * {
     font-weight: 800;
     padding: 3px 7px;
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     color: #22D3EE;
     border: 1px solid rgba(34, 211, 238, 0.3);
@@ -7810,10 +7853,10 @@ html.battery-saver-active * {
 }
 
 .community-playlist-card h4 {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #FFFFFF;
-    margin: 0 0 3px 0;
+    margin: 0 0 4px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -7821,9 +7864,9 @@ html.battery-saver-active * {
 
 .community-playlist-card p {
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
+}

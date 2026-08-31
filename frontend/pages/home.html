@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Vibentra">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#061A1C">
     <link rel="apple-touch-icon" href="../images/icon-512.png">
     <link rel="icon" href="../images/icon-192.png" type="image/png">
-    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=1.9.4">
+    <link rel="stylesheet" id="mainCss" href="../css/style.css?v=2.0.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         // PWA Service Worker Registration & Update Logic
@@ -60,15 +60,15 @@
         // Immediately apply theme to prevent FOUC (Flash of Unstyled Content)
         const savedTheme = localStorage.getItem('vibentra_theme') || 'teal';
         const themes = {
-            'default': { primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)' },
-            'teal': { primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)' },
-            'purple': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#000000', cards: '#121212' },
-            'ocean': { primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: '#0C4A6E' },
-            'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: '#065F46' },
-            'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: '#7C2D12' },
-            'cherry': { primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: '#881337' },
-            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: '#18181B' },
-            'india': { primary: '#F97316', secondary: '#10B981', accent: '#3B82F6', background: '#0B132B', cards: 'rgba(15, 23, 42, 0.7)' }
+            'default': { primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)' },
+            'teal': { primary: '#138086', secondary: '#22D3EE', accent: '#EE6C4D', background: '#061A1C', cards: 'rgba(14, 53, 56, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)' },
+            'purple': { primary: '#7C3AED', secondary: '#06B6D4', accent: '#EC4899', background: '#0F172A', cards: 'rgba(30, 41, 59, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #1A1F4C 0%, #0C102B 50%, #07091B 100%)' },
+            'ocean': { primary: '#0284C7', secondary: '#0EA5E9', accent: '#38BDF8', background: '#082F49', cards: 'rgba(12, 74, 110, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #0C4A6E 0%, #082F49 50%, #031B2E 100%)' },
+            'forest': { primary: '#16A34A', secondary: '#22C55E', accent: '#4ADE80', background: '#064E3B', cards: 'rgba(6, 95, 70, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #065F46 0%, #064E3B 50%, #022C22 100%)' },
+            'sunset': { primary: '#EA580C', secondary: '#F97316', accent: '#FB923C', background: '#431407', cards: 'rgba(124, 45, 18, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #7C2D12 0%, #431407 50%, #270903 100%)' },
+            'cherry': { primary: '#E11D48', secondary: '#F43F5E', accent: '#FB7185', background: '#4C0519', cards: 'rgba(136, 19, 55, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #881337 0%, #4C0519 50%, #28030E 100%)' },
+            'cyberpunk': { primary: '#D946EF', secondary: '#8B5CF6', accent: '#06B6D4', background: '#09090B', cards: 'rgba(24, 24, 27, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #27272A 0%, #09090B 50%, #000000 100%)' },
+            'india': { primary: '#F97316', secondary: '#10B981', accent: '#3B82F6', background: '#0B132B', cards: 'rgba(15, 23, 42, 0.7)', bgGradient: 'radial-gradient(circle at 20% 20%, #1E1B4B 0%, #0B132B 50%, #020617 100%)' }
         };
         let theme = themes[savedTheme] || themes['teal'] || themes['default'];
         if (savedTheme === 'custom') {
@@ -82,6 +82,8 @@
         document.documentElement.style.setProperty('--accent', theme.accent);
         document.documentElement.style.setProperty('--background', theme.background);
         document.documentElement.style.setProperty('--cards', theme.cards);
+        const bgGrad = theme.bgGradient || `radial-gradient(circle at 20% 20%, ${theme.primary} 0%, ${theme.background} 50%, #010A0B 100%)`;
+        document.documentElement.style.background = bgGrad;
         document.documentElement.style.backgroundColor = theme.background || '#061A1C';
     </script>
 </head>
