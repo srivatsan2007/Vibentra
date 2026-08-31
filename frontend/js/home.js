@@ -1116,15 +1116,8 @@ const initHome = () => {
             <p title="${artist}">${artist}</p>
         `;
 
-        card.addEventListener('click', async () => {
-            showNotification(`Loading '${title}'...`);
-            const pId = album.providerId || (album.source === 'youtube' ? 'youtube' : 'jiosaavn');
-            const albumTracks = await providerManager.getAlbum(pId, album.id);
-            if (albumTracks && albumTracks.length > 0) {
-                musicService.playContext(albumTracks, albumTracks[0]);
-            } else {
-                renderRemoteCollectionDetail(album, 'album');
-            }
+        card.addEventListener('click', () => {
+            renderRemoteCollectionDetail(album, 'album');
         });
 
         return card;
@@ -1134,8 +1127,8 @@ const initHome = () => {
     function createTrendingMixCard(mix) {
         const card = document.createElement('div');
         card.className = 'trending-mix-card';
-        card.style.setProperty('--mix-c1', mix.color1 || '#7C3AED');
-        card.style.setProperty('--mix-c2', mix.color2 || '#06B6D4');
+        card.style.setProperty('--mix-c1', mix.color1 || '#138086');
+        card.style.setProperty('--mix-c2', mix.color2 || '#22D3EE');
 
         card.innerHTML = `
             <div class="trending-mix-header">
@@ -1150,18 +1143,20 @@ const initHome = () => {
             </div>
             <div class="trending-mix-footer">
                 <span><i class="fa-solid fa-headphones"></i> ${mix.plays || '50K+ plays'}</span>
-                <span><i class="fa-solid fa-play"></i> Tap to Play</span>
+                <span><i class="fa-solid fa-list-ul"></i> View Songs</span>
             </div>
         `;
 
-        card.addEventListener('click', async () => {
-            showNotification(`Loading '${mix.title}'...`);
-            const tracks = await searchService.searchSongs(mix.query);
-            if (tracks && tracks.length > 0) {
-                musicService.playContext(tracks, tracks[0]);
-            } else {
-                showNotification(`No songs found for ${mix.title}`, 'error');
-            }
+        card.addEventListener('click', () => {
+            renderRemoteCollectionDetail({
+                id: mix.id,
+                title: mix.title,
+                artist: mix.subtitle || 'Trending Mix',
+                cover: mix.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80',
+                searchQuery: mix.query || mix.title,
+                provider: 'JioSaavn',
+                providerId: 'jiosaavn'
+            }, 'playlist');
         });
 
         return card;
@@ -1171,34 +1166,35 @@ const initHome = () => {
     function createArtistMixCard(artist) {
         const card = document.createElement('div');
         card.className = 'artist-mix-card';
-        const cover = artist.cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=7C3AED&color=fff&size=200`;
+        const cover = artist.cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=138086&color=fff&size=200`;
 
         card.innerHTML = `
             <div class="artist-mix-img-wrap">
                 <img src="${cover}" alt="${artist.name}" loading="lazy">
                 <span class="artist-mix-badge">${artist.badge || 'ARTIST MIX'}</span>
-                <button class="artist-mix-play-btn" title="Play ${artist.name} Hits">
-                    <i class="fa-solid fa-play"></i>
+                <button class="artist-mix-play-btn" title="View ${artist.name} Songs">
+                    <i class="fa-solid fa-list-ul"></i>
                 </button>
             </div>
             <h4 title="${artist.name}">${artist.name}</h4>
             <p title="${artist.subtitle || 'Essential Hits'}">${artist.subtitle || 'Essential Hits'}</p>
         `;
 
-        const playArtistHits = async (e) => {
+        const openArtistSongs = (e) => {
             if (e) e.stopPropagation();
-            showNotification(`Loading ${artist.name} Hits...`);
-            const query = artist.query || `${artist.name} top hits songs`;
-            const tracks = await searchService.searchSongs(query);
-            if (tracks && tracks.length > 0) {
-                musicService.playContext(tracks, tracks[0]);
-            } else {
-                showNotification(`Could not load tracks for ${artist.name}`, 'error');
-            }
+            renderRemoteCollectionDetail({
+                id: artist.id,
+                title: `${artist.name} - Essential Hits`,
+                artist: artist.subtitle || 'Artist Spotlight',
+                cover: cover,
+                searchQuery: artist.query || `${artist.name} top hits songs`,
+                provider: 'JioSaavn',
+                providerId: 'jiosaavn'
+            }, 'playlist');
         };
 
-        card.querySelector('.artist-mix-play-btn')?.addEventListener('click', playArtistHits);
-        card.addEventListener('click', playArtistHits);
+        card.querySelector('.artist-mix-play-btn')?.addEventListener('click', openArtistSongs);
+        card.addEventListener('click', openArtistSongs);
 
         return card;
     }
@@ -1213,28 +1209,29 @@ const initHome = () => {
             <div class="community-playlist-img-wrap">
                 <img src="${cover}" alt="${community.title}" loading="lazy">
                 <span class="community-tag-badge">${community.tag || 'COMMUNITY'}</span>
-                <button class="community-play-btn" title="Play ${community.title}">
-                    <i class="fa-solid fa-play"></i>
+                <button class="community-play-btn" title="View ${community.title} Songs">
+                    <i class="fa-solid fa-list-ul"></i>
                 </button>
             </div>
             <h4 title="${community.title}">${community.title}</h4>
             <p title="${community.subtitle}">${community.subtitle}</p>
         `;
 
-        const playCommunityPlaylist = async (e) => {
+        const openCommunitySongs = (e) => {
             if (e) e.stopPropagation();
-            showNotification(`Loading '${community.title}'...`);
-            const query = community.query || community.title;
-            const tracks = await searchService.searchSongs(query);
-            if (tracks && tracks.length > 0) {
-                musicService.playContext(tracks, tracks[0]);
-            } else {
-                showNotification(`Could not load ${community.title}`, 'error');
-            }
+            renderRemoteCollectionDetail({
+                id: community.id,
+                title: community.title,
+                artist: community.subtitle || 'Community Vibe',
+                cover: cover,
+                searchQuery: community.query || community.title,
+                provider: community.provider || 'JioSaavn',
+                providerId: community.providerId || 'jiosaavn'
+            }, 'playlist');
         };
 
-        card.querySelector('.community-play-btn')?.addEventListener('click', playCommunityPlaylist);
-        card.addEventListener('click', playCommunityPlaylist);
+        card.querySelector('.community-play-btn')?.addEventListener('click', openCommunitySongs);
+        card.addEventListener('click', openCommunitySongs);
 
         return card;
     }
@@ -1249,34 +1246,29 @@ const initHome = () => {
             <div class="community-playlist-img-wrap">
                 <img src="${cover}" alt="${chart.title || chart.name || 'Chart'}" loading="lazy">
                 <span class="community-tag-badge" style="color: #FCD34D; border-color: rgba(252, 211, 77, 0.4);"><i class="fa-solid fa-chart-simple"></i> CHART</span>
-                <button class="community-play-btn" title="Play ${chart.title || chart.name}">
-                    <i class="fa-solid fa-play"></i>
+                <button class="community-play-btn" title="View ${chart.title || chart.name} Songs">
+                    <i class="fa-solid fa-list-ul"></i>
                 </button>
             </div>
             <h4 title="${chart.title || chart.name}">${chart.title || chart.name}</h4>
             <p title="${chart.subtitle || 'Official Top Chart'}">${chart.subtitle || 'Official Top Chart'}</p>
         `;
 
-        const playChart = async (e) => {
+        const openChartSongs = (e) => {
             if (e) e.stopPropagation();
-            showNotification(`Loading '${chart.title || chart.name}'...`);
-            const pId = chart.providerId || 'jiosaavn';
-            let tracks = [];
-            if (chart.id) {
-                tracks = await providerManager.getPlaylist(pId, chart.id);
-            }
-            if (!tracks || tracks.length === 0) {
-                tracks = await searchService.searchSongs(chart.query || chart.title || chart.name);
-            }
-            if (tracks && tracks.length > 0) {
-                musicService.playContext(tracks, tracks[0]);
-            } else {
-                showNotification('Could not load chart tracks', 'error');
-            }
+            renderRemoteCollectionDetail({
+                id: chart.id,
+                title: chart.title || chart.name,
+                artist: chart.subtitle || 'Official Chart',
+                cover: cover,
+                searchQuery: chart.query || chart.title || chart.name,
+                provider: chart.provider || 'JioSaavn',
+                providerId: chart.providerId || 'jiosaavn'
+            }, 'playlist');
         };
 
-        card.querySelector('.community-play-btn')?.addEventListener('click', playChart);
-        card.addEventListener('click', playChart);
+        card.querySelector('.community-play-btn')?.addEventListener('click', openChartSongs);
+        card.addEventListener('click', openChartSongs);
         return card;
     }
 
@@ -2706,7 +2698,7 @@ const initHome = () => {
         const providerName = collection.provider || (collection.providerId === 'ytmusic' || collection.source === 'youtube' ? 'YouTube Music' : 'JioSaavn');
         const pId = collection.providerId || (providerName === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
 
-        const targetContainer = document.getElementById('searchDynamicContainer') || document.getElementById('dynamicContainer') || document.getElementById('mainContent') || document.querySelector('.main-content') || document.querySelector('.content-area') || document.body;
+        const targetContainer = document.getElementById('dynamicContent') || document.getElementById('searchDynamicContainer') || document.getElementById('mainContent') || document.body;
 
         if (!targetContainer) return;
 
@@ -2714,28 +2706,28 @@ const initHome = () => {
 
         targetContainer.innerHTML = `
             <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
-                <button class="btn" id="backFromRemoteBtn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 10px 22px; border-radius: 25px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-size: 0.95rem; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.2s ease;">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Search
+                <button class="btn" id="backFromRemoteBtn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(19, 128, 134, 0.35); color: #ffffff; padding: 10px 22px; border-radius: 25px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-size: 0.95rem; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.2s ease;">
+                    <i class="fa-solid fa-arrow-left"></i> ${currentQuery ? 'Back to Search' : 'Back to Home'}
                 </button>
             </div>
-            <div style="display: flex; align-items: flex-end; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; background: rgba(255,255,255,0.03); padding: 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-                <img src="${collection.cover}" style="width: 180px; height: 180px; border-radius: 12px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
-                <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                        <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;">${type === 'album' ? 'Album' : 'Playlist'}</p>
-                        <span style="font-size: 0.75rem; padding: 3px 10px; background: rgba(255,255,255,0.1); border-radius: 12px; font-weight: 600; color: #34d399; display: inline-flex; align-items: center; gap: 4px;">
+            <div style="display: flex; align-items: flex-end; gap: 24px; margin-bottom: 30px; flex-wrap: wrap; background: rgba(14, 53, 56, 0.45); padding: 24px; border-radius: 20px; border: 1px solid rgba(19, 128, 134, 0.25); box-shadow: 0 10px 35px rgba(0,0,0,0.45);">
+                <img src="${collection.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80'}" style="width: 190px; height: 190px; border-radius: 16px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
+                <div style="flex: 1; min-width: 260px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <p style="margin: 0; color: #22D3EE; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;">${type === 'album' ? 'Album' : 'Playlist'}</p>
+                        <span style="font-size: 0.75rem; padding: 3px 10px; background: rgba(19, 128, 134, 0.3); border: 1px solid rgba(19, 128, 134, 0.4); border-radius: 12px; font-weight: 600; color: #FFFFFF; display: inline-flex; align-items: center; gap: 4px;">
                             ${providerName}
                         </span>
                     </div>
-                    <h2 style="margin: 0 0 10px 0; font-size: clamp(1.5rem, 5vw, 2.8rem); font-weight: 800; color: #fff;">${collection.title}</h2>
-                    <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 1rem;">${collection.artist || providerName}</p>
-                    <button class="btn" id="playAllRemoteBtn" style="margin-top: 20px; background: #1DB954; color: #000; padding: 12px 32px; border-radius: 30px; font-weight: 800; font-size: 1.05rem; border: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 20px rgba(29, 185, 84, 0.4);"><i class="fa-solid fa-play"></i> Play All</button>
+                    <h2 style="margin: 0 0 10px 0; font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 800; color: #fff; line-height: 1.2;">${collection.title || 'Collection'}</h2>
+                    <p style="margin: 0; color: rgba(255,255,255,0.75); font-size: 1rem;">${collection.artist || 'Curated Hits'}</p>
+                    <button class="btn" id="playAllRemoteBtn" style="margin-top: 20px; background: linear-gradient(135deg, var(--primary, #138086), var(--secondary, #22D3EE)); color: #ffffff; padding: 12px 32px; border-radius: 30px; font-weight: 800; font-size: 1.05rem; border: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 20px rgba(19, 128, 134, 0.4); transition: transform 0.2s;"><i class="fa-solid fa-play"></i> Play All</button>
                 </div>
             </div>
             <div class="track-list" id="remoteTrackList">
                 <div style="padding: 40px 0; text-align: center; color: rgba(255,255,255,0.7);">
-                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: #1DB954; margin-bottom: 12px;"></i>
-                    <p style="font-size: 0.95rem; font-weight: 600;">Loading playlist tracks...</p>
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: var(--primary, #138086); margin-bottom: 12px;"></i>
+                    <p style="font-size: 0.95rem; font-weight: 600;">Loading collection tracks from provider...</p>
                 </div>
             </div>
         `;
