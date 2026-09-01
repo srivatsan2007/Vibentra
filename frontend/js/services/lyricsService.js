@@ -227,36 +227,87 @@ class LyricsService {
     }
 
     /**
-     * Romanization Engine: Convert Indic Scripts (Tamil, Devanagari, Telugu, etc.) to Latin Phonetics
+     * Romanization Engine: Convert Indic Scripts (Tamil, Hindi/Devanagari, etc.) to Latin Phonetics
      */
     romanizeText(text) {
         if (!text) return '';
 
-        // Indic Romanization Mapping Table
-        const tamilMap = {
-            'அ': 'a', 'ஆ': 'aa', 'இ': 'i', 'ஈ': 'ee', 'உ': 'u', 'ஊ': 'oo', 'எ': 'e', 'ஏ': 'ae', 'ஐ': 'ai', 'ஒ': 'o', 'ஓ': 'oa', 'ஔ': 'au',
-            'க': 'ka', 'ங': 'nga', 'ச': 'cha', 'ஞ': 'nya', 'ட': 'ta', 'ண': 'na', 'த': 'tha', 'ந': 'na', 'ப': 'pa', 'ம': 'ma',
-            'ய': 'ya', 'ர': 'ra', 'ல': 'la', 'வ': 'va', 'ழ': 'zha', 'ள': 'la', 'ற': 'ra', 'ன': 'na',
-            'க்': 'k', 'ங்': 'ng', 'ச்': 'ch', 'ஞ்': 'ny', 'ட்': 't', 'ண்': 'n', 'த்': 'th', 'ந்': 'n', 'ப்': 'p', 'ம்': 'm',
-            'ய்': 'y', 'ர்': 'r', 'ல்': 'l', 'வ்': 'v', 'ழ்': 'zh', 'ள்': 'l', 'ற்': 'r', 'ன்': 'n',
-            'ா': 'aa', 'ி': 'i', 'ீ': 'ee', 'ு': 'u', 'ூ': 'oo', 'ெ': 'e', 'ே': 'ae', 'ை': 'ai', 'ொ': 'o', 'ோ': 'oa', 'ௌ': 'au', '்': ''
+        // Tamil Maps
+        const tamilConsonants = {
+            '\u0B95': 'k', '\u0B99': 'ng', '\u0B9A': 'ch', '\u0B9E': 'ny', '\u0B9F': 't',
+            '\u0BA3': 'n', '\u0BA4': 'th', '\u0BA8': 'n', '\u0BA9': 'n', '\u0BAA': 'p',
+            '\u0BAE': 'm', '\u0BAF': 'y', '\u0BB0': 'r', '\u0BB1': 'r', '\u0BB2': 'l',
+            '\u0BB3': 'l', '\u0BB4': 'zh', '\u0BB5': 'v', '\u0BB6': 'sh', '\u0BB7': 'sh',
+            '\u0BB8': 's', '\u0BB9': 'h', '\u0B9C': 'j'
         };
+        const tamilIndependentVowels = {
+            '\u0B85': 'a', '\u0B86': 'aa', '\u0B87': 'i', '\u0B88': 'ee', '\u0B89': 'u', '\u0B8A': 'oo',
+            '\u0B8E': 'e', '\u0B8F': 'ae', '\u0B90': 'ai', '\u0B92': 'o', '\u0B93': 'oa', '\u0B94': 'au'
+        };
+        const tamilVowelSigns = {
+            '\u0BBE': 'aa', '\u0BBF': 'i', '\u0BC0': 'ee', '\u0BC1': 'u', '\u0BC2': 'oo',
+            '\u0BC6': 'e', '\u0BC7': 'ae', '\u0BC8': 'ai', '\u0BCA': 'o', '\u0BCB': 'oa',
+            '\u0BCC': 'au'
+        };
+        const tamilVirama = '\u0BCD';
 
-        const hindiMap = {
-            'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
-            'क': 'ka', 'ख': 'kha', 'ग': 'ga', 'घ': 'gha', 'च': 'cha', 'छ': 'chha', 'ज': 'ja', 'झ': 'jha',
-            'ट': 'ta', 'ठ': 'tha', 'ड': 'da', 'ढ': 'dha', 'ण': 'na', 'त': 'ta', 'थ': 'tha', 'द': 'da', 'ध': 'dha', 'न': 'na',
-            'प': 'pa', 'फ': 'pha', 'ब': 'ba', 'भ': 'bha', 'म': 'ma', 'य': 'ya', 'र': 'ra', 'ल': 'la', 'व': 'va', 'श': 'sha', 'ष': 'sha', 'स': 'sa', 'ह': 'ha',
-            'ा': 'aa', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', '्': ''
+        // Hindi / Devanagari Maps
+        const hindiConsonants = {
+            '\u0915': 'k', '\u0916': 'kh', '\u0917': 'g', '\u0918': 'gh', '\u0919': 'ng',
+            '\u091A': 'ch', '\u091B': 'chh', '\u091C': 'j', '\u091D': 'jh', '\u091E': 'ny',
+            '\u091F': 't', '\u0920': 'th', '\u0921': 'd', '\u0922': 'dh', '\u0923': 'n',
+            '\u0924': 't', '\u0925': 'th', '\u0926': 'd', '\u0927': 'dh', '\u0928': 'n',
+            '\u092A': 'p', '\u092B': 'ph', '\u092C': 'b', '\u092D': 'bh', '\u092E': 'm',
+            '\u092F': 'y', '\u0930': 'r', '\u0932': 'l', '\u0935': 'v', '\u0936': 'sh',
+            '\u0937': 'sh', '\u0938': 's', '\u0939': 'h'
         };
+        const hindiIndependentVowels = {
+            '\u0905': 'a', '\u0906': 'aa', '\u0907': 'i', '\u0908': 'ee', '\u0909': 'u', '\u090A': 'oo',
+            '\u090F': 'e', '\u0910': 'ai', '\u0913': 'o', '\u0914': 'au'
+        };
+        const hindiVowelSigns = {
+            '\u093E': 'aa', '\u093F': 'i', '\u0940': 'ee', '\u0941': 'u', '\u0942': 'oo',
+            '\u0947': 'e', '\u0948': 'ai', '\u094B': 'o', '\u094C': 'au', '\u0902': 'n', '\u0901': 'n'
+        };
+        const hindiVirama = '\u094D';
 
         let result = '';
-        for (let char of text) {
-            if (tamilMap[char]) {
-                result += tamilMap[char];
-            } else if (hindiMap[char]) {
-                result += hindiMap[char];
-            } else {
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const nextChar = i + 1 < text.length ? text[i + 1] : '';
+
+            // Tamil
+            if (tamilIndependentVowels[char]) {
+                result += tamilIndependentVowels[char];
+            } else if (tamilConsonants[char]) {
+                const root = tamilConsonants[char];
+                if (nextChar === tamilVirama) {
+                    result += root;
+                    i++;
+                } else if (tamilVowelSigns[nextChar]) {
+                    result += root + tamilVowelSigns[nextChar];
+                    i++;
+                } else {
+                    result += root + 'a';
+                }
+            }
+            // Hindi / Devanagari
+            else if (hindiIndependentVowels[char]) {
+                result += hindiIndependentVowels[char];
+            } else if (hindiConsonants[char]) {
+                const root = hindiConsonants[char];
+                if (nextChar === hindiVirama) {
+                    result += root;
+                    i++;
+                } else if (hindiVowelSigns[nextChar]) {
+                    result += root + hindiVowelSigns[nextChar];
+                    i++;
+                } else {
+                    result += root + 'a';
+                }
+            }
+            // Other characters
+            else {
                 result += char;
             }
         }
