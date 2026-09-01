@@ -740,51 +740,7 @@ const initHome = () => {
         }
     });
 
-    // Global helper to create album cards for Latest Albums & New Releases
-    function createAlbumCard(album) {
-        const card = document.createElement('div');
-        card.className = 'music-card album-card';
-        card.style.cursor = 'pointer';
-        const cover = album.cover || album.image || album.artworkUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
-        const title = album.title || album.name || 'Latest Album';
-        const artist = album.artist || album.subtitle || 'YouTube Music';
-        const provider = album.provider || 'YouTube Music';
 
-        card.innerHTML = `
-            <div class="card-img-wrapper">
-                <img src="${cover}" alt="${title}" loading="lazy">
-                <div class="play-btn-overlay" title="Open ${title}">
-                    <i class="fa-solid fa-play"></i>
-                </div>
-            </div>
-            <div class="card-info">
-                <div class="card-title-row">
-                    <h3 title="${title}">${title}</h3>
-                </div>
-                <p title="${artist}">${artist}</p>
-                <span style="font-size: 0.72rem; padding: 3px 8px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;">
-                    <i class="fa-brands fa-youtube"></i>
-                    ${provider}
-                </span>
-            </div>
-        `;
-
-        card.addEventListener('click', () => {
-            const searchNavBtn = document.querySelector('.nav-item[data-path="search"]');
-            if (searchNavBtn) {
-                searchNavBtn.click();
-                setTimeout(() => {
-                    const searchInput = document.getElementById('searchInput') || document.getElementById('desktopSearchInput');
-                    if (searchInput) {
-                        searchInput.value = title;
-                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                }, 100);
-            }
-        });
-
-        return card;
-    }
 
     // Global helper to create fully-featured music cards with working Like, Ringtone, Download, and Three Dots options
     function createSongCard(track, contextList = []) {
@@ -1035,7 +991,7 @@ const initHome = () => {
         card.innerHTML = `
             <div class="card-img-wrapper" style="position: relative;">
                 <img src="${cover}" alt="${playlist.title || playlist.name || 'Playlist'}" loading="lazy">
-                <div class="play-btn-overlay" title="Play Playlist"><i class="fa-solid fa-list-check"></i></div>
+                <div class="play-btn-overlay" title="Play Playlist"><i class="fa-solid fa-play"></i></div>
             </div>
             <div class="card-info">
                 <h3 title="${playlist.title || playlist.name || 'Untitled Playlist'}">${playlist.title || playlist.name || 'Untitled Playlist'}</h3>
@@ -1049,7 +1005,12 @@ const initHome = () => {
             </div>
         `;
 
-        card.addEventListener('click', async () => {
+        card.addEventListener('click', () => {
+            renderRemoteCollectionDetail(playlist, 'playlist');
+        });
+
+        card.querySelector('.play-btn-overlay')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
             showNotification(`Loading playlist '${playlist.title || playlist.name}'...`);
             const pId = playlist.providerId || 'jiosaavn';
             const plTracks = await providerManager.getPlaylist(pId, playlist.id);
@@ -2260,17 +2221,14 @@ const initHome = () => {
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Album • ${artistStr}</p>
                         </div>
                     </div>
-                    <button class="search-album-opt-btn" title="Album Options" style="background: transparent; border: none; color: #FFFFFF; font-size: 1.35rem; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; margin-right: 4px; padding: 0; z-index: 10; transition: background 0.2s ease;">
-                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    <button class="search-album-opt-btn" title="Play Album" style="background: transparent; border: none; color: #FFFFFF; font-size: 1.15rem; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; margin-right: 4px; padding: 0; z-index: 10; transition: background 0.2s ease;">
+                        <i class="fa-solid fa-play"></i>
                     </button>
                 `;
 
                 row.addEventListener('click', (e) => {
                     if (e.target.closest('.search-album-opt-btn')) return;
-                    if (searchInput) {
-                        searchInput.value = titleStr;
-                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
+                    renderRemoteCollectionDetail(album, 'album', searchInput ? searchInput.value : '');
                 });
 
                 const optBtn = row.querySelector('.search-album-opt-btn');
@@ -2310,7 +2268,7 @@ const initHome = () => {
                 `;
 
                 const titleStr = pl.title || pl.name || 'Untitled Playlist';
-                const creatorStr = pl.creator || pl.source || 'Vibentra';
+                const creatorStr = pl.creator || pl.source || pl.artist || 'Vibentra';
                 const coverUrl = pl.cover || pl.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
 
                 row.innerHTML = `
@@ -2321,14 +2279,14 @@ const initHome = () => {
                             <p style="margin: 0; font-size: 0.82rem; color: #aaaaaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Playlist • ${creatorStr}</p>
                         </div>
                     </div>
-                    <button class="search-pl-opt-btn" title="Playlist Options" style="background: transparent; border: none; color: #FFFFFF; font-size: 1.35rem; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; margin-right: 4px; padding: 0; z-index: 10; transition: background 0.2s ease;">
-                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    <button class="search-pl-opt-btn" title="Play Playlist" style="background: transparent; border: none; color: #FFFFFF; font-size: 1.15rem; width: 44px; height: 44px; min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; margin-right: 4px; padding: 0; z-index: 10; transition: background 0.2s ease;">
+                        <i class="fa-solid fa-play"></i>
                     </button>
                 `;
 
                 row.addEventListener('click', (e) => {
                     if (e.target.closest('.search-pl-opt-btn')) return;
-                    if (pl.id) renderPlaylistDetail(pl.id);
+                    renderRemoteCollectionDetail(pl, 'playlist', searchInput ? searchInput.value : '');
                 });
 
                 const optBtn = row.querySelector('.search-pl-opt-btn');
@@ -2702,7 +2660,6 @@ const initHome = () => {
         }
     }
 
-
     async function renderRemoteCollectionDetail(collection, type, currentQuery = '') {
         const providerName = collection.provider || (collection.providerId === 'ytmusic' || collection.source === 'youtube' ? 'YouTube Music' : 'JioSaavn');
         const pId = collection.providerId || (providerName === 'YouTube Music' ? 'ytmusic' : 'jiosaavn');
@@ -2713,6 +2670,9 @@ const initHome = () => {
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
+        const isAlbum = type === 'album';
+        const typeLabel = isAlbum ? 'Album' : 'Playlist';
+
         targetContainer.innerHTML = `
             <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
                 <button class="btn" id="backFromRemoteBtn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(19, 128, 134, 0.35); color: #ffffff; padding: 10px 22px; border-radius: 25px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-size: 0.95rem; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.2s ease;">
@@ -2720,23 +2680,26 @@ const initHome = () => {
                 </button>
             </div>
             <div style="display: flex; align-items: flex-end; gap: 24px; margin-bottom: 30px; flex-wrap: wrap; background: rgba(14, 53, 56, 0.45); padding: 24px; border-radius: 20px; border: 1px solid rgba(19, 128, 134, 0.25); box-shadow: 0 10px 35px rgba(0,0,0,0.45);">
-                <img src="${collection.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80'}" style="width: 190px; height: 190px; border-radius: 16px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
+                <img src="${collection.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80'}" style="width: 190px; height: 190px; border-radius: 16px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.6);" alt="${collection.title || 'Collection'}">
                 <div style="flex: 1; min-width: 260px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <p style="margin: 0; color: #22D3EE; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;">${type === 'album' ? 'Album' : 'Playlist'}</p>
+                        <p style="margin: 0; color: #22D3EE; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;">${typeLabel}</p>
                         <span style="font-size: 0.75rem; padding: 3px 10px; background: rgba(19, 128, 134, 0.3); border: 1px solid rgba(19, 128, 134, 0.4); border-radius: 12px; font-weight: 600; color: #FFFFFF; display: inline-flex; align-items: center; gap: 4px;">
                             ${providerName}
                         </span>
                     </div>
                     <h2 style="margin: 0 0 10px 0; font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 800; color: #fff; line-height: 1.2;">${collection.title || 'Collection'}</h2>
-                    <p style="margin: 0; color: rgba(255,255,255,0.75); font-size: 1rem;">${collection.artist || 'Curated Hits'}</p>
-                    <button class="btn" id="playAllRemoteBtn" style="margin-top: 20px; background: linear-gradient(135deg, var(--primary, #138086), var(--secondary, #22D3EE)); color: #ffffff; padding: 12px 32px; border-radius: 30px; font-weight: 800; font-size: 1.05rem; border: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 20px rgba(19, 128, 134, 0.4); transition: transform 0.2s;"><i class="fa-solid fa-play"></i> Play All</button>
+                    <p style="margin: 0 0 16px 0; color: rgba(255,255,255,0.75); font-size: 1rem;">${collection.artist || 'Curated Hits'}</p>
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn" id="playAllRemoteBtn" style="background: linear-gradient(135deg, var(--primary, #138086), var(--secondary, #22D3EE)); color: #ffffff; padding: 12px 32px; border-radius: 30px; font-weight: 800; font-size: 1.05rem; border: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 20px rgba(19, 128, 134, 0.4); transition: transform 0.2s;"><i class="fa-solid fa-play"></i> Play All</button>
+                        <button class="btn" id="saveCollectionRemoteBtn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 12px 24px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; backdrop-filter: blur(8px); transition: background 0.2s;"><i class="fa-solid fa-folder-plus"></i> Save to Playlists</button>
+                    </div>
                 </div>
             </div>
             <div class="track-list" id="remoteTrackList">
                 <div style="padding: 40px 0; text-align: center; color: rgba(255,255,255,0.7);">
                     <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: var(--primary, #138086); margin-bottom: 12px;"></i>
-                    <p style="font-size: 0.95rem; font-weight: 600;">Loading collection tracks from provider...</p>
+                    <p style="font-size: 0.95rem; font-weight: 600;">Loading tracks from ${providerName}...</p>
                 </div>
             </div>
         `;
@@ -2773,15 +2736,36 @@ const initHome = () => {
                 }
             }
 
-            document.getElementById('playAllRemoteBtn').addEventListener('click', () => {
-                if (remoteTracks.length > 0) {
-                    musicService.playContext(remoteTracks, remoteTracks[0]);
-                }
-            });
+            const playAllBtn = document.getElementById('playAllRemoteBtn');
+            if (playAllBtn) {
+                playAllBtn.addEventListener('click', () => {
+                    if (remoteTracks && remoteTracks.length > 0) {
+                        musicService.playContext(remoteTracks, remoteTracks[0]);
+                    } else {
+                        showNotification('No playable tracks available in this collection.', 'warning');
+                    }
+                });
+            }
+
+            const saveCollectionBtn = document.getElementById('saveCollectionRemoteBtn');
+            if (saveCollectionBtn) {
+                saveCollectionBtn.addEventListener('click', () => {
+                    if (!remoteTracks || remoteTracks.length === 0) {
+                        showNotification('No tracks found to save', 'error');
+                        return;
+                    }
+                    const plTitle = collection.title || `${typeLabel} - ${collection.artist || 'Curated'}`;
+                    const newPl = playlistService.createPlaylist(plTitle, `Imported ${providerName} ${typeLabel}`);
+                    remoteTracks.forEach(t => playlistService.addTrackToPlaylist(newPl.id, t));
+                    showNotification(`Saved '${plTitle}' with ${remoteTracks.length} tracks to your playlists!`, 'success');
+                });
+            }
 
             const trackListContainer = document.getElementById('remoteTrackList');
             if (!remoteTracks || remoteTracks.length === 0) {
-                trackListContainer.innerHTML = '<p style="color: var(--text-muted);">No tracks found in this collection.</p>';
+                if (trackListContainer) {
+                    trackListContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 30px;">No tracks found in this collection.</p>';
+                }
                 return;
             }
 
@@ -2829,7 +2813,10 @@ const initHome = () => {
 
         } catch (error) {
             console.error(error);
-            document.getElementById('remoteTrackList').innerHTML = '<p style="color: #ef4444;">Failed to load collection tracks.</p>';
+            const listContainer = document.getElementById('remoteTrackList');
+            if (listContainer) {
+                listContainer.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 30px;">Failed to load collection tracks.</p>';
+            }
         }
     }
 
