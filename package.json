@@ -1,6 +1,6 @@
 {
   "name": "vibentra",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "A modern music platform MVP built with HTML, CSS, JavaScript, Node.js, Express, and Firebase.",
   "main": "index.js",
   "scripts": {

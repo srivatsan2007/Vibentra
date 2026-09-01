@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v129';
+const CACHE_NAME = 'vibentra-cache-v130';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -14,6 +14,12 @@ const ASSETS_TO_CACHE = [
     '/js/services/musicService.js',
     '/js/services/lyricsService.js',
     '/js/services/connectService.js',
+    '/js/services/storyShareService.js',
+    '/js/services/coverGeneratorService.js',
+    '/js/services/historyService.js',
+    '/js/services/playlistService.js',
+    '/js/services/favoriteService.js',
+    '/js/services/sleepTimerService.js',
     '/js/providers/jiosaavnProvider.js',
     '/js/providers/youtubeMusicProvider.js',
     '/js/providers/providerManager.js',

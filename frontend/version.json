@@ -1,17 +1,22 @@
 {
-  "version": "v2.0.1",
-  "swVersion": "vibentra-cache-v129",
-  "releaseDate": "31 August 2026, 9:02 pm",
-  "size": "2.8 MB",
-  "importantNote": "Fixed right-side mobile layout gap, perfectly symmetrical viewport padding without altering zoom levels.",
+  "version": "v2.1.0",
+  "swVersion": "vibentra-cache-v130",
+  "releaseDate": "1 September 2026, 2:05 pm",
+  "size": "2.9 MB",
+  "importantNote": "Major feature update introducing Multilingual & Sing-Along Lyrics, Live Jam Listening Rooms, Collaborative Playlists, Spotify-style Story Cards, Floating PiP Mini Player, Vibentra Wrapped, and Custom AI Playlist Cover Generator.",
   "changelog": [
     {
-      "category": "Mobile Symmetrical Alignment & Gap Fix (v2.0.1)",
+      "category": "New Features & Enhancements (v2.1.0)",
       "items": [
-        "Eliminated the right-side gap on mobile views by unifying container padding and removing double width narrowing.",
-        "Maintained 100% natural 1.0x zoom and aspect ratio across all devices.",
-        "Symmetrically aligned topbar, curated hero card, horizontal shelves, and settings.",
-        "Bumped Service Worker cache to v129."
+        "Added Multilingual Lyrics Translation (English, Tamil, Hindi) & Romanized Sing-Along notes.",
+        "Added Live Jam Listening Rooms with real-time synchronized audio playback and live chat reactions.",
+        "Added Real-time Collaborative Playlists with 6-letter Join Codes and Firestore sync.",
+        "Added 9:16 Spotify Story Share Card generator with cover gradient extraction & 1-tap download/share.",
+        "Added Floating Picture-in-Picture (PiP) Mini Player with animated soundwaves & playback controls.",
+        "Added Vibentra Wrapped 4-slide animated story carousel with listening minutes & Music Personas.",
+        "Added Custom AI Playlist Cover Generator with 6 aesthetic presets.",
+        "Removed fullscreen button from topbar for streamlined header navigation.",
+        "Bumped Service Worker cache to v130."
       ]
     }
   ]
