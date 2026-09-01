@@ -10,6 +10,9 @@ import { playlistService } from './services/playlistService.js';
 import { historyService } from './services/historyService.js';
 import { sleepTimerService } from './services/sleepTimerService.js';
 import { connectService } from './services/connectService.js';
+import { storyShareService } from './services/storyShareService.js';
+import { coverGeneratorService } from './services/coverGeneratorService.js';
+import { lyricsService } from './services/lyricsService.js';
 import { initUpdateManager } from './updateManager.js';
 
 const initHome = () => {
@@ -727,6 +730,9 @@ const initHome = () => {
                 break;
             case 'settings':
                 renderSettings();
+                break;
+            case 'wrapped':
+                openWrappedModal();
                 break;
             default:
                 renderHome();
@@ -2858,23 +2864,32 @@ const initHome = () => {
                 </div>
             </div>
 
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                 <h2 style="font-weight: 800;">Your Playlists</h2>
-                <button class="btn btn-primary" id="openCreatePlaylistBtn" style="border-radius: 24px; padding: 10px 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1DB954, #059669); border: none; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4);">
-                    <i class="fa-solid fa-plus"></i> Create Playlist
-                </button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn" id="joinCollabPlaylistBtn" style="border-radius: 24px; padding: 10px 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.4); color: #22D3EE; cursor: pointer;">
+                        <i class="fa-solid fa-users"></i> Join Collab
+                    </button>
+                    <button class="btn btn-primary" id="openCreatePlaylistBtn" style="border-radius: 24px; padding: 10px 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1DB954, #059669); border: none; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4);">
+                        <i class="fa-solid fa-plus"></i> Create Playlist
+                    </button>
+                </div>
             </div>
             <div class="playlist-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
         `;
 
         playlists.forEach(pl => {
+            const coverHtml = pl.customCover ? `<img src="${pl.customCover}" style="width: 100%; height: 100%; object-fit: cover;">` : renderMosaicCover(pl.tracks);
             html += `
                 <div class="music-card playlist-card" data-id="${pl.id}" style="display: flex; align-items: center; gap: 16px; padding: 14px; width: 100%; border-radius: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; cursor: pointer; backdrop-filter: blur(12px);">
                     <div class="playlist-img-wrapper" style="width: 72px; height: 72px; flex-shrink: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.4); background: rgba(255,255,255,0.05);">
-                        ${renderMosaicCover(pl.tracks)}
+                        ${coverHtml}
                     </div>
                     <div class="playlist-info" style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                        <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.name}</h3>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.name}</h3>
+                            ${pl.isCollaborative ? `<span style="font-size: 0.68rem; padding: 2px 6px; border-radius: 6px; background: rgba(34, 211, 238, 0.2); color: #22D3EE; font-weight: 700;">COLLAB</span>` : ''}
+                        </div>
                         <p style="margin: 0; color: rgba(255,255,255,0.6); font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pl.description || 'Custom Playlist'}</p>
                         <span style="font-size: 0.78rem; color: #38BDF8; font-weight: 600; margin-top: 4px;">${pl.tracks.length} ${pl.tracks.length === 1 ? 'Track' : 'Tracks'}</span>
                     </div>
@@ -2901,6 +2916,20 @@ const initHome = () => {
             document.getElementById('playlistNameInput').value = '';
             document.getElementById('playlistDescInput').value = '';
             document.getElementById('playlistModal').classList.add('active');
+        });
+
+        document.getElementById('joinCollabPlaylistBtn')?.addEventListener('click', async () => {
+            const code = prompt('Enter 6-character Collaborative Playlist Code (e.g. VIBE_7X9A):');
+            if (code && code.trim()) {
+                try {
+                    showNotification('Joining collaborative playlist...', 'info');
+                    const joinedPl = await playlistService.joinCollabPlaylist(code.trim());
+                    showNotification(`Joined "${joinedPl.name}"!`, 'success');
+                    renderPlaylists();
+                } catch (e) {
+                    showNotification(e.message || 'Failed to join collaborative playlist', 'error');
+                }
+            }
         });
 
         document.querySelectorAll('.edit-pl-btn').forEach(btn => {
@@ -2937,78 +2966,6 @@ const initHome = () => {
         });
     }
 
-    function openTrackOptionsMenu(track, playlistId = null) {
-        if (!track) return;
-        const modal = document.getElementById('songOptionsModal');
-        if (!modal) return;
-
-        const coverEl = document.getElementById('sheetTrackCover');
-        const titleEl = document.getElementById('sheetTrackTitle');
-        const artistEl = document.getElementById('sheetTrackArtist');
-
-        if (coverEl) coverEl.src = track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
-        if (titleEl) titleEl.textContent = track.title || 'Untitled Track';
-        if (artistEl) artistEl.textContent = track.artist || 'Unknown Artist';
-
-        const isFav = favoriteService.isFavorite(track.id);
-        const likeBtn = document.getElementById('sheetLikeBtn');
-        if (likeBtn) {
-            const icon = likeBtn.querySelector('i');
-            const label = likeBtn.querySelector('span');
-            if (icon) {
-                icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-                icon.style.color = isFav ? '#EC4899' : '#38BDF8';
-            }
-            if (label) label.textContent = isFav ? 'Remove from Liked Songs' : 'Add to Liked Songs';
-        }
-
-        const removeBtn = document.getElementById('sheetRemoveBtn');
-        if (removeBtn) {
-            removeBtn.style.display = playlistId ? 'flex' : 'none';
-        }
-
-        modal.classList.add('active');
-
-        const closeModal = () => modal.classList.remove('active');
-
-        const closeBtn = document.getElementById('closeSongOptionsBtn');
-        if (closeBtn) closeBtn.onclick = closeModal;
-
-        modal.onclick = (e) => {
-            if (e.target === modal) closeModal();
-        };
-
-        const playBtn = document.getElementById('sheetPlayBtn');
-        if (playBtn) playBtn.onclick = () => { closeModal(); musicService.playContext([track], track); };
-
-        if (likeBtn) likeBtn.onclick = () => {
-            closeModal();
-            favoriteService.toggleFavorite(track);
-            showNotification(isFav ? 'Removed from Liked Songs' : 'Saved to Liked Songs', 'success');
-        };
-
-        const addPlBtn = document.getElementById('sheetAddPlBtn');
-        if (addPlBtn) addPlBtn.onclick = () => { closeModal(); musicService.openAddToPlaylistModal(track); };
-
-        const dlBtn = document.getElementById('sheetDownloadBtn');
-        if (dlBtn) dlBtn.onclick = () => { closeModal(); musicService.downloadTrack(track); };
-
-        const ringtoneBtn = document.getElementById('sheetRingtoneBtn');
-        if (ringtoneBtn) ringtoneBtn.onclick = () => { closeModal(); musicService.openRingtoneModal(track); };
-
-        const lyricsBtn = document.getElementById('sheetLyricsBtn');
-        if (lyricsBtn) lyricsBtn.onclick = () => { closeModal(); musicService.showLyricsModal(track); };
-
-        if (removeBtn) removeBtn.onclick = () => {
-            closeModal();
-            if (playlistId) {
-                playlistService.removeTrackFromPlaylist(playlistId, track.id);
-                renderPlaylistDetail(playlistId);
-                showNotification('Track removed from playlist', 'info');
-            }
-        };
-    }
-
     function renderPlaylistDetail(id) {
         const pl = playlistService.getPlaylist(id);
         if (!pl) return;
@@ -3041,6 +2998,8 @@ const initHome = () => {
         const avatarSrc = topAvatar && topAvatar.src && !topAvatar.src.includes('ui-avatars') ? topAvatar.src : null;
         const avatarInitial = username.charAt(0).toUpperCase();
 
+        const coverHtml = pl.customCover ? `<img src="${pl.customCover}" style="width: 100%; height: 100%; object-fit: cover;">` : renderMosaicCover(pl.tracks);
+
         let html = `
             <div class="spotify-playlist-view" style="width: 100%; box-sizing: border-box; padding-bottom: 90px;">
                 <!-- Top Back Header -->
@@ -3054,16 +3013,14 @@ const initHome = () => {
                 <div style="display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 24px;">
                     <!-- Cover Art Collage -->
                     <div class="playlist-cover-mosaic" style="width: 160px; height: 160px; flex-shrink: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 14px 35px rgba(0,0,0,0.6); background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
-                        ${renderMosaicCover(pl.tracks)}
+                        ${coverHtml}
                     </div>
 
                     <!-- Title & Creator Info -->
                     <div style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <h1 style="font-size: 2.2rem; font-weight: 800; color: #FFFFFF; margin: 0; line-height: 1.1; letter-spacing: -0.5px;">${pl.name}</h1>
-                            <button id="headerEditPlBtn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid var(--glass-border); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; backdrop-filter: blur(10px); transition: background 0.2s;">
-                                Edit
-                            </button>
+                            ${pl.isCollaborative ? `<span style="font-size: 0.75rem; padding: 4px 10px; border-radius: 10px; background: rgba(34, 211, 238, 0.2); border: 1px solid rgba(34, 211, 238, 0.4); color: #22D3EE; font-weight: 700;">🤝 Collab Code: ${pl.collabCode}</span>` : ''}
                         </div>
                         
                         ${pl.description ? `<p style="color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0;">${pl.description}</p>` : ''}
@@ -3092,20 +3049,10 @@ const initHome = () => {
                         <button id="downloadAllPlBtn" title="Download all songs in playlist" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
                             <i class="fa-regular fa-circle-down"></i>
                         </button>
-                        
-                        <!-- Add Collaborator / Add Songs Button -->
-                        <button id="addSongsPlBtn" title="Add songs to playlist" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
-                            <i class="fa-solid fa-user-plus"></i>
-                        </button>
 
                         <!-- Share Playlist Button -->
                         <button id="sharePlBtn" title="Share playlist link" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
                             <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                        </button>
-
-                        <!-- More Options Button -->
-                        <button id="morePlOptionsBtn" title="Playlist options" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; transition: transform 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center;">
-                            <i class="fa-solid fa-ellipsis"></i>
                         </button>
                     </div>
 
@@ -3125,11 +3072,11 @@ const initHome = () => {
 
                 <!-- Filter & Action Pill Buttons -->
                 <div style="display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px;">
-                    <button id="chipAddSongsBtn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                        <i class="fa-solid fa-plus"></i> Add
+                    <button id="chipCollabBtn" style="background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.4); color: #22D3EE; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <i class="fa-solid fa-users"></i> ${pl.isCollaborative ? 'Share Collab Code' : 'Collaborate'}
                     </button>
-                    <button id="chipSortBtn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                        <i class="fa-solid fa-arrow-down-up-between"></i> Sort
+                    <button id="chipCoverGenBtn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #22D3EE;"></i> AI Cover
                     </button>
                     <button id="chipEditBtn" style="background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
                         <i class="fa-solid fa-pen"></i> Edit
@@ -3151,7 +3098,7 @@ const initHome = () => {
         } else {
             pl.tracks.forEach((track, index) => {
                 html += `
-                <div class="spotify-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box; overflow: hidden;">
+                <div class="spotify-track-row pl-track-row" data-id="${track.id}" data-index="${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box; overflow: hidden;">
                     <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
@@ -3163,7 +3110,7 @@ const initHome = () => {
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto;">
                         ${track.duration ? `<span style="font-size: 0.78rem; color: var(--text-muted); flex-shrink: 0;">${track.duration}</span>` : ''}
-                        <button class="remove-from-pl-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
+                        <button class="remove-from-pl-btn pl-track-opt-btn" data-id="${track.id}" title="Track options" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #38BDF8; font-size: 1.15rem; width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: 10;">
                             <i class="fa-solid fa-ellipsis-vertical"></i>
                         </button>
                     </div>
@@ -3267,23 +3214,28 @@ const initHome = () => {
             }
         });
 
-        // More Options Dropdown Button (...)
-        document.getElementById('morePlOptionsBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const option = prompt(`Playlist Options for "${pl.name}":\n\n1. Edit Name & Description\n2. Download All Songs\n3. Shuffle Play\n4. Delete Playlist\n\nEnter option number (1-4):`);
-            if (option === '1') {
-                openEditModal();
-            } else if (option === '2') {
-                document.getElementById('downloadAllPlBtn')?.click();
-            } else if (option === '3') {
-                document.getElementById('shufflePlBtn')?.click();
-            } else if (option === '4') {
-                if (confirm(`Are you sure you want to delete playlist "${pl.name}"?`)) {
-                    playlistService.deletePlaylist(pl.id);
-                    renderPlaylists();
-                    showNotification('Playlist deleted', 'info');
+        // Collaborative Playlist Button
+        document.getElementById('chipCollabBtn')?.addEventListener('click', async () => {
+            if (!pl.isCollaborative) {
+                try {
+                    showNotification('Enabling real-time collaborative syncing...', 'info');
+                    const collabCode = await playlistService.enableCollab(pl.id);
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(collabCode);
+                    }
+                    prompt(`🎉 Collaborative Playlist Active!\n\nShare this Join Code with friends to edit this playlist together in real-time:\n\nJoin Code:`, collabCode);
+                    renderPlaylistDetail(pl.id);
+                } catch (e) {
+                    showNotification(e.message || 'Failed to enable collaboration', 'error');
                 }
+            } else {
+                prompt(`🤝 Collaborative Playlist Join Code:\n\nShare this code with friends so they can add tracks:`, pl.collabCode);
             }
+        });
+
+        // AI Cover Generator Button
+        document.getElementById('chipCoverGenBtn')?.addEventListener('click', () => {
+            openCoverGenModal(pl.id, pl.name);
         });
 
         // Sort Playlist
@@ -3302,9 +3254,9 @@ const initHome = () => {
         });
 
         // Track Row Click -> Play Track
-        document.querySelectorAll('.spotify-track-row').forEach(row => {
+        document.querySelectorAll('.pl-track-row').forEach(row => {
             row.addEventListener('click', (e) => {
-                if (e.target.closest('.remove-from-pl-btn')) return;
+                if (e.target.closest('.pl-track-opt-btn')) return;
                 const idx = parseInt(row.getAttribute('data-index'));
                 if (!isNaN(idx) && pl.tracks[idx]) {
                     musicService.playContext(pl.tracks, pl.tracks[idx]);
@@ -3313,33 +3265,31 @@ const initHome = () => {
         });
 
         // Track Options / Remove Button (⋮)
-        document.querySelectorAll('.remove-from-pl-btn').forEach(btn => {
+        document.querySelectorAll('.pl-track-opt-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const trackId = btn.getAttribute('data-id');
                 const track = pl.tracks.find(t => String(t.id) === String(trackId));
                 if (!track) return;
 
-                openTrackOptionsMenu(track, pl.id);
+                openTrackOptionsMenu(track, pl);
             });
         });
     }
 
-    function openTrackOptionsMenu(track, playlistId = null) {
+    // Track Options Action Sheet Controller (Spotify x YouTube Music Style)
+    function openTrackOptionsMenu(track, playlistContext = null) {
         if (!track) return;
         const modal = document.getElementById('songOptionsModal');
         if (!modal) return;
 
-        const safeCover = track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
         const coverEl = document.getElementById('sheetTrackCover');
         const titleEl = document.getElementById('sheetTrackTitle');
         const artistEl = document.getElementById('sheetTrackArtist');
-        if (coverEl) coverEl.src = safeCover;
-        if (titleEl) titleEl.textContent = track.title || 'Untitled Track';
-        if (artistEl) artistEl.textContent = track.artist || 'Unknown Artist';
-
         const playBtn = document.getElementById('sheetPlayBtn');
         const likeBtn = document.getElementById('sheetLikeBtn');
+        const storyShareBtn = document.getElementById('sheetStoryShareBtn');
+        const pipBtn = document.getElementById('sheetPipBtn');
         const addPlBtn = document.getElementById('sheetAddPlBtn');
         const downloadBtn = document.getElementById('sheetDownloadBtn');
         const ringtoneBtn = document.getElementById('sheetRingtoneBtn');
@@ -3347,73 +3297,92 @@ const initHome = () => {
         const removeBtn = document.getElementById('sheetRemoveBtn');
         const closeBtn = document.getElementById('closeSongOptionsBtn');
 
+        if (coverEl) coverEl.src = track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+        if (titleEl) titleEl.textContent = track.title || 'Untitled Track';
+        if (artistEl) artistEl.textContent = track.artist || 'Unknown Artist';
+
+        // Like button state
+        const isFav = favoriteService.isFavorite(track.id);
         if (likeBtn) {
-            const isFav = favoriteService.isFavorite(track.id);
-            const icon = likeBtn.querySelector('i');
-            const span = likeBtn.querySelector('span');
-            if (icon) icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-            if (span) span.textContent = isFav ? 'Remove from Liked Songs' : 'Add to Liked Songs';
+            likeBtn.innerHTML = `
+                <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="${isFav ? 'color: #EC4899;' : ''}"></i>
+                <span>${isFav ? 'Remove from Liked Songs' : 'Add to Liked Songs'}</span>
+            `;
+            likeBtn.onclick = () => {
+                favoriteService.toggleFavorite(track);
+                modal.classList.remove('active');
+                showNotification(isFav ? 'Removed from Liked Songs' : 'Added to Liked Songs ❤️', 'success');
+            };
+        }
+
+        if (playBtn) {
+            playBtn.onclick = () => {
+                modal.classList.remove('active');
+                musicService.playTrack(track);
+            };
+        }
+
+        if (storyShareBtn) {
+            storyShareBtn.onclick = () => {
+                modal.classList.remove('active');
+                openStoryShareModal(track);
+            };
+        }
+
+        if (pipBtn) {
+            pipBtn.onclick = () => {
+                modal.classList.remove('active');
+                togglePipPlayer(true);
+            };
+        }
+
+        if (addPlBtn) {
+            addPlBtn.onclick = () => {
+                modal.classList.remove('active');
+                openAddToPlaylistModal(track);
+            };
+        }
+
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                modal.classList.remove('active');
+                musicService.downloadTrack(track);
+            };
+        }
+
+        if (ringtoneBtn) {
+            ringtoneBtn.onclick = () => {
+                modal.classList.remove('active');
+                openRingtoneModal(track);
+            };
+        }
+
+        if (lyricsBtn) {
+            lyricsBtn.onclick = () => {
+                modal.classList.remove('active');
+                openLyricsModal(track);
+            };
         }
 
         if (removeBtn) {
-            removeBtn.style.display = playlistId ? 'flex' : 'none';
+            if (playlistContext) {
+                removeBtn.style.display = 'flex';
+                removeBtn.onclick = () => {
+                    playlistService.removeTrackFromPlaylist(playlistContext.id, track.id);
+                    modal.classList.remove('active');
+                    renderPlaylistDetail(playlistContext.id);
+                    showNotification(`Removed "${track.title}" from playlist`, 'info');
+                };
+            } else {
+                removeBtn.style.display = 'none';
+            }
         }
 
-        const closeModal = () => {
-            modal.classList.remove('active');
-        };
-
-        const rebind = (el, callback) => {
-            if (!el) return;
-            const newEl = el.cloneNode(true);
-            el.parentNode.replaceChild(newEl, el);
-            newEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                closeModal();
-                callback(e);
-            });
-        };
-
-        rebind(playBtn, () => {
-            musicService.playTrack(track);
-        });
-
-        rebind(likeBtn, () => {
-            favoriteService.toggleFavorite(track);
-            const isNowFav = favoriteService.isFavorite(track.id);
-            showNotification(isNowFav ? 'Added to Liked Songs' : 'Removed from Liked Songs', 'success');
-        });
-
-        rebind(addPlBtn, () => {
-            openAddToPlaylistModal(track);
-        });
-
-        rebind(downloadBtn, () => {
-            musicService.downloadTrack(track);
-        });
-
-        rebind(ringtoneBtn, () => {
-            openRingtoneModal(track);
-        });
-
-        rebind(lyricsBtn, () => {
-            openLyricsModal(track);
-        });
-
-        rebind(removeBtn, () => {
-            if (playlistId) {
-                playlistService.removeTrackFromPlaylist(playlistId, track.id);
-                renderPlaylistDetail(playlistId);
-                showNotification('Track removed from playlist', 'info');
-            }
-        });
-
-        rebind(closeBtn, () => {
-            closeModal();
-        });
-
+        if (closeBtn) {
+            closeBtn.onclick = () => modal.classList.remove('active');
+        }
         modal.onclick = (e) => {
-            if (e.target === modal) closeModal();
+            if (e.target === modal) modal.classList.remove('active');
         };
 
         modal.classList.add('active');
@@ -3488,26 +3457,491 @@ const initHome = () => {
         modal.classList.add('active');
     }
 
-    function openLyricsModal(track) {
-        if (!track) return;
+    // Spotify-Style Story Share Modal Controller
+    let currentStoryCardCanvas = null;
+    async function openStoryShareModal(track = null) {
+        const currentPlaying = track || musicService.currentTrack;
+        if (!currentPlaying) {
+            showNotification('Play a song first to share its story card!', 'info');
+            return;
+        }
+
+        const modal = document.getElementById('storyShareModal');
+        const previewContainer = document.getElementById('storyCardPreviewContainer');
+        const closeBtn = document.getElementById('closeStoryShareModal');
+        const downloadBtn = document.getElementById('downloadStoryBtn');
+        const shareBtn = document.getElementById('nativeShareStoryBtn');
+
+        if (!modal || !previewContainer) return;
+
+        previewContainer.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: #22D3EE;"></i>`;
+        modal.classList.add('active');
+
+        try {
+            const canvas = await storyShareService.renderStoryCard(currentPlaying);
+            currentStoryCardCanvas = canvas;
+
+            previewContainer.innerHTML = '';
+            const previewImg = document.createElement('img');
+            previewImg.src = canvas.toDataURL('image/png');
+            previewImg.style.cssText = 'width: 100%; height: 100%; object-fit: contain; border-radius: 20px;';
+            previewContainer.appendChild(previewImg);
+        } catch (e) {
+            console.error('Story card render error:', e);
+            previewContainer.innerHTML = `<p style="color: rgba(255,255,255,0.6); padding: 20px;">Failed to generate story card.</p>`;
+        }
+
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                if (currentStoryCardCanvas) {
+                    storyShareService.downloadCard(currentStoryCardCanvas, `${currentPlaying.title || 'vibentra'}-story.png`);
+                    showNotification('Story card downloaded!', 'success');
+                }
+            };
+        }
+
+        if (shareBtn) {
+            shareBtn.onclick = async () => {
+                if (currentStoryCardCanvas) {
+                    await storyShareService.shareCard(currentStoryCardCanvas, currentPlaying);
+                }
+            };
+        }
+
+        if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        };
+    }
+
+    // Lyrics & Multilingual Translation Controller
+    let currentRawLyrics = null;
+    let activeLyricsLang = 'original';
+    let lyricsTimeUpdateListener = null;
+
+    async function openLyricsModal(track = null) {
+        const currentPlaying = track || musicService.currentTrack;
+        if (!currentPlaying) {
+            showNotification('Play a track first to see lyrics!', 'info');
+            return;
+        }
+
         const modal = document.getElementById('lyricsModal');
         const closeBtn = document.getElementById('closeLyricsModal');
         const titleEl = document.getElementById('lyricsTitle');
         const contentEl = document.getElementById('lyricsContent');
-        if (!modal) return;
+        const langBar = document.getElementById('lyricsLangBar');
 
-        if (titleEl) titleEl.textContent = track.title || 'Lyrics';
-        if (contentEl) contentEl.textContent = 'Searching lyrics...';
+        if (!modal || !contentEl) return;
+
+        if (titleEl) titleEl.textContent = `${currentPlaying.title || 'Lyrics'} - ${currentPlaying.artist || ''}`;
+        contentEl.innerHTML = `
+            <div style="padding: 40px 0; text-align: center; color: rgba(255,255,255,0.7);">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.2rem; color: #22D3EE; margin-bottom: 12px;"></i>
+                <p style="font-size: 0.95rem; font-weight: 600;">Searching synced lyrics & sing-along notes...</p>
+            </div>
+        `;
 
         modal.classList.add('active');
-        if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
+        activeLyricsLang = 'original';
 
-        lyricsService.fetchLyrics(track).then(lyrics => {
-            if (contentEl) contentEl.textContent = lyrics || 'No lyrics found for this track.';
-        }).catch(() => {
-            if (contentEl) contentEl.textContent = 'Lyrics unavailable for this track.';
-        });
+        // Reset pills
+        if (langBar) {
+            langBar.querySelectorAll('.lyrics-lang-pill').forEach(p => {
+                p.classList.toggle('active', p.getAttribute('data-lang') === 'original');
+            });
+        }
+
+        try {
+            currentRawLyrics = await lyricsService.fetchLyrics(currentPlaying);
+            renderLyricsContent(currentRawLyrics, contentEl);
+        } catch (e) {
+            console.error('Lyrics error:', e);
+            contentEl.innerHTML = `<p style="color: rgba(255,255,255,0.6); padding: 30px;">Lyrics unavailable for this song.</p>`;
+        }
+
+        // Wire language pill clicks
+        if (langBar) {
+            langBar.querySelectorAll('.lyrics-lang-pill').forEach(pill => {
+                pill.onclick = async () => {
+                    langBar.querySelectorAll('.lyrics-lang-pill').forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    const lang = pill.getAttribute('data-lang');
+                    activeLyricsLang = lang;
+
+                    if (!currentRawLyrics) return;
+
+                    contentEl.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.8rem; color: #22D3EE; margin: 30px auto; display: block;"></i>`;
+
+                    if (lang === 'original') {
+                        renderLyricsContent(currentRawLyrics, contentEl);
+                    } else if (lang === 'romanized') {
+                        const romLyrics = lyricsService.getRomanizedLyrics(currentRawLyrics);
+                        renderLyricsContent(romLyrics, contentEl);
+                    } else {
+                        const transLyrics = await lyricsService.translateLyrics(currentRawLyrics, lang);
+                        renderLyricsContent(transLyrics, contentEl);
+                    }
+                };
+            });
+        }
+
+        if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        };
     }
+
+    function renderLyricsContent(lyricsData, containerEl) {
+        if (!lyricsData || (!lyricsData.plainText && (!lyricsData.syncedLines || lyricsData.syncedLines.length === 0))) {
+            containerEl.innerHTML = `<p style="color: rgba(255,255,255,0.6); padding: 40px;">No lyrics found for this track.</p>`;
+            return;
+        }
+
+        if (lyricsData.isSynced && lyricsData.syncedLines && lyricsData.syncedLines.length > 0) {
+            containerEl.innerHTML = '';
+            lyricsData.syncedLines.forEach((line, idx) => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'synced-lyrics-line';
+                lineEl.setAttribute('data-time', line.time);
+                lineEl.setAttribute('data-idx', idx);
+                lineEl.style.cssText = 'padding: 8px 16px; border-radius: 12px; margin-bottom: 6px; transition: all 0.3s ease; color: rgba(255,255,255,0.5); font-weight: 700; font-size: 1.15rem; cursor: pointer;';
+                lineEl.textContent = line.text;
+
+                lineEl.addEventListener('click', () => {
+                    musicService.seek(line.time);
+                });
+
+                containerEl.appendChild(lineEl);
+            });
+
+            // Clean up previous timeupdate listener
+            if (lyricsTimeUpdateListener) {
+                musicService.audio.removeEventListener('timeupdate', lyricsTimeUpdateListener);
+            }
+
+            lyricsTimeUpdateListener = () => {
+                const curr = musicService.currentTime;
+                const lines = containerEl.querySelectorAll('.synced-lyrics-line');
+                let activeIdx = -1;
+
+                lines.forEach((l, i) => {
+                    const t = parseFloat(l.getAttribute('data-time'));
+                    if (curr >= t) {
+                        activeIdx = i;
+                    }
+                });
+
+                lines.forEach((l, i) => {
+                    if (i === activeIdx) {
+                        l.style.color = '#FFFFFF';
+                        l.style.background = 'rgba(34, 211, 238, 0.2)';
+                        l.style.transform = 'scale(1.03)';
+                        l.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        l.style.color = 'rgba(255,255,255,0.45)';
+                        l.style.background = 'transparent';
+                        l.style.transform = 'scale(1)';
+                    }
+                });
+            };
+
+            musicService.audio.addEventListener('timeupdate', lyricsTimeUpdateListener);
+        } else {
+            containerEl.innerHTML = `<div style="text-align: left; color: rgba(255,255,255,0.9); font-size: 1.15rem; line-height: 2.2; padding: 10px 20px;">${lyricsData.plainText}</div>`;
+        }
+    }
+
+    // Custom AI Playlist Cover Generator Controller
+    function openCoverGenModal(playlistId = null, defaultTitle = 'My Playlist') {
+        const modal = document.getElementById('coverGeneratorModal');
+        const previewImg = document.getElementById('coverGenPreview');
+        const titleInput = document.getElementById('coverGenTitleInput');
+        const subtitleInput = document.getElementById('coverGenSubtitleInput');
+        const applyBtn = document.getElementById('applyCoverGenBtn');
+        const closeBtn = document.getElementById('closeCoverGenModal');
+
+        if (!modal) return;
+
+        let selectedPreset = 'cyberpunk';
+        if (titleInput) titleInput.value = defaultTitle;
+        if (subtitleInput) subtitleInput.value = 'Curated Soundscape';
+
+        const updatePreview = () => {
+            const dataUrl = coverGeneratorService.generateCover({
+                title: titleInput ? titleInput.value : defaultTitle,
+                subtitle: subtitleInput ? subtitleInput.value : 'Vibentra Mix',
+                presetId: selectedPreset
+            });
+            if (previewImg) previewImg.src = dataUrl;
+            return dataUrl;
+        };
+
+        // Wire preset pills
+        modal.querySelectorAll('.cover-preset-pill').forEach(pill => {
+            pill.onclick = () => {
+                modal.querySelectorAll('.cover-preset-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                selectedPreset = pill.getAttribute('data-preset');
+                updatePreview();
+            };
+        });
+
+        titleInput?.addEventListener('input', updatePreview);
+        subtitleInput?.addEventListener('input', updatePreview);
+
+        updatePreview();
+        modal.classList.add('active');
+
+        if (applyBtn) {
+            applyBtn.onclick = () => {
+                const coverDataUrl = updatePreview();
+                if (playlistId) {
+                    playlistService.setCustomCover(playlistId, coverDataUrl);
+                    showNotification('Custom AI artwork applied to playlist!', 'success');
+                    modal.classList.remove('active');
+                    renderPlaylistDetail(playlistId);
+                } else {
+                    sessionStorage.setItem('temp_playlist_cover', coverDataUrl);
+                    showNotification('Artwork generated! Ready to create playlist.', 'success');
+                    modal.classList.remove('active');
+                }
+            };
+        }
+
+        if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        };
+    }
+
+    // Vibentra Wrapped Full-Screen Story Carousel Controller
+    let wrappedSlideTimer = null;
+    let currentWrappedIndex = 0;
+    function openWrappedModal() {
+        const modal = document.getElementById('wrappedModal');
+        const contentContainer = document.getElementById('wrappedSlideContent');
+        const progressBars = document.getElementById('wrappedProgressBars');
+        const closeBtn = document.getElementById('closeWrappedBtn');
+        const prevTouch = document.getElementById('wrappedPrevTouch');
+        const nextTouch = document.getElementById('wrappedNextTouch');
+        const shareBtn = document.getElementById('wrappedShareBtn');
+
+        if (!modal || !contentContainer) return;
+
+        const stats = historyService.getWrappedAnalytics();
+        currentWrappedIndex = 0;
+        modal.classList.add('active');
+
+        const slides = [
+            // Slide 0: Total Minutes & Overview
+            `
+                <div class="wrapped-slide-fade" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                    <div style="font-size: 3.5rem; margin-bottom: 12px; filter: drop-shadow(0 0 20px #22D3EE);">🎧</div>
+                    <span style="font-size: 0.85rem; font-weight: 800; letter-spacing: 2px; color: #22D3EE; text-transform: uppercase; margin-bottom: 8px;">VIBENTRA WRAPPED</span>
+                    <h2 style="font-size: 2.2rem; font-weight: 900; color: #FFFFFF; margin: 0 0 16px 0; line-height: 1.2;">Your Music Year in Review</h2>
+                    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 20px; width: 100%; box-sizing: border-box; margin-bottom: 12px;">
+                        <h3 style="font-size: 3rem; font-weight: 900; color: #22D3EE; margin: 0;">${stats.totalMinutes}</h3>
+                        <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 0.95rem; font-weight: 600;">Minutes Listened across Vibentra</p>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0;">Tap right to see your Top Artists & Tracks 👉</p>
+                </div>
+            `,
+            // Slide 1: Top 5 Artists
+            `
+                <div class="wrapped-slide-fade" style="display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%;">
+                    <span style="font-size: 0.85rem; font-weight: 800; letter-spacing: 2px; color: #F43F5E; text-transform: uppercase; margin-bottom: 6px;">TOP ARTISTS</span>
+                    <h2 style="font-size: 1.8rem; font-weight: 900; color: #FFFFFF; margin: 0 0 16px 0;">Artists You Couldn't Stop Playing</h2>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        ${stats.topArtists.map(a => `
+                            <div class="wrapped-rank-row">
+                                <span class="wrapped-rank-num">${a.rank}</span>
+                                <img src="${a.cover}" class="wrapped-rank-img" alt="${a.name}">
+                                <div class="wrapped-rank-text">
+                                    <h4>${a.name}</h4>
+                                    <p>${a.plays} plays</p>
+                                </div>
+                                <i class="fa-solid fa-crown" style="color: ${a.rank === 1 ? '#FBBF24' : 'transparent'};"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `,
+            // Slide 2: Top 5 Tracks
+            `
+                <div class="wrapped-slide-fade" style="display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%;">
+                    <span style="font-size: 0.85rem; font-weight: 800; letter-spacing: 2px; color: #10B981; text-transform: uppercase; margin-bottom: 6px;">TOP HITS</span>
+                    <h2 style="font-size: 1.8rem; font-weight: 900; color: #FFFFFF; margin: 0 0 16px 0;">Your Most Replayed Anthems</h2>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        ${stats.topSongs.map(s => `
+                            <div class="wrapped-rank-row">
+                                <span class="wrapped-rank-num">${s.rank}</span>
+                                <img src="${s.cover}" class="wrapped-rank-img" alt="${s.title}">
+                                <div class="wrapped-rank-text">
+                                    <h4>${s.title}</h4>
+                                    <p>${s.artist}</p>
+                                </div>
+                                <i class="fa-solid fa-fire" style="color: ${s.rank === 1 ? '#EF4444' : 'rgba(255,255,255,0.2)'};"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `,
+            // Slide 3: Music Persona
+            `
+                <div class="wrapped-slide-fade" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                    <div style="font-size: 3.5rem; margin-bottom: 12px; filter: drop-shadow(0 0 25px ${stats.persona.color1});"><i class="${stats.persona.icon}" style="color: ${stats.persona.color1};"></i></div>
+                    <span style="font-size: 0.85rem; font-weight: 800; letter-spacing: 2px; padding: 4px 14px; border-radius: 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #FFFFFF; text-transform: uppercase; margin-bottom: 12px;">${stats.persona.badge}</span>
+                    <h2 style="font-size: 2.2rem; font-weight: 900; color: #FFFFFF; margin: 0 0 12px 0;">${stats.persona.title}</h2>
+                    <p style="color: rgba(255,255,255,0.85); font-size: 1rem; line-height: 1.6; margin: 0 0 20px 0; max-width: 320px;">${stats.persona.tagline}</p>
+                    <div style="padding: 10px 20px; background: rgba(255,255,255,0.06); border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);">
+                        <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Peak Vibe: </span>
+                        <strong style="color: #22D3EE;">${stats.topGenre}</strong>
+                    </div>
+                </div>
+            `
+        ];
+
+        const renderSlide = (idx) => {
+            currentWrappedIndex = idx;
+            contentContainer.innerHTML = slides[idx];
+
+            // Update top progress bars
+            const barFills = modal.querySelectorAll('.wrap-bar-fill');
+            barFills.forEach((fill, bIdx) => {
+                if (bIdx < idx) fill.style.width = '100%';
+                else if (bIdx === idx) fill.style.width = '100%';
+                else fill.style.width = '0%';
+            });
+
+            // Clear old timer
+            if (wrappedSlideTimer) clearTimeout(wrappedSlideTimer);
+
+            // Auto-advance timer (5.5s)
+            if (idx < slides.length - 1) {
+                wrappedSlideTimer = setTimeout(() => {
+                    renderSlide(idx + 1);
+                }, 5500);
+            }
+        };
+
+        renderSlide(0);
+
+        if (prevTouch) {
+            prevTouch.onclick = () => {
+                if (currentWrappedIndex > 0) renderSlide(currentWrappedIndex - 1);
+            };
+        }
+
+        if (nextTouch) {
+            nextTouch.onclick = () => {
+                if (currentWrappedIndex < slides.length - 1) renderSlide(currentWrappedIndex + 1);
+                else modal.classList.remove('active');
+            };
+        }
+
+        if (shareBtn) {
+            shareBtn.onclick = () => {
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'My Vibentra Wrapped 2026',
+                        text: `I spent ${stats.totalMinutes} minutes listening on Vibentra! My persona is ${stats.persona.title} (${stats.persona.badge}). Check out Vibentra! ✨`,
+                        url: window.location.href
+                    }).catch(() => {});
+                } else {
+                    showNotification(`Copied Wrapped stats: ${stats.totalMinutes} mins listened! 🎶`, 'success');
+                }
+            };
+        }
+
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                if (wrappedSlideTimer) clearTimeout(wrappedSlideTimer);
+                modal.classList.remove('active');
+            };
+        }
+    }
+
+    // Floating Picture-in-Picture Mini Player Widget Controller
+    function togglePipPlayer(forceState = null) {
+        const pipWidget = document.getElementById('floatingPipPlayer');
+        if (!pipWidget) return;
+
+        const isCurrentlyHidden = pipWidget.classList.contains('hidden');
+        const shouldShow = forceState !== null ? forceState : isCurrentlyHidden;
+
+        if (shouldShow) {
+            pipWidget.classList.remove('hidden');
+            updatePipWidget();
+        } else {
+            pipWidget.classList.add('hidden');
+        }
+    }
+
+    function updatePipWidget() {
+        const pipWidget = document.getElementById('floatingPipPlayer');
+        if (!pipWidget || pipWidget.classList.contains('hidden')) return;
+
+        const track = musicService.currentTrack;
+        const isPlaying = musicService.isPlaying;
+
+        const cover = document.getElementById('pipCover');
+        const title = document.getElementById('pipTitle');
+        const artist = document.getElementById('pipArtist');
+        const playBtn = document.getElementById('pipPlayBtn');
+
+        if (track) {
+            if (cover) cover.src = track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200&q=80';
+            if (title) title.textContent = track.title || 'Untitled Track';
+            if (artist) artist.textContent = track.artist || 'Unknown Artist';
+        }
+
+        if (playBtn) {
+            playBtn.innerHTML = `<i class="fa-solid fa-${isPlaying ? 'pause' : 'play'}"></i>`;
+        }
+    }
+
+    // Bind PiP Controls once
+    document.getElementById('pipCloseBtn')?.addEventListener('click', () => togglePipPlayer(false));
+    document.getElementById('pipPlayBtn')?.addEventListener('click', () => musicService.togglePlay());
+    document.getElementById('pipPrevBtn')?.addEventListener('click', () => musicService.playPrevious());
+    document.getElementById('pipNextBtn')?.addEventListener('click', () => musicService.playNext());
+    document.getElementById('pipExpandBtn')?.addEventListener('click', () => {
+        togglePipPlayer(false);
+        document.getElementById('largePlayerModal')?.classList.add('active');
+    });
+
+    // Sync PiP widget with playback events
+    musicService.onTrackChange = (track) => {
+        updatePipWidget();
+    };
+    musicService.onStateChange = (isPlaying) => {
+        updatePipWidget();
+    };
+
+    // Global Topbar Triggers
+    document.getElementById('topPipToggleBtn')?.addEventListener('click', () => togglePipPlayer());
+    document.getElementById('topWrappedBtn')?.addEventListener('click', () => openWrappedModal());
+    document.getElementById('navWrappedBtn')?.addEventListener('click', () => openWrappedModal());
+    document.getElementById('largeOptStoryShare')?.addEventListener('click', () => {
+        document.getElementById('largePlayerModal')?.classList.remove('active');
+        openStoryShareModal();
+    });
+    document.getElementById('largeOptPip')?.addEventListener('click', () => {
+        document.getElementById('largePlayerModal')?.classList.remove('active');
+        togglePipPlayer(true);
+    });
+    document.getElementById('largeOptLyrics')?.addEventListener('click', () => {
+        openLyricsModal();
+    });
+    document.getElementById('largeLyricsBtn')?.addEventListener('click', () => {
+        openLyricsModal();
+    });
+    document.getElementById('openCoverGenFromModalBtn')?.addEventListener('click', () => {
+        const id = document.getElementById('editingPlaylistId')?.value;
+        const name = document.getElementById('playlistNameInput')?.value || 'My Playlist';
+        openCoverGenModal(id, name);
+    });
 
     function renderFavorites() {
         const favs = favoriteService.getFavorites();
@@ -3569,6 +4003,252 @@ const initHome = () => {
                 if (track) openTrackOptionsMenu(track);
             });
         });
+    }
+
+    function renderConnect() {
+        const username = document.getElementById('welcomeName')?.textContent || 'User';
+
+        if (!connectService.currentRoomId) {
+            dynamicContent.innerHTML = `
+                <div class="connect-view-wrapper view-fade-in" style="max-width: 800px; margin: 0 auto; padding-bottom: 80px;">
+                    <!-- Hero Jam Card -->
+                    <div class="glass-panel" style="border-radius: 24px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(124, 58, 237, 0.3) 100%); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 24px; box-shadow: 0 12px 30px rgba(0,0,0,0.4);">
+                        <div style="width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #22D3EE, #7C3AED); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; box-shadow: 0 0 25px rgba(34, 211, 238, 0.6);">
+                            <i class="fa-solid fa-tower-broadcast"></i>
+                        </div>
+                        <h2 style="font-size: 1.8rem; font-weight: 900; color: #FFFFFF; margin: 0;">Live Jam & Listening Rooms</h2>
+                        <p style="color: rgba(255,255,255,0.8); font-size: 0.95rem; margin: 0; max-width: 500px; line-height: 1.5;">
+                            Listen to music simultaneously with friends from anywhere in the world in real-time.
+                        </p>
+                    </div>
+
+                    <!-- Host & Join Options Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <!-- Host Card -->
+                        <div class="glass-panel" style="padding: 24px; border-radius: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <i class="fa-solid fa-crown" style="color: #FBBF24; font-size: 1.3rem;"></i>
+                                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: white;">Host a Jam Session</h3>
+                                </div>
+                                <p style="color: rgba(255,255,255,0.65); font-size: 0.88rem; line-height: 1.45; margin: 0;">
+                                    Create a private room, share your 6-letter room code, and control playback for all connected listeners.
+                                </p>
+                            </div>
+                            <button id="startJamBtn" class="btn btn-primary" style="padding: 14px; border-radius: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #1DB954, #059669); border: none;">
+                                <i class="fa-solid fa-play"></i> Start Jam Room
+                            </button>
+                        </div>
+
+                        <!-- Join Card -->
+                        <div class="glass-panel" style="padding: 24px; border-radius: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <i class="fa-solid fa-right-to-bracket" style="color: #22D3EE; font-size: 1.3rem;"></i>
+                                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: white;">Join Friend's Jam</h3>
+                                </div>
+                                <p style="color: rgba(255,255,255,0.65); font-size: 0.88rem; line-height: 1.45; margin: 0 0 12px 0;">
+                                    Enter the 6-letter code shared by your friend to sync your player to their stream.
+                                </p>
+                                <input type="text" id="jamCodeInput" placeholder="Enter Room Code (e.g. ABC123)" maxlength="6" style="width: 100%; box-sizing: border-box; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: #FFFFFF; font-size: 1rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; outline: none;">
+                            </div>
+                            <button id="joinJamBtn" class="btn" style="padding: 14px; border-radius: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(34, 211, 238, 0.2); border: 1px solid rgba(34, 211, 238, 0.4); color: #22D3EE; cursor: pointer;">
+                                <i class="fa-solid fa-users"></i> Join Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('startJamBtn')?.addEventListener('click', async () => {
+                try {
+                    showNotification('Creating your Live Jam room...', 'info');
+                    const roomId = await connectService.createRoom(username);
+                    showNotification(`Live Jam Room created: ${roomId}!`, 'success');
+                    renderConnect();
+                } catch (e) {
+                    showNotification('Failed to create room: ' + e.message, 'error');
+                }
+            });
+
+            document.getElementById('joinJamBtn')?.addEventListener('click', async () => {
+                const code = document.getElementById('jamCodeInput')?.value;
+                if (!code || code.trim().length < 4) {
+                    showNotification('Please enter a valid 6-letter Room Code', 'error');
+                    return;
+                }
+                try {
+                    showNotification('Connecting to Live Jam...', 'info');
+                    await connectService.joinRoom(code.trim(), username);
+                    showNotification('Connected to Live Jam!', 'success');
+                    renderConnect();
+                } catch (e) {
+                    showNotification(e.message || 'Failed to join Jam', 'error');
+                }
+            });
+
+        } else {
+            // Active Jam Room View
+            const roomId = connectService.currentRoomId;
+            const isHost = connectService.isHost;
+
+            dynamicContent.innerHTML = `
+                <div class="connect-room-wrapper view-fade-in" style="max-width: 800px; margin: 0 auto; padding-bottom: 90px;">
+                    <!-- Room Header Bar -->
+                    <div class="glass-panel" style="border-radius: 20px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border: 1px solid rgba(34, 211, 238, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 1.4rem; color: #22D3EE;"><i class="fa-solid fa-tower-broadcast"></i></span>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: white;">Jam Room: <span style="color: #22D3EE; letter-spacing: 2px;">${roomId}</span></h3>
+                                <span style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">${isHost ? '👑 You are the Host (broadcasting)' : '🎧 Connected as Guest (listening)'}</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button id="copyJamCodeBtn" class="btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                                <i class="fa-solid fa-copy"></i> Copy Code
+                            </button>
+                            <button id="leaveJamBtn" class="btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #EF4444; padding: 8px 16px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                                Leave Jam
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Room Live Sync Player & Chat Box -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                        <!-- Currently Playing Section -->
+                        <div class="glass-panel" style="padding: 24px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 0 0 16px 0;">Now Synchronized</h4>
+                            <img id="jamTrackCover" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80" style="width: 140px; height: 140px; border-radius: 18px; object-fit: cover; box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-bottom: 14px;">
+                            <h3 id="jamTrackTitle" style="margin: 0 0 4px 0; font-size: 1.15rem; font-weight: 800; color: white;">No track streaming yet</h3>
+                            <p id="jamTrackArtist" style="margin: 0 0 16px 0; font-size: 0.85rem; color: var(--text-muted);">Host can play any song to broadcast</p>
+                            <div id="jamParticipantsList" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px;">
+                                <span style="font-size: 0.8rem; color: #22D3EE; font-weight: 700;">Active Listeners: 1</span>
+                            </div>
+                        </div>
+
+                        <!-- Live Jam Chat & Reactions -->
+                        <div class="glass-panel" style="padding: 20px; border-radius: 20px; display: flex; flex-direction: column; height: 360px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-comments" style="color: #22D3EE;"></i> Live Reactions & Chat
+                            </h4>
+                            <div id="jamChatMessages" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; padding-right: 4px;">
+                                <p style="color: rgba(255,255,255,0.5); font-size: 0.82rem; text-align: center; margin: auto;">Drop a vibe or reaction below! 👇</p>
+                            </div>
+
+                            <!-- Quick Emoji Reactions -->
+                            <div style="display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px;">
+                                <button class="jam-emoji-btn" data-emoji="🔥" style="background: rgba(255,255,255,0.08); border: none; border-radius: 8px; padding: 4px 8px; font-size: 1.1rem; cursor: pointer;">🔥</button>
+                                <button class="jam-emoji-btn" data-emoji="❤️" style="background: rgba(255,255,255,0.08); border: none; border-radius: 8px; padding: 4px 8px; font-size: 1.1rem; cursor: pointer;">❤️</button>
+                                <button class="jam-emoji-btn" data-emoji="⚡" style="background: rgba(255,255,255,0.08); border: none; border-radius: 8px; padding: 4px 8px; font-size: 1.1rem; cursor: pointer;">⚡</button>
+                                <button class="jam-emoji-btn" data-emoji="🎉" style="background: rgba(255,255,255,0.08); border: none; border-radius: 8px; padding: 4px 8px; font-size: 1.1rem; cursor: pointer;">🎉</button>
+                                <button class="jam-emoji-btn" data-emoji="💃" style="background: rgba(255,255,255,0.08); border: none; border-radius: 8px; padding: 4px 8px; font-size: 1.1rem; cursor: pointer;">💃</button>
+                                <button class="jam-emoji-btn" data-emoji="🎧" style="background: rgba(255,255,255,0.08); border: none; border-radius: 8px; padding: 4px 8px; font-size: 1.1rem; cursor: pointer;">🎧</button>
+                            </div>
+
+                            <!-- Chat Input -->
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="jamMessageInput" placeholder="Send a message..." style="flex: 1; padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; outline: none; font-size: 0.9rem;">
+                                <button id="jamSendMsgBtn" class="btn btn-primary" style="border-radius: 12px; padding: 0 16px; border: none;"><i class="fa-solid fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Wire Room Events
+            document.getElementById('copyJamCodeBtn')?.addEventListener('click', () => {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(roomId);
+                    showNotification(`Room code "${roomId}" copied to clipboard!`, 'success');
+                }
+            });
+
+            document.getElementById('leaveJamBtn')?.addEventListener('click', () => {
+                connectService.leaveRoom();
+                showNotification('Left Live Jam room.', 'info');
+                renderConnect();
+            });
+
+            // Chat Message Sender
+            const sendChat = (text) => {
+                if (!text || !text.trim()) return;
+                connectService.sendMessage(text.trim(), username);
+                const input = document.getElementById('jamMessageInput');
+                if (input) input.value = '';
+            };
+
+            document.getElementById('jamSendMsgBtn')?.addEventListener('click', () => {
+                const msg = document.getElementById('jamMessageInput')?.value;
+                sendChat(msg);
+            });
+
+            document.getElementById('jamMessageInput')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChat(e.target.value);
+                }
+            });
+
+            document.querySelectorAll('.jam-emoji-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const emoji = btn.getAttribute('data-emoji');
+                    sendChat(emoji);
+                });
+            });
+
+            // Listen to Realtime Room State Updates
+            connectService.onRoomUpdate = (roomData) => {
+                if (!roomData) return;
+
+                const cover = document.getElementById('jamTrackCover');
+                const title = document.getElementById('jamTrackTitle');
+                const artist = document.getElementById('jamTrackArtist');
+                const participantsList = document.getElementById('jamParticipantsList');
+
+                if (roomData.currentTrack) {
+                    if (cover) cover.src = roomData.currentTrack.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+                    if (title) title.textContent = roomData.currentTrack.title || 'Untitled Track';
+                    if (artist) artist.textContent = roomData.currentTrack.artist || 'Unknown Artist';
+
+                    // If Guest, sync audio
+                    if (!connectService.isHost) {
+                        const currentLocalTrack = musicService.currentTrack;
+                        if (!currentLocalTrack || String(currentLocalTrack.id) !== String(roomData.currentTrack.id)) {
+                            musicService.playTrack(roomData.currentTrack);
+                        }
+                    }
+                }
+
+                if (participantsList && roomData.participants) {
+                    participantsList.innerHTML = `<span style="font-size: 0.8rem; color: #22D3EE; font-weight: 700;">Active Listeners: ${roomData.participants.length}</span>`;
+                }
+            };
+
+            // Listen to Chat Messages
+            connectService.onMessageReceived = (messages) => {
+                const chatContainer = document.getElementById('jamChatMessages');
+                if (!chatContainer) return;
+                chatContainer.innerHTML = '';
+                messages.forEach(m => {
+                    const isMe = m.senderName === username;
+                    const msgEl = document.createElement('div');
+                    msgEl.style.cssText = `display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'}; margin-bottom: 4px;`;
+                    msgEl.innerHTML = `
+                        <span style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-bottom: 2px;">${m.senderName || 'Viber'}</span>
+                        <div style="background: ${isMe ? 'linear-gradient(135deg, #22D3EE, #0284C7)' : 'rgba(255,255,255,0.1)'}; color: white; padding: 6px 12px; border-radius: 12px; font-size: 0.88rem; max-width: 80%; word-break: break-word;">
+                            ${m.text}
+                        </div>
+                    `;
+                    chatContainer.appendChild(msgEl);
+                });
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            };
+
+            // Host syncs audio state
+            if (isHost && musicService.currentTrack) {
+                connectService.syncPlaybackState(musicService.currentTrack, musicService.isPlaying, musicService.currentTime);
+            }
+        }
     }
 
     async function renderVibeAI() {

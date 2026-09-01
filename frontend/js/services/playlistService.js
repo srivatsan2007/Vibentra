@@ -1,10 +1,11 @@
 import { auth, db } from '../firebase-config.js';
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 export class PlaylistService {
     constructor() {
         this.playlists = [];
+        this.collabListeners = new Map();
         this.loadPlaylistsLocal();
         
         onAuthStateChanged(auth, (user) => {
@@ -17,7 +18,11 @@ export class PlaylistService {
     loadPlaylistsLocal() {
         const stored = localStorage.getItem('vibentra_playlists');
         if (stored) {
-            this.playlists = JSON.parse(stored);
+            try {
+                this.playlists = JSON.parse(stored);
+            } catch (e) {
+                this.playlists = [];
+            }
         } else {
             // Default demo playlist
             this.playlists = [{
@@ -52,7 +57,6 @@ export class PlaylistService {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const cloudPls = docSnap.data().playlists || [];
-                // Merge cloud and local
                 const merged = [...this.playlists];
                 cloudPls.forEach(cPl => {
                     const localMatch = merged.find(lPl => lPl.id === cPl.id);
@@ -65,11 +69,14 @@ export class PlaylistService {
                                 localMatch.tracks.push(ct);
                             }
                         });
+                        if (cPl.customCover && !localMatch.customCover) {
+                            localMatch.customCover = cPl.customCover;
+                        }
                     }
                 });
                 this.playlists = merged;
                 this.savePlaylistsLocal();
-                this.saveToCloud(); // Push back the merged list
+                this.saveToCloud();
                 
                 // Dispatch event to update UI
                 window.dispatchEvent(new CustomEvent('playlistsSynced'));
@@ -89,12 +96,15 @@ export class PlaylistService {
         return this.playlists.find(p => p.id === id);
     }
 
-    createPlaylist(name, description = '') {
+    createPlaylist(name, description = '', customCover = null) {
         const newPlaylist = {
             id: 'pl_' + Date.now(),
             name,
             description,
-            tracks: []
+            customCover: customCover || null,
+            tracks: [],
+            isCollaborative: false,
+            collabCode: null
         };
         this.playlists.push(newPlaylist);
         this.savePlaylistsLocal();
@@ -102,11 +112,21 @@ export class PlaylistService {
         return newPlaylist;
     }
 
-    editPlaylist(id, newName, newDescription) {
+    setCustomCover(playlistId, coverDataUrl) {
+        const pl = this.playlists.find(p => p.id === playlistId);
+        if (pl) {
+            pl.customCover = coverDataUrl;
+            this.savePlaylistsLocal();
+            this.saveToCloud();
+        }
+    }
+
+    editPlaylist(id, newName, newDescription, newCover = null) {
         const pl = this.playlists.find(p => p.id === id);
         if (pl) {
             pl.name = newName;
             pl.description = newDescription;
+            if (newCover !== null) pl.customCover = newCover;
             this.savePlaylistsLocal();
             this.saveToCloud();
         }
@@ -125,6 +145,9 @@ export class PlaylistService {
                 pl.tracks.push(track);
                 this.savePlaylistsLocal();
                 this.saveToCloud();
+                if (pl.isCollaborative && pl.collabCode) {
+                    this.syncCollabToCloud(pl);
+                }
             }
         }
     }
@@ -135,6 +158,124 @@ export class PlaylistService {
             pl.tracks = pl.tracks.filter(t => t.id !== trackId);
             this.savePlaylistsLocal();
             this.saveToCloud();
+            if (pl.isCollaborative && pl.collabCode) {
+                this.syncCollabToCloud(pl);
+            }
+        }
+    }
+
+    /**
+     * Enable Collaboration for a Playlist
+     */
+    async enableCollab(playlistId) {
+        const pl = this.getPlaylist(playlistId);
+        if (!pl) return null;
+
+        const collabCode = 'VIBE_' + Math.random().toString(36).substring(2, 7).toUpperCase();
+        pl.isCollaborative = true;
+        pl.collabCode = collabCode;
+        pl.collabOwner = auth.currentUser ? auth.currentUser.uid : 'anon';
+        
+        this.savePlaylistsLocal();
+        this.saveToCloud();
+
+        // Publish to global collabPlaylists in Firestore
+        try {
+            if (db) {
+                await setDoc(doc(db, "collabPlaylists", collabCode), {
+                    id: pl.id,
+                    name: pl.name,
+                    description: pl.description,
+                    customCover: pl.customCover || null,
+                    tracks: pl.tracks,
+                    collabCode: collabCode,
+                    ownerUid: pl.collabOwner,
+                    updatedAt: Date.now()
+                });
+                this.listenToCollabPlaylist(collabCode, pl.id);
+            }
+        } catch (e) {
+            console.warn('Firestore collab publish error:', e);
+        }
+
+        return collabCode;
+    }
+
+    /**
+     * Join an Existing Collaborative Playlist via Code
+     */
+    async joinCollabPlaylist(collabCode) {
+        const cleanCode = collabCode.trim().toUpperCase();
+        const docRef = doc(db, "collabPlaylists", cleanCode);
+        const snap = await getDoc(docRef);
+
+        if (!snap.exists()) {
+            throw new Error("Collaborative playlist not found. Please check the code.");
+        }
+
+        const data = snap.data();
+        let existing = this.playlists.find(p => p.collabCode === cleanCode || p.id === data.id);
+        
+        if (!existing) {
+            existing = {
+                id: data.id || ('collab_' + Date.now()),
+                name: `[Collab] ${data.name}`,
+                description: data.description || 'Shared Collaborative Playlist',
+                customCover: data.customCover || null,
+                tracks: data.tracks || [],
+                isCollaborative: true,
+                collabCode: cleanCode
+            };
+            this.playlists.push(existing);
+        } else {
+            existing.tracks = data.tracks || [];
+            existing.isCollaborative = true;
+            existing.collabCode = cleanCode;
+        }
+
+        this.savePlaylistsLocal();
+        this.saveToCloud();
+        this.listenToCollabPlaylist(cleanCode, existing.id);
+        return existing;
+    }
+
+    listenToCollabPlaylist(collabCode, localPlaylistId) {
+        if (this.collabListeners.has(collabCode)) return;
+
+        try {
+            if (db) {
+                const unsub = onSnapshot(doc(db, "collabPlaylists", collabCode), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const cloudData = docSnap.data();
+                        const target = this.getPlaylist(localPlaylistId);
+                        if (target) {
+                            target.tracks = cloudData.tracks || [];
+                            if (cloudData.name) target.name = cloudData.name;
+                            this.savePlaylistsLocal();
+                            window.dispatchEvent(new CustomEvent('collabPlaylistUpdated', { detail: { playlistId: localPlaylistId } }));
+                        }
+                    }
+                });
+                this.collabListeners.set(collabCode, unsub);
+            }
+        } catch (e) {
+            console.warn("Collab listener error:", e);
+        }
+    }
+
+    async syncCollabToCloud(pl) {
+        if (!pl.collabCode || !db) return;
+        try {
+            await setDoc(doc(db, "collabPlaylists", pl.collabCode), {
+                id: pl.id,
+                name: pl.name,
+                description: pl.description,
+                customCover: pl.customCover || null,
+                tracks: pl.tracks,
+                updatedAt: Date.now()
+            }, { merge: true });
+        } catch (e) {
+            console.warn('Sync collab to cloud failed:', e);
         }
     }
 }

@@ -152,6 +152,10 @@
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                     <span>Vibe AI</span>
                 </li>
+                <li class="nav-item" data-path="wrapped" id="navWrappedBtn">
+                    <i class="fa-solid fa-gift" style="color: #F43F5E;"></i>
+                    <span>Wrapped</span>
+                </li>
             </ul>
 
             <!-- Library Promo Box (Desktop) -->
@@ -209,6 +213,14 @@
                 </div>
                 
                 <div class="topbar-actions">
+                    <div class="notification-btn" id="topPipToggleBtn" title="Picture-in-Picture Mini Player">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </div>
+
+                    <div class="notification-btn" id="topWrappedBtn" title="Vibentra Wrapped (Listening Stats)">
+                        <i class="fa-solid fa-gift" style="color: #F43F5E;"></i>
+                    </div>
+
                     <div class="notification-btn" id="batterySaverToggleBtn" title="Toggle Battery Optimization Mode">
                         <i class="fa-solid fa-battery-half" id="topBatteryIcon"></i>
                     </div>
@@ -426,10 +438,20 @@
 
     <!-- Lyrics Modal -->
     <div class="large-player-modal" id="lyricsModal">
-        <div class="glass-panel" style="width: 600px; max-width: 90%; height: 80vh; padding: 40px; border-radius: 16px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <button class="close-large-player" id="closeLyricsModal" style="top: 20px; left: auto; right: 20px; width: 40px; height: 40px;"><i class="fa-solid fa-xmark"></i></button>
-            <h2 id="lyricsTitle" style="margin-bottom: 20px; color: var(--primary);">Lyrics</h2>
-            <div id="lyricsContent" style="width: 100%; flex: 1; overflow-y: auto; font-size: 1.2rem; line-height: 2; white-space: pre-wrap; padding-right: 15px;">
+        <div class="glass-panel" style="width: 620px; max-width: 92%; height: 82vh; padding: 30px 24px; border-radius: 24px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; background: #0E131F; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 20px 60px rgba(0,0,0,0.85);">
+            <button class="close-large-player" id="closeLyricsModal" style="top: 16px; left: auto; right: 16px; width: 36px; height: 36px;"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="lyricsTitle" style="margin: 0 0 12px 0; color: #22D3EE; font-size: 1.4rem; font-weight: 800;">Lyrics & Sing-Along</h2>
+            
+            <!-- Translation & Romanization Language Bar -->
+            <div class="lyrics-lang-bar" id="lyricsLangBar" style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center;">
+                <button class="lyrics-lang-pill active" data-lang="original">Original</button>
+                <button class="lyrics-lang-pill" data-lang="romanized">✨ Sing-Along (Romanized)</button>
+                <button class="lyrics-lang-pill" data-lang="en">English</button>
+                <button class="lyrics-lang-pill" data-lang="ta">தமிழ் (Tamil)</button>
+                <button class="lyrics-lang-pill" data-lang="hi">हिंदी (Hindi)</button>
+            </div>
+
+            <div id="lyricsContent" style="width: 100%; flex: 1; overflow-y: auto; font-size: 1.2rem; line-height: 2.2; white-space: pre-wrap; padding-right: 15px; scroll-behavior: smooth;">
                 Loading lyrics...
             </div>
         </div>
@@ -457,11 +479,17 @@
                     <div class="option-item" id="largeOptPlaylist">
                         <i class="fa-solid fa-folder-plus" style="color: #06B6D4;"></i> Add to Playlist
                     </div>
+                    <div class="option-item" id="largeOptStoryShare">
+                        <i class="fa-solid fa-camera-retro" style="color: #EC4899;"></i> Story Share Card
+                    </div>
+                    <div class="option-item" id="largeOptPip">
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="color: #22D3EE;"></i> Picture-in-Picture
+                    </div>
                     <div class="option-item" id="largeOptDownload">
                         <i class="fa-solid fa-download" style="color: #10B981;"></i> Download Song
                     </div>
                     <div class="option-item" id="largeOptRingtone">
-                        <i class="fa-solid fa-bell" style="color: #EC4899;"></i> Set as Ringtone
+                        <i class="fa-solid fa-bell" style="color: #F43F5E;"></i> Set as Ringtone
                     </div>
                     <div class="option-item" id="largeOptLyrics">
                         <i class="fa-solid fa-align-left" style="color: #7C3AED;"></i> Show Lyrics
@@ -540,15 +568,20 @@
 
     <!-- Playlist Modal -->
     <div class="large-player-modal" id="playlistModal">
-        <div class="glass-panel" style="width: 400px; padding: 30px; border-radius: 16px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <button class="close-large-player" id="closePlaylistModal" style="top: -20px; left: auto; right: -20px; width: 40px; height: 40px;"><i class="fa-solid fa-xmark"></i></button>
-            <h2 id="playlistModalTitle" style="margin-bottom: 20px;">Create Playlist</h2>
+        <div class="glass-panel" style="width: 420px; max-width: 92%; padding: 30px; border-radius: 20px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; background: #131722; border: 1px solid rgba(255,255,255,0.15);">
+            <button class="close-large-player" id="closePlaylistModal" style="top: 14px; right: 14px; width: 34px; height: 34px;"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="playlistModalTitle" style="margin-bottom: 20px; color: white;">Create Playlist</h2>
             <input type="hidden" id="editingPlaylistId">
             <div class="search-container" style="max-width: 100%; margin-bottom: 15px;">
                 <input type="text" id="playlistNameInput" class="search-input" placeholder="Playlist Name" style="padding-left: 20px;">
             </div>
-            <div class="search-container" style="max-width: 100%; margin-bottom: 25px;">
+            <div class="search-container" style="max-width: 100%; margin-bottom: 20px;">
                 <input type="text" id="playlistDescInput" class="search-input" placeholder="Description (Optional)" style="padding-left: 20px;">
+            </div>
+            <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 15px;">
+                <button type="button" class="btn" id="openCoverGenFromModalBtn" style="flex: 1; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #22D3EE; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Cover
+                </button>
             </div>
             <button class="btn btn-primary" id="savePlaylistBtn" style="width: 100%; padding: 12px;">Save Playlist</button>
         </div>
@@ -609,6 +642,108 @@
         </div>
     </div>
 
+    <!-- Spotify-Style Story Share Modal -->
+    <div class="large-player-modal" id="storyShareModal">
+        <div class="glass-panel" style="width: 440px; max-width: 92%; max-height: 90vh; padding: 24px; border-radius: 24px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 25px 60px rgba(0,0,0,0.85); background: #12121c; overflow-y: auto;">
+            <button class="close-large-player" id="closeStoryShareModal" style="top: 14px; right: 14px; width: 34px; height: 34px; position: absolute; background: rgba(255,255,255,0.1); border-radius: 50%; border: none; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="margin: 0 0 4px 0; font-size: 1.3rem; color: white; font-weight: 800;"><i class="fa-brands fa-instagram" style="color: #E1306C; margin-right: 6px;"></i> Story Share Card</h2>
+            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0 0 16px 0;">Share what you're listening to on Instagram & WhatsApp</p>
+            <div id="storyCardPreviewContainer" style="width: 250px; height: 444px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.7); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; background: #08080c;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: #22D3EE;"></i>
+            </div>
+            <div style="display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="downloadStoryBtn" style="flex: 1; min-width: 130px; padding: 12px; border-radius: 25px; font-weight: 700; background: linear-gradient(135deg, #E1306C, #FD1D1D, #F77737); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-download"></i> Download
+                </button>
+                <button class="btn" id="nativeShareStoryBtn" style="flex: 1; min-width: 130px; padding: 12px; border-radius: 25px; font-weight: 700; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-share-nodes"></i> Share
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vibentra Wrapped Full-Screen Story Carousel Modal -->
+    <div class="large-player-modal" id="wrappedModal" style="z-index: 200000; background: rgba(5, 5, 10, 0.98);">
+        <div class="wrapped-container" style="width: 440px; max-width: 95%; height: 86vh; border-radius: 24px; position: relative; display: flex; flex-direction: column; overflow: hidden; background: #0B0E14; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 70px rgba(0,0,0,0.9);">
+            <!-- Progress Bars at top -->
+            <div class="wrapped-progress-bars" id="wrappedProgressBars" style="display: flex; gap: 6px; padding: 16px 16px 8px 16px; z-index: 10;">
+                <div class="wrap-bar-seg" style="flex: 1; height: 3px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden;"><div class="wrap-bar-fill" style="width: 0%; height: 100%; background: #22D3EE; transition: width 0.1s linear;"></div></div>
+                <div class="wrap-bar-seg" style="flex: 1; height: 3px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden;"><div class="wrap-bar-fill" style="width: 0%; height: 100%; background: #22D3EE; transition: width 0.1s linear;"></div></div>
+                <div class="wrap-bar-seg" style="flex: 1; height: 3px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden;"><div class="wrap-bar-fill" style="width: 0%; height: 100%; background: #22D3EE; transition: width 0.1s linear;"></div></div>
+                <div class="wrap-bar-seg" style="flex: 1; height: 3px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden;"><div class="wrap-bar-fill" style="width: 0%; height: 100%; background: #22D3EE; transition: width 0.1s linear;"></div></div>
+            </div>
+            <!-- Close button -->
+            <button id="closeWrappedBtn" style="position: absolute; top: 22px; right: 16px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: white; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+            
+            <!-- Story Slide Content Area -->
+            <div id="wrappedSlideContent" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px; text-align: center; position: relative; overflow: hidden;">
+                <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Story Navigation Touch Targets -->
+            <div id="wrappedPrevTouch" style="position: absolute; left: 0; top: 60px; bottom: 80px; width: 35%; cursor: pointer; z-index: 15;"></div>
+            <div id="wrappedNextTouch" style="position: absolute; right: 0; top: 60px; bottom: 80px; width: 65%; cursor: pointer; z-index: 15;"></div>
+
+            <!-- Bottom Action Bar -->
+            <div style="padding: 14px 20px 20px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 20; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);">
+                <button id="wrappedShareBtn" class="btn" style="background: linear-gradient(135deg, #138086, #22D3EE); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-share-nodes"></i> Share Wrapped
+                </button>
+                <span style="font-size: 0.8rem; color: rgba(255,255,255,0.6); font-weight: 600;">✨ Vibentra Wrapped</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom AI Playlist Cover Generator Modal -->
+    <div class="large-player-modal" id="coverGeneratorModal">
+        <div class="glass-panel" style="width: 460px; max-width: 92%; max-height: 90vh; padding: 26px; border-radius: 24px; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 25px 60px rgba(0,0,0,0.85); background: #14141f; overflow-y: auto;">
+            <button class="close-large-player" id="closeCoverGenModal" style="top: 14px; right: 14px; width: 34px; height: 34px; position: absolute; background: rgba(255,255,255,0.1); border-radius: 50%; border: none; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="margin: 0 0 4px 0; font-size: 1.3rem; color: white; font-weight: 800;"><i class="fa-solid fa-wand-magic-sparkles" style="color: #22D3EE; margin-right: 6px;"></i> AI Playlist Cover Generator</h2>
+            <p style="color: rgba(255,255,255,0.6); font-size: 0.82rem; margin: 0 0 16px 0;">Generate custom aesthetic album artwork</p>
+            
+            <!-- Preview -->
+            <img id="coverGenPreview" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80" style="width: 170px; height: 170px; border-radius: 16px; object-fit: cover; box-shadow: 0 8px 25px rgba(0,0,0,0.6); margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2);">
+            
+            <!-- Style Presets -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px;">
+                <button class="cover-preset-pill active" data-preset="cyberpunk">Cyberpunk</button>
+                <button class="cover-preset-pill" data-preset="sunset">Sunset Lo-Fi</button>
+                <button class="cover-preset-pill" data-preset="ocean">Ocean Deep</button>
+                <button class="cover-preset-pill" data-preset="velvet">Velvet Rose</button>
+                <button class="cover-preset-pill" data-preset="acid">Acid Wave</button>
+                <button class="cover-preset-pill" data-preset="retro">Retro Synth</button>
+            </div>
+
+            <input type="text" id="coverGenTitleInput" class="search-input" placeholder="Cover Title (e.g., Midnight Vibes)" style="width: 100%; margin-bottom: 10px; padding: 10px 14px; border-radius: 10px; box-sizing: border-box;">
+            <input type="text" id="coverGenSubtitleInput" class="search-input" placeholder="Vibe / Subtitle" style="width: 100%; margin-bottom: 16px; padding: 10px 14px; border-radius: 10px; box-sizing: border-box;">
+
+            <button class="btn btn-primary" id="applyCoverGenBtn" style="width: 100%; padding: 12px; border-radius: 25px; font-weight: 700; background: linear-gradient(135deg, #138086, #22D3EE); border: none; color: white; cursor: pointer;">
+                Apply to Playlist
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Picture-in-Picture Mini Player Widget -->
+    <div id="floatingPipPlayer" class="floating-pip-widget hidden">
+        <div class="pip-inner">
+            <button class="pip-close-btn" id="pipCloseBtn" title="Close Mini Player"><i class="fa-solid fa-xmark"></i></button>
+            <img id="pipCover" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200&q=80" alt="Cover" class="pip-cover">
+            <div class="pip-info">
+                <h4 id="pipTitle">Track Title</h4>
+                <p id="pipArtist">Artist Name</p>
+                <div class="pip-soundwave">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <div class="pip-controls">
+                <button id="pipPrevBtn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+                <button id="pipPlayBtn" class="pip-play-circle" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
+                <button id="pipNextBtn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+                <button id="pipExpandBtn" title="Open Full Player"><i class="fa-solid fa-maximize"></i></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Spotify x YouTube Music Track Options Action Sheet -->
     <div class="large-player-modal" id="songOptionsModal" style="z-index: 100000;">
         <div class="song-options-sheet">
@@ -628,6 +763,14 @@
                 <button class="sheet-option-item" id="sheetLikeBtn">
                     <i class="fa-regular fa-heart"></i>
                     <span>Add to Liked Songs</span>
+                </button>
+                <button class="sheet-option-item" id="sheetStoryShareBtn">
+                    <i class="fa-solid fa-camera-retro" style="color: #EC4899;"></i>
+                    <span>Story Share Card</span>
+                </button>
+                <button class="sheet-option-item" id="sheetPipBtn">
+                    <i class="fa-solid fa-arrow-up-right-from-square" style="color: #22D3EE;"></i>
+                    <span>Picture-in-Picture Mini Player</span>
                 </button>
                 <button class="sheet-option-item" id="sheetAddPlBtn">
                     <i class="fa-solid fa-plus"></i>

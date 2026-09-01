@@ -24,12 +24,13 @@ class ConnectService {
     async createRoom(username) {
         const roomId = this.generateRoomCode();
         const roomRef = doc(db, "rooms", roomId);
+        const uid = auth.currentUser ? auth.currentUser.uid : ('user_' + Math.random().toString(36).substring(2, 7));
         
         const roomData = {
-            hostId: auth.currentUser.uid,
-            hostName: username,
+            hostId: uid,
+            hostName: username || 'Host',
             createdAt: serverTimestamp(),
-            participants: [{ uid: auth.currentUser.uid, name: username }],
+            participants: [{ uid: uid, name: username || 'Host' }],
             currentTrack: null,
             isPlaying: false,
             currentTime: 0,
@@ -47,19 +48,22 @@ class ConnectService {
     }
 
     async joinRoom(roomId, username) {
-        const roomRef = doc(db, "rooms", roomId.toUpperCase());
+        const cleanId = roomId.trim().toUpperCase();
+        const roomRef = doc(db, "rooms", cleanId);
         const roomSnap = await getDoc(roomRef);
 
         if (!roomSnap.exists()) {
-            throw new Error("Room not found. Please check the code.");
+            throw new Error("Jam Room not found. Please check the 6-letter code.");
         }
 
+        const uid = auth.currentUser ? auth.currentUser.uid : ('guest_' + Math.random().toString(36).substring(2, 7));
+
         await updateDoc(roomRef, {
-            participants: arrayUnion({ uid: auth.currentUser.uid, name: username })
+            participants: arrayUnion({ uid: uid, name: username || 'Viber' })
         });
 
-        this.currentRoomId = roomId.toUpperCase();
-        this.isHost = roomSnap.data().hostId === auth.currentUser.uid;
+        this.currentRoomId = cleanId;
+        this.isHost = roomSnap.data().hostId === uid;
         
         this.listenToRoom(this.currentRoomId);
         this.listenToMessages(this.currentRoomId);
@@ -95,11 +99,12 @@ class ConnectService {
 
     async sendMessage(text, username) {
         if (!this.currentRoomId) return;
+        const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
         
         await addDoc(collection(db, "rooms", this.currentRoomId, "messages"), {
             text: text,
-            senderId: auth.currentUser.uid,
-            senderName: username,
+            senderId: uid,
+            senderName: username || 'Viber',
             timestamp: serverTimestamp()
         });
     }

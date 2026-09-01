@@ -1,11 +1,12 @@
 /**
  * Lyrics Service for Vibentra
  * Powered by LRCLIB (SimpMusic Provider) & Fallback Providers
- * Supports Real-time Synced Lyrics (.lrc) & Plain Text
+ * Supports Real-time Synced Lyrics (.lrc), Plain Text, Romanization (Sing-Along), and Multilingual Translation
  */
 class LyricsService {
     constructor() {
         this.cache = new Map();
+        this.translationCache = new Map();
         this.activeSyncedLines = [];
         this.activeTrackId = null;
         this.lastActiveLineIndex = -1;
@@ -223,6 +224,134 @@ class LyricsService {
         }
 
         return null;
+    }
+
+    /**
+     * Romanization Engine: Convert Indic Scripts (Tamil, Devanagari, Telugu, etc.) to Latin Phonetics
+     */
+    romanizeText(text) {
+        if (!text) return '';
+
+        // Indic Romanization Mapping Table
+        const tamilMap = {
+            'அ': 'a', 'ஆ': 'aa', 'இ': 'i', 'ஈ': 'ee', 'உ': 'u', 'ஊ': 'oo', 'எ': 'e', 'ஏ': 'ae', 'ஐ': 'ai', 'ஒ': 'o', 'ஓ': 'oa', 'ஔ': 'au',
+            'க': 'ka', 'ங': 'nga', 'ச': 'cha', 'ஞ': 'nya', 'ட': 'ta', 'ண': 'na', 'த': 'tha', 'ந': 'na', 'ப': 'pa', 'ம': 'ma',
+            'ய': 'ya', 'ர': 'ra', 'ல': 'la', 'வ': 'va', 'ழ': 'zha', 'ள': 'la', 'ற': 'ra', 'ன': 'na',
+            'க்': 'k', 'ங்': 'ng', 'ச்': 'ch', 'ஞ்': 'ny', 'ட்': 't', 'ண்': 'n', 'த்': 'th', 'ந்': 'n', 'ப்': 'p', 'ம்': 'm',
+            'ய்': 'y', 'ர்': 'r', 'ல்': 'l', 'வ்': 'v', 'ழ்': 'zh', 'ள்': 'l', 'ற்': 'r', 'ன்': 'n',
+            'ா': 'aa', 'ி': 'i', 'ீ': 'ee', 'ு': 'u', 'ூ': 'oo', 'ெ': 'e', 'ே': 'ae', 'ை': 'ai', 'ொ': 'o', 'ோ': 'oa', 'ௌ': 'au', '்': ''
+        };
+
+        const hindiMap = {
+            'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+            'क': 'ka', 'ख': 'kha', 'ग': 'ga', 'घ': 'gha', 'च': 'cha', 'छ': 'chha', 'ज': 'ja', 'झ': 'jha',
+            'ट': 'ta', 'ठ': 'tha', 'ड': 'da', 'ढ': 'dha', 'ण': 'na', 'त': 'ta', 'थ': 'tha', 'द': 'da', 'ध': 'dha', 'न': 'na',
+            'प': 'pa', 'फ': 'pha', 'ब': 'ba', 'भ': 'bha', 'म': 'ma', 'य': 'ya', 'र': 'ra', 'ल': 'la', 'व': 'va', 'श': 'sha', 'ष': 'sha', 'स': 'sa', 'ह': 'ha',
+            'ा': 'aa', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', '्': ''
+        };
+
+        let result = '';
+        for (let char of text) {
+            if (tamilMap[char]) {
+                result += tamilMap[char];
+            } else if (hindiMap[char]) {
+                result += hindiMap[char];
+            } else {
+                result += char;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Get Romanized (Sing-Along) version of lyrics
+     */
+    getRomanizedLyrics(lyricsData) {
+        if (!lyricsData) return null;
+        if (lyricsData.isSynced && lyricsData.syncedLines) {
+            return {
+                ...lyricsData,
+                syncedLines: lyricsData.syncedLines.map(line => ({
+                    time: line.time,
+                    text: this.romanizeText(line.text)
+                })),
+                plainText: this.romanizeText(lyricsData.plainText)
+            };
+        } else {
+            return {
+                ...lyricsData,
+                plainText: this.romanizeText(lyricsData.plainText)
+            };
+        }
+    }
+
+    /**
+     * Translate lyrics to a target language (en, ta, hi, te, es, fr)
+     */
+    async translateLyrics(lyricsData, targetLang = 'en') {
+        if (!lyricsData) return null;
+        const cacheKey = `${lyricsData.plainText?.substring(0, 40)}_${targetLang}`;
+        if (this.translationCache.has(cacheKey)) {
+            return this.translationCache.get(cacheKey);
+        }
+
+        try {
+            if (lyricsData.isSynced && lyricsData.syncedLines && lyricsData.syncedLines.length > 0) {
+                // Batch translate synced lines (up to 30 main lines)
+                const translatedLines = [];
+                const sampleLines = lyricsData.syncedLines;
+
+                // Concurrently translate chunks
+                const chunkSize = 10;
+                for (let i = 0; i < sampleLines.length; i += chunkSize) {
+                    const chunk = sampleLines.slice(i, i + chunkSize);
+                    const chunkText = chunk.map(l => l.text).join('\n');
+
+                    try {
+                        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunkText)}&langpair=autodetect|${targetLang}`);
+                        if (res.ok) {
+                            const json = await res.json();
+                            const translatedChunk = (json?.responseData?.translatedText || chunkText).split('\n');
+                            chunk.forEach((line, idx) => {
+                                translatedLines.push({
+                                    time: line.time,
+                                    text: translatedChunk[idx] || line.text
+                                });
+                            });
+                        } else {
+                            chunk.forEach(l => translatedLines.push({ ...l }));
+                        }
+                    } catch {
+                        chunk.forEach(l => translatedLines.push({ ...l }));
+                    }
+                }
+
+                const result = {
+                    ...lyricsData,
+                    syncedLines: translatedLines,
+                    plainText: translatedLines.map(l => l.text).join('\n')
+                };
+                this.translationCache.set(cacheKey, result);
+                return result;
+            } else if (lyricsData.plainText) {
+                const sampleText = lyricsData.plainText.substring(0, 1500);
+                const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(sampleText)}&langpair=autodetect|${targetLang}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    const translatedText = json?.responseData?.translatedText || lyricsData.plainText;
+                    const result = {
+                        ...lyricsData,
+                        plainText: translatedText
+                    };
+                    this.translationCache.set(cacheKey, result);
+                    return result;
+                }
+            }
+        } catch (e) {
+            console.warn('[LyricsService] Translation failed:', e);
+        }
+
+        return lyricsData;
     }
 }
 
