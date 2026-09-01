@@ -335,26 +335,6 @@ const initHome = () => {
             }
         };
 
-        const fullScreenToggleBtn = document.getElementById('fullScreenToggleBtn');
-        if (fullScreenToggleBtn) {
-            fullScreenToggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                    triggerFullScreenMode();
-                    fullScreenToggleBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
-                    showNotification('Entered Fullscreen Mode', 'info');
-                } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen().catch(() => { });
-                    } else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen().catch(() => { });
-                    }
-                    fullScreenToggleBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
-                    showNotification('Exited Fullscreen Mode', 'info');
-                }
-            });
-        }
-
         const refreshIndicator = document.createElement('div');
         refreshIndicator.id = 'pullToRefreshIndicator';
         refreshIndicator.style.cssText = `
