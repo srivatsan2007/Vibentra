@@ -8176,14 +8176,14 @@ html.battery-saver-active * {
 
 /* Spotify-Grade Ultra-Smooth View Transition Engine */
 .view-fluid-enter {
-    animation: viewFluidCrossfade 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: viewFluidCrossfade 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
     will-change: opacity, transform;
 }
 
 @keyframes viewFluidCrossfade {
     0% {
-        opacity: 0.65;
-        transform: translate3d(0, 6px, 0);
+        opacity: 0.88;
+        transform: translate3d(0, 4px, 0);
     }
     100% {
         opacity: 1;
@@ -8191,11 +8191,34 @@ html.battery-saver-active * {
     }
 }
 
+/* View Transition Pseudoelement Canvas Dark Locks */
+::view-transition {
+    background-color: var(--background, #061A1C) !important;
+}
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.18s;
+    mix-blend-mode: normal !important;
+    background-color: var(--background, #061A1C) !important;
+}
+
 /* 60fps/120fps GPU Compositing & Smooth Momentum Touch Scrolling */
 .main-content {
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
     scroll-behavior: smooth !important;
+    background: transparent !important;
+}
+
+#dynamicContent,
+.spotify-search-page,
+.spotify-home-page,
+.spotify-playlist-view {
+    position: relative;
+    z-index: 1;
+    background: transparent !important;
 }
 
 .spotify-track-row,

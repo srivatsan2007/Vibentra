@@ -775,14 +775,8 @@ const initHome = () => {
             activeCurrentView = path;
         };
 
-        // Use modern View Transition API if supported for buttery-smooth native transitions
-        if (document.startViewTransition && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-            document.startViewTransition(() => {
-                executeViewRender();
-            });
-        } else {
-            executeViewRender();
-        }
+        // Execute scoped GPU-accelerated view transition on container
+        executeViewRender();
     }
 
     // Listen for favorite changes from player to re-render if on favorites page
