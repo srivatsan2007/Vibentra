@@ -32,7 +32,6 @@ html {
     background-color: var(--background, #061A1C) !important;
     background: var(--bg-gradient, radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)) !important;
     font-size: 92%;
-    zoom: 0.92;
 }
 
 body {
@@ -43,8 +42,8 @@ body {
     overflow-x: hidden !important;
     scroll-behavior: smooth !important;
     -webkit-overflow-scrolling: touch !important;
-    width: 108.6956% !important;
-    min-height: 108.6956vh !important;
+    width: 100% !important;
+    min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
 }
@@ -5728,25 +5727,50 @@ input:checked+.toggle-slider:before {
 .spotify-track-row,
 .ytm-track-row,
 .ytm-search-row,
-.fav-track-row {
+.fav-track-row,
+.squircle-track-row,
+.pl-track-row {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
+    gap: 8px !important;
     overflow: hidden !important;
     position: relative !important;
 }
 
-.spotify-track-row>div:first-child,
-.ytm-track-row>div:first-child,
-.ytm-search-row>div:first-child,
-.fav-track-row>div:first-child {
+.spotify-track-row > div:first-child,
+.ytm-track-row > div:first-child,
+.ytm-search-row > div:first-child,
+.fav-track-row > div:first-child,
+.squircle-track-row > div:first-child,
+.pl-track-row > div:first-child {
     flex: 1 1 auto !important;
     min-width: 0 !important;
-    max-width: calc(100% - 44px) !important;
+    max-width: calc(100% - 46px) !important;
     overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.spotify-track-row h4,
+.spotify-track-row p,
+.ytm-track-row h4,
+.ytm-track-row p,
+.fav-track-row h4,
+.fav-track-row p,
+.squircle-track-row h4,
+.squircle-track-row p,
+.pl-track-row h4,
+.pl-track-row p {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
 }
 
 .search-row-opt-btn,
@@ -5754,13 +5778,14 @@ input:checked+.toggle-slider:before {
 .search-pl-opt-btn,
 .remove-from-pl-btn,
 .fav-opt-btn,
-.remote-track-opt-btn {
+.remote-track-opt-btn,
+.pl-track-opt-btn {
     flex-shrink: 0 !important;
-    margin-left: 6px !important;
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
+    margin-left: auto !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -5779,9 +5804,10 @@ input:checked+.toggle-slider:before {
     body,
     html {
         width: 100% !important;
+        max-width: 100% !important;
         overflow-x: hidden !important;
-        background: radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%) !important;
-        background-attachment: fixed !important;
+        background-color: var(--background, #061A1C) !important;
+        background: var(--bg-gradient, radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)) !important;
     }
 
     .main-content {
