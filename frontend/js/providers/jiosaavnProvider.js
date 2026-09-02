@@ -234,10 +234,11 @@ export default class JioSaavnProvider extends ProviderInterface {
     }
 
     async getAlbum(albumId) {
+        if (!albumId || albumId === 'undefined' || albumId === 'null') return [];
         try {
-            const data = await this.safeFetch(`/album?id=${albumId}`);
+            const data = await this.safeFetch(`/album?id=${encodeURIComponent(albumId)}`);
             if (!data || !Array.isArray(data)) return [];
-            const standardized = data.map(t => this.standardizeTrack(t));
+            const standardized = data.map(t => this.standardizeTrack(t)).filter(Boolean);
             standardized.forEach(t => this.trackCache.set(t.id, t));
             return standardized;
         } catch (error) {
@@ -247,15 +248,16 @@ export default class JioSaavnProvider extends ProviderInterface {
     }
 
     async getPlaylist(playlistId) {
+        if (!playlistId || playlistId === 'undefined' || playlistId === 'null') return [];
         try {
-            let rawData = await this.safeFetch(`/playlist?id=${playlistId}`);
+            let rawData = await this.safeFetch(`/playlist?id=${encodeURIComponent(playlistId)}`);
             let tracksArray = Array.isArray(rawData) ? rawData : (rawData?.songs || rawData?.data?.songs || rawData?.results || rawData?.data || []);
             
             if (!tracksArray || !Array.isArray(tracksArray) || tracksArray.length === 0) {
                 // Fallback API endpoints for playlist details
                 const fallbackApis = [
-                    `https://saavn.me/playlists?id=${playlistId}`,
-                    `https://jiosaavn-api-v3.vercel.app/playlists?id=${playlistId}`
+                    `https://saavn.me/playlists?id=${encodeURIComponent(playlistId)}`,
+                    `https://jiosaavn-api-v3.vercel.app/playlists?id=${encodeURIComponent(playlistId)}`
                 ];
                 for (let api of fallbackApis) {
                     try {
@@ -282,9 +284,12 @@ export default class JioSaavnProvider extends ProviderInterface {
 
             // Fallback: search songs using playlist ID / title if direct playlist detail API returned no items
             if (!tracksArray || !Array.isArray(tracksArray) || tracksArray.length === 0) {
-                const cleanQuery = String(playlistId).replace(/yt_pl_|jio_pl_/gi, '').replace(/_/g, ' ');
-                tracksArray = await this.searchSongs(cleanQuery);
-                return tracksArray;
+                const cleanQuery = String(playlistId).replace(/yt_pl_|jio_pl_/gi, '').replace(/_/g, ' ').trim();
+                if (cleanQuery && cleanQuery !== 'undefined' && cleanQuery !== 'null' && cleanQuery.length > 2) {
+                    tracksArray = await this.searchSongs(cleanQuery);
+                    return tracksArray;
+                }
+                return [];
             }
 
             const standardized = tracksArray.map(t => this.standardizeTrack(t)).filter(Boolean);

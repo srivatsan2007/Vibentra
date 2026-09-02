@@ -386,9 +386,11 @@ export default class YouTubeMusicProvider extends ProviderInterface {
     async getAlbum(albumId) { return []; }
 
     async getPlaylist(playlistId) {
-        if (!playlistId) return [];
+        if (!playlistId || playlistId === 'undefined' || playlistId === 'null') return [];
 
-        let rawPlId = String(playlistId).replace('yt_pl_essentials_', '').replace('yt_pl_', '');
+        let rawPlId = String(playlistId).replace('yt_pl_essentials_', '').replace('yt_pl_', '').trim();
+        if (!rawPlId || rawPlId === 'undefined' || rawPlId === 'null') return [];
+
         let decodedQuery = null;
         try {
             decodedQuery = decodeURIComponent(rawPlId);
@@ -423,7 +425,8 @@ export default class YouTubeMusicProvider extends ProviderInterface {
             }
         }
 
-        const searchQuery = decodedQuery || 'top hits';
+        const searchQuery = (decodedQuery && decodedQuery !== 'undefined' && decodedQuery !== 'null') ? decodedQuery : '';
+        if (!searchQuery) return [];
         const songs = await this.searchSongs(searchQuery);
         return songs;
     }

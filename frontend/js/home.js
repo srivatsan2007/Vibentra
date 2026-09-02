@@ -1139,14 +1139,14 @@ const initHome = () => {
         const openArtistSongs = (e) => {
             if (e) e.stopPropagation();
             renderRemoteCollectionDetail({
-                id: artist.id,
+                id: artist.id || null,
                 title: `${artist.name} - Essential Hits`,
                 artist: artist.subtitle || 'Artist Spotlight',
                 cover: cover,
                 searchQuery: artist.query || `${artist.name} top hits songs`,
                 provider: 'JioSaavn',
                 providerId: 'jiosaavn'
-            }, 'playlist');
+            }, 'artist');
         };
 
         card.querySelector('.artist-mix-play-btn')?.addEventListener('click', openArtistSongs);
@@ -1176,7 +1176,7 @@ const initHome = () => {
         const openCommunitySongs = (e) => {
             if (e) e.stopPropagation();
             renderRemoteCollectionDetail({
-                id: community.id,
+                id: community.id || null,
                 title: community.title,
                 artist: community.subtitle || 'Community Vibe',
                 cover: cover,
@@ -1213,7 +1213,7 @@ const initHome = () => {
         const openChartSongs = (e) => {
             if (e) e.stopPropagation();
             renderRemoteCollectionDetail({
-                id: chart.id,
+                id: chart.id || null,
                 title: chart.title || chart.name,
                 artist: chart.subtitle || 'Official Chart',
                 cover: cover,
@@ -1656,31 +1656,58 @@ const initHome = () => {
 
                     // Extract and render Popular Artists
                     if (artistsContainer) {
-                        const artistNames = new Set();
+                        const artistMap = new Map();
+                        // 1. Populate from language artist mixes if available for rich artwork
+                        if (config.artistMixes) {
+                            config.artistMixes.forEach(am => {
+                                if (am.name && !artistMap.has(am.name)) {
+                                    artistMap.set(am.name, {
+                                        name: am.name,
+                                        cover: am.cover,
+                                        query: am.query || `${am.name} top hits songs`
+                                    });
+                                }
+                            });
+                        }
+
+                        // 2. Supplement from active trending tracks
                         activeTrendingTracks.forEach(t => {
-                            if (t.artist) t.artist.split(',').forEach(a => artistNames.add(a.trim()));
+                            if (t.artist) {
+                                t.artist.split(',').forEach(a => {
+                                    const trimmed = a.trim();
+                                    if (trimmed && trimmed.toLowerCase() !== 'unknown' && trimmed.toLowerCase() !== 'unknown artist' && trimmed.length > 1 && !artistMap.has(trimmed)) {
+                                        artistMap.set(trimmed, {
+                                            name: trimmed,
+                                            cover: t.cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(trimmed)}&background=138086&color=fff&size=200&bold=true`,
+                                            query: `${trimmed} top hits songs`
+                                        });
+                                    }
+                                });
+                            }
                         });
-                        const topArtists = Array.from(artistNames).filter(a => a.length > 0 && a.toLowerCase() !== 'unknown').slice(0, 6);
+
+                        const topArtists = Array.from(artistMap.values()).slice(0, 8);
 
                         artistsContainer.innerHTML = '';
-                        topArtists.forEach(artistName => {
-                            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(artistName)}&background=random&color=fff&size=150&font-size=0.33`;
+                        topArtists.forEach(artObj => {
+                            const artistName = artObj.name;
+                            const avatarUrl = artObj.cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(artistName)}&background=138086&color=fff&size=200&bold=true`;
                             const card = document.createElement('div');
                             card.className = 'squircle-artist-card';
                             card.innerHTML = `
-                                <img src="${avatarUrl}" alt="${artistName}">
+                                <img src="${avatarUrl}" alt="${artistName}" loading="lazy">
                                 <h4 title="${artistName}">${artistName}</h4>
                                 <p>Artist</p>
                             `;
                             card.addEventListener('click', () => {
-                                loadView('search');
-                                setTimeout(() => {
-                                    const searchInput = document.getElementById('searchInput');
-                                    if (searchInput) {
-                                        searchInput.value = artistName;
-                                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                    }
-                                }, 80);
+                                renderRemoteCollectionDetail({
+                                    title: `${artistName} - Essential Hits`,
+                                    artist: 'Spotlight Artist',
+                                    cover: avatarUrl,
+                                    searchQuery: artObj.query || `${artistName} top hits songs`,
+                                    provider: 'JioSaavn',
+                                    providerId: 'jiosaavn'
+                                }, 'artist');
                             });
                             artistsContainer.appendChild(card);
                         });
@@ -2106,14 +2133,18 @@ const initHome = () => {
                     <img src="${coverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80'}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.4);" alt="${artistName}">
                     <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                         <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${artistName}</h4>
-                        <p style="margin: 2px 0 0 0; font-size: 0.81rem; color: #aaaaaa;">Artists</p>
+                        <p style="margin: 2px 0 0 0; font-size: 0.81rem; color: #aaaaaa;">Artist</p>
                     </div>
                 `;
                 row.addEventListener('click', () => {
-                    if (searchInput) {
-                        searchInput.value = artistName;
-                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
+                    renderRemoteCollectionDetail({
+                        title: `${artistName} - Top Songs`,
+                        artist: 'Featured Artist',
+                        cover: coverUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(artistName)}&background=138086&color=fff&size=200&bold=true`,
+                        searchQuery: `${artistName} top hits songs`,
+                        provider: 'JioSaavn',
+                        providerId: 'jiosaavn'
+                    }, 'artist', searchInput ? searchInput.value : '');
                 });
                 return row;
             };
@@ -2656,8 +2687,13 @@ const initHome = () => {
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        const isAlbum = type === 'album';
-        const typeLabel = isAlbum ? 'Album' : 'Playlist';
+        let typeLabel = 'Playlist';
+        if (type === 'album') typeLabel = 'Album';
+        else if (type === 'artist') typeLabel = 'Artist';
+
+        const collectionTitle = collection.title || collection.name || 'Collection';
+        const collectionArtist = collection.artist || collection.subtitle || (type === 'artist' ? 'Artist Spotlight' : 'Curated Hits');
+        const collectionCover = collection.cover || collection.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80';
 
         targetContainer.innerHTML = `
             <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
@@ -2666,7 +2702,7 @@ const initHome = () => {
                 </button>
             </div>
             <div style="display: flex; align-items: flex-end; gap: 24px; margin-bottom: 30px; flex-wrap: wrap; background: rgba(14, 53, 56, 0.45); padding: 24px; border-radius: 20px; border: 1px solid rgba(19, 128, 134, 0.25); box-shadow: 0 10px 35px rgba(0,0,0,0.45);">
-                <img src="${collection.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80'}" style="width: 190px; height: 190px; border-radius: 16px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.6);" alt="${collection.title || 'Collection'}">
+                <img src="${collectionCover}" style="width: 190px; height: 190px; border-radius: ${type === 'artist' ? '50%' : '16px'}; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.6);" alt="${collectionTitle}">
                 <div style="flex: 1; min-width: 260px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                         <p style="margin: 0; color: #22D3EE; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;">${typeLabel}</p>
@@ -2674,8 +2710,8 @@ const initHome = () => {
                             ${providerName}
                         </span>
                     </div>
-                    <h2 style="margin: 0 0 10px 0; font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 800; color: #fff; line-height: 1.2;">${collection.title || 'Collection'}</h2>
-                    <p style="margin: 0 0 16px 0; color: rgba(255,255,255,0.75); font-size: 1rem;">${collection.artist || 'Curated Hits'}</p>
+                    <h2 style="margin: 0 0 10px 0; font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 800; color: #fff; line-height: 1.2;">${collectionTitle}</h2>
+                    <p style="margin: 0 0 16px 0; color: rgba(255,255,255,0.75); font-size: 1rem;">${collectionArtist}</p>
                     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                         <button class="btn" id="playAllRemoteBtn" style="background: linear-gradient(135deg, var(--primary, #138086), var(--secondary, #22D3EE)); color: #ffffff; padding: 12px 32px; border-radius: 30px; font-weight: 800; font-size: 1.05rem; border: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 20px rgba(19, 128, 134, 0.4); transition: transform 0.2s;"><i class="fa-solid fa-play"></i> Play All</button>
                         <button class="btn" id="saveCollectionRemoteBtn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 12px 24px; border-radius: 30px; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; backdrop-filter: blur(8px); transition: background 0.2s;"><i class="fa-solid fa-folder-plus"></i> Save to Playlists</button>
@@ -2703,22 +2739,30 @@ const initHome = () => {
 
         let remoteTracks = [];
         try {
-            if (type === 'album') {
-                remoteTracks = await providerManager.getAlbum(pId, collection.id);
+            if (collection.tracks && collection.tracks.length > 0) {
+                remoteTracks = collection.tracks;
+            } else if (collection.songs && collection.songs.length > 0) {
+                remoteTracks = collection.songs;
             } else {
-                remoteTracks = await providerManager.getPlaylist(pId, collection.id);
-            }
+                const hasValidId = collection.id && collection.id !== 'undefined' && collection.id !== 'null' && String(collection.id).trim().length > 0;
+                if (hasValidId) {
+                    if (type === 'album') {
+                        remoteTracks = await providerManager.getAlbum(pId, collection.id);
+                    } else if (type === 'playlist') {
+                        remoteTracks = await providerManager.getPlaylist(pId, collection.id);
+                    }
+                }
 
-            // High-reliability Fallback if provider getPlaylist/getAlbum returns empty array
-            if (!remoteTracks || remoteTracks.length === 0) {
-                if (collection.tracks && collection.tracks.length > 0) {
-                    remoteTracks = collection.tracks;
-                } else if (collection.songs && collection.songs.length > 0) {
-                    remoteTracks = collection.songs;
-                } else {
-                    const fallbackTerm = collection.title || collection.searchQuery || currentQuery || 'hits';
-                    const fallbackRes = await searchService.searchAll(fallbackTerm);
-                    remoteTracks = (fallbackRes && fallbackRes.songs && fallbackRes.songs.length > 0) ? fallbackRes.songs : [];
+                // Fallback: search for the collection / artist songs directly
+                if (!remoteTracks || remoteTracks.length === 0) {
+                    const fallbackTerm = collection.searchQuery || collection.query || collectionTitle || currentQuery || 'top hits';
+                    const searchedSongs = await searchService.searchSongs(fallbackTerm);
+                    if (searchedSongs && searchedSongs.length > 0) {
+                        remoteTracks = searchedSongs;
+                    } else {
+                        const fallbackRes = await searchService.searchAll(fallbackTerm);
+                        remoteTracks = (fallbackRes && fallbackRes.songs && fallbackRes.songs.length > 0) ? fallbackRes.songs : [];
+                    }
                 }
             }
 
@@ -2740,7 +2784,7 @@ const initHome = () => {
                         showNotification('No tracks found to save', 'error');
                         return;
                     }
-                    const plTitle = collection.title || `${typeLabel} - ${collection.artist || 'Curated'}`;
+                    const plTitle = collectionTitle || `${typeLabel} - ${collectionArtist}`;
                     const newPl = playlistService.createPlaylist(plTitle, `Imported ${providerName} ${typeLabel}`);
                     remoteTracks.forEach(t => playlistService.addTrackToPlaylist(newPl.id, t));
                     showNotification(`Saved '${plTitle}' with ${remoteTracks.length} tracks to your playlists!`, 'success');
@@ -2766,13 +2810,17 @@ const initHome = () => {
                 row.setAttribute('data-index', index);
                 row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s; cursor: pointer; position: relative; width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05);';
 
+                const tTitle = track.title || track.song || track.name || 'Untitled Track';
+                const tArtist = track.artist || track.primary_artists || track.singers || 'Unknown Artist';
+                const tCover = track.cover || track.image || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80';
+
                 row.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
-                        <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${track.title}">
+                        <img src="${tCover}" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${tTitle}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
-                            <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
+                            <h4 style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tTitle}</h4>
                             <p style="font-size: 0.8rem; color: #aaaaaa; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                ${track.artist || 'Unknown Artist'}
+                                ${tArtist}
                             </p>
                         </div>
                     </div>
