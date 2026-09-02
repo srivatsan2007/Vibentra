@@ -4575,7 +4575,7 @@ input {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 20px 24px;
+    padding: max(20px, env(safe-area-inset-top)) 24px 20px 24px;
     background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -6299,12 +6299,16 @@ input:checked+.toggle-slider:before {
 }
 
 .home-greeting-text h1 {
-    font-size: 2.1rem;
+    font-size: clamp(1.4rem, 5vw, 2.1rem);
     font-weight: 800;
     color: #FFFFFF;
     margin: 0;
     letter-spacing: -0.5px;
-    line-height: 1.15;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 /* Neon Pill Filter Chips */

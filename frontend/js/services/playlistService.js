@@ -5,6 +5,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/fi
 export class PlaylistService {
     constructor() {
         this.playlists = [];
+        this.deletedPlaylistIds = this.loadDeletedPlaylistIds();
         this.collabListeners = new Map();
         this.loadPlaylistsLocal();
         
@@ -15,23 +16,44 @@ export class PlaylistService {
         });
     }
 
+    loadDeletedPlaylistIds() {
+        try {
+            return JSON.parse(localStorage.getItem('vibentra_deleted_playlists') || '[]');
+        } catch {
+            return [];
+        }
+    }
+
+    saveDeletedPlaylistIds() {
+        localStorage.setItem('vibentra_deleted_playlists', JSON.stringify(this.deletedPlaylistIds));
+    }
+
     loadPlaylistsLocal() {
         const stored = localStorage.getItem('vibentra_playlists');
-        if (stored) {
+        if (stored !== null) {
             try {
-                this.playlists = JSON.parse(stored);
+                const parsed = JSON.parse(stored);
+                // Filter out any playlist that was deleted
+                this.playlists = Array.isArray(parsed) 
+                    ? parsed.filter(p => !this.deletedPlaylistIds.includes(p.id))
+                    : [];
             } catch (e) {
                 this.playlists = [];
             }
         } else {
-            // Default demo playlist
-            this.playlists = [{
-                id: 'pl_' + Date.now(),
-                name: 'My Awesome Mix',
-                description: 'A custom playlist',
-                tracks: []
-            }];
-            this.savePlaylistsLocal();
+            // Only create default demo playlist on very first initial install if not deleted
+            if (this.deletedPlaylistIds.length === 0) {
+                this.playlists = [{
+                    id: 'pl_' + Date.now(),
+                    name: 'My Awesome Mix',
+                    description: 'A custom playlist',
+                    tracks: []
+                }];
+                this.savePlaylistsLocal();
+            } else {
+                this.playlists = [];
+                this.savePlaylistsLocal();
+            }
         }
     }
 
@@ -43,8 +65,10 @@ export class PlaylistService {
         if (auth.currentUser) {
             try {
                 await setDoc(doc(db, "userPlaylists", auth.currentUser.uid), {
-                    playlists: this.playlists
-                }, { merge: true });
+                    playlists: this.playlists,
+                    deletedPlaylistIds: this.deletedPlaylistIds,
+                    updatedAt: Date.now()
+                });
             } catch (e) {
                 console.error("Failed to save playlists to cloud", e);
             }
@@ -56,8 +80,20 @@ export class PlaylistService {
             const docRef = doc(db, "userPlaylists", uid);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                const cloudPls = docSnap.data().playlists || [];
-                const merged = [...this.playlists];
+                const cloudData = docSnap.data();
+                const cloudDeleted = cloudData.deletedPlaylistIds || [];
+                
+                // Merge deleted IDs from cloud
+                cloudDeleted.forEach(id => {
+                    if (!this.deletedPlaylistIds.includes(id)) {
+                        this.deletedPlaylistIds.push(id);
+                    }
+                });
+                this.saveDeletedPlaylistIds();
+
+                const cloudPls = (cloudData.playlists || []).filter(cPl => !this.deletedPlaylistIds.includes(cPl.id));
+                const merged = [...this.playlists.filter(lPl => !this.deletedPlaylistIds.includes(lPl.id))];
+
                 cloudPls.forEach(cPl => {
                     const localMatch = merged.find(lPl => lPl.id === cPl.id);
                     if (!localMatch) {
@@ -74,6 +110,7 @@ export class PlaylistService {
                         }
                     }
                 });
+
                 this.playlists = merged;
                 this.savePlaylistsLocal();
                 this.saveToCloud();
@@ -133,6 +170,10 @@ export class PlaylistService {
     }
 
     deletePlaylist(id) {
+        if (!this.deletedPlaylistIds.includes(id)) {
+            this.deletedPlaylistIds.push(id);
+            this.saveDeletedPlaylistIds();
+        }
         this.playlists = this.playlists.filter(p => p.id !== id);
         this.savePlaylistsLocal();
         this.saveToCloud();

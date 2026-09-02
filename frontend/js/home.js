@@ -1290,9 +1290,10 @@ const initHome = () => {
 
     // Views Rendering
     async function renderHome() {
-        const currentUsername = localStorage.getItem('vibentra_user_name') || window.currentUserProfile?.username || document.getElementById('welcomeName')?.textContent || (auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]) || 'User';
+        const rawUsername = localStorage.getItem('vibentra_user_name') || window.currentUserProfile?.username || document.getElementById('welcomeName')?.textContent || (auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]) || 'User';
         const currentAvatar = localStorage.getItem('vibentra_user_avatar') || window.currentUserProfile?.avatar || document.getElementById('topProfileImg')?.src || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
         const storedLang = localStorage.getItem('vibentra_lang_pref') || 'English';
+        const displayGreetingName = rawUsername.split(/[\/\s]/)[0] || rawUsername;
 
         dynamicContent.innerHTML = `
             <div class="home-neon-page view-fade-in">
@@ -1318,7 +1319,7 @@ const initHome = () => {
 
                 <!-- Personalized Greeting -->
                 <div class="home-greeting-text">
-                    <h1>Hi, <span id="homeDynamicGreetingName">${currentUsername}</span></h1>
+                    <h1>Hi, <span id="homeDynamicGreetingName" title="${rawUsername}">${displayGreetingName}</span></h1>
                 </div>
 
                 <!-- Sticky Neon Pill Filter Chips Row -->
