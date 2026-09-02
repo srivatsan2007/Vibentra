@@ -7535,6 +7535,10 @@ html.battery-saver-active * {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
     -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-padding: 0 16px !important;
+    overscroll-behavior-x: contain !important;
+    touch-action: pan-x pan-y !important;
     width: 100% !important;
     box-sizing: border-box !important;
 }
@@ -7548,6 +7552,8 @@ html.battery-saver-active * {
 .squircle-shelf-scroll > * {
     flex: 0 0 auto !important;
     flex-shrink: 0 !important;
+    scroll-snap-align: start !important;
+    scroll-snap-stop: normal !important;
 }
 
 .squircle-shelf-scroll .music-card,
@@ -8168,4 +8174,44 @@ html.battery-saver-active * {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Spotify-Grade Ultra-Smooth View Transition Engine */
+.view-fluid-enter {
+    animation: viewFluidCrossfade 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: opacity, transform;
+}
+
+@keyframes viewFluidCrossfade {
+    0% {
+        opacity: 0.65;
+        transform: translate3d(0, 6px, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* 60fps/120fps GPU Compositing & Smooth Momentum Touch Scrolling */
+.main-content {
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    scroll-behavior: smooth !important;
+}
+
+.spotify-track-row,
+.squircle-track-row,
+.ytm-track-row {
+    content-visibility: auto;
+    contain-intrinsic-size: 58px;
+    contain: layout style;
+}
+
+.music-card,
+.squircle-album-card,
+.squircle-artist-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 200px;
+    contain: layout style;
 }

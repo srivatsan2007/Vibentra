@@ -683,19 +683,29 @@ const initHome = () => {
         });
     });
 
+    const viewScrollMemory = {
+        home: 0,
+        search: 0,
+        playlists: 0,
+        favorites: 0,
+        connect: 0,
+        'vibe-ai': 0,
+        profile: 0,
+        settings: 0
+    };
+    let activeCurrentView = 'home';
+
     function loadView(path, pushState = true) {
         if (pushState) {
             history.pushState({ path }, '', '#' + path);
         }
 
-        // Smooth scroll to top when switching views
-        try {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            const mainContentEl = document.getElementById('mainContent');
-            if (mainContentEl) {
-                mainContentEl.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        } catch (e) { }
+        // 1. Save scroll position of previous active view
+        const mainContentEl = document.getElementById('mainContent');
+        const currentY = window.scrollY || (mainContentEl ? mainContentEl.scrollTop : 0);
+        if (activeCurrentView && activeCurrentView !== path) {
+            viewScrollMemory[activeCurrentView] = currentY;
+        }
 
         const navDockPill = document.querySelector('.mobile-nav-dock-pill');
         const searchCircle = document.querySelector('.mobile-nav-search-circle');
@@ -708,36 +718,69 @@ const initHome = () => {
             if (searchCircle) searchCircle.classList.remove('search-active');
         }
 
-        switch (path) {
-            case 'home':
-                renderHome();
-                break;
-            case 'search':
-                renderSearch();
-                break;
-            case 'playlists':
-                renderPlaylists();
-                break;
-            case 'favorites':
-                renderFavorites();
-                break;
-            case 'connect':
-                renderConnect();
-                break;
-            case 'vibe-ai':
-                renderVibeAI();
-                break;
-            case 'profile':
-                renderProfile();
-                break;
-            case 'settings':
-                renderSettings();
-                break;
-            case 'wrapped':
-                openWrappedModal();
-                break;
-            default:
-                renderHome();
+        const executeViewRender = () => {
+            switch (path) {
+                case 'home':
+                    renderHome();
+                    break;
+                case 'search':
+                    renderSearch();
+                    break;
+                case 'playlists':
+                    renderPlaylists();
+                    break;
+                case 'favorites':
+                    renderFavorites();
+                    break;
+                case 'connect':
+                    renderConnect();
+                    break;
+                case 'vibe-ai':
+                    renderVibeAI();
+                    break;
+                case 'profile':
+                    renderProfile();
+                    break;
+                case 'settings':
+                    renderSettings();
+                    break;
+                case 'wrapped':
+                    openWrappedModal();
+                    break;
+                default:
+                    renderHome();
+            }
+
+            // 2. Apply fluid crossfade animation
+            const dynamicContainer = document.getElementById('dynamicContent');
+            if (dynamicContainer) {
+                dynamicContainer.classList.remove('view-fluid-enter');
+                void dynamicContainer.offsetWidth; // Force reflow
+                dynamicContainer.classList.add('view-fluid-enter');
+            }
+
+            // 3. Smoothly restore saved scroll position or start fresh
+            const savedScroll = viewScrollMemory[path] || 0;
+            requestAnimationFrame(() => {
+                if (savedScroll > 0) {
+                    window.scrollTo({ top: savedScroll, behavior: 'instant' });
+                    if (mainContentEl) mainContentEl.scrollTop = savedScroll;
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    if (mainContentEl) mainContentEl.scrollTop = 0;
+                }
+            });
+
+            activeCurrentView = path;
+        };
+
+        // Use modern View Transition API if supported for buttery-smooth native transitions
+        if (document.startViewTransition && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+            document.startViewTransition(() => {
+                executeViewRender();
+            });
+        } else {
+            executeViewRender();
         }
     }
 
