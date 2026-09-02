@@ -2,13 +2,21 @@ import { auth } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const initApp = () => {
+    // Strictly execute only when #splashScreen element exists on page
     const splashScreen = document.getElementById('splashScreen');
-    if (!splashScreen) return; // Only run on index.html splash screen
+    if (!splashScreen) return;
 
     let hasRedirected = false;
-    const isInsidePages = window.location.pathname.includes('/pages/');
-    const homeUrl = isInsidePages ? 'home.html' : './pages/home.html';
-    const authUrl = isInsidePages ? 'auth.html' : './pages/auth.html';
+
+    // Bulletproof path resolution for any hosting environment (Root, Pages, Subfolder, PWA, Capacitor)
+    const getSafePath = (pageName) => {
+        const path = window.location.pathname;
+        const base = path.substring(0, path.lastIndexOf('/') + 1);
+        if (path.includes('/pages/')) {
+            return `${base}${pageName}.html`;
+        }
+        return `${base}pages/${pageName}.html`;
+    };
 
     const doRedirect = (targetUrl) => {
         if (hasRedirected) return;
@@ -24,10 +32,10 @@ const initApp = () => {
         unsubscribe();
         if (user) {
             localStorage.setItem('vibentra_logged_in', 'true');
-            doRedirect(homeUrl);
+            doRedirect(getSafePath('home'));
         } else {
             localStorage.removeItem('vibentra_logged_in');
-            doRedirect(authUrl);
+            doRedirect(getSafePath('auth'));
         }
     });
 
@@ -35,7 +43,7 @@ const initApp = () => {
     setTimeout(() => {
         if (!hasRedirected) {
             const wasLoggedIn = localStorage.getItem('vibentra_logged_in') === 'true' || !!localStorage.getItem('vibentra_user_email');
-            doRedirect(wasLoggedIn ? homeUrl : authUrl);
+            doRedirect(getSafePath(wasLoggedIn ? 'home' : 'auth'));
         }
     }, 1500);
 };

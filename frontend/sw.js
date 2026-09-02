@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibentra-cache-v131';
+const CACHE_NAME = 'vibentra-cache-v132';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -89,6 +89,10 @@ self.addEventListener('fetch', event => {
                 return caches.match(event.request, { ignoreSearch: true }).then(response => {
                     if (response) {
                         return response;
+                    }
+                    // For HTML page navigations that fail, fallback to cached home.html or index.html
+                    if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+                        return caches.match('/pages/home.html').then(homeRes => homeRes || caches.match('/index.html') || caches.match('/'));
                     }
                     // If not found in cache, return a fallback empty response so the browser doesn't throw a promise rejection error
                     return new Response('', { status: 404, statusText: 'Not found in cache' });
