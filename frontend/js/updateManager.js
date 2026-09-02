@@ -218,9 +218,17 @@ export function initUpdateManager() {
                         newWorker.postMessage({ type: 'SKIP_WAITING' });
                     }
 
-                    // Smooth reload
+                    // Clear Service Worker caches so mobile browsers never serve stale bundles
+                    if ('caches' in window) {
+                        caches.keys().then(names => {
+                            return Promise.all(names.map(name => caches.delete(name)));
+                        }).catch(() => {});
+                    }
+
+                    // Smooth cache-busted reload for mobile browsers
                     setTimeout(() => {
-                        window.location.reload();
+                        const currentPath = window.location.pathname;
+                        window.location.href = currentPath + '?v=' + Date.now();
                     }, 400);
                 }
             }, 200);

@@ -1,18 +1,16 @@
 {
-  "version": "v2.1.6",
-  "swVersion": "vibentra-cache-v138",
-  "releaseDate": "2 September 2026, 7:40 pm",
+  "version": "v2.1.7",
+  "swVersion": "vibentra-cache-v139",
+  "releaseDate": "2 September 2026, 7:50 pm",
   "size": "2.9 MB",
-  "importantNote": "Complete mobile UX optimization with Spotify & Echo Music fluid transitions, auto-hiding dock on search focus, exact 100dvh player sheet, high-priority lyrics z-index, and streamlined mobile track lists.",
+  "importantNote": "Refined mobile UX update with unified search bar flexbox layout, mobile layout jump fixes, and automated mobile cache purging.",
   "changelog": [
     {
-      "category": "Mobile UX & Performance Polish (v2.1.6)",
+      "category": "Mobile UX Polish & Cache Fix (v2.1.7)",
       "items": [
-        "Implemented Spotify-style auto-collapsing floating dock and mini-player during search focus.",
-        "Fixed full-screen player modal sizing from calc(100vw/0.92) to exact 100vw/100dvh.",
-        "Resolved z-index layering so Synced Lyrics modal renders cleanly above the full-screen player.",
-        "Cleaned up mobile track rows in Search and Playlists by hiding crowded three-dots buttons on mobile viewports.",
-        "Enhanced Service Worker update manager with dismissal persistence and smooth hot-reloads."
+        "Unified search bar flexbox layout to eliminate icon overlap and typing jump on mobile screens.",
+        "Added min-height stabilization on dynamic search container to eliminate scroll bounce.",
+        "Enhanced update installer to purge stale service worker caches and force fresh asset fetch on mobile."
       ]
     }
   ]

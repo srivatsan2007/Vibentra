@@ -2636,6 +2636,7 @@ const initHome = () => {
             }
 
             clearBtn.style.display = 'flex';
+            dynamicContainer.style.minHeight = '60vh';
             dynamicContainer.innerHTML = `
                 <div style="padding: 40px 0; text-align: center; color: rgba(255,255,255,0.7);">
                     <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: #1DB954; margin-bottom: 12px;"></i>

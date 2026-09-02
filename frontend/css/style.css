@@ -2693,26 +2693,50 @@ input {
     letter-spacing: -0.8px;
 }
 
-/* White Spotify / YouTube Music Dark Search Input Bar */
+/* Modern Unified Spotify Search Bar Container */
 .spotify-search-bar-container {
     position: relative;
+    display: flex;
+    align-items: center;
     width: 100%;
+    height: 50px;
+    background: #212121;
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 28px;
+    padding: 0 14px;
     margin-bottom: 20px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    transition: box-shadow 0.25s ease, background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.spotify-search-bar-container:focus-within {
+    background: #2a2a2a;
+    border-color: #38BDF8;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.35), 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+.spotify-search-icon {
+    font-size: 1.15rem;
+    color: #aaaaaa;
+    margin-right: 12px;
+    flex-shrink: 0;
+    pointer-events: none;
 }
 
 .spotify-search-input {
-    width: 100%;
-    height: 48px;
-    padding: 0 45px 0 44px;
-    border-radius: 28px;
-    background: #212121;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #FFFFFF;
-    font-size: 1.05rem;
-    font-weight: 500;
-    outline: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    transition: box-shadow 0.25s ease, background-color 0.25s ease;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #FFFFFF !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
 }
 
 .spotify-search-input::placeholder {
@@ -2720,37 +2744,34 @@ input {
     font-weight: 400;
 }
 
-.spotify-search-input:focus {
-    background: #2a2a2a;
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 8px 30px rgba(0, 0, 0, 0.6);
-}
-
-.spotify-search-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaaaaa;
-    font-size: 1.15rem;
-    pointer-events: none;
-}
-
+.spotify-clear-btn,
 .spotify-voice-btn {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
     background: transparent;
     border: none;
     color: #aaaaaa;
     font-size: 1.15rem;
     cursor: pointer;
-    padding: 6px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
     transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.spotify-clear-btn:hover,
+.spotify-voice-btn:hover {
+    color: #FFFFFF;
+}
+
+.spotify-voice-btn.recording {
+    color: #EC4899;
+    transform: scale(1.15);
 }
 
 .spotify-voice-btn:hover {
@@ -5897,13 +5918,14 @@ input:checked+.toggle-slider:before {
 
     /* Search & Filter Bar Mobile */
     .spotify-search-bar-container {
-        padding: 4px 12px !important;
-        border-radius: 40px !important;
+        height: 48px !important;
+        padding: 0 12px !important;
+        border-radius: 26px !important;
         margin-bottom: 16px !important;
     }
 
     .spotify-search-input {
-        font-size: 0.92rem !important;
+        font-size: 0.95rem !important;
     }
 
     .spotify-top-result-card {
