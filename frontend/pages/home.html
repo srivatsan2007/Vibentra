@@ -79,6 +79,7 @@
         document.documentElement.style.setProperty('--background', theme.background);
         document.documentElement.style.setProperty('--cards', theme.cards);
         const bgGrad = theme.bgGradient || `radial-gradient(circle at 20% 20%, ${theme.primary} 0%, ${theme.background} 50%, #010A0B 100%)`;
+        document.documentElement.style.setProperty('--bg-gradient', bgGrad);
         document.documentElement.style.background = bgGrad;
         document.documentElement.style.backgroundColor = theme.background || '#061A1C';
     </script>

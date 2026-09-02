@@ -163,6 +163,7 @@ const initHome = () => {
         document.documentElement.style.setProperty('--cards', theme.cards);
 
         const bgGrad = theme.bgGradient || `radial-gradient(circle at 20% 20%, ${theme.primary} 0%, ${theme.background} 50%, #010A0B 100%)`;
+        document.documentElement.style.setProperty('--bg-gradient', bgGrad);
         document.documentElement.style.background = bgGrad;
         document.documentElement.style.backgroundColor = theme.background || '#061A1C';
         document.body.style.background = bgGrad;
@@ -2665,74 +2666,108 @@ const initHome = () => {
             renderDefaultBrowseState();
         });
 
-        // Voice Search Microphone logic
+        // Voice Search Microphone logic using Native Web Speech Recognition
         const voiceSearchBtn = document.getElementById('voiceSearchBtn');
-        let isRecording = false;
-        let mediaRecorder;
-        let audioChunks = [];
+        let recognitionInstance = null;
+        let isVoiceListening = false;
 
-        voiceSearchBtn.addEventListener('click', async () => {
-            if (isRecording) {
-                mediaRecorder.stop();
-                isRecording = false;
-                voiceSearchBtn.classList.remove('recording');
-                return;
-            }
+        if (voiceSearchBtn) {
+            voiceSearchBtn.addEventListener('click', () => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
+                if (!SpeechRecognition) {
+                    showNotification('Voice search is not supported in this browser.', 'warning');
+                    return;
+                }
 
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) audioChunks.push(e.data);
-                };
+                if (isVoiceListening && recognitionInstance) {
+                    recognitionInstance.stop();
+                    return;
+                }
 
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    stream.getTracks().forEach(track => track.stop());
+                try {
+                    const recognition = new SpeechRecognition();
+                    recognitionInstance = recognition;
 
-                    const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
-                    reader.onloadend = async () => {
-                        const base64Audio = reader.result;
-                        showNotification('Recognizing audio...', 'success');
+                    // Language configuration matching active app language
+                    const activeLang = localStorage.getItem('vibentra_selected_lang') || 'all';
+                    if (activeLang === 'tamil') recognition.lang = 'ta-IN';
+                    else if (activeLang === 'hindi') recognition.lang = 'hi-IN';
+                    else if (activeLang === 'telugu') recognition.lang = 'te-IN';
+                    else if (activeLang === 'malayalam') recognition.lang = 'ml-IN';
+                    else if (activeLang === 'kannada') recognition.lang = 'kn-IN';
+                    else recognition.lang = 'en-IN';
 
-                        try {
-                            const response = await fetch('http://localhost:5000/api/jiosaavn/recognize', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ audioData: base64Audio })
-                            });
-                            const data = await response.json();
+                    recognition.interimResults = true;
+                    recognition.continuous = false;
+                    recognition.maxAlternatives = 1;
 
-                            if (data.success && data.track) {
-                                showNotification('Song recognized!');
-                                searchInput.value = data.track.title;
-                                triggerSearch(data.track.title);
+                    recognition.onstart = () => {
+                        isVoiceListening = true;
+                        voiceSearchBtn.classList.add('recording');
+                        voiceSearchBtn.title = 'Listening... Tap to stop';
+                        searchInput.placeholder = 'Listening... Speak a song name...';
+                        showNotification('Listening... Speak a song or artist!', 'info');
+                    };
+
+                    recognition.onresult = (event) => {
+                        let interimTranscript = '';
+                        let finalTranscript = '';
+
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
                             } else {
-                                showNotification('Could not recognize the song', 'error');
+                                interimTranscript += event.results[i][0].transcript;
                             }
-                        } catch (err) {
-                            showNotification('Error recognizing audio', 'error');
+                        }
+
+                        const currentSpoken = finalTranscript || interimTranscript;
+                        if (currentSpoken) {
+                            searchInput.value = currentSpoken;
+                            clearBtn.style.display = 'flex';
                         }
                     };
-                };
 
-                mediaRecorder.start();
-                isRecording = true;
-                voiceSearchBtn.classList.add('recording');
-                showNotification('Listening... Sing or hum a song!', 'success');
+                    recognition.onerror = (event) => {
+                        console.warn("Speech recognition error:", event.error);
+                        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                            showNotification('Microphone permission denied. Please allow mic access.', 'error');
+                        } else if (event.error === 'no-speech') {
+                            showNotification('No speech detected. Tap mic and try again.', 'warning');
+                        }
+                    };
 
-                setTimeout(() => {
-                    if (isRecording) voiceSearchBtn.click();
-                }, 5000);
+                    recognition.onend = () => {
+                        isVoiceListening = false;
+                        voiceSearchBtn.classList.remove('recording');
+                        voiceSearchBtn.title = 'Search by voice';
+                        searchInput.placeholder = 'What do you want to play?';
 
-            } catch (err) {
-                console.error("Microphone access error:", err);
-                showNotification('Microphone access denied or unavailable', 'error');
-            }
-        });
+                        const rawQuery = searchInput.value.trim();
+                        if (rawQuery.length > 0) {
+                            // Strip conversational prefixes like "play", "search for", "find song"
+                            const cleanSpokenQuery = rawQuery
+                                .replace(/^(play\s+song\s+|play\s+|search\s+for\s+|search\s+|find\s+song\s+|find\s+)/i, '')
+                                .replace(/\s+song$/i, '')
+                                .trim() || rawQuery;
+
+                            searchInput.value = cleanSpokenQuery;
+                            showNotification(`Searching for "${cleanSpokenQuery}"...`, 'success');
+                            triggerSearch(cleanSpokenQuery);
+                        }
+                    };
+
+                    recognition.start();
+
+                } catch (err) {
+                    console.error("Speech recognition startup error:", err);
+                    isVoiceListening = false;
+                    voiceSearchBtn.classList.remove('recording');
+                    showNotification('Could not start voice search. Please try again.', 'error');
+                }
+            });
+        }
 
         // Initialize state
         if (initialQuery) {

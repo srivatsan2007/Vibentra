@@ -30,8 +30,7 @@ html {
     padding: 0 !important;
     overflow-x: hidden !important;
     background-color: var(--background, #061A1C) !important;
-    background: radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%) !important;
-    background-attachment: fixed !important;
+    background: var(--bg-gradient, radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)) !important;
     font-size: 92%;
     zoom: 0.92;
 }
@@ -39,8 +38,7 @@ html {
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--background, #061A1C) !important;
-    background: radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%) !important;
-    background-attachment: fixed !important;
+    background: var(--bg-gradient, radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)) !important;
     color: var(--text, #FFFFFF);
     overflow-x: hidden !important;
     scroll-behavior: smooth !important;
@@ -277,7 +275,7 @@ input {
     overflow: hidden;
     z-index: 0;
     pointer-events: none;
-    background: radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%) !important;
+    background: var(--bg-gradient, radial-gradient(circle at 20% 20%, #138086 0%, #061A1C 50%, #010A0B 100%)) !important;
 }
 
 /* Multi-colored Floating Liquid Orbs */
