@@ -1898,21 +1898,24 @@ input {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    width: calc(100vw / 0.92) !important;
-    min-width: calc(100vw / 0.92) !important;
-    height: calc(100vh / 0.92) !important;
-    height: calc(100dvh / 0.92) !important;
-    min-height: calc(100vh / 0.92) !important;
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
     background: rgba(7, 9, 25, 0.96) !important;
-    backdrop-filter: blur(40px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+    backdrop-filter: blur(35px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(35px) saturate(180%) !important;
     z-index: 100000 !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1), transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1924,12 +1927,22 @@ input {
     pointer-events: all !important;
 }
 
-/* Explicit High-Priority Layering & Styling for Lyrics Modal */
-#lyricsModal {
-    z-index: 10050 !important;
+/* Explicit High-Priority Layering & Styling for Nested Sub-Modals */
+#lyricsModal,
+#ringtoneModal,
+#storyShareModal,
+#addToPlaylistModal,
+#coverGeneratorModal,
+#songOptionsModal {
+    z-index: 100500 !important;
 }
 
-#lyricsModal.active {
+#lyricsModal.active,
+#ringtoneModal.active,
+#storyShareModal.active,
+#addToPlaylistModal.active,
+#coverGeneratorModal.active,
+#songOptionsModal.active {
     display: flex !important;
     opacity: 1 !important;
     pointer-events: all !important;
@@ -2171,11 +2184,14 @@ input {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    width: calc(100vw / 0.92) !important;
-    min-width: calc(100vw / 0.92) !important;
-    height: calc(100vh / 0.92) !important;
-    height: calc(100dvh / 0.92) !important;
-    min-height: calc(100vh / 0.92) !important;
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
     background: #070914 !important;
     z-index: 100000 !important;
     display: flex !important;
@@ -2183,7 +2199,7 @@ input {
     align-items: center !important;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1), transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -3929,6 +3945,18 @@ input {
         padding-bottom: 170px !important;
     }
 
+    /* Hide Three-Dots Options in Search Page & Playlist Views on Mobile */
+    .search-row-opt-btn,
+    .pl-track-opt-btn,
+    .remote-track-opt-btn,
+    .fav-opt-btn,
+    .spotify-track-row .remove-from-pl-btn,
+    .pl-track-row .remove-from-pl-btn,
+    .card-menu-trigger,
+    .card-quick-actions .more-btn {
+        display: none !important;
+    }
+
     /* Hero Mix Card Mobile Cleanup (Prevents oversized height clutter) */
     .hero-mix-card {
         padding: 16px 20px !important;
@@ -4548,9 +4576,10 @@ input {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background: #090B10;
     color: #FFFFFF;
-    z-index: 10000;
+    z-index: 100020;
     display: none;
     flex-direction: column;
     overflow: hidden;
@@ -4677,11 +4706,11 @@ input {
     left: 0 !important;
     width: 100vw !important;
     box-sizing: border-box !important;
-    z-index: 10005 !important;
+    z-index: 100025 !important;
     display: flex !important;
     align-items: center !important;
     gap: 14px !important;
-    padding: 14px 20px max(18px, env(safe-area-inset-bottom)) 20px !important;
+    padding: 14px 20px max(24px, env(safe-area-inset-bottom, 24px)) 20px !important;
     background: rgba(15, 23, 42, 0.98) !important;
     backdrop-filter: blur(25px) !important;
     -webkit-backdrop-filter: blur(25px) !important;
@@ -4732,9 +4761,11 @@ input {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
-    z-index: 10001;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 100030;
     display: none;
     align-items: center;
     justify-content: center;
@@ -6784,6 +6815,25 @@ input:checked+.toggle-slider:before {
         font-weight: 800;
         box-shadow: 0 4px 20px var(--neon-lime-glow);
         transform: scale(1.08);
+    }
+
+    /* Spotify & Echo Smooth Auto-Hide on Search Focus */
+    .mobile-bottom-nav,
+    .music-player {
+        transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease !important;
+        will-change: transform, opacity;
+    }
+
+    body.search-focused .music-player {
+        transform: translate(-50%, 260%) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    body.search-focused .mobile-bottom-nav {
+        transform: translate(-50%, 220%) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 }
 

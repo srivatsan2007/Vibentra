@@ -717,6 +717,12 @@ const initHome = () => {
         } else {
             if (navDockPill) navDockPill.classList.remove('collapsed');
             if (searchCircle) searchCircle.classList.remove('search-active');
+            document.body.classList.remove('search-focused');
+            if (window.__activeSearchScrollHandler) {
+                const mainEl = document.getElementById('mainContent');
+                if (mainEl) mainEl.removeEventListener('scroll', window.__activeSearchScrollHandler);
+                window.__activeSearchScrollHandler = null;
+            }
         }
 
         const executeViewRender = () => {
@@ -2038,9 +2044,13 @@ const initHome = () => {
             }
         };
 
+        if (window.__activeSearchScrollHandler) {
+            const mainEl = document.getElementById('mainContent');
+            if (mainEl) mainEl.removeEventListener('scroll', window.__activeSearchScrollHandler);
+        }
+        window.__activeSearchScrollHandler = handleSearchScroll;
         const mainContentEl = document.getElementById('mainContent');
         if (mainContentEl) {
-            mainContentEl.removeEventListener('scroll', handleSearchScroll);
             mainContentEl.addEventListener('scroll', handleSearchScroll, { passive: true });
         }
 
@@ -2238,7 +2248,7 @@ const initHome = () => {
                        </span>`;
 
                 row.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: calc(100% - 50px);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; max-width: 100%;">
                         <img src="${track.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80'}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" alt="${track.title}">
                         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px;">
                             <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title || 'Untitled Track'}</h4>
@@ -2639,9 +2649,22 @@ const initHome = () => {
         };
 
         // Event Listeners for Search Bar
+        searchInput.addEventListener('focus', () => {
+            document.body.classList.add('search-focused');
+        });
+
+        searchInput.addEventListener('blur', () => {
+            if (!searchInput.value.trim()) {
+                document.body.classList.remove('search-focused');
+            }
+        });
+
         searchInput.addEventListener('input', (e) => {
             const val = e.target.value;
             clearBtn.style.display = val ? 'flex' : 'none';
+            if (val.trim()) {
+                document.body.classList.add('search-focused');
+            }
             clearTimeout(searchDebounce);
 
             if (!val.trim()) {
@@ -2651,12 +2674,13 @@ const initHome = () => {
 
             searchDebounce = setTimeout(() => {
                 triggerSearch(val);
-            }, 450);
+            }, 380);
         });
 
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
             clearBtn.style.display = 'none';
+            document.body.classList.remove('search-focused');
             searchInput.focus();
             renderDefaultBrowseState();
         });

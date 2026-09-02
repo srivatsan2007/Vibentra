@@ -122,6 +122,10 @@ export function initUpdateManager() {
     const cancelInstallBtn = document.getElementById('cancelInstallBtn');
 
     function showToastBanner(ver) {
+        const dismissedVer = localStorage.getItem('vibentra_dismissed_update_version');
+        if (dismissedVer && dismissedVer === ver) {
+            return; // Silently suppress repetitive banner for dismissed version
+        }
         if (toastBanner) {
             const p = toastBanner.querySelector('.toast-text p');
             if (p) p.textContent = `Version ${ver || 'new'} is available`;
@@ -175,9 +179,16 @@ export function initUpdateManager() {
         if (updateView) updateView.style.display = 'none';
     }
 
+    function dismissUpdate() {
+        if (updateData?.version) {
+            localStorage.setItem('vibentra_dismissed_update_version', updateData.version);
+        }
+        closeUpdateView();
+    }
+
     if (viewDetailsBtn) viewDetailsBtn.addEventListener('click', openUpdateView);
-    if (backBtn) backBtn.addEventListener('click', closeUpdateView);
-    if (laterBtn) laterBtn.addEventListener('click', closeUpdateView);
+    if (backBtn) backBtn.addEventListener('click', dismissUpdate);
+    if (laterBtn) laterBtn.addEventListener('click', dismissUpdate);
 
     // Install Action Sequence
     if (installBtn) {
@@ -186,7 +197,7 @@ export function initUpdateManager() {
             let progress = 0;
 
             installTimer = setInterval(() => {
-                progress += Math.floor(Math.random() * 15) + 10;
+                progress += Math.floor(Math.random() * 15) + 12;
                 if (progress > 100) progress = 100;
 
                 if (progressFill) progressFill.style.width = progress + '%';
@@ -198,33 +209,21 @@ export function initUpdateManager() {
                     
                     if (updateData) {
                         localStorage.setItem('vibentra_active_sw_version', updateData.swVersion);
+                        localStorage.removeItem('vibentra_dismissed_update_version');
                     }
+
+                    window.__vibentraExplicitUpdate = true;
 
                     if (newWorker) {
                         newWorker.postMessage({ type: 'SKIP_WAITING' });
                     }
 
-                    // Force unregister and reload
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.getRegistrations().then(registrations => {
-                            for (let registration of registrations) {
-                                registration.unregister();
-                            }
-                        }).then(() => {
-                            if ('caches' in window) {
-                                caches.keys().then(names => {
-                                    for (let name of names) caches.delete(name);
-                                });
-                            }
-                            setTimeout(() => {
-                                window.location.href = window.location.pathname + '?v=' + Date.now();
-                            }, 500);
-                        });
-                    } else {
+                    // Smooth reload
+                    setTimeout(() => {
                         window.location.reload();
-                    }
+                    }, 400);
                 }
-            }, 250);
+            }, 200);
         });
     }
 

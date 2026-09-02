@@ -1,22 +1,18 @@
 {
-  "version": "v2.1.0",
-  "swVersion": "vibentra-cache-v137",
-  "releaseDate": "1 September 2026, 2:05 pm",
+  "version": "v2.1.6",
+  "swVersion": "vibentra-cache-v138",
+  "releaseDate": "2 September 2026, 7:40 pm",
   "size": "2.9 MB",
-  "importantNote": "Major feature update introducing Multilingual & Sing-Along Lyrics, Live Jam Listening Rooms, Collaborative Playlists, Spotify-style Story Cards, Floating PiP Mini Player, Vibentra Wrapped, and Custom AI Playlist Cover Generator.",
+  "importantNote": "Complete mobile UX optimization with Spotify & Echo Music fluid transitions, auto-hiding dock on search focus, exact 100dvh player sheet, high-priority lyrics z-index, and streamlined mobile track lists.",
   "changelog": [
     {
-      "category": "New Features & Enhancements (v2.1.0)",
+      "category": "Mobile UX & Performance Polish (v2.1.6)",
       "items": [
-        "Added Multilingual Lyrics Translation (English, Tamil, Hindi) & Romanized Sing-Along notes.",
-        "Added Live Jam Listening Rooms with real-time synchronized audio playback and live chat reactions.",
-        "Added Real-time Collaborative Playlists with 6-letter Join Codes and Firestore sync.",
-        "Added 9:16 Spotify Story Share Card generator with cover gradient extraction & 1-tap download/share.",
-        "Added Floating Picture-in-Picture (PiP) Mini Player with animated soundwaves & playback controls.",
-        "Added Vibentra Wrapped 4-slide animated story carousel with listening minutes & Music Personas.",
-        "Added Custom AI Playlist Cover Generator with 6 aesthetic presets.",
-        "Removed fullscreen button from topbar for streamlined header navigation.",
-        "Bumped Service Worker cache to v130."
+        "Implemented Spotify-style auto-collapsing floating dock and mini-player during search focus.",
+        "Fixed full-screen player modal sizing from calc(100vw/0.92) to exact 100vw/100dvh.",
+        "Resolved z-index layering so Synced Lyrics modal renders cleanly above the full-screen player.",
+        "Cleaned up mobile track rows in Search and Playlists by hiding crowded three-dots buttons on mobile viewports.",
+        "Enhanced Service Worker update manager with dismissal persistence and smooth hot-reloads."
       ]
     }
   ]
