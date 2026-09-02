@@ -17,11 +17,10 @@
     <script>
         // PWA Service Worker Registration & Update Logic
         if ('serviceWorker' in navigator) {
-            let newWorker;
             let refreshing = false;
             
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
+                if (!refreshing && window.__vibentraExplicitUpdate) {
                     window.location.reload();
                     refreshing = true;
                 }
@@ -41,19 +40,16 @@
             });
         }
 
-        // Aggressive fix for browser dropping CSS cache on back navigation
+        // Smooth handling for BFCache restoration without unstyling the DOM
         window.addEventListener("pageshow", function (event) {
             var historyTraversal = event.persisted || 
                                    (typeof window.performance != "undefined" && 
                                     window.performance.navigation.type === 2);
             if (historyTraversal) {
-                window.location.reload();
-            }
-            
-            // Force CSS to re-evaluate just in case BFCache corrupted it
-            const cssNode = document.getElementById('mainCss');
-            if (cssNode) {
-                cssNode.href = '../css/style.css?v=' + new Date().getTime();
+                const cssNode = document.getElementById('mainCss');
+                if (cssNode && !cssNode.sheet) {
+                    cssNode.href = '../css/style.css?v=2.1.5';
+                }
             }
         });
         

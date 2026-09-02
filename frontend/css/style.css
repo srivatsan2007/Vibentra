@@ -287,6 +287,9 @@ input {
     filter: blur(80px);
     opacity: 0.35;
     animation: floatOrb 18s ease-in-out infinite alternate;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    pointer-events: none;
 }
 
 .orb-1 {

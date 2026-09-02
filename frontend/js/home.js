@@ -191,6 +191,28 @@ const initHome = () => {
     const savedTheme = localStorage.getItem('vibentra_theme') || 'teal';
     window.applyTheme(savedTheme);
 
+    // Immediately pre-populate cached user profile to prevent visual UI flicker
+    const cachedPreloadName = localStorage.getItem('vibentra_user_name');
+    const cachedPreloadAvatar = localStorage.getItem('vibentra_user_avatar');
+    if (cachedPreloadName) {
+        const welcomeNameEl = document.getElementById('welcomeName');
+        if (welcomeNameEl) welcomeNameEl.textContent = cachedPreloadName;
+        const topUsernameEl = document.getElementById('topUsername');
+        if (topUsernameEl) topUsernameEl.textContent = cachedPreloadName;
+        const profileUsername = document.getElementById('profileUsername');
+        if (profileUsername) profileUsername.textContent = cachedPreloadName;
+        const homeDynamicGreeting = document.getElementById('homeDynamicGreetingName');
+        if (homeDynamicGreeting) homeDynamicGreeting.textContent = cachedPreloadName;
+    }
+    if (cachedPreloadAvatar) {
+        const topProfileImg = document.getElementById('topProfileImg');
+        if (topProfileImg) topProfileImg.src = cachedPreloadAvatar;
+        const profileAvatar = document.getElementById('profileAvatar');
+        if (profileAvatar) profileAvatar.src = cachedPreloadAvatar;
+        const homeNeonAvatar = document.getElementById('homeNeonAvatar');
+        if (homeNeonAvatar) homeNeonAvatar.src = cachedPreloadAvatar;
+    }
+
     // Check Auth State
     musicService.initUI(); // Initialize player UI bindings
     onAuthStateChanged(auth, async (user) => {
@@ -199,9 +221,9 @@ const initHome = () => {
             return;
         }
 
-        let resolvedUsername = user.displayName || user.email?.split('@')[0] || 'User';
-        let resolvedAvatar = user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
-        let resolvedEmail = user.email || '';
+        let resolvedUsername = user.displayName || user.email?.split('@')[0] || cachedPreloadName || 'User';
+        let resolvedAvatar = user.photoURL || cachedPreloadAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80';
+        let resolvedEmail = user.email || localStorage.getItem('vibentra_user_email') || '';
 
         // Load User Data from Firestore
         try {

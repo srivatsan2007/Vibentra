@@ -3,25 +3,36 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/fi
 
 const initApp = () => {
     const splashScreen = document.getElementById('splashScreen');
-    if (!splashScreen) return;
+    let hasRedirected = false;
 
-    // Simulate loading time (e.g., fetching initial data)
+    const doRedirect = (targetUrl) => {
+        if (hasRedirected) return;
+        hasRedirected = true;
+        if (splashScreen) splashScreen.classList.add('hidden');
+        setTimeout(() => {
+            window.location.replace(targetUrl);
+        }, 300);
+    };
+
+    // Fast resolution: listen to auth state without artificial multi-second stall
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        if (user) {
+            localStorage.setItem('vibentra_logged_in', 'true');
+            doRedirect('./pages/home.html');
+        } else {
+            localStorage.removeItem('vibentra_logged_in');
+            doRedirect('./pages/auth.html');
+        }
+    });
+
+    // Fallback safety timeout if network is offline or Firebase takes long
     setTimeout(() => {
-        // Check Firebase Auth state
-        onAuthStateChanged(auth, (user) => {
-            splashScreen.classList.add('hidden');
-            
-            setTimeout(() => {
-                if (user) {
-                    // User is signed in, redirect to home
-                    window.location.href = './pages/home.html';
-                } else {
-                    // User is signed out, redirect to auth
-                    window.location.href = './pages/auth.html';
-                }
-            }, 500); // Wait for transition
-        });
-    }, 2000); // 2 seconds splash screen
+        if (!hasRedirected) {
+            const wasLoggedIn = localStorage.getItem('vibentra_logged_in') === 'true' || !!localStorage.getItem('vibentra_user_email');
+            doRedirect(wasLoggedIn ? './pages/home.html' : './pages/auth.html');
+        }
+    }, 1500);
 };
 
 if (document.readyState === 'loading') {

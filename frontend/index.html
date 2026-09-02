@@ -23,7 +23,7 @@
             let refreshing = false;
             
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
+                if (!refreshing && window.__vibentraExplicitUpdate) {
                     window.location.reload();
                     refreshing = true;
                 }
