@@ -3,26 +3,31 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/fi
 
 const initApp = () => {
     const splashScreen = document.getElementById('splashScreen');
+    if (!splashScreen) return; // Only run on index.html splash screen
+
     let hasRedirected = false;
+    const isInsidePages = window.location.pathname.includes('/pages/');
+    const homeUrl = isInsidePages ? 'home.html' : './pages/home.html';
+    const authUrl = isInsidePages ? 'auth.html' : './pages/auth.html';
 
     const doRedirect = (targetUrl) => {
         if (hasRedirected) return;
         hasRedirected = true;
-        if (splashScreen) splashScreen.classList.add('hidden');
+        splashScreen.classList.add('hidden');
         setTimeout(() => {
             window.location.replace(targetUrl);
         }, 300);
     };
 
-    // Fast resolution: listen to auth state without artificial multi-second stall
+    // Fast resolution: listen to auth state without artificial stall
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         unsubscribe();
         if (user) {
             localStorage.setItem('vibentra_logged_in', 'true');
-            doRedirect('./pages/home.html');
+            doRedirect(homeUrl);
         } else {
             localStorage.removeItem('vibentra_logged_in');
-            doRedirect('./pages/auth.html');
+            doRedirect(authUrl);
         }
     });
 
@@ -30,7 +35,7 @@ const initApp = () => {
     setTimeout(() => {
         if (!hasRedirected) {
             const wasLoggedIn = localStorage.getItem('vibentra_logged_in') === 'true' || !!localStorage.getItem('vibentra_user_email');
-            doRedirect(wasLoggedIn ? './pages/home.html' : './pages/auth.html');
+            doRedirect(wasLoggedIn ? homeUrl : authUrl);
         }
     }, 1500);
 };
