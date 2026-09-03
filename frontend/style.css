@@ -7185,5 +7185,105 @@ body {
     border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+/* Mobile Responsive Widget Tweaks for Phone Home Screen */
+@media (max-width: 600px) {
+    .home-widget-area {
+        padding: 0 12px;
+        margin: 8px auto 14px;
+    }
+
+    .widget-turntable-card {
+        padding: 12px 14px;
+        gap: 12px;
+        border-radius: 20px;
+    }
+
+    .turntable-deck-left {
+        width: 96px;
+        height: 96px;
+    }
+
+    .vinyl-platter {
+        width: 92px;
+        height: 92px;
+    }
+
+    .vinyl-center-label {
+        width: 38px;
+        height: 38px;
+    }
+
+    .turntable-tonearm {
+        height: 60px;
+        width: 18px;
+        top: -3px;
+        right: 2px;
+    }
+
+    .turntable-title {
+        font-size: 0.95rem;
+    }
+
+    .turntable-artist {
+        font-size: 0.74rem;
+        margin-bottom: 6px;
+    }
+
+    .btn-turntable-play {
+        width: 38px;
+        height: 38px;
+        font-size: 0.95rem;
+    }
+
+    .btn-turntable-nav {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .widget-glass-card {
+        padding: 14px 16px;
+        border-radius: 20px;
+    }
+
+    .glass-widget-art {
+        width: 50px;
+        height: 50px;
+    }
+
+    .glass-widget-title {
+        font-size: 0.95rem;
+    }
+
+    .glass-widget-artist {
+        font-size: 0.74rem;
+    }
+
+    .widget-capsule-pill {
+        padding: 6px 12px 6px 6px;
+        border-radius: 30px;
+    }
+
+    .pill-widget-thumb {
+        width: 38px;
+        height: 38px;
+    }
+
+    .pill-widget-title {
+        font-size: 0.86rem;
+    }
+
+    .pill-widget-artist {
+        font-size: 0.72rem;
+    }
+
+    .btn-pill-play {
+        width: 34px;
+        height: 34px;
+        font-size: 0.88rem;
+    }
+}
+
+
 
 

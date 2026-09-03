@@ -141,6 +141,7 @@ function switchScreen(screenName) {
             const navHome = document.getElementById('navHome');
             if (navHome) navHome.classList.add('active');
             document.querySelectorAll('#desktopNavHome, #desktopSearchNavHome, #desktopLibNavHome').forEach(btn => btn.classList.add('active'));
+            if (typeof renderHomeWidget === 'function') renderHomeWidget();
         }
         if (screenName === 'search') {
             searchScreen.classList.add('active');
@@ -2033,6 +2034,7 @@ function playTrack(song, playlist = []) {
     audioPlayer.muted = false;
 
     updateMediaSession(song);
+    syncNativeAndroidWidget(song, true);
     acquireWakeLock();
 
     const audioSrc = song.streamUrl || song.url || song.media_url;
@@ -2126,6 +2128,70 @@ function updateMediaSessionPositionState() {
     } catch (_) {}
 }
 
+// Native Android Phone Home Screen Widget Bridge (Capacitor BackgroundAudioPlugin)
+function getBackgroundAudioPlugin() {
+    if (typeof window === 'undefined') return null;
+    if (window.Capacitor?.Plugins?.BackgroundAudio) {
+        return window.Capacitor.Plugins.BackgroundAudio;
+    }
+    if (window.Capacitor && typeof window.Capacitor.registerPlugin === 'function') {
+        try {
+            const plugin = window.Capacitor.registerPlugin('BackgroundAudio');
+            if (plugin) {
+                if (!window.Capacitor.Plugins) window.Capacitor.Plugins = {};
+                window.Capacitor.Plugins.BackgroundAudio = plugin;
+                return plugin;
+            }
+        } catch (e) { }
+    }
+    return null;
+}
+
+function syncNativeAndroidWidget(track = null, playing = isPlaying) {
+    try {
+        const bgPlugin = getBackgroundAudioPlugin();
+        if (!bgPlugin) return;
+        const current = track || currentSongObj || (currentPlaylist && currentPlaylist[currentTrackIndex]);
+        if (!current) return;
+
+        const durMs = Math.floor((audioPlayer.duration || 0) * 1000);
+        const posMs = Math.floor((audioPlayer.currentTime || 0) * 1000);
+
+        bgPlugin.startService({
+            title: current.title || "Vibentra Music",
+            artist: current.artist || "Playing...",
+            cover: current.cover || "",
+            isPlaying: playing,
+            duration: durMs > 0 ? durMs : 0,
+            position: posMs > 0 ? posMs : 0
+        });
+    } catch (e) {
+        console.warn("Native Android widget sync warning:", e);
+    }
+}
+
+function initNativeAndroidWidgetListener() {
+    const bgPlugin = getBackgroundAudioPlugin();
+    if (bgPlugin && typeof bgPlugin.addListener === 'function') {
+        try {
+            bgPlugin.addListener('mediaAction', (data) => {
+                console.log(`[Native Android Widget Action]: ${data?.action}`);
+                if (data?.action === 'play') {
+                    if (audioPlayer.paused) togglePlayPause();
+                } else if (data?.action === 'pause') {
+                    if (!audioPlayer.paused) togglePlayPause();
+                } else if (data?.action === 'next') {
+                    playNextTrack();
+                } else if (data?.action === 'previous') {
+                    playPreviousTrack();
+                }
+            });
+        } catch (e) {
+            console.warn("Native widget listener warning:", e);
+        }
+    }
+}
+
 // Background WakeLock: Prevents mobile OS from suspending audio thread when screen is off
 let appWakeLock = null;
 async function acquireWakeLock() {
@@ -2191,6 +2257,7 @@ function updatePlayPauseIcons(playing) {
     if (typeof updateHomeWidgetPlaybackState === 'function') {
         updateHomeWidgetPlaybackState(playing);
     }
+    syncNativeAndroidWidget(null, playing);
 }
 
 function togglePlayPause() {
@@ -6313,8 +6380,16 @@ document.getElementById('btnStudioPiPAction')?.addEventListener('click', (e) => 
     togglePictureInPicture();
 });
 
-// Initialize Home Widget on App Load
+// Initialize Home Widget & Native Android Bridge on App Load
+initNativeAndroidWidgetListener();
+
 setTimeout(() => {
     renderHomeWidget();
     initPictureInPictureWidget();
-}, 800);
+    syncNativeAndroidWidget();
+}, 600);
+
+setTimeout(() => {
+    renderHomeWidget();
+}, 1500);
+
