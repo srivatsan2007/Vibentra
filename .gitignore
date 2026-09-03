@@ -1,3 +1,9 @@
 node_modules/
 .env
 .DS_Store
+frontend_old_backup/
+*.apk
+*.apk.idsig
+.agents/
+
+
