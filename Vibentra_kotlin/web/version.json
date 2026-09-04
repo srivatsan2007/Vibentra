@@ -1,15 +1,14 @@
 {
-  "version": "1.2.3.1",
-  "name": "Vibentra v1.2.3.1 - Sound of India Update",
+  "version": "1.2.4",
+  "name": "Vibentra v1.2.4 - Sound of India & Live Collections Update",
   "releaseDate": "September 2026",
-  "size": "18.4 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.2.3.1/Vibentra-v1.2.3.1.apk",
+  "size": "18.5 MB",
+  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.2.4/Vibentra-v1.2.4.apk",
   "changelog": [
-    "🚀 Connect Hub: Private room voice calling & synchronized music streaming",
-    "🔮 Vibe AI: Smart AI mood music selector tailored to your emotion",
-    "🎁 Vibentra Wrapped: Spotify Wrapped stats, listening minutes & top repeated tracks",
-    "📱 Redesigned Playlists: Hero Liked Songs card & Spotify-style sleek list rows",
-    "🛡️ High-Performance Audio Engine: 100% background playback with screen on/off",
-    "⚡ Zero-Stall Recovery: Automatic stream re-resolution and seamless preloading"
+    "🎵 100% Real Live Tracks: Authentic, dedicated tracklists for every JioSaavn & YouTube album & playlist",
+    "🗑️ Mobile Playlist Management: Clearly visible Delete Playlist & Delete Songs buttons on all mobile views",
+    "📱 Responsive Mobile Actions: Enhanced touch buttons for effortless song and playlist deletion",
+    "🚀 Live Update System: Instant mobile notification bar and in-app prompt for seamless updates",
+    "⚡ High-Definition 320kbps Audio: Ultra fast CDN stream delivery with background audio persistence"
   ]
 }

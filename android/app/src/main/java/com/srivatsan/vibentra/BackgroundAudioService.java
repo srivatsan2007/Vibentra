@@ -65,6 +65,17 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
 
     private int originalMusicVolume = -1;
 
+    private final android.os.Handler wakeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable wakePulseRunnable = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                BackgroundAudioPlugin.wakeWebView();
+            } catch (Throwable t) {}
+            wakeHandler.postDelayed(this, 15000);
+        }
+    };
+
     private synchronized void applyCallSilence(boolean enable) {
         if (audioManager == null) return;
         try {
@@ -224,6 +235,7 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
             }
 
             registerTelephonyListener();
+            wakeHandler.post(wakePulseRunnable);
         } catch (Throwable t) {
             t.printStackTrace();
         }
@@ -324,9 +336,40 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
         try {
             if (intent != null && intent.getAction() != null) {
                 String action = intent.getAction();
-                if (action.equals(ACTION_PLAY) || action.equals(ACTION_PAUSE) || 
-                    action.equals(ACTION_NEXT) || action.equals(ACTION_PREVIOUS)) {
-                    
+                if (action.equals(ACTION_PLAY)) {
+                    this.isPlaying = true;
+                    if (wakeLock != null && !wakeLock.isHeld()) {
+                        try {
+                            wakeLock.acquire(10 * 60 * 60 * 1000L /* 10 hours max */);
+                            Log.d(TAG, "WAKE_LOCK_ACQUIRED_ON_PLAY");
+                        } catch (Throwable t) {}
+                    }
+                    if (wifiLock != null && !wifiLock.isHeld()) {
+                        try {
+                            wifiLock.acquire();
+                            Log.d(TAG, "WIFI_LOCK_ACQUIRED_ON_PLAY");
+                        } catch (Throwable t) {}
+                    }
+                    requestAudioFocus();
+                    VibentraWidgetProvider.updateWidgetState(this, currentTitle, currentArtist, true, coverBitmap);
+                    updateMediaSessionState();
+                    Notification notification = buildNotification();
+                    NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (nm != null) {
+                        nm.notify(NOTIFICATION_ID, notification);
+                    }
+                    BackgroundAudioPlugin.handleMediaAction(action);
+                } else if (action.equals(ACTION_PAUSE)) {
+                    this.isPlaying = false;
+                    VibentraWidgetProvider.updateWidgetState(this, currentTitle, currentArtist, false, coverBitmap);
+                    updateMediaSessionState();
+                    Notification notification = buildNotification();
+                    NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (nm != null) {
+                        nm.notify(NOTIFICATION_ID, notification);
+                    }
+                    BackgroundAudioPlugin.handleMediaAction(action);
+                } else if (action.equals(ACTION_NEXT) || action.equals(ACTION_PREVIOUS)) {
                     BackgroundAudioPlugin.handleMediaAction(action);
                 } else if (action.equals(ACTION_STOP)) {
                     stopSelf();
@@ -334,11 +377,11 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
                 }
             }
 
-            if (intent != null) {
+            if (intent != null && intent.hasExtra("title")) {
                 String title = intent.getStringExtra("title");
                 String artist = intent.getStringExtra("artist");
                 String cover = intent.getStringExtra("cover");
-                boolean playing = intent.getBooleanExtra("isPlaying", true);
+                boolean playing = intent.getBooleanExtra("isPlaying", this.isPlaying);
                 long duration = intent.getLongExtra("duration", -1L);
                 long position = intent.getLongExtra("position", -1L);
 
@@ -551,6 +594,9 @@ public class BackgroundAudioService extends Service implements AudioManager.OnAu
     @Override
     public void onDestroy() {
         Log.d(TAG, "SERVICE_DESTROYED");
+        try {
+            wakeHandler.removeCallbacks(wakePulseRunnable);
+        } catch (Throwable t) {}
         try {
             unregisterReceiver(noisyReceiver);
             unregisterReceiver(callReceiver);

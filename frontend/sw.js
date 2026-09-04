@@ -1,5 +1,5 @@
 // Vibentra Service Worker - Background Audio & Real Mobile System Notifications
-const CACHE_NAME = 'vibentra-cache-v1';
+const CACHE_NAME = 'vibentra-cache-v2';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();

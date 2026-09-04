@@ -58,8 +58,17 @@ public class MainActivity extends BridgeActivity {
     private void requestPhoneStatePermission() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                java.util.ArrayList<String> perms = new java.util.ArrayList<>();
                 if (checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{android.Manifest.permission.READ_PHONE_STATE}, 1001);
+                    perms.add(android.Manifest.permission.READ_PHONE_STATE);
+                }
+                if (Build.VERSION.SDK_INT >= 33) {
+                    if (checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        perms.add("android.permission.POST_NOTIFICATIONS");
+                    }
+                }
+                if (!perms.isEmpty()) {
+                    requestPermissions(perms.toArray(new String[0]), 1001);
                 }
             }
             registerTelephonyCallbackInActivity();

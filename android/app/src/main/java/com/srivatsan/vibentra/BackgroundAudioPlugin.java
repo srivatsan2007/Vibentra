@@ -2,6 +2,10 @@ package com.srivatsan.vibentra;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.webkit.WebView;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -10,7 +14,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "BackgroundAudio")
 public class BackgroundAudioPlugin extends Plugin {
-
+    private static final String TAG = "BackgroundAudioPlugin";
     private static BackgroundAudioPlugin instance;
 
     @Override
@@ -19,21 +23,61 @@ public class BackgroundAudioPlugin extends Plugin {
         instance = this;
     }
 
+    public static void wakeWebView() {
+        try {
+            if (instance == null) return;
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    if (instance != null && instance.getBridge() != null && instance.getBridge().getWebView() != null) {
+                        WebView webView = instance.getBridge().getWebView();
+                        webView.onResume();
+                        webView.resumeTimers();
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "Error waking WebView", t);
+                }
+            });
+        } catch (Throwable t) {
+            Log.w(TAG, "Error in wakeWebView", t);
+        }
+    }
+
     public static void handleMediaAction(String action) {
         try {
             if (instance == null) return;
 
-            JSObject ret = new JSObject();
+            final String actKey;
             if (BackgroundAudioService.ACTION_PLAY.equals(action)) {
-                ret.put("action", "play");
+                actKey = "play";
             } else if (BackgroundAudioService.ACTION_PAUSE.equals(action)) {
-                ret.put("action", "pause");
+                actKey = "pause";
             } else if (BackgroundAudioService.ACTION_NEXT.equals(action)) {
-                ret.put("action", "next");
+                actKey = "next";
             } else if (BackgroundAudioService.ACTION_PREVIOUS.equals(action)) {
-                ret.put("action", "previous");
+                actKey = "previous";
+            } else {
+                actKey = action;
             }
 
+            // Immediately wake WebView and evaluate direct Javascript on MainLooper
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    if (instance != null && instance.getBridge() != null && instance.getBridge().getWebView() != null) {
+                        WebView webView = instance.getBridge().getWebView();
+                        webView.onResume();
+                        webView.resumeTimers();
+                        String script = "if (typeof window.handleNativeMediaAction === 'function') { window.handleNativeMediaAction('" + actKey + "'); }";
+                        webView.evaluateJavascript(script, null);
+                        Log.d(TAG, "Evaluated direct JS media action: " + actKey);
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "Error evaluating direct JS media action", t);
+                }
+            });
+
+            // Also dispatch standard Capacitor notification for listener compatibility
+            JSObject ret = new JSObject();
+            ret.put("action", actKey);
             instance.notifyListeners("mediaAction", ret);
         } catch (Throwable t) {
             t.printStackTrace();
@@ -114,6 +158,52 @@ public class BackgroundAudioPlugin extends Plugin {
                 Intent intent = new Intent(context, BackgroundAudioService.class);
                 intent.setAction(BackgroundAudioService.ACTION_STOP);
                 context.startService(intent);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        } finally {
+            call.resolve();
+        }
+    }
+
+    @PluginMethod
+    public void showNotification(PluginCall call) {
+        try {
+            String title = call.getString("title", "Vibentra Update Available 🚀");
+            String body = call.getString("body", "Vibentra update is available. Tap to update!");
+            Context context = getContext();
+            if (context != null) {
+                android.app.NotificationManager nm = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) {
+                    String channelId = "vibentra_updates";
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        android.app.NotificationChannel channel = new android.app.NotificationChannel(
+                                channelId,
+                                "Vibentra Updates",
+                                android.app.NotificationManager.IMPORTANCE_HIGH
+                        );
+                        channel.setDescription("Notifications about new app updates and releases");
+                        nm.createNotificationChannel(channel);
+                    }
+
+                    Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                    android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(
+                            context,
+                            2001,
+                            launchIntent,
+                            android.app.PendingIntent.FLAG_UPDATE_CURRENT | (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? android.app.PendingIntent.FLAG_IMMUTABLE : 0)
+                    );
+
+                    androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(context, channelId)
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle(title)
+                            .setContentText(body)
+                            .setAutoCancel(true)
+                            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                            .setContentIntent(pendingIntent);
+
+                    nm.notify(2001, builder.build());
+                }
             }
         } catch (Throwable t) {
             t.printStackTrace();

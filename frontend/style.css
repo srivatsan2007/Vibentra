@@ -3872,27 +3872,50 @@ body {
    FULL SETTINGS SCREEN (SCREENSHOTS 2 & 3)
    ========================================================= */
 .settings-screen {
-    background-color: #0E0A08;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    width: 100vw;
+    max-width: 100%;
+    height: 100%;
     min-height: 100vh;
-    padding-bottom: 120px;
+    background-color: #0E0A08;
+    padding-bottom: 140px;
     display: none;
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    z-index: 50;
+    box-sizing: border-box;
 }
 
 .settings-screen.active {
     display: block;
 }
 
-.settings-topbar {
+.settings-main-view,
+.settings-detail-view {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.settings-topbar,
+.settings-detail-topbar {
     display: flex;
     align-items: center;
     gap: 16px;
     padding: 16px 20px;
     position: sticky;
     top: 0;
+    width: 100%;
+    box-sizing: border-box;
     background: rgba(14, 10, 8, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     z-index: 20;
 }
 
@@ -3917,16 +3940,19 @@ body {
 
 .settings-title {
     font-family: var(--font-heading);
-    font-size: 1.8rem;
+    font-size: 1.85rem;
     font-weight: 800;
     color: #FFFFFF;
     margin: 0;
+    letter-spacing: -0.5px;
 }
 
 .settings-content-wrapper {
-    max-width: 600px;
+    width: 100%;
+    max-width: 640px;
     margin: 0 auto;
-    padding: 10px 16px 40px 16px;
+    padding: 12px 16px 60px 16px;
+    box-sizing: border-box;
 }
 
 .settings-search-box {
@@ -3935,8 +3961,10 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 28px;
-    padding: 10px 18px;
+    padding: 12px 18px;
     margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
     transition: all 0.2s ease;
 }
 
@@ -3948,7 +3976,7 @@ body {
 
 .settings-search-box i {
     color: #A89890;
-    font-size: 1rem;
+    font-size: 1.05rem;
     margin-right: 12px;
 }
 
@@ -3958,7 +3986,7 @@ body {
     border: none;
     outline: none;
     color: #FFFFFF;
-    font-size: 0.95rem;
+    font-size: 0.98rem;
 }
 
 .settings-search-box input::placeholder {
@@ -3970,7 +3998,8 @@ body {
     border: none;
     color: #A89890;
     cursor: pointer;
-    padding: 2px 6px;
+    padding: 4px 8px;
+    font-size: 0.95rem;
 }
 
 .settings-group-card {
@@ -3978,15 +4007,19 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 24px;
     overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .settings-item {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 15px 18px;
+    padding: 16px 18px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     cursor: pointer;
+    box-sizing: border-box;
+    width: 100%;
     transition: background 0.15s ease, transform 0.15s ease;
 }
 
@@ -4258,6 +4291,63 @@ body {
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.4);
     display: inline-block;
+}
+
+/* Mobile Responsive Tuning for Settings Screen - Edge-to-Edge Zoom Fit */
+@media (max-width: 640px) {
+    .settings-screen {
+        width: 100vw;
+        max-width: 100vw;
+        left: 0;
+        right: 0;
+        padding-bottom: 150px;
+    }
+    .settings-topbar,
+    .settings-detail-topbar {
+        padding: 14px 16px;
+        gap: 14px;
+        width: 100vw;
+        max-width: 100vw;
+    }
+    .settings-title {
+        font-size: 1.7rem;
+    }
+    .settings-content-wrapper {
+        padding: 10px 14px 150px 14px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    .settings-search-box {
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        border-radius: 24px;
+        width: 100%;
+    }
+    .settings-group-card {
+        border-radius: 20px;
+        width: 100%;
+    }
+    .settings-item {
+        padding: 15px 14px;
+        gap: 14px;
+        width: 100%;
+    }
+    .settings-item-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.15rem;
+    }
+    .settings-item-title {
+        font-size: 1.02rem;
+    }
+    .settings-item-sub {
+        font-size: 0.82rem;
+    }
+    .settings-sub-card {
+        padding: 16px 14px;
+        border-radius: 18px;
+    }
 }
 
 /* =========================================================
@@ -7283,6 +7373,380 @@ body {
         font-size: 0.88rem;
     }
 }
+
+/* =========================================================
+   PLAYLIST DETAIL VIEW & RESPONSIVE MOBILE DELETION CONTROLS
+========================================================= */
+.library-playlist-detail-view {
+    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    padding-bottom: 240px !important;
+}
+
+.btn-back-library {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #F1F5F9;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: background 0.2s ease;
+}
+
+.btn-back-library:hover,
+.btn-back-library:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.playlist-detail-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    .playlist-detail-header {
+        flex-direction: row;
+        align-items: flex-end;
+        text-align: left;
+    }
+}
+
+.detail-cover-box {
+    width: 160px;
+    height: 160px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+    flex-shrink: 0;
+    background: #1E293B;
+}
+
+.detail-cover-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detail-meta-box {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+.detail-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: rgba(99, 102, 241, 0.2);
+    color: #A5B4FC;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    margin-bottom: 6px;
+}
+
+.detail-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    margin: 4px 0 8px 0;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.detail-desc {
+    font-size: 0.85rem;
+    color: #94A3B8;
+    margin: 0 0 6px 0;
+    line-height: 1.4;
+}
+
+.detail-stats {
+    font-size: 0.78rem;
+    color: #64748B;
+    margin: 0 0 16px 0;
+}
+
+.detail-action-buttons {
+    display: flex;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.btn-hero-play,
+.btn-hero-shuffle,
+.btn-detail-tool,
+.btn-detail-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 9999px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+    min-height: 38px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.btn-hero-play {
+    background: linear-gradient(135deg, #138086, #06B6D4);
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(19, 128, 134, 0.4);
+}
+
+.btn-hero-play:hover, .btn-hero-play:active {
+    transform: scale(1.02);
+    background: linear-gradient(135deg, #189ca2, #08cbe9);
+}
+
+.btn-hero-shuffle {
+    background: rgba(255, 255, 255, 0.08);
+    color: #F1F5F9;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.btn-hero-shuffle:hover, .btn-hero-shuffle:active {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.btn-detail-tool {
+    background: rgba(255, 255, 255, 0.06);
+    color: #CBD5E1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-detail-tool:hover, .btn-detail-tool:active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
+}
+
+.btn-detail-delete {
+    background: rgba(239, 68, 68, 0.16) !important;
+    color: #EF4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+.btn-detail-delete:hover,
+.btn-detail-delete:active {
+    background: #EF4444 !important;
+    color: #FFFFFF !important;
+}
+
+/* Song Track Items & Deletion inside Playlist */
+.playlist-detail-tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.library-track-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.2s ease, transform 0.15s ease;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.library-track-item:hover,
+.library-track-item:active {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.track-index {
+    font-size: 0.78rem;
+    color: #64748B;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.track-cover-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.track-meta {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.track-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #F8FAFC;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track-sub {
+    font-size: 0.76rem;
+    color: #94A3B8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+.track-duration {
+    font-size: 0.76rem;
+    color: #64748B;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.btn-track-action,
+.btn-track-remove {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #94A3B8;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-track-action:hover,
+.btn-track-action:active {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-track-action.liked {
+    color: #EF4444;
+}
+
+.btn-track-remove {
+    color: #EF4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    margin-left: 2px;
+}
+
+.btn-track-remove:hover,
+.btn-track-remove:active {
+    color: #FFFFFF;
+    background: #EF4444;
+    border-color: #EF4444;
+}
+
+/* Playlist list row deletion icon */
+.btn-pl-row-delete {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.12);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-pl-row-delete:hover,
+.btn-pl-row-delete:active {
+    background: #EF4444;
+    color: #FFFFFF;
+    transform: scale(1.08);
+}
+
+.btn-pl-card-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #EF4444;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 5;
+}
+
+.btn-pl-card-delete:hover,
+.btn-pl-card-delete:active {
+    background: #EF4444;
+    color: #FFFFFF;
+}
+
+@media (max-width: 480px) {
+    .detail-cover-box {
+        width: 140px;
+        height: 140px;
+    }
+
+    .detail-title {
+        font-size: 1.35rem;
+    }
+
+    .detail-action-buttons {
+        justify-content: center;
+    }
+
+    .btn-hero-play,
+    .btn-hero-shuffle,
+    .btn-detail-tool,
+    .btn-detail-delete {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        min-height: 36px;
+    }
+
+    .track-duration {
+        display: none;
+    }
+}
+
 
 
 

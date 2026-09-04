@@ -1304,13 +1304,13 @@ async function openSettingsCategoryDetail(id, title) {
                 </div>
                 <div class="settings-data-row">
                     <span class="settings-data-label">Installed Version</span>
-                    <span class="settings-data-val">1.2.2-stable</span>
+                    <span class="settings-data-val">${CURRENT_APP_VERSION}-stable</span>
                 </div>
                 <div class="settings-data-row">
                     <span class="settings-data-label">Update Status</span>
                     <span class="settings-data-val">
                         ${hasUpdate 
-                            ? '<span class="real-data-badge" style="background:rgba(239,68,68,0.18); color:#F87171; border-color:rgba(239,68,68,0.3);"><i class="fa-solid fa-arrow-up"></i> Update Available (v1.2.3)</span>'
+                            ? `<span class="real-data-badge" style="background:rgba(239,68,68,0.18); color:#F87171; border-color:rgba(239,68,68,0.3);"><i class="fa-solid fa-arrow-up"></i> Update Available (v${latestUpdateData?.version || '1.2.4'})</span>`
                             : '<span class="real-data-badge"><i class="fa-solid fa-check"></i> Up to date (No update)</span>'
                         }
                     </span>
@@ -1333,7 +1333,7 @@ async function openSettingsCategoryDetail(id, title) {
                 </div>
                 ${hasUpdate ? `
                     <button class="btn-setting-action btn-primary-action" id="btnInstallUpdate">
-                        <i class="fa-solid fa-cloud-arrow-down"></i> Install Update (v1.2.3)
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Install Update (v${latestUpdateData?.version || '1.2.4'})
                     </button>
                     <button class="btn-setting-action" id="btnCheckSysUpdate">
                         <i class="fa-solid fa-rotate"></i> Re-check Cloud Server
@@ -1356,10 +1356,11 @@ async function openSettingsCategoryDetail(id, title) {
         });
 
         document.getElementById('btnInstallUpdate')?.addEventListener('click', () => {
-            localStorage.setItem('vibentra_has_update', 'false');
-            renderSystemUpdateBadge();
-            openSettingsCategoryDetail('system_update', 'System update');
-            showNotification("Update installed successfully! System is now up to date. ✓", "success");
+            if (latestUpdateData) {
+                openUpdateDetailsModal();
+            } else {
+                checkForAppUpdates(true);
+            }
         });
 
         document.getElementById('btnToggleSimulateUpdate')?.addEventListener('click', () => {
@@ -1446,7 +1447,7 @@ async function openSettingsCategoryDetail(id, title) {
                 </div>
                 <div class="settings-data-row">
                     <span class="settings-data-label">App Version</span>
-                    <span class="settings-data-val">1.2.2-stable (Build 2026.09)</span>
+                    <span class="settings-data-val">${CURRENT_APP_VERSION}-stable (Build 2026.09)</span>
                 </div>
                 <div class="settings-data-row">
                     <span class="settings-data-label">Author</span>
@@ -1568,9 +1569,134 @@ async function fetchLiveJioSaavn(query) {
     return [];
 }
 
-// Resilient Album & Playlist Songs Resolver (Guarantees songs are always found)
+// =========================================================
+// REAL ALBUM & PLAYLIST TRACK RESOLVERS (LIVE JIOSAAVN & YOUTUBE MUSIC)
+// =========================================================
+async function fetchLiveAlbumTracks(albumId, title = '', artist = '') {
+    if (albumId) {
+        const cleanId = String(albumId).replace(/^album_/, '');
+        const urls = [
+            `https://vibentra.vercel.app/api/jiosaavn/album?id=${encodeURIComponent(cleanId)}`,
+            `https://saavn.me/albums?id=${encodeURIComponent(cleanId)}`
+        ];
+        for (let u of urls) {
+            try {
+                const res = await fetch(u, { signal: AbortSignal.timeout(6000) });
+                if (res.ok) {
+                    const data = await res.json();
+                    const rawSongs = Array.isArray(data) ? data : (data.songs || data.data?.songs || data.data || []);
+                    if (Array.isArray(rawSongs) && rawSongs.length > 0) {
+                        return rawSongs.map(formatTrackItem);
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
+    if (title) {
+        try {
+            const allData = await fetchJioSaavnSearchAll(title);
+            if (allData.albums && allData.albums.length > 0) {
+                const matched = allData.albums[0];
+                if (matched && matched.id && matched.id !== albumId) {
+                    const tracks = await fetchLiveAlbumTracks(matched.id, '', '');
+                    if (tracks && tracks.length > 0) return tracks;
+                }
+            }
+        } catch (_) {}
+    }
+    return [];
+}
+
+async function fetchLivePlaylistTracks(listId, title = '') {
+    if (listId) {
+        const cleanId = String(listId).replace(/^pl_|^search_pl_/, '');
+
+        if (cleanId.startsWith('PL') || cleanId.startsWith('UU') || cleanId.startsWith('RD') || cleanId.startsWith('OLAK5uy_')) {
+            const ytTracks = await fetchLiveYouTubePlaylistTracks(cleanId, title);
+            if (ytTracks && ytTracks.length > 0) return ytTracks;
+        }
+
+        const urls = [
+            `https://vibentra.vercel.app/api/jiosaavn/playlist?id=${encodeURIComponent(cleanId)}`,
+            `https://saavn.me/playlists?id=${encodeURIComponent(cleanId)}`
+        ];
+        for (let u of urls) {
+            try {
+                const res = await fetch(u, { signal: AbortSignal.timeout(6000) });
+                if (res.ok) {
+                    const data = await res.json();
+                    const rawSongs = Array.isArray(data) ? data : (data.songs || data.data?.songs || data.data || []);
+                    if (Array.isArray(rawSongs) && rawSongs.length > 0) {
+                        return rawSongs.map(formatTrackItem);
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
+    if (title) {
+        try {
+            const allData = await fetchJioSaavnSearchAll(title);
+            if (allData.playlists && allData.playlists.length > 0) {
+                const matched = allData.playlists[0];
+                if (matched && matched.id && matched.id !== listId) {
+                    const tracks = await fetchLivePlaylistTracks(matched.id, '');
+                    if (tracks && tracks.length > 0) return tracks;
+                }
+            }
+        } catch (_) {}
+    }
+    return [];
+}
+
+async function fetchLiveYouTubePlaylistTracks(ytListId, title = '') {
+    const pipedInstances = [
+        'https://pipedapi.kavin.rocks',
+        'https://api.piped.privacy.com.de',
+        'https://piped-api.lunar.icu'
+    ];
+    for (let inst of pipedInstances) {
+        try {
+            const res = await fetch(`${inst}/playlists/${encodeURIComponent(ytListId)}`, { signal: AbortSignal.timeout(6000) });
+            if (res.ok) {
+                const data = await res.json();
+                const streams = data.relatedStreams || [];
+                if (streams.length > 0) {
+                    return streams.map(s => {
+                        const vid = s.url ? s.url.replace('/watch?v=', '') : Math.random().toString(36).substring(2, 9);
+                        return {
+                            id: `yt_${vid}`,
+                            title: (s.title || 'Track').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                            artist: (s.uploaderName || 'YouTube Music').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                            album: data.name || title || 'YouTube Music',
+                            cover: s.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80',
+                            streamUrl: null,
+                            duration: s.duration ? `${Math.floor(s.duration / 60)}:${('0' + (s.duration % 60)).slice(-2)}` : '3:45'
+                        };
+                    });
+                }
+            }
+        } catch (_) {}
+    }
+    return [];
+}
+
+// Resilient Album & Playlist Songs Resolver (Guarantees authentic live songs are always found)
 async function fetchPlaylistTracks(playlist) {
     if (playlist.songs && playlist.songs.length > 0) return playlist.songs;
+
+    // 1. If it is an Album, fetch authentic live album tracks
+    if (playlist.albumId || playlist.type === 'album') {
+        const albTracks = await fetchLiveAlbumTracks(playlist.albumId, playlist.title, playlist.artist);
+        if (albTracks && albTracks.length > 0) return albTracks;
+    }
+
+    // 2. If it is a Playlist with a listId or type 'playlist', fetch authentic playlist tracks
+    if (playlist.listId || playlist.type === 'playlist') {
+        const plTracks = await fetchLivePlaylistTracks(playlist.listId, playlist.title);
+        if (plTracks && plTracks.length > 0) return plTracks;
+    }
 
     const rawTitle = (playlist.title || '').trim();
     const cleanTitle = rawTitle
@@ -1582,11 +1708,9 @@ async function fetchPlaylistTracks(playlist) {
     // Ordered list of queries to guarantee songs load
     const candidates = [
         playlist.query,
-        cleanTitle && cleanTitle.length >= 2 ? cleanTitle : null,
-        rawTitle,
         playlist.artist ? `${cleanTitle || rawTitle} ${playlist.artist}` : null,
-        playlist.artist ? playlist.artist : null,
-        'Tamil Latest Hits'
+        cleanTitle && cleanTitle.length >= 2 ? cleanTitle : null,
+        rawTitle
     ].filter(Boolean);
 
     for (let q of candidates) {
@@ -1747,7 +1871,9 @@ function renderAlbumsSection(parent, { title, prefix, badge, badgeClass, albums 
         card.addEventListener('click', () => {
             const cleanQuery = album.title.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').replace(/- Single|- EP/gi, '').trim() || album.title;
             openPlaylistDetailView({
-                id: `album_${album.id || Math.random().toString(36).substring(2, 9)}`,
+                id: album.id ? `album_${album.id}` : `album_${Math.random().toString(36).substring(2, 9)}`,
+                albumId: album.id,
+                type: 'album',
                 title: album.title,
                 query: cleanQuery,
                 artist: album.artist,
@@ -1800,17 +1926,12 @@ function renderPlaylistsSection(parent, { title, prefix, badge, badgeClass, play
         `;
 
         card.addEventListener('click', () => {
-            let cleanQuery = (pl.title || '')
-                .replace(/\([^)]*\)/g, '')
-                .replace(/\[[^\]]*\]/g, '')
-                .replace(/Playlist|Music|Mix|Chartbusters|Hits/gi, '')
-                .trim();
-            if (!cleanQuery || cleanQuery.length < 3) cleanQuery = 'Tamil Trending';
-
             openPlaylistDetailView({
-                id: `pl_${Math.random().toString(36).substring(2, 9)}`,
+                id: pl.id ? `pl_${pl.id}` : `pl_${Math.random().toString(36).substring(2, 9)}`,
+                listId: pl.id,
+                type: 'playlist',
                 title: pl.title,
-                query: cleanQuery,
+                query: pl.title,
                 author: pl.author,
                 desc: `${pl.author || pl.videos || 'Playlist'} • Curated Live Stream`,
                 cover: pl.thumbnail || pl.cover,
@@ -2170,20 +2291,54 @@ function syncNativeAndroidWidget(track = null, playing = isPlaying) {
     }
 }
 
+// Native Android Direct & Capacitor Media Action Handler (Background Widget & Notification)
+window.handleNativeMediaAction = function(action) {
+    console.log(`[Native Android Media Action Handler]: ${action}`);
+    if (!action) return;
+    const act = String(action).toLowerCase();
+    if (act === 'play') {
+        if (audioPlayer.paused) {
+            const playPromise = audioPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    isPlaying = true;
+                    updatePlayPauseIcons(true);
+                    syncNativeAndroidWidget(null, true);
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                }).catch(err => {
+                    console.warn("Direct native audio play error, falling back to togglePlayPause:", err);
+                    togglePlayPause();
+                });
+            } else {
+                isPlaying = true;
+                updatePlayPauseIcons(true);
+                syncNativeAndroidWidget(null, true);
+            }
+        }
+    } else if (act === 'pause') {
+        if (!audioPlayer.paused) {
+            audioPlayer.pause();
+            isPlaying = false;
+            updatePlayPauseIcons(false);
+            syncNativeAndroidWidget(null, false);
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+        }
+    } else if (act === 'next') {
+        playNextTrack();
+    } else if (act === 'previous') {
+        playPreviousTrack();
+    }
+};
+
 function initNativeAndroidWidgetListener() {
     const bgPlugin = getBackgroundAudioPlugin();
     if (bgPlugin && typeof bgPlugin.addListener === 'function') {
         try {
             bgPlugin.addListener('mediaAction', (data) => {
-                console.log(`[Native Android Widget Action]: ${data?.action}`);
-                if (data?.action === 'play') {
-                    if (audioPlayer.paused) togglePlayPause();
-                } else if (data?.action === 'pause') {
-                    if (!audioPlayer.paused) togglePlayPause();
-                } else if (data?.action === 'next') {
-                    playNextTrack();
-                } else if (data?.action === 'previous') {
-                    playPreviousTrack();
+                const action = data?.action;
+                console.log(`[Native Android Widget Plugin Listener Action]: ${action}`);
+                if (typeof window.handleNativeMediaAction === 'function') {
+                    window.handleNativeMediaAction(action);
                 }
             });
         } catch (e) {
@@ -3797,6 +3952,7 @@ async function fetchYouTubePipedSearch(query) {
                         });
                     } else if (item.type === 'playlist') {
                         playlists.push({
+                            id: item.url ? item.url.replace('/playlist?list=', '').replace('/playlist/', '') : (item.id || null),
                             title: item.name,
                             author: item.uploaderName ? `${item.uploaderName} • ${item.videos || 10} tracks` : `${item.videos || 10} tracks`,
                             thumbnail: item.thumbnail,
@@ -3844,8 +4000,9 @@ function formatArtistItem(ar) {
 
 function formatPlaylistItem(p) {
     return {
-        title: p.title || p.name,
-        author: p.subtitle || p.header_desc || 'Vibentra Mix',
+        id: p.id || p.listid || p.listId || null,
+        title: (p.title || p.name || 'Playlist').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+        author: (p.subtitle || p.header_desc || p.author || 'Vibentra Mix').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
         cover: (p.image && p.image.length > 0) ? (typeof p.image === 'string' ? p.image : p.image[p.image.length - 1].url) : (p.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80')
     };
 }
@@ -3964,8 +4121,11 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
             `;
             row.addEventListener('click', () => {
                 openPlaylistDetailView({
-                    id: `alb_${alb.id || Math.random().toString(36).substring(2, 9)}`,
+                    id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
+                    albumId: alb.id,
+                    type: 'album',
                     title: alb.title,
+                    artist: alb.artist,
                     desc: `${alb.artist} • ${alb.year || 'Album'}`,
                     cover: alb.cover,
                     isLive: true,
@@ -4028,7 +4188,9 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
             `;
             row.addEventListener('click', () => {
                 openPlaylistDetailView({
-                    id: `search_pl_${Math.random().toString(36).substring(2, 9)}`,
+                    id: pl.id ? `search_pl_${pl.id}` : `search_pl_${Math.random().toString(36).substring(2, 9)}`,
+                    listId: pl.id,
+                    type: 'playlist',
                     title: pl.title,
                     desc: pl.author || pl.videos || 'Playlist',
                     cover: pl.thumbnail || pl.cover,
@@ -4671,8 +4833,18 @@ function renderPlaylistsView() {
                 </div>
                 <div class="pl-row-actions">
                     <button class="btn-pl-row-play" title="Play Playlist"><i class="fa-solid fa-play"></i></button>
+                    <button class="btn-pl-row-delete" title="Delete Playlist"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             `;
+            row.querySelector('.btn-pl-row-play')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (pl.songs && pl.songs.length > 0) playTrack(pl.songs[0], pl.songs);
+                else openPlaylistDetailView(pl, 'library');
+            });
+            row.querySelector('.btn-pl-row-delete')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deletePlaylist(pl.id);
+            });
             row.addEventListener('click', () => {
                 openPlaylistDetailView(pl, 'library');
             });
@@ -4684,10 +4856,15 @@ function renderPlaylistsView() {
                 <div class="playlist-cover-wrapper">
                     <img src="${coverSrc}" alt="${pl.title}" onerror="this.src='https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80'">
                     <div class="playlist-play-hover-btn"><i class="fa-solid fa-play"></i></div>
+                    <button class="btn-pl-card-delete" title="Delete Playlist"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
                 <div class="playlist-card-title">${pl.title}</div>
                 <div class="playlist-card-sub">${count} song${count === 1 ? '' : 's'}</div>
             `;
+            card.querySelector('.btn-pl-card-delete')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deletePlaylist(pl.id);
+            });
             card.addEventListener('click', () => {
                 openPlaylistDetailView(pl, 'library');
             });
@@ -4876,9 +5053,11 @@ async function openPlaylistDetailView(playlist, fromScreen = 'library') {
     if (badgeEl) badgeEl.textContent = playlist.badge || (playlist.isFeatured ? 'Curated Mix' : 'Custom Playlist');
 
     const isCustom = !playlist.isFeatured && !playlist.isFavorites && !playlist.isLive;
+    const canDeleteTracks = isCustom || playlist.isFavorites;
 
     if (deleteBtn) {
         deleteBtn.style.display = isCustom ? 'inline-flex' : 'none';
+        deleteBtn.innerHTML = `<i class="fa-solid fa-trash"></i> Delete Playlist`;
         deleteBtn.onclick = () => deletePlaylist(playlist.id);
     }
     if (editBtn) editBtn.style.display = isCustom ? 'inline-flex' : 'none';
@@ -4933,7 +5112,7 @@ async function openPlaylistDetailView(playlist, fromScreen = 'library') {
             </div>
             <span class="track-duration">${song.duration || '3:30'}</span>
             <button class="btn-track-action ${isFav ? 'liked' : ''}" title="Favorite"><i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart"></i></button>
-            ${isCustom ? `<button class="btn-track-remove" title="Remove track from playlist"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+            ${canDeleteTracks ? `<button class="btn-track-remove" title="${playlist.isFavorites ? 'Remove from favorites' : 'Remove track from playlist'}"><i class="fa-solid fa-trash-can"></i></button>` : ''}
         `;
 
         // When the user taps ANY song in the playlist, only then that song plays!
@@ -4957,7 +5136,14 @@ async function openPlaylistDetailView(playlist, fromScreen = 'library') {
         if (removeBtn) {
             removeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                removeSongFromPlaylist(playlist.id, song.id);
+                if (playlist.isFavorites) {
+                    toggleSongFavorite(song);
+                    playlist.songs = getFavorites();
+                    openPlaylistDetailView(playlist, playlistDetailPreviousScreen);
+                    showNotification(`Removed "${song.title}" from favorites`, 'success');
+                } else {
+                    removeSongFromPlaylist(playlist.id, song.id);
+                }
             });
         }
 
@@ -5622,7 +5808,7 @@ document.getElementById('wrappedBackdrop')?.addEventListener('click', () => clos
 // =========================================================
 // 25. GITHUB IN-APP AUTO UPDATE SYSTEM & MOBILE SYSTEM NOTIFICATIONS
 // =========================================================
-let CURRENT_APP_VERSION = localStorage.getItem('vibentra_app_version') || "1.2.2";
+let CURRENT_APP_VERSION = localStorage.getItem('vibentra_app_version') || "1.2.3.1";
 const GITHUB_REPO_PATH = "srivatsan2007/Vibentra";
 let latestUpdateData = null;
 let isDownloadingUpdate = false;
@@ -5643,6 +5829,23 @@ if ('serviceWorker' in navigator) {
 
 // Trigger real Mobile Phone Notification Bar Notification with App Logo
 async function sendSystemUpdateNotification(version, releaseData) {
+    const title = `Vibentra Update Available 🚀`;
+    const body = `Vibentra has latest update v${version}. Tap to update!`;
+
+    // 1. Real Native Android Mobile Notification Bar (via Capacitor Native Bridge)
+    try {
+        if (window.Capacitor?.Plugins?.BackgroundAudio?.showNotification) {
+            await window.Capacitor.Plugins.BackgroundAudio.showNotification({
+                title: title,
+                body: body,
+                version: version
+            });
+        }
+    } catch (e) {
+        console.warn("Native Android notification error:", e);
+    }
+
+    // 2. Web Service Worker & Notification API (for Browser / PWA)
     if (!("Notification" in window)) {
         console.warn("Notifications not supported in this browser");
         return;
@@ -5655,9 +5858,8 @@ async function sendSystemUpdateNotification(version, releaseData) {
         }
 
         if (perm === "granted") {
-            const title = `Vibentra Update Available 🚀`;
             const options = {
-                body: `Vibentra has latest update v${version}. Tap to update!`,
+                body: body,
                 icon: './logo.png',
                 badge: './logo.png',
                 image: './logo.png',
@@ -5721,7 +5923,7 @@ async function checkForAppUpdates(isManual = false) {
                     version: version,
                     name: gh.name || `Vibentra v${version}`,
                     releaseDate: gh.published_at ? new Date(gh.published_at).toLocaleDateString() : 'Live Release',
-                    size: apkAsset ? `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB` : '18.4 MB',
+                    size: apkAsset ? `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB` : '18.5 MB',
                     apkUrl: apkAsset ? apkAsset.browser_download_url : (gh.html_url || `https://github.com/${GITHUB_REPO_PATH}/releases`),
                     changelog: gh.body ? gh.body.split('\n').map(l => l.trim()).filter(l => l.length > 0) : []
                 };
@@ -5746,8 +5948,10 @@ async function checkForAppUpdates(isManual = false) {
         // Compare versions dynamically
         if (compareSemVer(releaseData.version, CURRENT_APP_VERSION) > 0) {
             latestUpdateData = releaseData;
+            localStorage.setItem('vibentra_has_update', 'true');
+            renderSystemUpdateBadge();
             showUpdateAvailablePrompt(releaseData);
-            // Trigger OS System Notification in user's mobile notification bar!
+            // Trigger real Mobile Notification Bar Notification!
             sendSystemUpdateNotification(releaseData.version, releaseData);
         } else {
             if (isManual) {
@@ -5845,10 +6049,11 @@ function startUpdateDownload() {
             if (installBtn) installBtn.disabled = true;
 
             setTimeout(() => {
-                const newVersion = latestUpdateData?.version || "1.2.3.1";
+                const newVersion = latestUpdateData?.version || "1.2.4";
                 localStorage.setItem('vibentra_app_version', newVersion);
                 localStorage.setItem('vibentra_has_update', 'false');
                 CURRENT_APP_VERSION = newVersion;
+                renderSystemUpdateBadge();
 
                 // Update version labels across the entire app in DOM
                 document.querySelectorAll('.sheet-version-badge, .settings-data-val').forEach(el => {

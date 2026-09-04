@@ -5,5 +5,6 @@ frontend_old_backup/
 *.apk
 *.apk.idsig
 .agents/
-
+.gradle/
+*.gradle/
 
