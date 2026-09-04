@@ -85,6 +85,27 @@ const libraryScreen = document.getElementById('libraryScreen');
 const settingsScreen = document.getElementById('settingsScreen');
 let currentActiveScreen = 'home';
 let previousScreen = 'home';
+let lastBackPressTime = 0;
+let suppressNextPopState = false;
+let appNavHistoryDepth = 0;
+let isBackNavigationInProgress = false;
+
+function pushHistoryNavigationState(state) {
+    try {
+        window.history.pushState(state, '', window.location.pathname + window.location.search);
+        appNavHistoryDepth++;
+    } catch (e) {}
+}
+
+function consumeBackHistory(isPopState) {
+    if (!isPopState && appNavHistoryDepth > 0) {
+        suppressNextPopState = true;
+        appNavHistoryDepth--;
+        try {
+            window.history.back();
+        } catch (e) {}
+    }
+}
 
 // Auth Cards
 const loginCard = document.getElementById('loginCard');
@@ -107,11 +128,18 @@ export function showNotification(message, type = 'success') {
 }
 
 // Navigation Helper
-function switchScreen(screenName) {
+function switchScreen(screenName, skipHistory = false) {
     if (screenName !== 'settings') {
         previousScreen = currentActiveScreen;
     }
+    const priorScreen = currentActiveScreen;
     currentActiveScreen = screenName;
+
+    if (!skipHistory && !isBackNavigationInProgress) {
+        if (screenName !== 'splash' && screenName !== 'auth' && screenName !== 'home' && screenName !== priorScreen) {
+            pushHistoryNavigationState({ type: 'screen', screen: screenName });
+        }
+    }
 
     [splashScreen, authScreen, homeScreen, searchScreen, libraryScreen, settingsScreen].forEach(s => s && s.classList.remove('active'));
     
@@ -2520,14 +2548,22 @@ if (collapsePlayerBtn) collapsePlayerBtn.addEventListener('click', () => closeFu
 function openFullPlayer() {
     if (fullPlayerScreen) {
         fullPlayerScreen.classList.add('active');
+        fullPlayerScreen.style.transform = '';
         document.body.style.overflow = 'hidden';
+        if (!isBackNavigationInProgress) {
+            pushHistoryNavigationState({ type: 'player' });
+        }
     }
 }
 
 function closeFullPlayer() {
     if (fullPlayerScreen) {
         fullPlayerScreen.classList.remove('active');
+        fullPlayerScreen.style.transform = '';
         document.body.style.overflow = 'auto';
+        if (!isBackNavigationInProgress) {
+            consumeBackHistory(false);
+        }
     }
 }
 
@@ -5328,6 +5364,9 @@ async function openPlaylistDetailView(playlist, fromScreen = 'library') {
     if (!detailView) return;
     detailView.style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!isBackNavigationInProgress) {
+        pushHistoryNavigationState({ type: 'playlistDetail', id: playlist.id });
+    }
 
     // Dynamic Back button label depending on entry screen
     const backBtn = document.getElementById('backToLibraryBtn');
@@ -5479,6 +5518,9 @@ function removeSongFromPlaylist(playlistId, songId) {
 document.getElementById('backToLibraryBtn')?.addEventListener('click', () => {
     const detailView = document.getElementById('playlistDetailView');
     if (detailView) detailView.style.display = 'none';
+    if (!isBackNavigationInProgress) {
+        consumeBackHistory(false);
+    }
 
     if (playlistDetailPreviousScreen === 'home') {
         switchScreen('home');
@@ -6926,4 +6968,345 @@ setTimeout(() => {
 setTimeout(() => {
     renderHomeWidget();
 }, 1500);
+
+// =========================================================
+// MOBILE BACK BUTTON & GESTURE NAVIGATION SYSTEM
+// =========================================================
+
+window.handleAppBackNavigation = function(isPopState = false) {
+    if (isBackNavigationInProgress) return true;
+    isBackNavigationInProgress = true;
+    setTimeout(() => { isBackNavigationInProgress = false; }, 250);
+
+    // 1. Check for any active modal or sheet
+    const activeModals = Array.from(document.querySelectorAll('.custom-feature-modal.active, #voiceSearchModal.active'));
+    if (activeModals.length > 0) {
+        const topModal = activeModals[activeModals.length - 1];
+        if (topModal.id === 'voiceSearchModal') {
+            if (typeof speechRecognitionInstance !== 'undefined' && speechRecognitionInstance) {
+                try { speechRecognitionInstance.abort(); } catch (e) {}
+            }
+            topModal.classList.remove('active');
+        } else {
+            if (typeof closeModal === 'function') {
+                closeModal(topModal.id);
+            }
+            topModal.classList.remove('active');
+        }
+        consumeBackHistory(isPopState);
+        return true;
+    }
+
+    // 2. Check for Full-Screen Player
+    const fullPlayer = document.getElementById('fullPlayerScreen');
+    if (fullPlayer && fullPlayer.classList.contains('active')) {
+        if (typeof closeFullPlayer === 'function') {
+            closeFullPlayer();
+        } else {
+            fullPlayer.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        consumeBackHistory(isPopState);
+        return true;
+    }
+
+    // 3. Check for Playlist/Album Detail View
+    const playlistDetailView = document.getElementById('playlistDetailView');
+    if (playlistDetailView && playlistDetailView.style.display !== 'none') {
+        const backBtn = document.getElementById('backToLibraryBtn');
+        if (backBtn) {
+            backBtn.click();
+        } else {
+            playlistDetailView.style.display = 'none';
+            if (typeof playlistDetailPreviousScreen !== 'undefined') {
+                switchScreen(playlistDetailPreviousScreen || 'library', true);
+            } else {
+                switchScreen('library', true);
+            }
+        }
+        consumeBackHistory(isPopState);
+        return true;
+    }
+
+    // 4. Check for Settings Sub-View or Settings Screen
+    const settingsScreen = document.getElementById('settingsScreen');
+    if (settingsScreen && settingsScreen.classList.contains('active')) {
+        const sDetail = document.getElementById('settingsDetailView');
+        const sMain = document.getElementById('settingsMainView');
+        if (sDetail && sDetail.style.display !== 'none') {
+            sDetail.style.display = 'none';
+            if (sMain) sMain.style.display = 'block';
+            consumeBackHistory(isPopState);
+            return true;
+        }
+        switchScreen(previousScreen && previousScreen !== 'settings' ? previousScreen : 'home', true);
+        consumeBackHistory(isPopState);
+        return true;
+    }
+
+    // 5. Check if on a secondary tab (Search, Library, Favorites)
+    if (currentActiveScreen && currentActiveScreen !== 'home') {
+        switchScreen('home', true);
+        consumeBackHistory(isPopState);
+        return true;
+    }
+
+    // 6. Already on Home Screen with nothing open: Double-tap back exit protection
+    const now = Date.now();
+    if (now - lastBackPressTime < 2000) {
+        if (window.NativeBackBridge?.exitApp) {
+            window.NativeBackBridge.exitApp();
+        } else if (window.Capacitor?.Plugins?.BackgroundAudio?.exitApp) {
+            window.Capacitor.Plugins.BackgroundAudio.exitApp();
+        } else if (window.Capacitor?.Plugins?.App?.exitApp) {
+            window.Capacitor.Plugins.App.exitApp();
+        } else if (navigator.app && navigator.app.exitApp) {
+            navigator.app.exitApp();
+        }
+        return false;
+    } else {
+        lastBackPressTime = now;
+        showNotification("Press back again to exit Vibentra", "success");
+        if (navigator.vibrate) {
+            try { navigator.vibrate(25); } catch (e) {}
+        }
+        return true;
+    }
+};
+
+// Popstate listener for browser navigation / PWA back gesture
+window.addEventListener('popstate', () => {
+    if (suppressNextPopState) {
+        suppressNextPopState = false;
+        return;
+    }
+    window.handleAppBackNavigation(true);
+});
+
+// Capacitor App Back Button Plugin listener (if available)
+if (window.Capacitor?.Plugins?.App?.addListener) {
+    try {
+        window.Capacitor.Plugins.App.addListener('backButton', () => {
+            window.handleAppBackNavigation(false);
+        });
+    } catch (e) {}
+}
+
+// Observe all modals to automatically maintain browser history state
+function setupModalHistoryObservers() {
+    const modalElements = document.querySelectorAll('.custom-feature-modal, #voiceSearchModal');
+    modalElements.forEach(modalEl => {
+        let wasActive = modalEl.classList.contains('active');
+        const observer = new MutationObserver(() => {
+            const isActive = modalEl.classList.contains('active');
+            if (isActive && !wasActive) {
+                if (!isBackNavigationInProgress) {
+                    pushHistoryNavigationState({ type: 'modal', modalId: modalEl.id });
+                }
+            } else if (!isActive && wasActive) {
+                if (!isBackNavigationInProgress) {
+                    consumeBackHistory(false);
+                }
+            }
+            wasActive = isActive;
+        });
+        observer.observe(modalEl, { attributes: true, attributeFilter: ['class'] });
+    });
+}
+
+// Mobile Touch Gestures: Full Screen Player, Mini Player, Bottom Sheets, and Edge Back
+function setupMobileTouchGestures() {
+    // 1. Full Player Downward Swipe to Collapse
+    const fullPlayer = document.getElementById('fullPlayerScreen');
+    if (fullPlayer) {
+        let touchStartY = 0;
+        let touchStartX = 0;
+        let touchStartTime = 0;
+        let isDraggingPlayer = false;
+
+        fullPlayer.addEventListener('touchstart', (e) => {
+            if (!fullPlayer.classList.contains('active')) return;
+            const scrollableChild = e.target.closest('#lyricsContainer, .full-player-lyrics, .settings-detail-body');
+            if (scrollableChild && scrollableChild.scrollTop > 5) return;
+
+            touchStartY = e.touches[0].clientY;
+            touchStartX = e.touches[0].clientX;
+            touchStartTime = Date.now();
+            isDraggingPlayer = true;
+        }, { passive: true });
+
+        fullPlayer.addEventListener('touchmove', (e) => {
+            if (!isDraggingPlayer || !fullPlayer.classList.contains('active')) return;
+            const currentY = e.touches[0].clientY;
+            const currentX = e.touches[0].clientX;
+            const deltaY = currentY - touchStartY;
+            const deltaX = currentX - touchStartX;
+
+            if (deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                fullPlayer.style.transition = 'none';
+                fullPlayer.style.transform = `translateY(${Math.min(deltaY, 400)}px)`;
+            }
+        }, { passive: true });
+
+        const finishPlayerDrag = (e) => {
+            if (!isDraggingPlayer) return;
+            isDraggingPlayer = false;
+            fullPlayer.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+
+            const deltaY = (e.changedTouches[0]?.clientY || touchStartY) - touchStartY;
+            const deltaX = (e.changedTouches[0]?.clientX || touchStartX) - touchStartX;
+            const elapsed = Math.max(Date.now() - touchStartTime, 1);
+            const velocityY = deltaY / elapsed;
+
+            if (deltaY > 80 || (deltaY > 35 && velocityY > 0.4 && Math.abs(deltaY) > Math.abs(deltaX))) {
+                fullPlayer.style.transform = 'translateY(100%)';
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(25); } catch (err) {}
+                }
+                setTimeout(() => {
+                    closeFullPlayer();
+                    fullPlayer.style.transform = '';
+                }, 220);
+            } else {
+                fullPlayer.style.transform = 'translateY(0)';
+            }
+        };
+
+        fullPlayer.addEventListener('touchend', finishPlayerDrag, { passive: true });
+        fullPlayer.addEventListener('touchcancel', () => {
+            isDraggingPlayer = false;
+            fullPlayer.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            fullPlayer.style.transform = 'translateY(0)';
+        }, { passive: true });
+    }
+
+    // 2. Mini Player Swipe Gestures (Up = Expand, Left = Next, Right = Prev)
+    const miniPlayer = document.getElementById('miniPlayer');
+    if (miniPlayer) {
+        let miniStartX = 0;
+        let miniStartY = 0;
+        let miniStartTime = 0;
+        let isMiniTouch = false;
+
+        miniPlayer.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.mini-player-actions, button, .action-btn')) return;
+            miniStartX = e.touches[0].clientX;
+            miniStartY = e.touches[0].clientY;
+            miniStartTime = Date.now();
+            isMiniTouch = true;
+        }, { passive: true });
+
+        miniPlayer.addEventListener('touchend', (e) => {
+            if (!isMiniTouch) return;
+            isMiniTouch = false;
+
+            const endX = e.changedTouches[0]?.clientX || miniStartX;
+            const endY = e.changedTouches[0]?.clientY || miniStartY;
+            const deltaX = endX - miniStartX;
+            const deltaY = endY - miniStartY;
+
+            // Vertical Swipe UP -> Open Full Player
+            if (deltaY < -40 && Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(25); } catch (err) {}
+                }
+                openFullPlayer();
+                return;
+            }
+
+            // Horizontal Swipe -> Skip Tracks
+            if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+                if (deltaX < 0) {
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate(25); } catch (err) {}
+                    }
+                    playNextTrack();
+                    showNotification("Next track ⏭️", "success");
+                } else {
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate(25); } catch (err) {}
+                    }
+                    playPreviousTrack();
+                    showNotification("Previous track ⏮️", "success");
+                }
+            }
+        }, { passive: true });
+    }
+
+    // 3. Bottom Sheets Drag-to-Dismiss Gesture
+    const sheets = document.querySelectorAll('.bottom-sheet-mode, .custom-feature-modal');
+    sheets.forEach(sheet => {
+        let startY = 0;
+        let startX = 0;
+        let isDraggingSheet = false;
+
+        sheet.addEventListener('touchstart', (e) => {
+            if (!sheet.classList.contains('active')) return;
+            const scrollable = sheet.querySelector('.custom-feature-modal-content, .bottom-sheet-content, .sheet-body') || sheet;
+            if (scrollable.scrollTop > 5) return;
+
+            startY = e.touches[0].clientY;
+            startX = e.touches[0].clientX;
+            isDraggingSheet = true;
+        }, { passive: true });
+
+        sheet.addEventListener('touchend', (e) => {
+            if (!isDraggingSheet) return;
+            isDraggingSheet = false;
+            const endY = e.changedTouches[0]?.clientY || startY;
+            const endX = e.changedTouches[0]?.clientX || startX;
+            const deltaY = endY - startY;
+            const deltaX = endX - startX;
+
+            if (deltaY > 65 && Math.abs(deltaY) > Math.abs(deltaX) * 1.25) {
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(20); } catch (err) {}
+                }
+                if (typeof closeModal === 'function') {
+                    closeModal(sheet.id);
+                } else {
+                    sheet.classList.remove('active');
+                }
+            }
+        }, { passive: true });
+    });
+
+    // 4. Edge Swipe Back Gesture (Swipe right from left edge < 35px)
+    let edgeStartX = 0;
+    let edgeStartY = 0;
+    let isEdgeSwipe = false;
+
+    document.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
+        if (touch.clientX <= 35) {
+            edgeStartX = touch.clientX;
+            edgeStartY = touch.clientY;
+            isEdgeSwipe = true;
+        } else {
+            isEdgeSwipe = false;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+        if (!isEdgeSwipe) return;
+        isEdgeSwipe = false;
+        const endX = e.changedTouches[0]?.clientX || edgeStartX;
+        const endY = e.changedTouches[0]?.clientY || edgeStartY;
+        const deltaX = endX - edgeStartX;
+        const deltaY = endY - edgeStartY;
+
+        if (deltaX >= 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+            if (navigator.vibrate) {
+                try { navigator.vibrate(30); } catch (err) {}
+            }
+            window.handleAppBackNavigation(false);
+        }
+    }, { passive: true });
+}
+
+// Initialize Gestures and History Observers
+setupModalHistoryObservers();
+setupMobileTouchGestures();
+
 

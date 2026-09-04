@@ -1008,6 +1008,22 @@ body {
     transform: translateY(0);
 }
 
+.full-player-drag-handle {
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+    margin: 10px auto 2px auto;
+    cursor: grab;
+    flex-shrink: 0;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.full-player-drag-handle:active {
+    background: rgba(255, 255, 255, 0.75);
+    transform: scaleX(1.15);
+}
+
 /* Header */
 .full-player-header {
     display: flex;

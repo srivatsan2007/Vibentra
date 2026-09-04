@@ -211,4 +211,17 @@ public class BackgroundAudioPlugin extends Plugin {
             call.resolve();
         }
     }
+
+    @PluginMethod
+    public void exitApp(PluginCall call) {
+        try {
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        } finally {
+            call.resolve();
+        }
+    }
 }

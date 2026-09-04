@@ -41,6 +41,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BackgroundAudioPlugin.class);
         super.onCreate(savedInstanceState);
         setupWebViewSettings();
+        setupBackNavigation();
         requestPhoneStatePermission();
 
         try {
@@ -53,6 +54,47 @@ public class MainActivity extends BridgeActivity {
         }
 
         webViewActiveHandler.post(keepActiveRunnable);
+    }
+
+    private void setupBackNavigation() {
+        try {
+            getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    triggerAppBackNavigation();
+                }
+            });
+            Log.d(TAG, "ON_BACK_PRESSED_DISPATCHER_REGISTERED");
+        } catch (Exception e) {
+            Log.w(TAG, "Error configuring OnBackPressedDispatcher callback", e);
+        }
+    }
+
+    private void triggerAppBackNavigation() {
+        try {
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                runOnUiThread(() -> {
+                    try {
+                        getBridge().getWebView().evaluateJavascript(
+                            "if (typeof window.handleAppBackNavigation === 'function') { window.handleAppBackNavigation(); } else { window.history.back(); }",
+                            null
+                        );
+                    } catch (Throwable t) {
+                        Log.w(TAG, "Error evaluating back navigation JS", t);
+                        finish();
+                    }
+                });
+                return;
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Error in triggerAppBackNavigation", t);
+        }
+        finish();
+    }
+
+    @Override
+    public void onBackPressed() {
+        triggerAppBackNavigation();
     }
 
     private void requestPhoneStatePermission() {
@@ -202,6 +244,13 @@ public class MainActivity extends BridgeActivity {
                     settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
                     cookieManager.setAcceptThirdPartyCookies(webView, true);
                 }
+
+                webView.addJavascriptInterface(new Object() {
+                    @android.webkit.JavascriptInterface
+                    public void exitApp() {
+                        runOnUiThread(() -> finish());
+                    }
+                }, "NativeBackBridge");
 
                 // Handle Google Auth popups directly inside the app instead of launching external Chrome browser
                 webView.setWebChromeClient(new android.webkit.WebChromeClient() {
