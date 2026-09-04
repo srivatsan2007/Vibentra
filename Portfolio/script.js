@@ -1,5 +1,6 @@
 /**
- * Vibentra Portfolio Interactive Controller (v1.9.0)
+ * Vibentra Portfolio Interactive Controller (v1.2.5)
+ * Themed in #95E9E9 & Deep Ocean Night Palette
  * Crafted by SRIVATSAN R
  */
 
@@ -28,25 +29,26 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', () => toggleDrawer(false));
     });
 
-    // 2. Navbar Scroll Glass Elevation
+    // 2. Navbar Scroll Glass Elevation (#95E9E9 ocean glass)
     const navbar = document.getElementById('navbar');
     window.addEventListener('scroll', () => {
         if (window.scrollY > 40) {
-            navbar.style.background = 'rgba(9, 13, 22, 0.92)';
-            navbar.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.6)';
+            navbar.style.background = 'rgba(6, 14, 23, 0.94)';
+            navbar.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(149, 233, 233, 0.15)';
         } else {
-            navbar.style.background = 'rgba(9, 13, 22, 0.75)';
+            navbar.style.background = 'rgba(6, 14, 23, 0.85)';
             navbar.style.boxShadow = 'none';
         }
     });
 
-    // 3. Interactive Hero Player Mockup Simulation
+    // 3. Interactive Hero Player Mockup Simulation (Featuring Real Live Tracks)
     const mockPlayBtn = document.getElementById('mockPlayBtn');
     const mockPlayIcon = document.getElementById('mockPlayIcon');
     const mockAlbumArt = document.getElementById('mockupAlbumArt');
     const mockEqualizer = document.getElementById('mockupEqualizer');
     const mockProgressFill = document.getElementById('mockupProgressFill');
     const mockCurrentTime = document.getElementById('mockupCurrentTime');
+    const mockTotalTime = document.getElementById('mockupTotalTime');
     const mockTrackTitle = document.getElementById('mockupTrackTitle');
     const mockTrackArtist = document.getElementById('mockupTrackArtist');
     const mockPrevBtn = document.getElementById('mockPrevBtn');
@@ -56,14 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isMockPlaying = true;
     let mockSeconds = 102; // 1:42
-    const mockDuration = 210; // 3:30
     let mockInterval = null;
 
     const sampleTracks = [
-        { title: 'Vibentra Theme Flow', artist: 'SRIVATSAN R • Sound Sanctuary Mix', duration: 210 },
-        { title: 'Neon Pulse Waves', artist: 'Liquid DSP • 320kbps Master', duration: 195 },
-        { title: 'Midnight Chill Lounge', artist: 'AI Smart Queue • Ambient Beats', duration: 240 },
-        { title: 'Vinyl Grooves Heritage', artist: 'Retro Analog • Sound of India', duration: 180 }
+        { title: 'Bloody Sweet (From "Leo")', artist: 'Anirudh Ravichander • 100% Real Live Track', duration: 198 },
+        { title: 'Radhimaa (From "Think Indie")', artist: 'Sai Abhyankkar • 320kbps Master', duration: 259 },
+        { title: 'Badass (From "Leo")', artist: 'Anirudh Ravichander • High Definition Audio', duration: 229 },
+        { title: 'Katchi Sera', artist: 'Sai Abhyankkar • Indian Indie Hits', duration: 194 }
     ];
     let currentTrackIdx = 0;
 
@@ -78,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mockTrackTitle) mockTrackTitle.textContent = tr.title;
         if (mockTrackArtist) mockTrackArtist.textContent = tr.artist;
         if (mockCurrentTime) mockCurrentTime.textContent = formatTime(mockSeconds);
-        const progressPct = (mockSeconds / tr.duration) * 100;
+        if (mockTotalTime) mockTotalTime.textContent = formatTime(tr.duration);
+        const progressPct = Math.min(100, (mockSeconds / tr.duration) * 100);
         if (mockProgressFill) mockProgressFill.style.width = `${progressPct}%`;
     };
 
@@ -127,12 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mockShuffleBtn?.addEventListener('click', () => {
         mockShuffleBtn.classList.toggle('active');
-        mockShuffleBtn.style.color = mockShuffleBtn.classList.contains('active') ? '#38BDF8' : '';
+        mockShuffleBtn.style.color = mockShuffleBtn.classList.contains('active') ? '#95E9E9' : '';
+        mockShuffleBtn.style.borderColor = mockShuffleBtn.classList.contains('active') ? '#95E9E9' : '';
     });
 
     mockRepeatBtn?.addEventListener('click', () => {
         mockRepeatBtn.classList.toggle('active');
-        mockRepeatBtn.style.color = mockRepeatBtn.classList.contains('active') ? '#F472B6' : '';
+        mockRepeatBtn.style.color = mockRepeatBtn.classList.contains('active') ? '#38BDF8' : '';
+        mockRepeatBtn.style.borderColor = mockRepeatBtn.classList.contains('active') ? '#38BDF8' : '';
     });
 
     startMockTimer();
@@ -195,5 +199,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    console.log("🚀 Vibentra Portfolio v1.9.0 loaded successfully! Created by SRIVATSAN R.");
+    console.log("🚀 Vibentra Portfolio v1.2.5 loaded successfully with #95E9E9 theme! Created by SRIVATSAN R.");
 });
