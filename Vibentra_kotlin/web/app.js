@@ -4307,11 +4307,46 @@ if (voiceCloseBtn) {
 // =========================================================
 
 // State for custom playlists
+// Permanent Deleted Playlists Registry (Guarantees deleted playlists NEVER come back)
+function getDeletedPlaylistIds() {
+    try {
+        const stored = localStorage.getItem('vibentra_deleted_playlists');
+        return stored ? JSON.parse(stored) : [];
+    } catch {
+        return [];
+    }
+}
+
+function addDeletedPlaylistId(playlistId) {
+    if (!playlistId) return;
+    try {
+        const list = getDeletedPlaylistIds();
+        if (!list.includes(playlistId)) {
+            list.push(playlistId);
+            localStorage.setItem('vibentra_deleted_playlists', JSON.stringify(list));
+        }
+    } catch (_) {}
+}
+
+// State for custom playlists (Filtered against deleted registry)
 function getCustomPlaylists() {
     try {
+        const deletedIds = new Set(getDeletedPlaylistIds());
         const stored = localStorage.getItem('vibentra_playlists');
-        if (stored) return JSON.parse(stored);
-        // Default seed playlist
+        if (stored !== null) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+                return parsed.filter(p => p && p.id && !deletedIds.has(p.id));
+            }
+        }
+
+        // If user has already initialized before, do not re-seed deleted playlists
+        if (localStorage.getItem('vibentra_pl_initialized') === 'true') {
+            return [];
+        }
+
+        // First-time seed only
+        localStorage.setItem('vibentra_pl_initialized', 'true');
         const defaultPl = [
             {
                 id: 'pl_favorites_shortcut',
@@ -4320,8 +4355,11 @@ function getCustomPlaylists() {
                 isFavorites: true,
                 cover: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&q=80',
                 songs: getFavorites()
-            },
-            {
+            }
+        ];
+
+        if (!deletedIds.has('pl_midnight_vibes')) {
+            defaultPl.push({
                 id: 'pl_midnight_vibes',
                 title: 'Midnight Chill',
                 desc: 'Late night aesthetic Tamil indie & acoustic melodies',
@@ -4337,10 +4375,10 @@ function getCustomPlaylists() {
                         streamUrl: 'https://aac.saavncdn.com/877/875e41134def3f76517ce29ea7819fc8_320.mp4'
                     }
                 ]
-            }
-        ];
+            });
+        }
         localStorage.setItem('vibentra_playlists', JSON.stringify(defaultPl));
-        return defaultPl;
+        return defaultPl.filter(p => !deletedIds.has(p.id));
     } catch {
         return [];
     }
@@ -4348,9 +4386,11 @@ function getCustomPlaylists() {
 
 function saveCustomPlaylists(playlists) {
     try {
-        localStorage.setItem('vibentra_playlists', JSON.stringify(playlists));
+        const deletedIds = new Set(getDeletedPlaylistIds());
+        const cleanList = (playlists || []).filter(p => p && p.id && !deletedIds.has(p.id));
+        localStorage.setItem('vibentra_playlists', JSON.stringify(cleanList));
         if (currentUser) {
-            savePlaylistsToGoogleCloud(playlists);
+            savePlaylistsToGoogleCloud(cleanList);
         }
     } catch (e) {
         console.warn("Saving playlists error:", e);
@@ -4360,16 +4400,19 @@ function saveCustomPlaylists(playlists) {
 // ---------------------------------------------------------
 // GOOGLE CLOUD PLAYLIST RETRIEVAL & TWO-WAY REALTIME SYNC
 // ---------------------------------------------------------
-// GOOGLE CLOUD PLAYLIST RETRIEVAL & TWO-WAY REALTIME SYNC
-// ---------------------------------------------------------
 let unsubscribePlaylistsSnapshot = null;
 let unsubscribeLegacySnapshot = null;
 
 function applyCloudPlaylists(cloudPlaylists) {
     if (!cloudPlaylists || !Array.isArray(cloudPlaylists)) return;
-    let localPlaylists = getCustomPlaylists();
+    const deletedIds = new Set(getDeletedPlaylistIds());
+    let localPlaylists = getCustomPlaylists().filter(p => !deletedIds.has(p.id));
 
     cloudPlaylists.forEach(cloudPl => {
+        if (!cloudPl || !cloudPl.id) return;
+        // CRITICAL: Permanently block any playlist that the user has deleted!
+        if (deletedIds.has(cloudPl.id)) return;
+
         const plTitle = cloudPl.title || cloudPl.name || 'My Playlist';
         const plDesc = cloudPl.desc || cloudPl.description || '';
         const plCover = cloudPl.cover || cloudPl.customCover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80';
@@ -4384,7 +4427,7 @@ function applyCloudPlaylists(cloudPlaylists) {
         }));
 
         const normalizedPl = {
-            id: cloudPl.id || ('pl_' + Date.now()),
+            id: cloudPl.id,
             title: plTitle,
             desc: plDesc,
             cover: plCover,
@@ -4404,17 +4447,25 @@ function applyCloudPlaylists(cloudPlaylists) {
         }
     });
 
+    localPlaylists = localPlaylists.filter(p => !deletedIds.has(p.id));
     localStorage.setItem('vibentra_playlists', JSON.stringify(localPlaylists));
     renderPlaylistsView();
 
-    // If user is currently looking at a playlist detail view, update displayed songs AUTOMATICALLY!
+    // If user is currently looking at a playlist detail view that was deleted, close it
     if (currentDetailPlaylist && !currentDetailPlaylist.isFeatured && !currentDetailPlaylist.isFavorites) {
-        const fresh = localPlaylists.find(p => p.id === currentDetailPlaylist.id);
-        if (fresh) {
-            currentDetailPlaylist = fresh;
+        if (deletedIds.has(currentDetailPlaylist.id)) {
             const detailView = document.getElementById('playlistDetailView');
-            if (detailView && detailView.style.display !== 'none') {
-                openPlaylistDetailView(fresh);
+            if (detailView) detailView.style.display = 'none';
+            currentDetailPlaylist = null;
+            document.getElementById('backToLibraryBtn')?.click();
+        } else {
+            const fresh = localPlaylists.find(p => p.id === currentDetailPlaylist.id);
+            if (fresh) {
+                currentDetailPlaylist = fresh;
+                const detailView = document.getElementById('playlistDetailView');
+                if (detailView && detailView.style.display !== 'none') {
+                    openPlaylistDetailView(fresh);
+                }
             }
         }
     }
@@ -4459,6 +4510,9 @@ function setupRealtimeGooglePlaylistsSync(user) {
     unsubscribePlaylistsSnapshot = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
+            if (data.deletedPlaylistIds && Array.isArray(data.deletedPlaylistIds)) {
+                data.deletedPlaylistIds.forEach(id => addDeletedPlaylistId(id));
+            }
             if (data.playlists) applyCloudPlaylists(data.playlists);
             if (data.favorites) applyCloudFavorites(data.favorites);
         }
@@ -4471,6 +4525,9 @@ function setupRealtimeGooglePlaylistsSync(user) {
     unsubscribeLegacySnapshot = onSnapshot(legacyPlDocRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
+            if (data.deletedPlaylistIds && Array.isArray(data.deletedPlaylistIds)) {
+                data.deletedPlaylistIds.forEach(id => addDeletedPlaylistId(id));
+            }
             if (data.playlists) applyCloudPlaylists(data.playlists);
         }
     }, (err) => {
@@ -4488,6 +4545,9 @@ async function retrievePlaylistsFromGoogleCloud(user) {
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
             const data = docSnap.data();
+            if (data.deletedPlaylistIds && Array.isArray(data.deletedPlaylistIds)) {
+                data.deletedPlaylistIds.forEach(id => addDeletedPlaylistId(id));
+            }
             if (data.playlists && data.playlists.length > 0) applyCloudPlaylists(data.playlists);
             if (data.favorites && data.favorites.length > 0) applyCloudFavorites(data.favorites);
         }
@@ -4495,9 +4555,15 @@ async function retrievePlaylistsFromGoogleCloud(user) {
         // 2. Check original Vibentra app collection: userPlaylists/{uid}
         try {
             const origPlDoc = await getDoc(doc(db, "userPlaylists", user.uid));
-            if (origPlDoc.exists() && origPlDoc.data().playlists) {
-                applyCloudPlaylists(origPlDoc.data().playlists);
-                console.log("Playlists seamlessly retrieved from original Vibentra userPlaylists collection!");
+            if (origPlDoc.exists()) {
+                const data = origPlDoc.data();
+                if (data.deletedPlaylistIds && Array.isArray(data.deletedPlaylistIds)) {
+                    data.deletedPlaylistIds.forEach(id => addDeletedPlaylistId(id));
+                }
+                if (data.playlists) {
+                    applyCloudPlaylists(data.playlists);
+                    console.log("Playlists seamlessly retrieved from original Vibentra userPlaylists collection!");
+                }
             }
         } catch (e) {
             console.warn("Checking original userPlaylists:", e);
@@ -4525,16 +4591,21 @@ async function retrievePlaylistsFromGoogleCloud(user) {
 async function savePlaylistsToGoogleCloud(playlists) {
     try {
         if (!currentUser) return;
+        const deletedIds = getDeletedPlaylistIds();
+        const filtered = (playlists || []).filter(p => p && p.id && !deletedIds.includes(p.id));
+
         const userDocRef = doc(db, "users", currentUser.uid);
         await setDoc(userDocRef, {
-            playlists: playlists,
+            playlists: filtered,
+            deletedPlaylistIds: deletedIds,
             lastSynced: new Date().toISOString()
         }, { merge: true });
 
         // Also save to userPlaylists collection for 100% backward compatibility
         try {
             await setDoc(doc(db, "userPlaylists", currentUser.uid), {
-                playlists: playlists,
+                playlists: filtered,
+                deletedPlaylistIds: deletedIds,
                 updatedAt: Date.now()
             }, { merge: true });
         } catch (_) {}
@@ -5272,15 +5343,33 @@ document.getElementById('detailAddSongsBtn')?.addEventListener('click', () => {
     }
 });
 
-// Delete Playlist
-function deletePlaylist(playlistId) {
-    if (!confirm("Are you sure you want to delete this playlist?")) return;
-    let pls = getCustomPlaylists();
-    pls = pls.filter(p => p.id !== playlistId);
+// Delete Playlist (Permanently removes locally and from cloud Firestore)
+async function deletePlaylist(playlistId) {
+    if (!playlistId) return;
+    if (!confirm("Are you sure you want to permanently delete this playlist?")) return;
+
+    // 1. Add to permanent deleted blacklist so it can NEVER be resurrected
+    addDeletedPlaylistId(playlistId);
+
+    // 2. Remove from local custom playlists
+    let pls = getCustomPlaylists().filter(p => p && p.id !== playlistId);
     saveCustomPlaylists(pls);
-    showNotification("Playlist deleted", "success");
-    document.getElementById('backToLibraryBtn')?.click();
+
+    // 3. Immediately sync the deletion to Firestore
+    if (currentUser) {
+        await savePlaylistsToGoogleCloud(pls);
+    }
+
+    // 4. If currently viewing the deleted playlist detail, close it
+    const detailView = document.getElementById('playlistDetailView');
+    if (detailView && currentDetailPlaylist && (currentDetailPlaylist.id === playlistId || String(currentDetailPlaylist.id).includes(playlistId))) {
+        detailView.style.display = 'none';
+        currentDetailPlaylist = null;
+        document.getElementById('backToLibraryBtn')?.click();
+    }
+
     renderPlaylistsView();
+    showNotification("Playlist permanently deleted ✓", "success");
 }
 
 // F. Create Playlist Form

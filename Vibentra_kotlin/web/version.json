@@ -1,14 +1,14 @@
 {
-  "version": "1.2.4",
-  "name": "Vibentra v1.2.4 - Sound of India & Live Collections Update",
+  "version": "1.2.5",
+  "name": "Vibentra v1.2.5 - Permanent Playlist Deletion & Sync Update",
   "releaseDate": "September 2026",
   "size": "18.5 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.2.4/Vibentra-v1.2.4.apk",
+  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.2.5/Vibentra-v1.2.5.apk",
   "changelog": [
+    "🗑️ Permanent Playlist Deletion: Deleted playlists are permanently purged locally and in Cloud Firestore, never reappearing",
+    "☁️ Cloud Sync Guard: Blacklist sync prevents deleted playlists from being resurrected across app launches or devices",
     "🎵 100% Real Live Tracks: Authentic, dedicated tracklists for every JioSaavn & YouTube album & playlist",
-    "🗑️ Mobile Playlist Management: Clearly visible Delete Playlist & Delete Songs buttons on all mobile views",
-    "📱 Responsive Mobile Actions: Enhanced touch buttons for effortless song and playlist deletion",
-    "🚀 Live Update System: Instant mobile notification bar and in-app prompt for seamless updates",
+    "📱 Mobile Playlist Controls: Dedicated Delete Playlist & Delete Songs buttons on all mobile views",
     "⚡ High-Definition 320kbps Audio: Ultra fast CDN stream delivery with background audio persistence"
   ]
 }
