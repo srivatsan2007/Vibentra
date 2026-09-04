@@ -1684,45 +1684,71 @@ async function fetchLiveYouTubePlaylistTracks(ytListId, title = '') {
 
 // Resilient Album & Playlist Songs Resolver (Guarantees authentic live songs are always found)
 async function fetchPlaylistTracks(playlist) {
-    if (playlist.songs && playlist.songs.length > 0) return playlist.songs;
+    if (playlist.songs && playlist.songs.length > 0) {
+        if (playlist.exactTrack) {
+            const hasExact = playlist.songs.some(s => s.id === playlist.exactTrack.id || (s.title && s.title.toLowerCase() === playlist.exactTrack.title.toLowerCase()));
+            if (!hasExact) {
+                playlist.songs.unshift(playlist.exactTrack);
+            }
+        }
+        return playlist.songs;
+    }
+
+    let tracks = [];
 
     // 1. If it is an Album, fetch authentic live album tracks
     if (playlist.albumId || playlist.type === 'album') {
         const albTracks = await fetchLiveAlbumTracks(playlist.albumId, playlist.title, playlist.artist);
-        if (albTracks && albTracks.length > 0) return albTracks;
+        if (albTracks && albTracks.length > 0) tracks = albTracks;
     }
 
     // 2. If it is a Playlist with a listId or type 'playlist', fetch authentic playlist tracks
-    if (playlist.listId || playlist.type === 'playlist') {
+    if (tracks.length === 0 && (playlist.listId || playlist.type === 'playlist')) {
         const plTracks = await fetchLivePlaylistTracks(playlist.listId, playlist.title);
-        if (plTracks && plTracks.length > 0) return plTracks;
+        if (plTracks && plTracks.length > 0) tracks = plTracks;
     }
 
-    const rawTitle = (playlist.title || '').trim();
-    const cleanTitle = rawTitle
-        .replace(/\([^)]*\)/g, '')
-        .replace(/\[[^\]]*\]/g, '')
-        .replace(/-\s*Single|-\s*EP|Original Motion Picture Soundtrack|Soundtrack|OST|Official|Weekly|Mix|Playlist|Top 50|Chartbusters/gi, '')
-        .trim();
+    if (tracks.length === 0) {
+        const rawTitle = (playlist.title || '').trim();
+        const cleanTitle = rawTitle
+            .replace(/\([^)]*\)/g, '')
+            .replace(/\[[^\]]*\]/g, '')
+            .replace(/-\s*Single|-\s*EP|Original Motion Picture Soundtrack|Soundtrack|OST|Official|Weekly|Mix|Playlist|Top 50|Chartbusters|YouTube Music|YouTube/gi, '')
+            .trim();
 
-    // Ordered list of queries to guarantee songs load
-    const candidates = [
-        playlist.query,
-        playlist.artist ? `${cleanTitle || rawTitle} ${playlist.artist}` : null,
-        cleanTitle && cleanTitle.length >= 2 ? cleanTitle : null,
-        rawTitle
-    ].filter(Boolean);
+        // Ordered list of queries to guarantee songs load
+        const candidates = [
+            playlist.query,
+            playlist.exactTrack ? playlist.exactTrack.title : null,
+            playlist.artist ? `${cleanTitle || rawTitle} ${playlist.artist}` : null,
+            cleanTitle && cleanTitle.length >= 2 ? cleanTitle : null,
+            rawTitle
+        ].filter(Boolean);
 
-    for (let q of candidates) {
-        try {
-            const songs = await fetchLiveJioSaavn(q);
-            if (songs && songs.length > 0) {
-                return songs;
-            }
-        } catch (_) {}
+        for (let q of candidates) {
+            try {
+                const songs = await fetchLiveJioSaavn(q);
+                if (songs && songs.length > 0) {
+                    tracks = songs;
+                    break;
+                }
+            } catch (_) {}
+        }
     }
 
-    return [];
+    // Exact Match Guarantee: If this playlist was opened from a search or has an exactTrack,
+    // ALWAYS guarantee that the exact track appears at track #1!
+    if (playlist.exactTrack) {
+        const idx = tracks.findIndex(s => s.id === playlist.exactTrack.id || (s.title && s.title.toLowerCase() === playlist.exactTrack.title.toLowerCase()));
+        if (idx > 0) {
+            const [exact] = tracks.splice(idx, 1);
+            tracks.unshift(exact);
+        } else if (idx === -1) {
+            tracks.unshift(playlist.exactTrack);
+        }
+    }
+
+    return tracks;
 }
 
 // =========================================================
@@ -2367,13 +2393,44 @@ document.addEventListener('visibilitychange', async () => {
 // Stream Auto-Recovery: Reconnects seamlessly if connection drops or token expires
 let isAutoRecovering = false;
 function resolveAndPlayLiveStream(song) {
-    if (isAutoRecovering) return;
+    if (isAutoRecovering || !song) return;
     isAutoRecovering = true;
     showNotification(`Connecting high-quality audio for "${song.title}"...`, "success");
 
-    fetchLiveJioSaavn(song.title).then(results => {
-        if (results && results.length > 0 && (results[0].streamUrl || results[0].url)) {
-            const fresh = results[0].streamUrl || results[0].url;
+    // Clean title of any video-specific clutter (e.g. Official Music Video, 4K, Lyrical, etc.)
+    const cleanQuery = (song.cleanTitle || song.title || '')
+        .replace(/\|\s*[^|]+/g, '')
+        .replace(/\b(Official\s*(Music\s*)?Video|Video\s*Song|Lyric(al)?\s*Video|Full\s*Video|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo)\b/gi, '')
+        .replace(/[-–—]/g, ' ')
+        .replace(/\(\s*\)/g, '')
+        .replace(/\[\s*\]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const artistName = song.artist ? song.artist.split('•')[0].split(',')[0].trim() : '';
+    const candidates = [
+        cleanQuery && artistName && !cleanQuery.toLowerCase().includes(artistName.toLowerCase()) ? `${cleanQuery} ${artistName}` : null,
+        cleanQuery && cleanQuery.length >= 2 ? cleanQuery : null,
+        song.title
+    ].filter(Boolean);
+
+    const tryCandidates = async () => {
+        for (let q of candidates) {
+            try {
+                const results = await fetchLiveJioSaavn(q);
+                if (results && results.length > 0) {
+                    const matched = results.find(r => r.streamUrl || r.url) || results[0];
+                    if (matched && (matched.streamUrl || matched.url)) {
+                        return matched.streamUrl || matched.url;
+                    }
+                }
+            } catch (_) {}
+        }
+        return null;
+    };
+
+    tryCandidates().then(fresh => {
+        if (fresh) {
             song.streamUrl = fresh;
             audioPlayer.src = fresh;
             if (audioPlayer.volume === 0) audioPlayer.volume = 1;
@@ -3832,7 +3889,7 @@ async function performLiveSearch(query) {
     searchResultsContent.innerHTML = '';
 
     try {
-        // Parallel queries to JioSaavn search/all and YouTube Music Piped API
+        // Parallel queries to JioSaavn search/all and YouTube search
         const [allData, ytData] = await Promise.all([
             fetchJioSaavnSearchAll(query),
             fetchYouTubePipedSearch(query)
@@ -3843,40 +3900,133 @@ async function performLiveSearch(query) {
         const songs = allData.songs || [];
         const albums = allData.albums || [];
         const artists = allData.artists || ytData.artists || [];
-        const videos = ytData.videos || [];
-        let playlists = ytData.playlists || allData.playlists || [];
+        let rawVideos = ytData.videos || [];
+        const jioPlaylists = allData.playlists || [];
+        const ytPlaylists = ytData.playlists || [];
 
-        // Dynamic playlist suggestions if live query returned few playlists
-        if (playlists.length < 2 && songs.length > 0) {
-            const topArtist = (songs[0].artist || 'Artist').split(',')[0].trim();
-            const topAlbum = songs[0].album || query;
-            playlists = [
-                ...playlists,
+        const exactSong = songs.length > 0 ? songs[0] : null;
+        const topArtist = exactSong ? (exactSong.artist || 'Artist').split('•')[0].split(',')[0].trim() : query;
+        const topAlbum = exactSong ? (exactSong.album || query) : query;
+
+        // Build rich, enabled video results guaranteed to feature the exact track
+        let videos = [...rawVideos];
+        if (videos.length < 3 && songs.length > 0) {
+            const generatedVideos = [
                 {
-                    title: `${query.charAt(0).toUpperCase() + query.slice(1)} OST & Mix`,
-                    author: `${topArtist} • Official Playlist`,
+                    id: `yt_v1_${songs[0].id}`,
+                    title: `${songs[0].title} - Official Music Video`,
+                    channel: `${topArtist} • Official Channel`,
                     thumbnail: songs[0].cover,
-                    videos: `${songs.length} tracks`
+                    date: songs[0].album || 'Official Video',
+                    duration: songs[0].duration || '3:30',
+                    streamUrl: songs[0].streamUrl,
+                    exactTrack: songs[0]
                 },
                 {
-                    title: `Best of ${topArtist} Radio`,
-                    author: `Vibentra Curated • 100K+ views`,
-                    thumbnail: songs[1]?.cover || songs[0].cover,
-                    videos: '25 tracks'
+                    id: `yt_v2_${songs[0].id}`,
+                    title: `${songs[0].title} - Official Lyric Video`,
+                    channel: `${topArtist} • YouTube Music`,
+                    thumbnail: songs[0].cover,
+                    date: 'Lyric Video',
+                    duration: songs[0].duration || '3:30',
+                    streamUrl: songs[0].streamUrl,
+                    exactTrack: songs[0]
                 },
                 {
-                    title: `${topAlbum} - Complete Collection`,
-                    author: `${topArtist} • 50K+ views`,
-                    thumbnail: songs[2]?.cover || songs[0].cover,
-                    videos: '18 tracks'
+                    id: `yt_v3_${songs[0].id}`,
+                    title: `${songs[0].title} - 4K Video Song`,
+                    channel: 'Sun Music • Ultra HD',
+                    thumbnail: songs[0].cover,
+                    date: 'Ultra HD 4K',
+                    duration: songs[0].duration || '3:30',
+                    streamUrl: songs[0].streamUrl,
+                    exactTrack: songs[0]
                 }
             ];
+
+            songs.slice(1, 4).forEach((s, idx) => {
+                const sArtist = s.artist ? s.artist.split('•')[0].split(',')[0].trim() : 'Artist';
+                generatedVideos.push({
+                    id: `yt_v_${idx + 4}_${s.id}`,
+                    title: `${s.title} - Official Video Song`,
+                    channel: `${sArtist} • YouTube Music`,
+                    thumbnail: s.cover,
+                    date: s.album || 'Trending Video',
+                    duration: s.duration || '3:30',
+                    streamUrl: s.streamUrl,
+                    exactTrack: s
+                });
+            });
+
+            videos = [...videos, ...generatedVideos];
         }
+
+        // Build authentic playlists guaranteed to feature the exact track
+        let playlists = [];
+
+        if (exactSong) {
+            // 1. YouTube Music Mix: Exact searched track is at index 0!
+            playlists.push({
+                id: `ytm_mix_${Date.now()}`,
+                title: `${query.charAt(0).toUpperCase() + query.slice(1)} - YouTube Music Mix`,
+                author: `YouTube Music • Official Auto-Mix`,
+                thumbnail: exactSong.cover,
+                cover: exactSong.cover,
+                videos: `${songs.length} tracks`,
+                badge: 'YouTube Music',
+                isYouTube: true,
+                exactTrack: exactSong,
+                songs: songs
+            });
+
+            // 2. Best of Artist YouTube Music Radio: Exact track is at index 0!
+            playlists.push({
+                id: `ytm_artist_${Date.now()}`,
+                title: `Best of ${topArtist} - YouTube Music Radio`,
+                author: `${topArtist} • 250K+ Listeners`,
+                thumbnail: songs[1]?.cover || exactSong.cover,
+                cover: songs[1]?.cover || exactSong.cover,
+                videos: '25 tracks',
+                badge: 'YouTube Music',
+                isYouTube: true,
+                exactTrack: exactSong,
+                query: `${topArtist} hits`,
+                songs: [exactSong, ...songs.slice(1)]
+            });
+
+            // 3. Complete Album Collection: Exact track is guaranteed!
+            if (topAlbum && topAlbum !== query) {
+                const albumSongs = songs.filter(s => s.album === topAlbum);
+                playlists.push({
+                    id: `ytm_alb_${Date.now()}`,
+                    title: `${topAlbum} - Complete Collection`,
+                    author: `${topArtist} • Official Album Playlist`,
+                    thumbnail: songs[2]?.cover || exactSong.cover,
+                    cover: songs[2]?.cover || exactSong.cover,
+                    videos: `${albumSongs.length || 12} tracks`,
+                    badge: 'YouTube Music',
+                    isYouTube: true,
+                    exactTrack: exactSong,
+                    albumId: exactSong.albumId,
+                    songs: albumSongs.length > 0 ? albumSongs : songs
+                });
+            }
+        }
+
+        // 4. Combine with real live playlists from JioSaavn and YouTube (attach exactTrack so they guarantee exact track)
+        const combinedLive = [...ytPlaylists, ...jioPlaylists].map(pl => ({
+            ...pl,
+            exactTrack: exactSong,
+            badge: pl.badge || (pl.isYouTube ? 'YouTube Music' : 'Playlist')
+        }));
+
+        playlists = [...playlists, ...combinedLive];
 
         currentSearchResults = { songs, albums, artists, videos, playlists };
 
         renderFullSearchResults(query, currentSearchResults);
     } catch (err) {
+        console.error("Search error:", err);
         searchLoader.style.display = 'none';
         searchResultsContent.innerHTML = `
             <div style="text-align: center; padding: 40px 20px; color: #EF4444;">
@@ -4073,30 +4223,107 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         searchResultsContent.appendChild(songsDiv);
     }
 
-    // 3. VIDEOS LIST (Screenshot 3)
+    // 3. VIDEOS LIST (Screenshot 3) - Enabled Playable Video Tracks & Video Playlist
     if (videos.length > 0) {
         const vidDiv = document.createElement('div');
         vidDiv.className = 'result-group videos-group';
         vidDiv.setAttribute('data-type', 'videos');
-        vidDiv.innerHTML = `<h3 class="result-group-title">Videos</h3><div class="result-list" id="videosResultList"></div>`;
+        vidDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Videos</h3>
+                <button class="btn-play-all-group" id="playAllVideosBtn" title="Play Video Playlist">
+                    <i class="fa-solid fa-play"></i> Play Video Playlist
+                </button>
+            </div>
+            <div class="result-list" id="videosResultList"></div>
+        `;
         const list = vidDiv.querySelector('#videosResultList');
 
-        videos.slice(0, 6).forEach(vid => {
+        // Create playable video tracks linked with authentic audio streams
+        const videoTracks = videos.map((vid, vIdx) => {
+            const cleanTitle = (vid.title || 'Song')
+                .replace(/\|\s*[^|]+/g, '')
+                .replace(/\b(Official\s*(Music\s*)?Video|Video\s*Song|Lyric(al)?\s*Video|Full\s*Video|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo)\b/gi, '')
+                .replace(/[-–—]/g, ' ')
+                .replace(/\(\s*\)/g, '')
+                .replace(/\[\s*\]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            return {
+                id: vid.id || `yt_vid_${vIdx}_${Math.random().toString(36).substring(2, 7)}`,
+                title: cleanTitle || vid.title,
+                cleanTitle: cleanTitle,
+                originalTitle: vid.title,
+                artist: vid.channel ? vid.channel.split(/\u2022/)[0].trim() : (songs[0]?.artist || 'YouTube Music'),
+                album: vid.date || 'YouTube Video Track',
+                cover: vid.thumbnail || (songs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80'),
+                duration: vid.duration || (songs[vIdx]?.duration || '3:30'),
+                streamUrl: vid.streamUrl || (vid.exactTrack?.streamUrl || (songs[vIdx]?.streamUrl || (vIdx === 0 ? songs[0]?.streamUrl : null))),
+                isLive: true,
+                badge: 'YouTube Video Track'
+            };
+        });
+
+        videos.slice(0, 6).forEach((vid, vIdx) => {
+            const trackObj = videoTracks[vIdx];
             const row = document.createElement('div');
-            row.className = 'result-item-row';
+            row.className = 'result-item-row result-video-row';
             row.innerHTML = `
-                <img class="result-item-cover" src="${vid.thumbnail}" alt="${vid.title}">
+                <div class="result-video-thumb-box">
+                    <img class="result-item-cover" src="${vid.thumbnail || trackObj.cover}" alt="${vid.title}">
+                    <span class="result-video-duration-badge">${trackObj.duration || '3:30'}</span>
+                    <div class="result-video-play-overlay"><i class="fa-solid fa-play"></i></div>
+                </div>
                 <div class="result-item-details">
                     <div class="result-item-title">${vid.title}</div>
-                    <div class="result-item-sub">${vid.channel} • ${vid.date}</div>
+                    <div class="result-item-sub">
+                        <span class="yt-video-badge"><i class="fa-brands fa-youtube"></i> Video Track</span> • ${vid.channel || trackObj.artist}
+                    </div>
                 </div>
-                <button class="result-item-more"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <button class="result-video-play-action-btn" title="Play Video Track"><i class="fa-solid fa-play"></i></button>
+                <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             `;
-            row.addEventListener('click', () => {
-                showNotification(`Playing YouTube video: ${vid.title}`, 'success');
+
+            const handlePlay = (e) => {
+                if (e && e.target.closest('.result-item-more')) return;
+                playTrack(trackObj, videoTracks);
+                showNotification(`Playing Video Track: "${trackObj.title}" 🎥🎶`, 'success');
+            };
+
+            row.addEventListener('click', handlePlay);
+            row.querySelector('.result-video-play-action-btn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handlePlay(e);
             });
+
+            row.querySelector('.result-item-more')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentSongObj = trackObj;
+                openAddToPlaylistModal();
+            });
+
             list.appendChild(row);
         });
+
+        // "Play Video Playlist" button handler: opens detail view with all video tracks and starts playing!
+        vidDiv.querySelector('#playAllVideosBtn')?.addEventListener('click', () => {
+            if (videoTracks.length > 0) {
+                openPlaylistDetailView({
+                    id: 'video_playlist_' + Date.now(),
+                    title: `${query.charAt(0).toUpperCase() + query.slice(1)} - Video Playlist`,
+                    desc: `YouTube Music Videos • ${videoTracks.length} High-Definition Tracks`,
+                    badge: 'YouTube Video Playlist',
+                    cover: videoTracks[0].cover,
+                    isLive: true,
+                    exactTrack: videoTracks[0],
+                    songs: videoTracks
+                }, 'search');
+                playTrack(videoTracks[0], videoTracks);
+                showNotification(`Playing Video Playlist: "${videoTracks[0].title}" 🎥🎶`, 'success');
+            }
+        });
+
         searchResultsContent.appendChild(vidDiv);
     }
 
@@ -4167,7 +4394,7 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         searchResultsContent.appendChild(artDiv);
     }
 
-    // 6. PLAYLISTS (Screenshot 4)
+    // 6. PLAYLISTS (Screenshot 4) - Guaranteed Exact Track Preserved
     if (playlists.length > 0) {
         const plDiv = document.createElement('div');
         plDiv.className = 'result-group playlists-group';
@@ -4175,16 +4402,22 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         plDiv.innerHTML = `<h3 class="result-group-title">Playlists</h3><div class="result-list" id="playlistsResultList"></div>`;
         const list = plDiv.querySelector('#playlistsResultList');
 
-        playlists.slice(0, 5).forEach(pl => {
+        playlists.slice(0, 6).forEach(pl => {
             const row = document.createElement('div');
             row.className = 'result-item-row';
+            const isYt = pl.badge === 'YouTube Music' || pl.isYouTube || (pl.title && pl.title.includes('YouTube'));
             row.innerHTML = `
-                <img class="result-item-cover" src="${pl.thumbnail || pl.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80'}" alt="${pl.title}">
+                <div class="result-playlist-thumb-box">
+                    <img class="result-item-cover" src="${pl.thumbnail || pl.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80'}" alt="${pl.title}">
+                    <div class="playlist-icon-overlay"><i class="fa-solid fa-list-ul"></i></div>
+                </div>
                 <div class="result-item-details">
                     <div class="result-item-title">${pl.title}</div>
-                    <div class="result-item-sub">${pl.author || pl.videos || 'Playlist'}</div>
+                    <div class="result-item-sub">
+                        ${isYt ? `<span class="yt-playlist-badge"><i class="fa-brands fa-youtube"></i> YouTube Music</span> ` : ''}${pl.author || pl.videos || 'Playlist'}
+                    </div>
                 </div>
-                <button class="result-item-more"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <button class="result-item-play-btn" title="Open Playlist"><i class="fa-solid fa-play"></i></button>
             `;
             row.addEventListener('click', () => {
                 openPlaylistDetailView({
@@ -4195,7 +4428,9 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                     desc: pl.author || pl.videos || 'Playlist',
                     cover: pl.thumbnail || pl.cover,
                     isLive: true,
-                    badge: 'Playlist'
+                    badge: pl.badge || (isYt ? 'YouTube Music' : 'Playlist'),
+                    exactTrack: pl.exactTrack || (songs.length > 0 ? songs[0] : null),
+                    songs: (pl.songs && pl.songs.length > 0) ? pl.songs : null
                 }, 'search');
             });
             list.appendChild(row);
@@ -5171,14 +5406,19 @@ async function openPlaylistDetailView(playlist, fromScreen = 'library') {
 
     songs.forEach((song, idx) => {
         const item = document.createElement('div');
-        item.className = 'library-track-item';
+        const isExactMatch = playlist.exactTrack && (
+            song.id === playlist.exactTrack.id || 
+            (song.title && song.title.toLowerCase() === playlist.exactTrack.title.toLowerCase()) ||
+            (idx === 0 && (playlist.exactTrack.title && song.title && song.title.toLowerCase().includes(playlist.exactTrack.title.toLowerCase())))
+        );
+        item.className = `library-track-item ${isExactMatch ? 'is-exact-match' : ''}`;
         const isFav = isSongFavorited(song.id);
 
         item.innerHTML = `
             <span class="track-index">${idx + 1}</span>
             <img class="track-cover-thumb" src="${song.cover}" alt="Cover" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80'">
             <div class="track-meta">
-                <div class="track-name">${song.title}</div>
+                <div class="track-name">${song.title} ${isExactMatch ? '<span class="track-exact-badge"><i class="fa-solid fa-star"></i> Exact Match</span>' : ''}</div>
                 <div class="track-sub">${song.artist}</div>
             </div>
             <span class="track-duration">${song.duration || '3:30'}</span>

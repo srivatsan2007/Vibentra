@@ -1800,6 +1800,218 @@ body {
     cursor: pointer;
 }
 
+/* Group Header with Play Action (e.g. Play Video Playlist) */
+.result-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.result-group-header .result-group-title {
+    margin-bottom: 0;
+}
+
+.btn-play-all-group {
+    background: linear-gradient(135deg, #06B6D4, #0284C7);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+    transition: all 0.2s ease;
+}
+
+.btn-play-all-group:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(6, 182, 212, 0.5);
+    filter: brightness(1.1);
+}
+
+.btn-play-all-group:active {
+    transform: translateY(1px);
+}
+
+/* Video Result Card & Thumb Box */
+.result-video-row {
+    position: relative;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.result-video-row:hover {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: rgba(6, 182, 212, 0.2);
+}
+
+.result-video-thumb-box {
+    position: relative;
+    width: 64px;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.result-video-thumb-box .result-item-cover {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.result-video-duration-badge {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    background: rgba(0, 0, 0, 0.82);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+}
+
+.result-video-play-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.95rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.result-video-row:hover .result-video-play-overlay {
+    opacity: 1;
+}
+
+.result-video-play-action-btn {
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.35);
+    color: #06B6D4;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-right: 4px;
+}
+
+.result-video-play-action-btn:hover {
+    background: #06B6D4;
+    color: #0F172A;
+    transform: scale(1.1);
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+}
+
+.result-item-play-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    margin-right: 4px;
+}
+
+.result-item-play-btn:hover {
+    background: #06B6D4;
+    border-color: #06B6D4;
+    color: #0F172A;
+    transform: scale(1.08);
+}
+
+.result-playlist-thumb-box {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.result-playlist-thumb-box .result-item-cover {
+    width: 100%;
+    height: 100%;
+}
+
+.playlist-icon-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85rem;
+}
+
+/* Badges for YouTube & Exact Match */
+.yt-video-badge {
+    color: #EF4444;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.yt-playlist-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #EF4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.track-exact-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.library-track-item.is-exact-match {
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.12), rgba(16, 185, 129, 0.06));
+    border-left: 3px solid #06B6D4;
+    padding-left: 12px;
+}
+
 /* =========================================================
    5. VOICE SEARCH MODAL OVERLAY
    ========================================================= */
