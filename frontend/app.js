@@ -89,6 +89,7 @@ let lastBackPressTime = 0;
 let suppressNextPopState = false;
 let appNavHistoryDepth = 0;
 let isBackNavigationInProgress = false;
+let activeBlobUrl = null;
 
 function pushHistoryNavigationState(state) {
     try {
@@ -191,11 +192,13 @@ function switchScreen(screenName, skipHistory = false) {
                 const tabFavs = document.getElementById('tabFavoritesView');
                 const tabPls = document.getElementById('tabPlaylistsView');
                 const tabFeat = document.getElementById('tabFeaturedView');
+                const tabDown = document.getElementById('tabDownloadsView');
                 const detailView = document.getElementById('playlistDetailView');
                 if (detailView) detailView.style.display = 'none';
                 if (tabFavs) tabFavs.style.display = 'none';
                 if (tabPls) tabPls.style.display = 'block';
                 if (tabFeat) tabFeat.style.display = 'none';
+                if (tabDown) tabDown.style.display = 'none';
             }
             renderPlaylistsView();
 
@@ -217,16 +220,40 @@ function switchScreen(screenName, skipHistory = false) {
                 const tabFavs = document.getElementById('tabFavoritesView');
                 const tabPls = document.getElementById('tabPlaylistsView');
                 const tabFeat = document.getElementById('tabFeaturedView');
+                const tabDown = document.getElementById('tabDownloadsView');
                 const detailView = document.getElementById('playlistDetailView');
                 if (detailView) detailView.style.display = 'none';
                 if (tabFavs) tabFavs.style.display = 'block';
                 if (tabPls) tabPls.style.display = 'none';
                 if (tabFeat) tabFeat.style.display = 'none';
+                if (tabDown) tabDown.style.display = 'none';
             }
             renderFavoritesView();
             if (currentUser) {
                 retrievePlaylistsFromGoogleCloud(currentUser);
             }
+        }
+        if (screenName === 'downloads') {
+            if (libraryScreen) libraryScreen.classList.add('active');
+            const navLib = document.getElementById('navLibrary');
+            if (navLib) navLib.classList.add('active');
+
+            const downTab = document.querySelector('.library-tab[data-tab="downloads"]');
+            if (downTab) {
+                document.querySelectorAll('.library-tab').forEach(t => t.classList.remove('active'));
+                downTab.classList.add('active');
+                const tabFavs = document.getElementById('tabFavoritesView');
+                const tabPls = document.getElementById('tabPlaylistsView');
+                const tabFeat = document.getElementById('tabFeaturedView');
+                const tabDown = document.getElementById('tabDownloadsView');
+                const detailView = document.getElementById('playlistDetailView');
+                if (detailView) detailView.style.display = 'none';
+                if (tabFavs) tabFavs.style.display = 'none';
+                if (tabPls) tabPls.style.display = 'none';
+                if (tabFeat) tabFeat.style.display = 'none';
+                if (tabDown) tabDown.style.display = 'block';
+            }
+            renderDownloadsView();
         }
     }
 }
@@ -1202,6 +1229,17 @@ async function openSettingsCategoryDetail(id, title) {
             }
         } catch {}
 
+        let offlineTracks = [];
+        let offlineMB = '0.0';
+        try {
+            if (typeof getAllOfflineTracks === 'function') {
+                offlineTracks = await getAllOfflineTracks();
+                let bytes = 0;
+                offlineTracks.forEach(t => bytes += (t.size || 0));
+                offlineMB = (bytes / (1024 * 1024)).toFixed(1);
+            }
+        } catch {}
+
         settingsDetailBody.innerHTML = `
             <div class="settings-sub-card">
                 <div class="settings-card-header">
@@ -1212,8 +1250,12 @@ async function openSettingsCategoryDetail(id, title) {
                     </div>
                 </div>
                 <div class="settings-data-row">
+                    <span class="settings-data-label">Offline Music Vault</span>
+                    <span class="settings-data-val"><span class="real-data-badge badge-blue">${offlineTracks.length} tracks (${offlineMB} MB)</span></span>
+                </div>
+                <div class="settings-data-row">
                     <span class="settings-data-label">App Cache & IndexedDB</span>
-                    <span class="settings-data-val"><span class="real-data-badge badge-blue">${storageUsedMB} MB Used</span></span>
+                    <span class="settings-data-val">${storageUsedMB} MB Total Used</span>
                 </div>
                 <div class="settings-data-row">
                     <span class="settings-data-label">Available Disk Quota</span>
@@ -1227,11 +1269,23 @@ async function openSettingsCategoryDetail(id, title) {
                     <span class="settings-data-label">Cached Liked Songs</span>
                     <span class="settings-data-val">${favsCount} tracks</span>
                 </div>
-                <button class="btn-setting-action btn-danger-action" id="btnClearStorageCache">
+                <button class="btn-setting-action btn-danger-action" id="btnClearOfflineVault" style="margin-bottom: 8px;">
+                    <i class="fa-solid fa-trash"></i> Clear Offline Vault (${offlineTracks.length} songs)
+                </button>
+                <button class="btn-setting-action" id="btnClearStorageCache">
                     <i class="fa-solid fa-broom"></i> Clear Temporary Audio Cache
                 </button>
             </div>
         `;
+
+        document.getElementById('btnClearOfflineVault')?.addEventListener('click', async () => {
+            if (confirm(`Remove all ${offlineTracks.length} offline downloaded songs from storage?`)) {
+                await clearAllOfflineTracks();
+                showNotification("Offline music vault cleared! 🗑️", "success");
+                openSettingsCategoryDetail('storage', 'Storage');
+                renderDownloadsView();
+            }
+        });
 
         document.getElementById('btnClearStorageCache')?.addEventListener('click', async () => {
             try {
@@ -2212,19 +2266,71 @@ function playTrack(song, playlist = []) {
     syncNativeAndroidWidget(song, true);
     acquireWakeLock();
 
-    const audioSrc = song.streamUrl || song.url || song.media_url;
-    if (audioSrc) {
-        audioPlayer.src = audioSrc;
-        audioPlayer.play().then(() => {
-            isPlaying = true;
-            updatePlayPauseIcons(true);
-            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-        }).catch(err => {
-            console.warn("Audio play blocked or expired:", err);
-            resolveAndPlayLiveStream(song);
+    // Offline Vault Check First: If downloaded locally, play without network!
+    if (typeof getOfflineTrack === 'function') {
+        getOfflineTrack(song.id).then(offlineTrack => {
+            if (offlineTrack && offlineTrack.audioBlob) {
+                if (activeBlobUrl) {
+                    try { URL.revokeObjectURL(activeBlobUrl); } catch (_) {}
+                }
+                activeBlobUrl = URL.createObjectURL(offlineTrack.audioBlob);
+                audioPlayer.src = activeBlobUrl;
+                audioPlayer.play().then(() => {
+                    isPlaying = true;
+                    updatePlayPauseIcons(true);
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                }).catch(err => {
+                    console.warn("Offline audio playback error:", err);
+                });
+                return;
+            }
+
+            // Not downloaded and offline:
+            if (!navigator.onLine) {
+                showNotification(`"${song.title}" is not downloaded. Opening your offline vault...`, "error");
+                switchScreen('downloads');
+                return;
+            }
+
+            // Online stream playback
+            const audioSrc = song.streamUrl || song.url || song.media_url;
+            if (audioSrc) {
+                audioPlayer.src = audioSrc;
+                audioPlayer.play().then(() => {
+                    isPlaying = true;
+                    updatePlayPauseIcons(true);
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                }).catch(err => {
+                    console.warn("Audio play blocked or expired:", err);
+                    resolveAndPlayLiveStream(song);
+                });
+            } else {
+                resolveAndPlayLiveStream(song);
+            }
+        }).catch(() => {
+            const audioSrc = song.streamUrl || song.url || song.media_url;
+            if (audioSrc) {
+                audioPlayer.src = audioSrc;
+                audioPlayer.play().catch(() => resolveAndPlayLiveStream(song));
+            } else {
+                resolveAndPlayLiveStream(song);
+            }
         });
     } else {
-        resolveAndPlayLiveStream(song);
+        const audioSrc = song.streamUrl || song.url || song.media_url;
+        if (audioSrc) {
+            audioPlayer.src = audioSrc;
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                updatePlayPauseIcons(true);
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+            }).catch(err => {
+                console.warn("Audio play blocked or expired:", err);
+                resolveAndPlayLiveStream(song);
+            });
+        } else {
+            resolveAndPlayLiveStream(song);
+        }
     }
 }
 
@@ -2830,9 +2936,394 @@ function triggerAudioDownload(song, isRingtone = false) {
 
 if (playerDownloadBtn) {
     playerDownloadBtn.addEventListener('click', () => {
-        if (currentSongObj) triggerAudioDownload(currentSongObj, false);
+        if (currentSongObj) downloadSongForOffline(currentSongObj);
     });
 }
+
+// =========================================================
+// OFFLINE AUDIO STORAGE VAULT ENGINE (IndexedDB v1.3.0)
+// =========================================================
+
+function openOfflineDB() {
+    return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+            return reject(new Error("IndexedDB not supported"));
+        }
+        const request = indexedDB.open('vibentra_offline_db', 1);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('tracks')) {
+                const store = db.createObjectStore('tracks', { keyPath: 'id' });
+                store.createIndex('downloadedAt', 'downloadedAt', { unique: false });
+                store.createIndex('title', 'title', { unique: false });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function saveTrackOffline(trackData) {
+    const db = await openOfflineDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('tracks', 'readwrite');
+        const store = tx.objectStore('tracks');
+        store.put(trackData);
+        tx.oncomplete = () => resolve(trackData);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getOfflineTrack(songId) {
+    if (!songId) return null;
+    try {
+        const db = await openOfflineDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('tracks', 'readonly');
+            const store = tx.objectStore('tracks');
+            const req = store.get(String(songId));
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+        });
+    } catch {
+        return null;
+    }
+}
+
+async function getAllOfflineTracks() {
+    try {
+        const db = await openOfflineDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('tracks', 'readonly');
+            const store = tx.objectStore('tracks');
+            const req = store.getAll();
+            req.onsuccess = () => {
+                const list = req.result || [];
+                list.sort((a, b) => (b.downloadedAt || 0) - (a.downloadedAt || 0));
+                resolve(list);
+            };
+            req.onerror = () => resolve([]);
+        });
+    } catch {
+        return [];
+    }
+}
+
+async function deleteOfflineTrack(songId) {
+    try {
+        const db = await openOfflineDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('tracks', 'readwrite');
+            const store = tx.objectStore('tracks');
+            store.delete(String(songId));
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch {
+        return false;
+    }
+}
+
+async function isSongDownloaded(songId) {
+    const track = await getOfflineTrack(songId);
+    return Boolean(track && track.audioBlob);
+}
+
+async function clearAllOfflineTracks() {
+    try {
+        const db = await openOfflineDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('tracks', 'readwrite');
+            const store = tx.objectStore('tracks');
+            store.clear();
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch {
+        return false;
+    }
+}
+
+async function resolveStreamUrlForDownload(song) {
+    if (song.streamUrl && !song.streamUrl.includes('placeholder')) return song.streamUrl;
+    if (song.url && (song.url.includes('.mp4') || song.url.includes('.mp3') || song.url.includes('saavncdn') || song.url.includes('googlevideo'))) return song.url;
+    if (song.media_url) return song.media_url;
+
+    const query = song.cleanTitle || song.title;
+    if (query) {
+        try {
+            const results = await fetchLiveJioSaavn(query);
+            if (results && results.length > 0) {
+                const match = results.find(r => r.streamUrl || r.url) || results[0];
+                return match.streamUrl || match.url || match.media_url;
+            }
+        } catch (_) {}
+    }
+    return null;
+}
+
+async function downloadSongForOffline(song) {
+    if (!song) return;
+
+    try {
+        const isAlready = await isSongDownloaded(song.id);
+        if (isAlready) {
+            showNotification(`"${song.title}" is already in your Offline Vault ⚡`, "success");
+            return;
+        }
+
+        showNotification(`Downloading "${song.title}" for offline listening... 📥`, "success");
+
+        let streamUrl = await resolveStreamUrlForDownload(song);
+        if (!streamUrl) {
+            showNotification(`Could not locate audio stream for "${song.title}"`, "error");
+            return;
+        }
+
+        // Fetch audio bytes as binary Blob
+        const audioRes = await fetch(streamUrl);
+        if (!audioRes.ok) throw new Error(`Audio fetch failed: ${audioRes.status}`);
+        const audioBlob = await audioRes.blob();
+
+        // Fetch cover art bytes as binary Blob
+        let coverBlob = null;
+        if (song.cover && !song.cover.startsWith('data:')) {
+            try {
+                const coverRes = await fetch(song.cover);
+                if (coverRes.ok) coverBlob = await coverRes.blob();
+            } catch (_) {}
+        }
+
+        await saveTrackOffline({
+            id: String(song.id),
+            title: song.title || 'Unknown Song',
+            artist: song.artist || 'Unknown Artist',
+            album: song.album || song.title,
+            duration: song.duration || '3:30',
+            cover: song.cover || '',
+            audioBlob: audioBlob,
+            coverBlob: coverBlob,
+            size: audioBlob.size,
+            downloadedAt: Date.now(),
+            lyrics: song.lyrics || []
+        });
+
+        showNotification(`Downloaded "${song.title}" for offline playback! ⚡💾`, "success");
+        if (navigator.vibrate) {
+            try { navigator.vibrate([30, 50, 30]); } catch (_) {}
+        }
+
+        // Refresh downloads view if active
+        const downloadsView = document.getElementById('tabDownloadsView');
+        if (downloadsView && downloadsView.style.display !== 'none') {
+            renderDownloadsView();
+        }
+    } catch (err) {
+        console.error("Download for offline failed:", err);
+        // Fallback to browser file download if CORS prevented blob fetch
+        showNotification(`Saving as local file download... 📥`, "success");
+        triggerAudioDownload(song, false);
+    }
+}
+
+async function downloadPlaylistForOffline(playlist) {
+    if (!playlist || !playlist.songs || playlist.songs.length === 0) {
+        showNotification("No songs found in playlist to download", "error");
+        return;
+    }
+
+    const songs = playlist.songs;
+    showNotification(`Downloading ${songs.length} songs from "${playlist.title}" for offline playback... 📥`, "success");
+
+    let count = 0;
+    for (let i = 0; i < songs.length; i++) {
+        const s = songs[i];
+        const isDown = await isSongDownloaded(s.id);
+        if (!isDown) {
+            try {
+                await downloadSongForOffline(s);
+                count++;
+            } catch (_) {}
+        } else {
+            count++;
+        }
+    }
+    showNotification(`Finished downloading "${playlist.title}"! (${count}/${songs.length} offline ready) ⚡`, "success");
+    renderDownloadsView();
+}
+
+// Render Offline Downloads View
+async function renderDownloadsView() {
+    const listContainer = document.getElementById('downloadsSongsList');
+    const heroMeta = document.getElementById('downloadsHeroMeta');
+    const storageUsedText = document.getElementById('downloadsStorageUsedText');
+    const emptyState = document.getElementById('downloadsEmptyState');
+    const searchInput = document.getElementById('downloadsSearchInput');
+    const clearBtn = document.getElementById('downloadsSearchClearBtn');
+
+    if (!listContainer) return;
+
+    const tracks = await getAllOfflineTracks();
+
+    let totalBytes = 0;
+    tracks.forEach(t => { totalBytes += (t.size || 0); });
+    const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+
+    if (heroMeta) {
+        heroMeta.textContent = `${tracks.length} song${tracks.length === 1 ? '' : 's'} • ${totalMB} MB used on device • 100% Offline Ready ⚡`;
+    }
+    if (storageUsedText) {
+        storageUsedText.textContent = `${totalMB} MB`;
+    }
+
+    if (tracks.length === 0) {
+        if (emptyState) emptyState.style.display = 'block';
+        listContainer.innerHTML = '';
+        document.getElementById('btnExploreDownloads')?.addEventListener('click', () => switchScreen('home'));
+        return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Live search filter
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+
+    let filtered = tracks;
+    if (query) {
+        filtered = tracks.filter(t => 
+            (t.title && t.title.toLowerCase().includes(query)) ||
+            (t.artist && t.artist.toLowerCase().includes(query)) ||
+            (t.album && t.album.toLowerCase().includes(query))
+        );
+    }
+
+    listContainer.innerHTML = '';
+    filtered.forEach((song, idx) => {
+        const item = document.createElement('div');
+        item.className = 'library-track-item';
+        const trackMB = ((song.size || 0) / (1024 * 1024)).toFixed(1);
+        const coverSrc = song.coverBlob ? URL.createObjectURL(song.coverBlob) : (song.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80');
+
+        item.innerHTML = `
+            <span class="track-index">${idx + 1}</span>
+            <img class="track-cover-thumb" src="${coverSrc}" alt="Cover" onerror="this.src='https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80'">
+            <div class="track-meta">
+                <div class="track-name">${song.title} <i class="fa-solid fa-circle-check download-indicator-badge" title="Saved offline"></i></div>
+                <div class="track-sub">${song.artist}</div>
+            </div>
+            <span class="track-filesize-tag">${trackMB} MB</span>
+            <span class="track-duration">${song.duration || '3:30'}</span>
+            <button class="btn-track-action btn-delete-download" title="Remove from Offline Downloads"><i class="fa-solid fa-trash"></i></button>
+        `;
+
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-delete-download')) return;
+            playTrack(song, filtered);
+        });
+
+        const delBtn = item.querySelector('.btn-delete-download');
+        if (delBtn) {
+            delBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await deleteOfflineTrack(song.id);
+                showNotification(`Removed "${song.title}" from offline vault 🗑️`, "success");
+                renderDownloadsView();
+            });
+        }
+
+        listContainer.appendChild(item);
+    });
+}
+
+// Wire Downloaded View Hero Buttons
+document.getElementById('downloadsPlayAllBtn')?.addEventListener('click', async () => {
+    const tracks = await getAllOfflineTracks();
+    if (tracks.length > 0) {
+        playTrack(tracks[0], tracks);
+        showNotification(`Playing all ${tracks.length} offline songs ⚡`, "success");
+    } else {
+        showNotification("No offline songs to play", "error");
+    }
+});
+
+document.getElementById('downloadsShuffleBtn')?.addEventListener('click', async () => {
+    const tracks = await getAllOfflineTracks();
+    if (tracks.length > 0) {
+        isShuffle = true;
+        const randIndex = Math.floor(Math.random() * tracks.length);
+        playTrack(tracks[randIndex], tracks);
+        showNotification(`Shuffle playing offline vault 🔀`, "success");
+    } else {
+        showNotification("No offline songs to play", "error");
+    }
+});
+
+document.getElementById('downloadsClearAllBtn')?.addEventListener('click', async () => {
+    const tracks = await getAllOfflineTracks();
+    if (tracks.length === 0) return;
+    if (confirm(`Remove all ${tracks.length} downloaded songs from offline storage?`)) {
+        await clearAllOfflineTracks();
+        showNotification("Offline vault cleared 🧹", "success");
+        renderDownloadsView();
+    }
+});
+
+document.getElementById('downloadsSearchInput')?.addEventListener('input', () => {
+    renderDownloadsView();
+});
+
+document.getElementById('downloadsSearchClearBtn')?.addEventListener('click', () => {
+    const input = document.getElementById('downloadsSearchInput');
+    if (input) {
+        input.value = '';
+        renderDownloadsView();
+    }
+});
+
+// Wire Download All Liked Songs
+document.getElementById('favDownloadAllBtn')?.addEventListener('click', async () => {
+    const favs = getFavorites();
+    if (favs.length === 0) {
+        showNotification("No liked songs to download", "error");
+        return;
+    }
+    await downloadPlaylistForOffline({ title: 'Liked Songs', songs: favs });
+});
+
+// Wire Download Entire Playlist in Detail View
+document.getElementById('detailDownloadAllBtn')?.addEventListener('click', async () => {
+    if (currentDetailPlaylist && currentDetailPlaylist.songs && currentDetailPlaylist.songs.length > 0) {
+        await downloadPlaylistForOffline(currentDetailPlaylist);
+    } else {
+        showNotification("No songs found in playlist to download", "error");
+    }
+});
+
+// Network Online/Offline Monitoring
+function setupNetworkStatusListeners() {
+    const banner = document.getElementById('offlineModeBanner');
+
+    const updateOnlineStatus = () => {
+        const isOnline = navigator.onLine;
+        if (!isOnline) {
+            if (banner) banner.style.display = 'flex';
+            showNotification("⚡ Switched to Offline Mode — Playing from Local Downloads", "success");
+        } else {
+            if (banner) banner.style.display = 'none';
+            showNotification("🌐 Back online! Music streaming catalog connected", "success");
+        }
+    };
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    // Initial check
+    if (!navigator.onLine && banner) {
+        banner.style.display = 'flex';
+    }
+}
+
 
 // --- C. LIVE SYNCHRONIZED KARAOKE LYRICS ENGINE ---
 let currentLyricsLines = [];
@@ -3241,7 +3732,7 @@ document.getElementById('optDownloadRingtone')?.addEventListener('click', () => 
 
 document.getElementById('optDownloadSong')?.addEventListener('click', () => {
     closeModal('songOptionsModal');
-    if (currentSongObj) triggerAudioDownload(currentSongObj, false);
+    if (currentSongObj) downloadSongForOffline(currentSongObj);
 });
 
 document.getElementById('optToggleFavorite')?.addEventListener('click', () => {
@@ -4955,6 +5446,7 @@ libraryTabs.forEach(tab => {
         const tabFavs = document.getElementById('tabFavoritesView');
         const tabPls = document.getElementById('tabPlaylistsView');
         const tabFeat = document.getElementById('tabFeaturedView');
+        const tabDown = document.getElementById('tabDownloadsView');
         const detailView = document.getElementById('playlistDetailView');
 
         if (detailView) detailView.style.display = 'none';
@@ -4962,10 +5454,12 @@ libraryTabs.forEach(tab => {
         if (tabFavs) tabFavs.style.display = tabName === 'favorites' ? 'block' : 'none';
         if (tabPls) tabPls.style.display = tabName === 'playlists' ? 'block' : 'none';
         if (tabFeat) tabFeat.style.display = tabName === 'featured' ? 'block' : 'none';
+        if (tabDown) tabDown.style.display = tabName === 'downloads' ? 'block' : 'none';
 
         if (tabName === 'favorites') renderFavoritesView();
         if (tabName === 'playlists') renderPlaylistsView();
         if (tabName === 'featured') renderFeaturedPlaylistsView();
+        if (tabName === 'downloads') renderDownloadsView();
     });
 });
 
@@ -5360,6 +5854,8 @@ async function openPlaylistDetailView(playlist, fromScreen = 'library') {
     if (tabFavs) tabFavs.style.display = 'none';
     if (tabPls) tabPls.style.display = 'none';
     if (tabFeat) tabFeat.style.display = 'none';
+    const tabDown = document.getElementById('tabDownloadsView');
+    if (tabDown) tabDown.style.display = 'none';
 
     if (!detailView) return;
     detailView.style.display = 'block';
@@ -7305,8 +7801,9 @@ function setupMobileTouchGestures() {
     }, { passive: true });
 }
 
-// Initialize Gestures and History Observers
+// Initialize Gestures, History Observers, and Offline Network Status
 setupModalHistoryObservers();
 setupMobileTouchGestures();
+setupNetworkStatusListeners();
 
 

@@ -3041,6 +3041,168 @@ body {
     background: rgba(255, 255, 255, 0.22);
 }
 
+/* =========================================================
+   OFFLINE MODE & DOWNLOADS VAULT SYSTEM (v1.3.0)
+   ========================================================= */
+
+/* Floating Offline Mode Indicator Banner */
+.offline-mode-floating-banner {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.25);
+    border-radius: 999px;
+    padding: 8px 18px;
+    animation: offlineBannerSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+@keyframes offlineBannerSlideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.offline-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.offline-bolt-icon {
+    color: #38bdf8;
+    font-size: 0.95rem;
+    animation: pulseBolt 2s infinite ease-in-out;
+}
+
+@keyframes pulseBolt {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px #38bdf8); }
+}
+
+/* Downloads Hero Banner */
+.downloads-hero-banner {
+    background: linear-gradient(135deg, #042f2e 0%, #0f172a 55%, #1e1b4b 100%) !important;
+    border-color: rgba(45, 212, 191, 0.25) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(20, 184, 166, 0.15) !important;
+}
+
+.downloads-hero-art {
+    background: linear-gradient(135deg, #14b8a6, #0284c7) !important;
+    box-shadow: 0 8px 24px rgba(20, 184, 166, 0.4) !important;
+}
+
+.downloads-badge {
+    color: #2dd4bf !important;
+    background: rgba(20, 184, 166, 0.2) !important;
+    border: 1px solid rgba(45, 212, 191, 0.35) !important;
+}
+
+.btn-hero-download {
+    padding: 11px 18px;
+    border-radius: 24px;
+    background: rgba(20, 184, 166, 0.18);
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    color: #2dd4bf;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-hero-download:hover {
+    background: rgba(20, 184, 166, 0.3);
+    transform: scale(1.03);
+}
+
+.btn-hero-danger {
+    padding: 11px 18px;
+    border-radius: 24px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.2s ease;
+}
+
+.btn-hero-danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.downloads-storage-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.downloads-storage-pill i {
+    color: #14b8a6;
+}
+
+/* Downloaded Indicator Badge next to tracks */
+.download-indicator-badge {
+    color: #10b981;
+    font-size: 0.85rem;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.btn-delete-download {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.btn-delete-download:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.track-filesize-tag {
+    font-size: 0.75rem;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-right: 6px;
+}
+
 /* TRACKLISTS (Shared between Liked Songs and Playlist Detail) */
 .library-tracks-container, .playlist-detail-tracks {
     display: flex;

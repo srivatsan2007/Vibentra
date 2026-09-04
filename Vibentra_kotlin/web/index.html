@@ -20,6 +20,14 @@
         <span id="notificationMessage">Notification</span>
     </div>
 
+    <!-- Floating Offline Mode Indicator Banner -->
+    <div class="offline-mode-floating-banner" id="offlineModeBanner" style="display: none;">
+        <div class="offline-banner-content">
+            <i class="fa-solid fa-bolt-lightning offline-bolt-icon"></i>
+            <span id="offlineBannerText">Offline Mode — Playing from Local Downloads</span>
+        </div>
+    </div>
+
     <!-- 1. SPLASH SCREEN -->
     <div id="splashScreen" class="screen splash-container active">
         <div class="splash-content">
@@ -373,11 +381,12 @@
             </div>
         </header>
 
-        <!-- Library Sub-Navigation Tabs (Liked Songs, My Playlists, Featured) -->
+        <!-- Library Sub-Navigation Tabs (Liked Songs, My Playlists, Featured, Downloaded) -->
         <div class="library-tabs-row" id="libraryTabsRow">
             <button class="library-tab" data-tab="favorites"><i class="fa-solid fa-heart"></i> Liked Songs</button>
             <button class="library-tab active" data-tab="playlists"><i class="fa-solid fa-folder"></i> My Playlists</button>
             <button class="library-tab" data-tab="featured"><i class="fa-solid fa-fire"></i> Featured Mixes</button>
+            <button class="library-tab" data-tab="downloads" id="tabBtnDownloads"><i class="fa-solid fa-cloud-arrow-down"></i> Downloaded</button>
         </div>
 
         <main class="library-content-container">
@@ -395,6 +404,7 @@
                         <div class="liked-hero-actions">
                             <button class="btn-hero-play" id="favPlayAllBtn"><i class="fa-solid fa-play"></i> Play All</button>
                             <button class="btn-hero-shuffle" id="favShuffleBtn"><i class="fa-solid fa-shuffle"></i> Shuffle</button>
+                            <button class="btn-hero-download" id="favDownloadAllBtn" title="Download all liked songs for offline listening"><i class="fa-solid fa-cloud-arrow-down"></i> Download All</button>
                         </div>
                     </div>
                 </div>
@@ -488,6 +498,52 @@
                 </div>
             </section>
 
+            <!-- TAB 4: OFFLINE DOWNLOADS VAULT VIEW -->
+            <section class="library-tab-view" id="tabDownloadsView" style="display: none;">
+                <!-- Downloads Hero Banner -->
+                <div class="liked-hero-banner downloads-hero-banner">
+                    <div class="liked-hero-art downloads-hero-art">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                    </div>
+                    <div class="liked-hero-info">
+                        <span class="liked-badge downloads-badge">Offline Vault</span>
+                        <h1 class="liked-hero-title">Downloaded Songs</h1>
+                        <p class="liked-hero-meta" id="downloadsHeroMeta">0 songs • 0 MB used on device</p>
+                        <div class="liked-hero-actions">
+                            <button class="btn-hero-play" id="downloadsPlayAllBtn"><i class="fa-solid fa-play"></i> Play All</button>
+                            <button class="btn-hero-shuffle" id="downloadsShuffleBtn"><i class="fa-solid fa-shuffle"></i> Shuffle</button>
+                            <button class="btn-hero-danger" id="downloadsClearAllBtn" title="Remove all offline downloads"><i class="fa-solid fa-trash"></i> Clear Vault</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Downloads Quick Filter & Controls -->
+                <div class="fav-controls-row" id="downloadsControlsRow">
+                    <div class="fav-search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="downloadsSearchInput" placeholder="Search downloaded songs...">
+                        <button class="fav-search-clear" id="downloadsSearchClearBtn" style="display:none;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="downloads-storage-pill" id="downloadsStoragePill" title="Device space used by Vibentra offline music">
+                        <i class="fa-solid fa-hard-drive"></i>
+                        <span id="downloadsStorageUsedText">0 MB</span>
+                    </div>
+                </div>
+
+                <!-- Downloaded Songs List Container -->
+                <div class="liked-songs-list" id="downloadsSongsList">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="liked-empty-state" id="downloadsEmptyState" style="display: none;">
+                    <div class="empty-icon"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                    <h3>No Downloaded Music Yet</h3>
+                    <p>Tap the download icon on any song, album, or playlist to save it for offline listening.</p>
+                    <button class="btn-explore-liked" id="btnExploreDownloads">Browse Music</button>
+                </div>
+            </section>
+
             <!-- PLAYLIST DETAIL VIEW (Shared view when any playlist is opened) -->
             <section class="library-playlist-detail-view" id="playlistDetailView" style="display: none;">
                 <button class="btn-back-library" id="backToLibraryBtn">
@@ -505,6 +561,7 @@
                         <div class="detail-action-buttons">
                             <button class="btn-hero-play" id="detailPlayAllBtn"><i class="fa-solid fa-play"></i> Play All</button>
                             <button class="btn-hero-shuffle" id="detailShuffleBtn"><i class="fa-solid fa-shuffle"></i> Shuffle</button>
+                            <button class="btn-detail-tool" id="detailDownloadAllBtn" title="Download Entire Playlist for Offline Listening"><i class="fa-solid fa-cloud-arrow-down"></i> Download</button>
                             <button class="btn-detail-tool" id="detailAddSongsBtn" title="Add More Songs"><i class="fa-solid fa-plus"></i> Add Songs</button>
                             <button class="btn-detail-tool" id="detailEditBtn" title="Edit Playlist Details"><i class="fa-solid fa-pen"></i> Edit</button>
                             <button class="btn-detail-tool" id="detailShareBtn" title="Share Playlist"><i class="fa-solid fa-share-nodes"></i> Share</button>
@@ -942,8 +999,8 @@
                     <span>Download Ringtone (30s Hook)</span>
                 </button>
                 <button class="option-menu-item" id="optDownloadSong">
-                    <i class="fa-solid fa-download"></i>
-                    <span>Download Full Song (320kbps MP4/MP3)</span>
+                    <i class="fa-solid fa-cloud-arrow-down" id="optDownloadSongIcon"></i>
+                    <span id="optDownloadSongText">Download for Offline Listening</span>
                 </button>
                 <button class="option-menu-item" id="optToggleFavorite">
                     <i class="fa-regular fa-heart" id="optHeartIcon"></i>

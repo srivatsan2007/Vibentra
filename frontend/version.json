@@ -1,14 +1,14 @@
 {
-  "version": "1.2.5",
-  "name": "Vibentra v1.2.5 - Permanent Playlist Deletion & Sync Update",
+  "version": "1.3.0",
+  "name": "Vibentra v1.3.0 - Offline Mode & Download Vault Update",
   "releaseDate": "September 2026",
-  "size": "18.5 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.2.5/Vibentra-v1.2.5.apk",
+  "size": "18.8 MB",
+  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.3.0/Vibentra-v1.3.0.apk",
   "changelog": [
-    "🗑️ Permanent Playlist Deletion: Deleted playlists are permanently purged locally and in Cloud Firestore, never reappearing",
-    "☁️ Cloud Sync Guard: Blacklist sync prevents deleted playlists from being resurrected across app launches or devices",
-    "🎵 100% Real Live Tracks: Authentic, dedicated tracklists for every JioSaavn & YouTube album & playlist",
-    "📱 Mobile Playlist Controls: Dedicated Delete Playlist & Delete Songs buttons on all mobile views",
-    "⚡ High-Definition 320kbps Audio: Ultra fast CDN stream delivery with background audio persistence"
+    "⚡ Full Offline Mode: Download tracks, albums, and playlists directly to device storage for zero-buffering offline playback",
+    "📥 Library Download Vault: Dedicated 'Downloaded' section in Library organizing all offline music with file size insights",
+    "📴 Zero-Internet Shell: Instant launch without connection errors via Service Worker and auto-fallback offline playback",
+    "💾 Local Audio Storage: Full-quality IndexedDB binary audio and artwork vault with storage manager in Settings",
+    "📱 Tactile Mobile Gestures: Smooth player pull-down to collapse, swipe up to expand, and track skipping gestures"
   ]
 }
