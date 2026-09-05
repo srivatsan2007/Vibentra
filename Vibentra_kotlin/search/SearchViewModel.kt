@@ -94,25 +94,50 @@ class SearchViewModel(
     }
 
     fun getVideoTrackAsSong(video: VideoResult): Song {
-        val top = _uiState.value.topResult
-        if (video.exactTrack != null) return video.exactTrack
-        val baseName = top?.title?.split(Regex("[-–—(]"))?.firstOrNull()?.trim()?.lowercase() ?: ""
-        if (top != null && (video.title.contains(top.title, ignoreCase = true) || (baseName.length >= 3 && video.title.contains(baseName, ignoreCase = true)) || _uiState.value.videos.firstOrNull() == video)) {
-            return top
+        // 1. Guaranteed exact track for top result video (Video #0)
+        if (video.exactTrack != null) {
+            return video.exactTrack.copy(
+                duration = video.duration.ifEmpty { video.exactTrack.duration },
+                coverUrl = video.thumbnail.ifEmpty { video.exactTrack.coverUrl }
+            )
         }
-        val matched = _uiState.value.songs.find { s -> 
-            val sBase = s.title.split(Regex("[-–—(]")).firstOrNull()?.trim()?.lowercase() ?: ""
-            video.title.contains(s.title, ignoreCase = true) || (sBase.length >= 3 && video.title.contains(sBase, ignoreCase = true))
+
+        // 2. Clean title of YouTube metadata tags
+        val cleanTitle = video.title
+            .replace(Regex("\\|.*$"), " ")
+            .replace(Regex("\\[[^\\]]*\\]"), " ")
+            .replace(Regex("\\((?!feat\\.|ft\\.)[^)]*\\)", RegexOption.IGNORE_CASE), " ")
+            .replace(Regex("\\b(Official\\s*(Music\\s*)?Video|Video\\s*Song|Lyric(al)?\\s*Video|Full\\s*Video|Full\\s*Song|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo)\\b", RegexOption.IGNORE_CASE), " ")
+            .replace(Regex("[-–—]"), " ")
+            .trim()
+            .replace(Regex("\\s+"), " ")
+
+        // 3. Search uiState.songs for an authentic matching song by clean title
+        val songs = _uiState.value.songs
+        val matched = songs.find { s ->
+            s.title.equals(cleanTitle, ignoreCase = true)
+        } ?: songs.find { s ->
+            val sClean = s.title.split(Regex("[-–—(]")).firstOrNull()?.trim() ?: ""
+            (sClean.length >= 3 && cleanTitle.contains(sClean, ignoreCase = true)) ||
+            (cleanTitle.length >= 3 && s.title.contains(cleanTitle, ignoreCase = true))
         }
-        if (matched != null) return matched
+
+        if (matched != null) {
+            return matched.copy(
+                duration = matched.duration.ifEmpty { video.duration },
+                coverUrl = video.thumbnail.ifEmpty { matched.coverUrl }
+            )
+        }
+
+        // 4. Return distinct Song with this video's specific title & artist (do NOT force top's stream)
         return Song(
             id = if (video.url.contains("v=")) video.url.substringAfter("v=").substringBefore("&") else "vid_${video.title.hashCode()}",
-            title = video.title,
-            artist = video.channel,
+            title = cleanTitle.ifEmpty { video.title },
+            artist = video.channel.substringBefore("•").trim(),
             album = video.date,
             duration = video.duration,
             coverUrl = video.thumbnail,
-            streamUrl = top?.streamUrl ?: ""
+            streamUrl = ""
         )
     }
 

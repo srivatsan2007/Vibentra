@@ -1,14 +1,15 @@
 {
-  "version": "1.4.0",
-  "name": "Vibentra v1.4.0 - Exact Track Search & Multi-Provider Lyrics Update",
+  "version": "1.4.1",
+  "name": "Vibentra v1.4.1 - Video Audio Track & Duration Synchronization Update",
   "releaseDate": "September 2026",
   "size": "19.2 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.0/Vibentra-v1.4.0.apk",
+  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.1/Vibentra-v1.4.1.apk",
   "changelog": [
-    "🎯 100% Exact Track Guarantee: Real playlist search guarantees the searched track is positioned at Track #1 across YouTube Music and JioSaavn",
-    "🎥 Full Video Playlist & Video Search: Video tracks featuring the exact searched song at #1, with play actions and full video pagination",
-    "🎙️ Auto-Switching Multi-Provider Lyrics Engine: Automatic waterfall fallback across LRCLIB Synced, LRCLIB Plain, JioSaavn, and Lyrics.ovh with live provider badges",
+    "🎵 100% Video Audio Stream Synchronization: Every video track resolves and plays its own authentic matching song audio instead of mismatched tracks",
+    "⏱️ Exact Duration Alignment: Video card duration badges and player time bars are 100% synchronized with the actual playing audio length",
+    "🎯 High-Precision Video Song Matching: High-precision title cleaning and live JioSaavn matching ensures video tracks map to their true high-definition audio",
+    "🎥 Dynamic Live Stream Resolution: Asynchronous stream resolution seamlessly connects YouTube video queries to lossless audio streams",
     "🎨 Complete System Theme Suite: 100% working System Default, Dark Mode, Light Mode, and AMOLED Pure Black themes with instant persistence",
-    "⚡ Pure Live Music Stream Engine: 100% real live songs and playlists with zero hardcoded or placeholder tracks"
+    "🎙️ Auto-Switching Multi-Provider Lyrics Engine: Automatic fallback across LRCLIB Synced, LRCLIB Plain, JioSaavn, and Lyrics.ovh"
   ]
 }

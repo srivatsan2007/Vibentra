@@ -444,7 +444,7 @@ class MusicRepository {
                                 date = date,
                                 url = rawUrl,
                                 duration = durStr,
-                                exactTrack = exactSong
+                                exactTrack = null
                             )
                         )
                     }
@@ -457,12 +457,16 @@ class MusicRepository {
         if (exactSong != null) {
             val baseName = exactSong.title.split(Regex("[-–—(]")).firstOrNull()?.trim()?.lowercase() ?: ""
             val idx = videos.indexOfFirst { 
+                it.title.equals(exactSong.title, ignoreCase = true) || 
                 it.title.contains(exactSong.title, ignoreCase = true) || 
-                (baseName.length >= 3 && it.title.contains(baseName, ignoreCase = true))
+                (baseName.length >= 4 && it.title.contains(baseName, ignoreCase = true))
             }
             if (idx > 0) {
                 val exactVid = videos.removeAt(idx)
-                videos.add(0, exactVid.copy(exactTrack = exactSong))
+                videos.add(0, exactVid.copy(
+                    duration = exactSong.duration.ifEmpty { exactVid.duration },
+                    exactTrack = exactSong
+                ))
             } else if (idx == -1) {
                 videos.add(
                     0,
@@ -477,7 +481,10 @@ class MusicRepository {
                     )
                 )
             } else if (idx == 0) {
-                videos[0] = videos[0].copy(exactTrack = exactSong)
+                videos[0] = videos[0].copy(
+                    duration = exactSong.duration.ifEmpty { videos[0].duration },
+                    exactTrack = exactSong
+                )
             }
         }
 
