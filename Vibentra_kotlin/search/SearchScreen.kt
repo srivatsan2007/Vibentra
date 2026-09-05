@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.vibentra.music.data.model.Song
+import com.srivatsan.vibentra.data.model.Song
 import com.vibentra.music.theme.VibentraColors
 
 @Composable
@@ -124,6 +124,22 @@ fun SearchScreen(
                 SearchResultsList(
                     uiState = uiState,
                     onSongClick = onSongClick,
+                    onPlaylistClick = { playlist ->
+                        viewModel.loadPlaylistTracks(playlist) { tracks ->
+                            if (tracks.isNotEmpty()) onSongClick(tracks.first())
+                        }
+                    },
+                    onVideoClick = { video ->
+                        val song = viewModel.getVideoTrackAsSong(video)
+                        onSongClick(song)
+                    },
+                    onPlayAllVideos = {
+                        val videoSongs = viewModel.loadVideoPlaylistTracks()
+                        if (videoSongs.isNotEmpty()) onSongClick(videoSongs.first())
+                    },
+                    onFilterClick = { filter ->
+                        viewModel.onFilterSelected(filter)
+                    },
                     isTabletOrLaptop = isTabletOrLaptop,
                     modifier = Modifier
                         .fillMaxSize()
@@ -404,6 +420,10 @@ fun ExplorePillCard(title: String, onClick: () -> Unit) {
 fun SearchResultsList(
     uiState: SearchUiState,
     onSongClick: (Song) -> Unit,
+    onPlaylistClick: (PlaylistResult) -> Unit = {},
+    onVideoClick: (VideoResult) -> Unit = {},
+    onPlayAllVideos: () -> Unit = {},
+    onFilterClick: (SearchFilter) -> Unit = {},
     isTabletOrLaptop: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -418,67 +438,69 @@ fun SearchResultsList(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Top Result
-        uiState.topResult?.let { top ->
-            item {
-                Text(
-                    text = "Top result",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 6.dp)
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF141E26))
-                        .clickable { onSongClick(top) }
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(top.albumArtUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = top.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(RoundedCornerShape(8.dp))
+        // 1. Top Result (Shown for ALL and SONGS filters)
+        if (uiState.selectedFilter == SearchFilter.ALL || uiState.selectedFilter == SearchFilter.SONGS) {
+            uiState.topResult?.let { top ->
+                item {
+                    Text(
+                        text = "Top result",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 6.dp)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = top.title,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0xFF141E26))
+                            .clickable { onSongClick(top) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(top.coverUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = top.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(RoundedCornerShape(8.dp))
                         )
-                        Text(
-                            text = top.artist,
-                            color = Color(0xFF94A3B8),
-                            fontSize = 13.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    IconButton(onClick = {}) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Options",
-                            tint = Color(0xFF94A3B8)
-                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = top.title,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = top.artist,
+                                color = Color(0xFF94A3B8),
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Options",
+                                tint = Color(0xFF94A3B8)
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // 2. Songs
-        if (uiState.songs.isNotEmpty()) {
+        // 2. Songs (Shown for ALL and SONGS filters)
+        if ((uiState.selectedFilter == SearchFilter.ALL || uiState.selectedFilter == SearchFilter.SONGS) && uiState.songs.isNotEmpty()) {
             item {
                 Text(
                     text = "Songs",
@@ -498,7 +520,7 @@ fun SearchResultsList(
                 ) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(song.albumArtUrl)
+                            .data(song.coverUrl)
                             .crossfade(true)
                             .build(),
                         contentDescription = song.title,
@@ -536,8 +558,138 @@ fun SearchResultsList(
             }
         }
 
-        // 3. Albums
-        if (uiState.albums.isNotEmpty()) {
+        // 3. Videos (Shown for ALL and VIDEOS filters)
+        if (uiState.selectedFilter == SearchFilter.VIDEOS && uiState.videos.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No video tracks found for \"${uiState.query}\"",
+                        color = Color(0xFF94A3B8),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+        if ((uiState.selectedFilter == SearchFilter.ALL || uiState.selectedFilter == SearchFilter.VIDEOS) && uiState.videos.isNotEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (uiState.selectedFilter == SearchFilter.VIDEOS) "Videos (${uiState.videos.size})" else "Videos",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "▶ Play Video Playlist",
+                            color = Color(0xFF06B6D4),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clickable { onPlayAllVideos() }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                        if (uiState.selectedFilter == SearchFilter.ALL && uiState.videos.size > 5) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "See all (${uiState.videos.size})",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 12.sp,
+                                modifier = Modifier
+                                    .clickable { onFilterClick(SearchFilter.VIDEOS) }
+                                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            val displayVideos = if (uiState.selectedFilter == SearchFilter.ALL) uiState.videos.take(6) else uiState.videos
+            items(displayVideos) { video ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onVideoClick(video) }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(width = 68.dp, height = 44.dp)) {
+                        AsyncImage(
+                            model = video.thumbnail,
+                            contentDescription = video.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(6.dp))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Play",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(2.dp)
+                                .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(3.dp))
+                                .padding(horizontal = 3.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = video.duration,
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = video.title,
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "${video.channel} • Video Track",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Options",
+                            tint = Color(0xFF94A3B8)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 4. Albums (Shown for ALL and ALBUMS filters)
+        if ((uiState.selectedFilter == SearchFilter.ALL || uiState.selectedFilter == SearchFilter.ALBUMS) && uiState.albums.isNotEmpty()) {
             item {
                 Text(
                     text = "Albums",
@@ -592,8 +744,8 @@ fun SearchResultsList(
             }
         }
 
-        // 4. Artists
-        if (uiState.artists.isNotEmpty()) {
+        // 5. Artists (Shown for ALL and ARTISTS filters)
+        if ((uiState.selectedFilter == SearchFilter.ALL || uiState.selectedFilter == SearchFilter.ARTISTS) && uiState.artists.isNotEmpty()) {
             item {
                 Text(
                     text = "Artists",
@@ -648,22 +800,55 @@ fun SearchResultsList(
             }
         }
 
-        // 5. Playlists (Matching Screenshot 4)
-        if (uiState.playlists.isNotEmpty()) {
+        // 6. Playlists (Shown for ALL and PLAYLISTS filters)
+        if (uiState.selectedFilter == SearchFilter.PLAYLISTS && uiState.playlists.isEmpty()) {
             item {
-                Text(
-                    text = "Playlists",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 6.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No playlists found for \"${uiState.query}\"",
+                        color = Color(0xFF94A3B8),
+                        fontSize = 14.sp
+                    )
+                }
             }
-            items(uiState.playlists) { playlist ->
+        }
+        if ((uiState.selectedFilter == SearchFilter.ALL || uiState.selectedFilter == SearchFilter.PLAYLISTS) && uiState.playlists.isNotEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (uiState.selectedFilter == SearchFilter.PLAYLISTS) "Playlists (${uiState.playlists.size})" else "Playlists",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+                    if (uiState.selectedFilter == SearchFilter.ALL && uiState.playlists.size > 6) {
+                        Text(
+                            text = "See all (${uiState.playlists.size})",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .clickable { onFilterClick(SearchFilter.PLAYLISTS) }
+                                .padding(horizontal = 4.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+            val displayPlaylists = if (uiState.selectedFilter == SearchFilter.ALL) uiState.playlists.take(6) else uiState.playlists
+            items(displayPlaylists) { playlist ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { }
+                        .clickable { onPlaylistClick(playlist) }
                         .padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

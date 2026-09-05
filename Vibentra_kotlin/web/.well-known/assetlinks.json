@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.srivatsan.vibentra",
+    "sha256_cert_fingerprints": [
+      "8A:85:A7:03:EF:21:E2:2E:3F:5C:04:C7:7F:A9:24:0C:F6:D4:0B:31:2A:CC:6B:C6:A4:FC:B6:88:98:5A:75:BF"
+    ]
+  }
+}]

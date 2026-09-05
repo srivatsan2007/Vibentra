@@ -735,21 +735,456 @@ document.querySelectorAll('.settings-item').forEach(item => {
     });
 });
 
-function applyAppTheme(theme) {
-    document.body.classList.remove('oled-mode', 'theme-teal', 'theme-neon', 'theme-cocoa');
-    if (theme === 'oled') {
-        document.body.classList.add('oled-mode');
-        document.body.style.backgroundColor = '#000000';
-    } else if (theme === 'teal') {
-        document.body.classList.add('theme-teal');
-        document.body.style.backgroundColor = '#07151D';
-    } else if (theme === 'neon') {
-        document.body.classList.add('theme-neon');
-        document.body.style.backgroundColor = '#0F0C1E';
-    } else {
-        document.body.classList.add('theme-cocoa');
-        document.body.style.backgroundColor = '#130E0C';
+// =========================================================
+// ADVANCED THEME ENGINE (FOLLOW SYSTEM, LIGHT, DARK, AMOLED)
+// =========================================================
+let systemMediaListener = null;
+
+function applyAppThemeMode(mode, accent) {
+    if (!mode) mode = localStorage.getItem('vibentra_theme_mode') || 'dark';
+    if (!accent) accent = localStorage.getItem('vibentra_theme_accent') || 'violet';
+
+    localStorage.setItem('vibentra_theme_mode', mode);
+    localStorage.setItem('vibentra_theme_accent', accent);
+
+    let resolvedTheme = mode;
+    if (mode === 'system') {
+        const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        resolvedTheme = isSystemDark ? 'dark' : 'light';
+
+        if (window.matchMedia && !systemMediaListener) {
+            systemMediaListener = window.matchMedia('(prefers-color-scheme: dark)');
+            const sysHandler = () => {
+                if (localStorage.getItem('vibentra_theme_mode') === 'system') {
+                    applyAppThemeMode('system');
+                }
+            };
+            try {
+                systemMediaListener.addEventListener('change', sysHandler);
+            } catch (e) {
+                if (systemMediaListener.addListener) systemMediaListener.addListener(sysHandler);
+            }
+        }
     }
+
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    document.documentElement.setAttribute('data-accent', accent);
+
+    document.body.classList.remove('theme-light', 'theme-dark', 'theme-amoled', 'oled-mode', 'theme-teal', 'theme-neon', 'theme-cocoa');
+    if (resolvedTheme === 'amoled') {
+        document.body.classList.add('theme-amoled', 'oled-mode');
+        document.body.style.backgroundColor = '#000000';
+    } else if (resolvedTheme === 'light') {
+        document.body.classList.add('theme-light');
+        document.body.style.backgroundColor = '#F3F4F8';
+    } else {
+        document.body.classList.add('theme-dark');
+        document.body.style.backgroundColor = '#0B0F17';
+    }
+
+    const metaTheme = document.getElementById('metaThemeColor');
+    if (metaTheme) {
+        metaTheme.content = resolvedTheme === 'amoled' ? '#000000' : (resolvedTheme === 'light' ? '#F3F4F8' : '#0B0F17');
+    }
+
+    const curThemeSub = document.getElementById('appearanceCurrentThemeSub');
+    if (curThemeSub) {
+        const modeLabels = {
+            'system': 'Follow system',
+            'light': 'Light mode',
+            'dark': 'Dark mode',
+            'amoled': 'AMOLED mode'
+        };
+        curThemeSub.textContent = modeLabels[mode] || 'Dark mode';
+    }
+}
+
+function applyAppTheme(theme) {
+    if (theme === 'oled') {
+        applyAppThemeMode('amoled', 'teal');
+    } else if (theme === 'teal') {
+        applyAppThemeMode('dark', 'teal');
+    } else if (theme === 'neon') {
+        applyAppThemeMode('dark', 'violet');
+    } else if (theme === 'cocoa') {
+        applyAppThemeMode('dark', 'cocoa');
+    } else if (theme === 'light') {
+        applyAppThemeMode('light', 'violet');
+    } else if (theme === 'system') {
+        applyAppThemeMode('system', 'violet');
+    } else {
+        applyAppThemeMode(theme);
+    }
+}
+
+// Option Picker Modal Helper
+function openAppearanceOptionPicker(title, sub, iconClass, options, currentValue, onSelect) {
+    const modal = document.getElementById('appearanceOptionPickerModal');
+    const titleEl = document.getElementById('appearancePickerTitle');
+    const subEl = document.getElementById('appearancePickerSub');
+    const iconEl = document.getElementById('appearancePickerIcon');
+    const optionsContainer = document.getElementById('appearancePickerOptions');
+    if (!modal || !optionsContainer) return;
+
+    if (titleEl) titleEl.textContent = title;
+    if (subEl) subEl.textContent = sub;
+    if (iconEl) iconEl.className = `${iconClass} feature-header-icon`;
+
+    optionsContainer.innerHTML = options.map(opt => `
+        <div class="picker-option-item ${opt.value === currentValue ? 'active' : ''}" data-val="${opt.value}">
+            <div class="picker-option-left">
+                ${opt.icon ? `<div class="picker-option-icon"><i class="${opt.icon}"></i></div>` : ''}
+                <div>
+                    <div class="picker-option-name">${opt.label}</div>
+                    ${opt.desc ? `<div class="picker-option-sub">${opt.desc}</div>` : ''}
+                </div>
+            </div>
+            <i class="fa-solid fa-check picker-check"></i>
+        </div>
+    `).join('');
+
+    optionsContainer.querySelectorAll('.picker-option-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const val = item.dataset.val;
+            onSelect(val);
+            closeModal('appearanceOptionPickerModal');
+        });
+    });
+
+    openModal('appearanceOptionPickerModal');
+}
+
+// Close appearance picker modal
+document.getElementById('appearancePickerBackdrop')?.addEventListener('click', () => closeModal('appearanceOptionPickerModal'));
+document.getElementById('closeAppearancePickerBtn')?.addEventListener('click', () => closeModal('appearanceOptionPickerModal'));
+
+function openThemeSelectionModal() {
+    const modal = document.getElementById('appearanceOptionPickerModal');
+    const titleEl = document.getElementById('appearancePickerTitle');
+    const subEl = document.getElementById('appearancePickerSub');
+    const iconEl = document.getElementById('appearancePickerIcon');
+    const optionsContainer = document.getElementById('appearancePickerOptions');
+    if (!modal || !optionsContainer) return;
+
+    if (titleEl) titleEl.textContent = 'Choose Theme';
+    if (subEl) subEl.textContent = 'Select visual mode and accent palette';
+    if (iconEl) iconEl.className = 'fa-solid fa-palette feature-header-icon';
+
+    const curMode = localStorage.getItem('vibentra_theme_mode') || 'dark';
+    const curAccent = localStorage.getItem('vibentra_theme_accent') || 'violet';
+
+    const modes = [
+        { value: 'system', label: 'Follow system', desc: "Automatically match device's system settings", icon: 'fa-solid fa-circle-half-stroke' },
+        { value: 'light', label: 'Light mode', desc: 'Crisp, modern, high-contrast light theme', icon: 'fa-solid fa-sun' },
+        { value: 'dark', label: 'Dark mode', desc: 'Deep modern navy slate dark theme', icon: 'fa-solid fa-moon' },
+        { value: 'amoled', label: 'AMOLED mode', desc: 'Pure #000000 pitch black for OLED battery saving', icon: 'fa-solid fa-bolt' }
+    ];
+
+    const accents = [
+        { id: 'violet', name: 'Neon Violet', color: '#8B5CF6' },
+        { id: 'teal', name: 'Ocean Teal', color: '#06B6D4' },
+        { id: 'cocoa', name: 'Warm Cocoa', color: '#E5A88B' },
+        { id: 'sunset', name: 'Sunset Flame', color: '#F43F5E' },
+        { id: 'emerald', name: 'Emerald', color: '#10B981' },
+        { id: 'sapphire', name: 'Royal Sapphire', color: '#3B82F6' }
+    ];
+
+    optionsContainer.innerHTML = `
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Theme Mode:</div>
+        ${modes.map(m => `
+            <div class="picker-option-item ${m.value === curMode ? 'active' : ''}" data-mode="${m.value}">
+                <div class="picker-option-left">
+                    <div class="picker-option-icon"><i class="${m.icon}"></i></div>
+                    <div>
+                        <div class="picker-option-name">${m.label}</div>
+                        <div class="picker-option-sub">${m.desc}</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-check picker-check"></i>
+            </div>
+        `).join('')}
+
+        <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); margin-top: 16px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Accent Glow Palette:</div>
+        <div class="picker-palette-grid">
+            ${accents.map(a => `
+                <button class="palette-btn ${a.id === curAccent ? 'active' : ''}" data-accent="${a.id}">
+                    <span class="picker-swatch" style="background:${a.color};"></span>
+                    <span>${a.name}</span>
+                </button>
+            `).join('')}
+        </div>
+    `;
+
+    optionsContainer.querySelectorAll('[data-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mode = btn.dataset.mode;
+            applyAppThemeMode(mode, localStorage.getItem('vibentra_theme_accent') || 'violet');
+            showNotification(`Applied ${mode === 'system' ? 'Follow System' : mode.toUpperCase() + ' mode'} theme! 🎨`, 'success');
+            closeModal('appearanceOptionPickerModal');
+        });
+    });
+
+    optionsContainer.querySelectorAll('[data-accent]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const acc = btn.dataset.accent;
+            applyAppThemeMode(localStorage.getItem('vibentra_theme_mode') || 'dark', acc);
+            optionsContainer.querySelectorAll('[data-accent]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            showNotification(`Applied ${btn.textContent.trim()} accent! 🎨`, 'success');
+        });
+    });
+
+    openModal('appearanceOptionPickerModal');
+}
+
+// =========================================================
+// APPEARANCE LIVE CONTROLLERS & INITIALIZATION
+// =========================================================
+function setLegacyIcon(enabled) {
+    localStorage.setItem('vibentra_legacy_icon', enabled);
+    document.querySelectorAll('.brand-logo-img, .sheet-brand-logo-img, .splash-logo-img').forEach(img => {
+        if (enabled) {
+            img.style.filter = 'hue-rotate(190deg) saturate(1.8) brightness(1.2)';
+        } else {
+            img.style.filter = '';
+        }
+    });
+}
+
+function setLiquidGlass(enabled) {
+    localStorage.setItem('vibentra_liquid_glass', enabled);
+    document.body.classList.toggle('disable-glass', !enabled);
+}
+
+function setHighRefresh(enabled) {
+    localStorage.setItem('vibentra_high_refresh', enabled);
+    document.body.classList.toggle('high-refresh', enabled);
+}
+
+function setMiniBgStyle(style) {
+    localStorage.setItem('vibentra_mini_bg_style', style);
+    const mini = document.getElementById('floatingMiniPlayer');
+    if (mini) {
+        if (style === 'Solid') {
+            mini.style.background = 'var(--bg-surface)';
+            mini.style.backdropFilter = 'none';
+        } else if (style === 'Blurred') {
+            mini.style.background = 'rgba(15, 20, 30, 0.7)';
+            mini.style.backdropFilter = 'blur(30px)';
+        } else if (style === 'Transparent') {
+            mini.style.background = 'transparent';
+            mini.style.backdropFilter = 'none';
+            mini.style.border = '1px solid var(--app-border)';
+        } else {
+            mini.style.background = '';
+            mini.style.backdropFilter = '';
+            mini.style.border = '';
+        }
+    }
+}
+
+function setAppleMusic(enabled) {
+    localStorage.setItem('vibentra_apple_music_mode', enabled);
+    const fullPlayer = document.getElementById('fullPlayerScreen');
+    if (fullPlayer) fullPlayer.classList.toggle('apple-music-player-mode', enabled);
+}
+
+function setPlayerBgStyle(style) {
+    localStorage.setItem('vibentra_player_bg_style', style);
+    const fullPlayer = document.getElementById('fullPlayerScreen');
+    if (fullPlayer) {
+        fullPlayer.classList.remove('player-bg-gradient', 'player-bg-solid', 'player-bg-fluid');
+        if (style === 'Solid') fullPlayer.classList.add('player-bg-solid');
+        else if (style === 'Fluid Mesh') fullPlayer.classList.add('player-bg-fluid');
+        else fullPlayer.classList.add('player-bg-gradient');
+    }
+}
+
+function setHideThumbnail(enabled) {
+    localStorage.setItem('vibentra_hide_thumbnail', enabled);
+    const cover = document.getElementById('fullPlayerCover');
+    const fallback = document.getElementById('fullPlayerLogoFallback');
+    if (cover) cover.style.display = enabled ? 'none' : 'block';
+    if (fallback) fallback.style.display = enabled ? 'flex' : 'none';
+}
+
+function setThumbRadius(radius) {
+    localStorage.setItem('vibentra_thumbnail_radius', radius);
+    const fullPlayer = document.getElementById('fullPlayerScreen');
+    if (fullPlayer) {
+        fullPlayer.classList.remove('thumb-radius-3', 'thumb-radius-8', 'thumb-radius-16', 'thumb-radius-24', 'thumb-radius-circle');
+        const map = { '3dp': 'thumb-radius-3', '8dp': 'thumb-radius-8', '16dp': 'thumb-radius-16', '24dp': 'thumb-radius-24', 'Circular': 'thumb-radius-circle' };
+        fullPlayer.classList.add(map[radius] || 'thumb-radius-3');
+    }
+}
+
+function setCropAlbumArt(enabled) {
+    localStorage.setItem('vibentra_crop_album_art', enabled);
+    const cover = document.getElementById('fullPlayerCover');
+    if (cover) cover.style.objectFit = enabled ? 'cover' : 'contain';
+}
+
+function setPlayerBtnColors(style) {
+    localStorage.setItem('vibentra_player_button_colors', style);
+    const ctrlRow = document.querySelector('.full-player-controls-row');
+    if (ctrlRow) {
+        ctrlRow.classList.remove('player-btns-accent', 'player-btns-mono');
+        if (style === 'Theme Accent') ctrlRow.classList.add('player-btns-accent');
+        else if (style === 'Monochrome') ctrlRow.classList.add('player-btns-mono');
+    }
+}
+
+function setSliderStyle(style) {
+    localStorage.setItem('vibentra_player_slider_style', style);
+    const progressWrapper = document.querySelector('.full-player-progress-container');
+    if (progressWrapper) {
+        progressWrapper.classList.remove('slider-slim', 'slider-thick', 'slider-bubble');
+        if (style === 'Thick') progressWrapper.classList.add('slider-thick');
+        else if (style === 'Waveform Bubble') progressWrapper.classList.add('slider-bubble');
+        else progressWrapper.classList.add('slider-slim');
+    }
+}
+
+function setRotatingThumb(enabled) {
+    localStorage.setItem('vibentra_rotating_thumbnail', enabled);
+    const cover = document.getElementById('fullPlayerCover');
+    if (cover) {
+        if (enabled && typeof isPlaying !== 'undefined' && isPlaying) {
+            cover.classList.add('vinyl-spinning');
+            cover.classList.remove('paused');
+        } else {
+            cover.classList.remove('vinyl-spinning', 'paused');
+        }
+    }
+}
+
+function setShowComment(enabled) {
+    localStorage.setItem('vibentra_show_comment_btn', enabled);
+    const btn = document.getElementById('toolCommentBtn');
+    if (btn) btn.style.display = enabled ? 'inline-flex' : 'none';
+}
+
+function setShowCodec(enabled) {
+    localStorage.setItem('vibentra_show_codec', enabled);
+    const badge = document.getElementById('playerCodecBadge');
+    if (badge) badge.style.display = enabled ? 'inline-flex' : 'none';
+}
+
+function setLyricsPosition(pos) {
+    localStorage.setItem('vibentra_lyrics_position', pos);
+    const container = document.getElementById('lyricsContainer');
+    if (container) {
+        container.classList.remove('lyrics-pos-left', 'lyrics-pos-center', 'lyrics-pos-right');
+        container.classList.add(`lyrics-pos-${pos.toLowerCase()}`);
+    }
+}
+
+function setGlowingLyrics(enabled) {
+    localStorage.setItem('vibentra_glowing_lyrics', enabled);
+    const container = document.getElementById('lyricsContainer');
+    if (container) container.classList.toggle('glowing-lyrics-effect', enabled);
+}
+
+function setAppleLyricsBlur(enabled) {
+    localStorage.setItem('vibentra_apple_lyrics_blur', enabled);
+    const container = document.getElementById('lyricsContainer');
+    if (container) container.classList.toggle('apple-lyrics-blur', enabled);
+}
+
+function setStdLyricsBlur(enabled) {
+    localStorage.setItem('vibentra_standard_lyrics_blur', enabled);
+    const container = document.getElementById('lyricsContainer');
+    if (container) container.classList.toggle('standard-lyrics-blur', enabled);
+}
+
+function setLyricsSize(size) {
+    localStorage.setItem('vibentra_lyrics_size', size);
+    const container = document.getElementById('lyricsContainer');
+    if (container) {
+        container.classList.remove('lyrics-size-20', 'lyrics-size-24', 'lyrics-size-28', 'lyrics-size-32');
+        const num = size.split(' ')[0];
+        container.classList.add(`lyrics-size-${num}`);
+    }
+}
+
+function setLyricsSpacing(spacing) {
+    localStorage.setItem('vibentra_lyrics_spacing', spacing);
+    const container = document.getElementById('lyricsContainer');
+    if (container) {
+        container.classList.remove('lyrics-space-11', 'lyrics-space-13', 'lyrics-space-15', 'lyrics-space-18');
+        const key = spacing.replace('.', '').replace('x', '');
+        container.classList.add(`lyrics-space-${key}`);
+    }
+}
+
+function setupSwipeGestures() {
+    [document.getElementById('fullPlayerScreen'), document.getElementById('floatingMiniPlayer')].forEach(el => {
+        if (!el) return;
+        let startX = 0;
+        let startY = 0;
+        el.addEventListener('touchstart', (e) => {
+            if (!e.changedTouches || !e.changedTouches[0]) return;
+            startX = e.changedTouches[0].screenX;
+            startY = e.changedTouches[0].screenY;
+        }, { passive: true });
+        el.addEventListener('touchend', (e) => {
+            if (!e.changedTouches || !e.changedTouches[0]) return;
+            if (localStorage.getItem('vibentra_swipe_change_song') === 'false') return;
+            const diffX = e.changedTouches[0].screenX - startX;
+            const diffY = e.changedTouches[0].screenY - startY;
+            if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+                if (diffX < 0) {
+                    if (typeof playNextTrack === 'function') playNextTrack();
+                } else {
+                    if (typeof playPrevTrack === 'function') playPrevTrack();
+                }
+            }
+        }, { passive: true });
+    });
+}
+
+function initAppearanceSettings() {
+    // 1. Theme
+    applyAppThemeMode(
+        localStorage.getItem('vibentra_theme_mode') || 'dark',
+        localStorage.getItem('vibentra_theme_accent') || 'violet'
+    );
+
+    // 2. Icon & visual filters
+    setLegacyIcon(localStorage.getItem('vibentra_legacy_icon') === 'true');
+    setLiquidGlass(localStorage.getItem('vibentra_liquid_glass') !== 'false');
+    setHighRefresh(localStorage.getItem('vibentra_high_refresh') !== 'false');
+
+    // 3. Mini-player & Player
+    setMiniBgStyle(localStorage.getItem('vibentra_mini_bg_style') || 'Liquid Glass');
+    setAppleMusic(localStorage.getItem('vibentra_apple_music_mode') === 'true');
+    setPlayerBgStyle(localStorage.getItem('vibentra_player_bg_style') || 'Gradient');
+    setHideThumbnail(localStorage.getItem('vibentra_hide_thumbnail') === 'true');
+    setThumbRadius(localStorage.getItem('vibentra_thumbnail_radius') || '3dp');
+    setCropAlbumArt(localStorage.getItem('vibentra_crop_album_art') === 'true');
+    setPlayerBtnColors(localStorage.getItem('vibentra_player_button_colors') || 'Default');
+    setSliderStyle(localStorage.getItem('vibentra_player_slider_style') || 'Slim');
+    setRotatingThumb(localStorage.getItem('vibentra_rotating_thumbnail') === 'true');
+    setShowComment(localStorage.getItem('vibentra_show_comment_btn') === 'true');
+    setShowCodec(localStorage.getItem('vibentra_show_codec') === 'true');
+
+    // 4. Lyrics
+    setLyricsPosition(localStorage.getItem('vibentra_lyrics_position') || 'Left');
+    setGlowingLyrics(localStorage.getItem('vibentra_glowing_lyrics') === 'true');
+    setAppleLyricsBlur(localStorage.getItem('vibentra_apple_lyrics_blur') !== 'false');
+    setStdLyricsBlur(localStorage.getItem('vibentra_standard_lyrics_blur') === 'true');
+    setLyricsSize(localStorage.getItem('vibentra_lyrics_size') || '24 sp');
+    setLyricsSpacing(localStorage.getItem('vibentra_lyrics_spacing') || '1.3x');
+
+    // 5. Gestures
+    setupSwipeGestures();
+}
+
+// Call on startup
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAppearanceSettings);
+} else {
+    initAppearanceSettings();
 }
 
 async function openSettingsCategoryDetail(id, title) {
@@ -896,72 +1331,796 @@ async function openSettingsCategoryDetail(id, title) {
         });
 
     } else if (id === 'appearance') {
-        const curTheme = localStorage.getItem('vibentra_theme') || 'cocoa';
-        const visEnabled = localStorage.getItem('vibentra_vis_enabled') !== 'false';
-        const capsuleNav = localStorage.getItem('vibentra_capsule_nav') !== 'false';
+        const curMode = localStorage.getItem('vibentra_theme_mode') || 'dark';
+        const modeLabels = { 'system': 'Follow system', 'light': 'Light mode', 'dark': 'Dark mode', 'amoled': 'AMOLED mode' };
+        const themeSubText = modeLabels[curMode] || 'Dark mode';
+
+        const legacyIcon = localStorage.getItem('vibentra_legacy_icon') === 'true';
+        const liquidGlass = localStorage.getItem('vibentra_liquid_glass') !== 'false';
+        const highRefresh = localStorage.getItem('vibentra_high_refresh') !== 'false';
+        const dynamicTheme = localStorage.getItem('vibentra_dynamic_theme') !== 'false';
+
+        const miniBgStyle = localStorage.getItem('vibentra_mini_bg_style') || 'Liquid Glass';
+        const appleMusic = localStorage.getItem('vibentra_apple_music_mode') === 'true';
+        const playerBgStyle = localStorage.getItem('vibentra_player_bg_style') || 'Gradient';
+        const hideThumb = localStorage.getItem('vibentra_hide_thumbnail') === 'true';
+        const thumbRadius = localStorage.getItem('vibentra_thumbnail_radius') || '3dp';
+        const cropArt = localStorage.getItem('vibentra_crop_album_art') === 'true';
+        const playerBtnColor = localStorage.getItem('vibentra_player_button_colors') || 'Default';
+        const sliderStyle = localStorage.getItem('vibentra_player_slider_style') || 'Slim';
+        const swipeSong = localStorage.getItem('vibentra_swipe_change_song') !== 'false';
+        const canvas = localStorage.getItem('vibentra_canvas') === 'true';
+        const rotatingThumb = localStorage.getItem('vibentra_rotating_thumbnail') === 'true';
+        const showComment = localStorage.getItem('vibentra_show_comment_btn') === 'true';
+        const showCodec = localStorage.getItem('vibentra_show_codec') === 'true';
+        const swipeSens = localStorage.getItem('vibentra_mini_swipe_sensitivity') || '73%';
+
+        const lyricsPos = localStorage.getItem('vibentra_lyrics_position') || 'Left';
+        const wordAnim = localStorage.getItem('vibentra_word_anim_style') || 'Vivi Music (Fluid)';
+        const glowingLyrics = localStorage.getItem('vibentra_glowing_lyrics') === 'true';
+        const appleLyricsBlur = localStorage.getItem('vibentra_apple_lyrics_blur') !== 'false';
+        const stdLyricsBlur = localStorage.getItem('vibentra_standard_lyrics_blur') === 'true';
+        const lyricsSize = localStorage.getItem('vibentra_lyrics_size') || '24 sp';
+        const lyricsSpacing = localStorage.getItem('vibentra_lyrics_spacing') || '1.3x';
+        const lyricsClick = localStorage.getItem('vibentra_change_lyrics_click') !== 'false';
+
+        const autoLiked = localStorage.getItem('vibentra_auto_pl_liked') !== 'false';
+        const autoDownloaded = localStorage.getItem('vibentra_auto_pl_downloaded') !== 'false';
+        const autoExported = localStorage.getItem('vibentra_auto_pl_exported') !== 'false';
+        const autoTop = localStorage.getItem('vibentra_auto_pl_top') !== 'false';
+        const autoCached = localStorage.getItem('vibentra_auto_pl_cached') !== 'false';
 
         settingsDetailBody.innerHTML = `
-            <div class="settings-sub-card">
-                <div class="settings-card-header">
-                    <i class="fa-solid fa-palette"></i>
-                    <div>
-                        <div class="settings-card-title">Theme Palette</div>
-                        <div class="settings-card-desc">Select your visual background aesthetic</div>
+            <div class="appearance-container">
+                <!-- 1. THEME SECTION -->
+                <div class="appearance-section-title">Theme</div>
+                <div class="appearance-card-group">
+                    <!-- Legacy Icon -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-circle-dot"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Legacy Icon</div>
+                                <div class="appearance-sub">Revert the app icon back to the original legacy design</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkLegacyIcon" ${legacyIcon ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
                     </div>
-                </div>
-                <div class="settings-pill-group" id="appearanceThemesList">
-                    <button class="settings-choice-pill ${curTheme === 'cocoa' ? 'active' : ''}" data-t="cocoa"><span class="theme-swatch" style="background:#1C1512;"></span> Warm Cocoa</button>
-                    <button class="settings-choice-pill ${curTheme === 'teal' ? 'active' : ''}" data-t="teal"><span class="theme-swatch" style="background:#07151D;"></span> Midnight Teal</button>
-                    <button class="settings-choice-pill ${curTheme === 'oled' ? 'active' : ''}" data-t="oled"><span class="theme-swatch" style="background:#000000;"></span> OLED Pure Black</button>
-                    <button class="settings-choice-pill ${curTheme === 'neon' ? 'active' : ''}" data-t="neon"><span class="theme-swatch" style="background:#0F0C1E;"></span> Cyberpunk Violet</button>
-                </div>
-            </div>
 
-            <div class="settings-sub-card">
-                <div class="settings-card-header">
-                    <i class="fa-solid fa-chart-simple"></i>
-                    <div>
-                        <div class="settings-card-title">Dynamic UI Elements</div>
-                        <div class="settings-card-desc">Configure animations and capsule floating bar</div>
+                    <!-- Theme Selector -->
+                    <div class="appearance-row clickable" id="rowThemeMode">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-palette"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Theme</div>
+                                <div class="appearance-sub" id="appearanceCurrentThemeSub">${themeSubText}</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
+                    </div>
+
+                    <!-- Liquid Glass (Beta) -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-droplet"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Liquid Glass (Beta)</div>
+                                <div class="appearance-sub">Liquid Glass (Beta)</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkLiquidGlass" ${liquidGlass ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Enable high refresh rate -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-gauge-high"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Enable high refresh rate</div>
+                                <div class="appearance-sub">Force the display to run at the highest supported refresh rate (e.g. 120Hz)</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkHighRefresh" ${highRefresh ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Enable dynamic theme -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Enable dynamic theme</div>
+                                <div class="appearance-sub">Enable or disable dynamic theme</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkDynamicTheme" ${dynamicTheme ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
                     </div>
                 </div>
-                <div class="settings-data-row">
-                    <span class="settings-data-label">Audio Waveform Visualizer</span>
-                    <label class="sheet-switch">
-                        <input type="checkbox" id="chkVisAnim" ${visEnabled ? 'checked' : ''}>
-                        <span class="sheet-slider"></span>
-                    </label>
+
+                <!-- 2. MINI-PLAYER SECTION -->
+                <div class="appearance-section-title">Mini-player</div>
+                <div class="appearance-card-group">
+                    <div class="appearance-row clickable" id="rowMiniPlayerBg">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-regular fa-window-maximize"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Mini-player background style</div>
+                                <div class="appearance-sub" id="valMiniPlayerBg">${miniBgStyle}</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
+                    </div>
                 </div>
-                <div class="settings-data-row">
-                    <span class="settings-data-label">Floating Capsule Bottom Bar</span>
-                    <label class="sheet-switch">
-                        <input type="checkbox" id="chkCapsuleBar" ${capsuleNav ? 'checked' : ''}>
-                        <span class="sheet-slider"></span>
-                    </label>
+
+                <!-- 3. PLAYER SECTION -->
+                <div class="appearance-section-title">Player</div>
+                <div class="appearance-card-group">
+                    <!-- Apple Music Inspired -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-regular fa-comment-dots"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Apple Music Inspired</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkAppleMusic" ${appleMusic ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Player background style -->
+                    <div class="appearance-row clickable" id="rowPlayerBg">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-table-cells"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Player background style</div>
+                                <div class="appearance-sub" id="valPlayerBg">${playerBgStyle}</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
+                    </div>
+
+                    <!-- Hide Player Thumbnail -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-regular fa-eye-slash"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Hide Player Thumbnail</div>
+                                <div class="appearance-sub">Replace album artwork with app logo in player</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkHideThumbnail" ${hideThumb ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Thumbnail Corner Radius -->
+                    <div class="appearance-row clickable" id="rowThumbRadius">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-regular fa-image"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Thumbnail Corner Radius</div>
+                                <div class="appearance-sub">Change the corner radius of the album cover thumbnail</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-val" id="valThumbRadius">${thumbRadius}</div>
+                    </div>
+
+                    <!-- Crop Album Art -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-crop-simple"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Crop Album Art</div>
+                                <div class="appearance-sub">Force a square aspect ratio by cropping video thumbnails</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkCropArt" ${cropArt ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Player button colors -->
+                    <div class="appearance-row clickable" id="rowPlayerBtnColors">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-palette"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Player button colors</div>
+                                <div class="appearance-sub" id="valPlayerBtnColors">${playerBtnColor}</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
+                    </div>
+
+                    <!-- Player slider style -->
+                    <div class="appearance-row clickable" id="rowPlayerSliderStyle">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-sliders"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Player slider style</div>
+                                <div class="appearance-sub" id="valPlayerSliderStyle">${sliderStyle}</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
+                    </div>
+
+                    <!-- Enable swipe to change song -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-arrows-left-right"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Enable swipe to change song</div>
+                                <div class="appearance-sub">Enable or disable swipe to change song</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkSwipeSong" ${swipeSong ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Canvas -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-crop"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Canvas</div>
+                                <div class="appearance-sub">Show animated album covers when available</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkCanvas" ${canvas ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Rotating thumbnail -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-regular fa-circle-play"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Rotating thumbnail</div>
+                                <div class="appearance-sub">Enable a rotating thumbnail animation effect</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkRotatingThumb" ${rotatingThumb ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Show comment button -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-regular fa-comment"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Show comment button</div>
+                                <div class="appearance-sub">Show a button to view comments in the player queue</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkShowComment" ${showComment ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Show codec on player -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-circle-info"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Show codec on player</div>
+                                <div class="appearance-sub">Display audio codec information below the timeline</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkShowCodec" ${showCodec ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Mini player swipe sensitivity -->
+                    <div class="appearance-row clickable" id="rowSwipeSensitivity">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-sliders"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Mini player swipe sensitivity</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-val" id="valSwipeSensitivity">${swipeSens}</div>
+                    </div>
+                </div>
+
+                <!-- 4. LYRICS SECTION -->
+                <div class="appearance-section-title">Lyrics</div>
+                <div class="appearance-card-group">
+                    <!-- Lyrics text position -->
+                    <div class="appearance-row clickable" id="rowLyricsPosition">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Lyrics text position</div>
+                                <div class="appearance-sub" id="valLyricsPosition">${lyricsPos}</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
+                    </div>
+
+                    <!-- Word-by-word animation style -->
+                    <div class="appearance-row clickable" id="rowWordAnim">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Word-by-word animation style</div>
+                                <div class="appearance-sub" id="valWordAnim">${wordAnim}</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
+                    </div>
+
+                    <!-- Enable glowing lyrics effect -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Enable glowing lyrics effect</div>
+                                <div class="appearance-sub">Add glowing animation and bounce effect to active lyrics</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkGlowingLyrics" ${glowingLyrics ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Apple Music Lyrics Blur -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Apple Music Lyrics Blur</div>
+                                <div class="appearance-sub">Apply blur to inactive lyrics lines for a premium focus effect</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkAppleLyricsBlur" ${appleLyricsBlur ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Standard lyrics blur -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Standard lyrics blur</div>
+                                <div class="appearance-sub">Apply blur to inactive lyrics lines for a premium focus effect</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkStdLyricsBlur" ${stdLyricsBlur ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Lyrics text size -->
+                    <div class="appearance-row clickable" id="rowLyricsSize">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Lyrics text size</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-val" id="valLyricsSize">${lyricsSize}</div>
+                    </div>
+
+                    <!-- Lyrics line spacing -->
+                    <div class="appearance-row clickable" id="rowLyricsSpacing">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Lyrics line spacing</div>
+                            </div>
+                        </div>
+                        <div class="appearance-row-val" id="valLyricsSpacing">${lyricsSpacing}</div>
+                    </div>
+
+                    <!-- Change lyrics on click -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-bars-staggered"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Change lyrics on click</div>
+                                <div class="appearance-sub">Adjust change lyrics on click</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkLyricsClick" ${lyricsClick ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 5. AUTO PLAYLISTS SECTION -->
+                <div class="appearance-section-title">Auto playlists</div>
+                <div class="appearance-card-group">
+                    <!-- Show Liked playlist -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-heart"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Show "Liked" playlist</div>
+                                <div class="appearance-sub">Show or hide Liked playlist</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkAutoLiked" ${autoLiked ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Show Downloaded playlist -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-circle-down"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Show "Downloaded" playlist</div>
+                                <div class="appearance-sub">Show or hide Downloaded playlist</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkAutoDownloaded" ${autoDownloaded ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Exported -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-download"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Exported</div>
+                                <div class="appearance-sub">Manage Exported settings</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkAutoExported" ${autoExported ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Show Top playlist -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Show "Top" playlist</div>
+                                <div class="appearance-sub">Show or hide Top playlist</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkAutoTop" ${autoTop ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Show Cached playlist -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-rotate"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Show "Cached" playlist</div>
+                                <div class="appearance-sub">Show or hide Cached playlist</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkAutoCached" ${autoCached ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
         `;
 
-        document.querySelectorAll('#appearanceThemesList .settings-choice-pill').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('#appearanceThemesList .settings-choice-pill').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const t = btn.dataset.t;
-                localStorage.setItem('vibentra_theme', t);
-                applyAppTheme(t);
-                showNotification(`Applied ${btn.textContent.trim()} theme! 🎨`, "success");
+        // Wire Theme mode click
+        document.getElementById('rowThemeMode')?.addEventListener('click', openThemeSelectionModal);
+
+        // Wire Legacy Icon toggle
+        document.getElementById('chkLegacyIcon')?.addEventListener('change', (e) => {
+            setLegacyIcon(e.target.checked);
+            showNotification(e.target.checked ? "Legacy Icon enabled" : "Modern Icon enabled", "success");
+        });
+
+        // Wire Liquid Glass toggle
+        document.getElementById('chkLiquidGlass')?.addEventListener('change', (e) => {
+            setLiquidGlass(e.target.checked);
+            showNotification(e.target.checked ? "Liquid Glass enabled" : "Liquid Glass disabled", "success");
+        });
+
+        // Wire High Refresh toggle
+        document.getElementById('chkHighRefresh')?.addEventListener('change', (e) => {
+            setHighRefresh(e.target.checked);
+            showNotification(e.target.checked ? "120Hz smooth scrolling enabled" : "Standard refresh rate", "success");
+        });
+
+        // Wire Dynamic Theme toggle
+        document.getElementById('chkDynamicTheme')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_dynamic_theme', e.target.checked);
+            showNotification(e.target.checked ? "Dynamic artwork colors active" : "Dynamic theme disabled", "success");
+        });
+
+        // Wire Mini-player background style selector
+        document.getElementById('rowMiniPlayerBg')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_mini_bg_style') || 'Liquid Glass';
+            const options = [
+                { value: 'Liquid Glass', label: 'Liquid Glass', desc: 'Frosted translucent backdrop blur', icon: 'fa-solid fa-droplet' },
+                { value: 'Solid', label: 'Solid', desc: 'Opaque card surface matching active theme', icon: 'fa-solid fa-square' },
+                { value: 'Blurred', label: 'Blurred', desc: 'Deep gaussian ambient blur', icon: 'fa-solid fa-eye-slash' },
+                { value: 'Transparent', label: 'Transparent', desc: 'Minimal floating capsule outline', icon: 'fa-regular fa-circle' }
+            ];
+            openAppearanceOptionPicker('Mini-player background style', 'Select capsule appearance', 'fa-regular fa-window-maximize', options, cur, (val) => {
+                setMiniBgStyle(val);
+                const el = document.getElementById('valMiniPlayerBg');
+                if (el) el.textContent = val;
+                showNotification(`Mini-player set to ${val}`, "success");
             });
         });
 
-        document.getElementById('chkVisAnim')?.addEventListener('change', (e) => {
-            localStorage.setItem('vibentra_vis_enabled', e.target.checked);
-            showNotification(e.target.checked ? "Visualizer enabled" : "Visualizer disabled", "success");
+        // Wire Apple Music toggle
+        document.getElementById('chkAppleMusic')?.addEventListener('change', (e) => {
+            setAppleMusic(e.target.checked);
+            showNotification(e.target.checked ? "Apple Music layout active" : "Default player layout", "success");
         });
 
-        document.getElementById('chkCapsuleBar')?.addEventListener('change', (e) => {
-            localStorage.setItem('vibentra_capsule_nav', e.target.checked);
-            const nav = document.getElementById('globalBottomNav');
-            if (nav) nav.style.display = e.target.checked ? 'flex' : 'none';
+        // Wire Player Background Style selector
+        document.getElementById('rowPlayerBg')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_player_bg_style') || 'Gradient';
+            const options = [
+                { value: 'Gradient', label: 'Gradient', desc: 'Smooth dark ambient gradient', icon: 'fa-solid fa-fill-drip' },
+                { value: 'Solid', label: 'Solid', desc: 'Clean uniform dark background', icon: 'fa-solid fa-square' },
+                { value: 'Fluid Mesh', label: 'Fluid Mesh', desc: 'Dynamic glowing radial mesh', icon: 'fa-solid fa-water' }
+            ];
+            openAppearanceOptionPicker('Player background style', 'Select full player backdrop', 'fa-solid fa-table-cells', options, cur, (val) => {
+                setPlayerBgStyle(val);
+                const el = document.getElementById('valPlayerBg');
+                if (el) el.textContent = val;
+                showNotification(`Player background set to ${val}`, "success");
+            });
+        });
+
+        // Wire Hide Thumbnail toggle
+        document.getElementById('chkHideThumbnail')?.addEventListener('change', (e) => {
+            setHideThumbnail(e.target.checked);
+            showNotification(e.target.checked ? "Thumbnail hidden (Brand Logo shown)" : "Album artwork shown", "success");
+        });
+
+        // Wire Thumbnail Corner Radius selector
+        document.getElementById('rowThumbRadius')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_thumbnail_radius') || '3dp';
+            const options = [
+                { value: '3dp', label: '3dp (Default)', desc: 'Subtle soft rounded corners', icon: 'fa-regular fa-square' },
+                { value: '8dp', label: '8dp', desc: 'Smooth medium curvature', icon: 'fa-regular fa-square' },
+                { value: '16dp', label: '16dp', desc: 'Modern high curve aesthetic', icon: 'fa-regular fa-square' },
+                { value: '24dp', label: '24dp', desc: 'Large fluid rounded edges', icon: 'fa-regular fa-square' },
+                { value: 'Circular', label: 'Circular (50%)', desc: 'Vinyl disc circular thumbnail', icon: 'fa-regular fa-circle' }
+            ];
+            openAppearanceOptionPicker('Thumbnail Corner Radius', 'Choose artwork curvature', 'fa-regular fa-image', options, cur, (val) => {
+                setThumbRadius(val);
+                const el = document.getElementById('valThumbRadius');
+                if (el) el.textContent = val;
+                showNotification(`Corner radius set to ${val}`, "success");
+            });
+        });
+
+        // Wire Crop Album Art toggle
+        document.getElementById('chkCropArt')?.addEventListener('change', (e) => {
+            setCropAlbumArt(e.target.checked);
+            showNotification(e.target.checked ? "Album art cropped to 1:1 square" : "Original aspect ratio preserved", "success");
+        });
+
+        // Wire Player Button Colors selector
+        document.getElementById('rowPlayerBtnColors')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_player_button_colors') || 'Default';
+            const options = [
+                { value: 'Default', label: 'Default', desc: 'Standard white playback controls', icon: 'fa-solid fa-circle' },
+                { value: 'Theme Accent', label: 'Theme Accent', desc: 'Buttons tinted with your active accent', icon: 'fa-solid fa-palette' },
+                { value: 'Monochrome', label: 'Monochrome', desc: 'Clean slate minimal tones', icon: 'fa-solid fa-moon' }
+            ];
+            openAppearanceOptionPicker('Player button colors', 'Select control button colors', 'fa-solid fa-palette', options, cur, (val) => {
+                setPlayerBtnColors(val);
+                const el = document.getElementById('valPlayerBtnColors');
+                if (el) el.textContent = val;
+                showNotification(`Button colors set to ${val}`, "success");
+            });
+        });
+
+        // Wire Player Slider Style selector
+        document.getElementById('rowPlayerSliderStyle')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_player_slider_style') || 'Slim';
+            const options = [
+                { value: 'Slim', label: 'Slim (Default)', desc: 'Ultra-sleek minimal seek bar', icon: 'fa-solid fa-minus' },
+                { value: 'Thick', label: 'Thick', desc: 'Bold easy-to-grab progress bar', icon: 'fa-solid fa-bars' },
+                { value: 'Waveform Bubble', label: 'Waveform Bubble', desc: 'Rounded pill shape slider', icon: 'fa-solid fa-capsules' }
+            ];
+            openAppearanceOptionPicker('Player slider style', 'Select timeline seekbar thickness', 'fa-solid fa-sliders', options, cur, (val) => {
+                setSliderStyle(val);
+                const el = document.getElementById('valPlayerSliderStyle');
+                if (el) el.textContent = val;
+                showNotification(`Slider style set to ${val}`, "success");
+            });
+        });
+
+        // Wire Swipe Song toggle
+        document.getElementById('chkSwipeSong')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_swipe_change_song', e.target.checked);
+            showNotification(e.target.checked ? "Swipe gesture enabled" : "Swipe gesture disabled", "success");
+        });
+
+        // Wire Canvas toggle
+        document.getElementById('chkCanvas')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_canvas', e.target.checked);
+            showNotification(e.target.checked ? "Animated canvas enabled" : "Canvas disabled", "success");
+        });
+
+        // Wire Rotating Thumbnail toggle
+        document.getElementById('chkRotatingThumb')?.addEventListener('change', (e) => {
+            setRotatingThumb(e.target.checked);
+            showNotification(e.target.checked ? "Rotating vinyl album art active 💿" : "Rotating animation disabled", "success");
+        });
+
+        // Wire Show Comment Button toggle
+        document.getElementById('chkShowComment')?.addEventListener('change', (e) => {
+            setShowComment(e.target.checked);
+            showNotification(e.target.checked ? "Comment button displayed in player" : "Comment button hidden", "success");
+        });
+
+        // Wire Show Codec toggle
+        document.getElementById('chkShowCodec')?.addEventListener('change', (e) => {
+            setShowCodec(e.target.checked);
+            showNotification(e.target.checked ? "Audio codec badge displayed" : "Codec badge hidden", "success");
+        });
+
+        // Wire Swipe Sensitivity selector
+        document.getElementById('rowSwipeSensitivity')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_mini_swipe_sensitivity') || '73%';
+            const options = [
+                { value: '50%', label: '50% (High Sensitivity)', desc: 'Reacts to small finger swipes', icon: 'fa-solid fa-gauge-simple-high' },
+                { value: '73%', label: '73% (Default)', desc: 'Balanced natural swipe threshold', icon: 'fa-solid fa-gauge' },
+                { value: '80%', label: '80% (Firm Swipe)', desc: 'Requires deliberate swipe gestures', icon: 'fa-solid fa-gauge-simple' },
+                { value: '100%', label: '100% (Strict)', desc: 'Requires full across-screen swipe', icon: 'fa-solid fa-lock' }
+            ];
+            openAppearanceOptionPicker('Mini player swipe sensitivity', 'Adjust swipe gesture trigger', 'fa-solid fa-sliders', options, cur, (val) => {
+                localStorage.setItem('vibentra_mini_swipe_sensitivity', val);
+                const el = document.getElementById('valSwipeSensitivity');
+                if (el) el.textContent = val;
+                showNotification(`Sensitivity set to ${val}`, "success");
+            });
+        });
+
+        // Wire Lyrics Text Position selector
+        document.getElementById('rowLyricsPosition')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_lyrics_position') || 'Left';
+            const options = [
+                { value: 'Left', label: 'Left (Default)', desc: 'Left-aligned modern lyrics flow', icon: 'fa-solid fa-align-left' },
+                { value: 'Center', label: 'Center', desc: 'Centered poetic lyrics layout', icon: 'fa-solid fa-align-center' },
+                { value: 'Right', label: 'Right', desc: 'Right-aligned layout', icon: 'fa-solid fa-align-right' }
+            ];
+            openAppearanceOptionPicker('Lyrics text position', 'Choose lyrics text alignment', 'fa-solid fa-bars-staggered', options, cur, (val) => {
+                setLyricsPosition(val);
+                const el = document.getElementById('valLyricsPosition');
+                if (el) el.textContent = val;
+                showNotification(`Lyrics position set to ${val}`, "success");
+            });
+        });
+
+        // Wire Word-by-word animation style selector
+        document.getElementById('rowWordAnim')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_word_anim_style') || 'Vivi Music (Fluid)';
+            const options = [
+                { value: 'Vivi Music (Fluid)', label: 'Vivi Music (Fluid)', desc: 'Fluid spring physics word highlighting', icon: 'fa-solid fa-wand-magic' },
+                { value: 'Apple Music (Karaoke)', label: 'Apple Music (Karaoke)', desc: 'Continuous letter-by-letter glowing sweep', icon: 'fa-solid fa-music' },
+                { value: 'Instant Fade', label: 'Instant Fade', desc: 'Clean smooth line fade transitions', icon: 'fa-solid fa-bolt' }
+            ];
+            openAppearanceOptionPicker('Word-by-word animation style', 'Select lyrics animation fluid style', 'fa-solid fa-bars-staggered', options, cur, (val) => {
+                localStorage.setItem('vibentra_word_anim_style', val);
+                const el = document.getElementById('valWordAnim');
+                if (el) el.textContent = val;
+                showNotification(`Lyrics animation set to ${val}`, "success");
+            });
+        });
+
+        // Wire Glowing Lyrics toggle
+        document.getElementById('chkGlowingLyrics')?.addEventListener('change', (e) => {
+            setGlowingLyrics(e.target.checked);
+            showNotification(e.target.checked ? "Glowing lyrics active ✨" : "Glowing lyrics disabled", "success");
+        });
+
+        // Wire Apple Music Lyrics Blur toggle
+        document.getElementById('chkAppleLyricsBlur')?.addEventListener('change', (e) => {
+            setAppleLyricsBlur(e.target.checked);
+            showNotification(e.target.checked ? "Focus blur enabled on inactive lyrics" : "Blur disabled", "success");
+        });
+
+        // Wire Standard lyrics blur toggle
+        document.getElementById('chkStdLyricsBlur')?.addEventListener('change', (e) => {
+            setStdLyricsBlur(e.target.checked);
+            showNotification(e.target.checked ? "Standard blur active" : "Standard blur disabled", "success");
+        });
+
+        // Wire Lyrics text size selector
+        document.getElementById('rowLyricsSize')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_lyrics_size') || '24 sp';
+            const options = [
+                { value: '20 sp', label: '20 sp (Compact)', desc: 'Smaller text size showing more lines', icon: 'fa-solid fa-font' },
+                { value: '24 sp', label: '24 sp (Default)', desc: 'Balanced standard readability size', icon: 'fa-solid fa-font' },
+                { value: '28 sp', label: '28 sp (Large)', desc: 'Large prominent lyrics font', icon: 'fa-solid fa-font' },
+                { value: '32 sp', label: '32 sp (Extra Large)', desc: 'Big bold sing-along text', icon: 'fa-solid fa-font' }
+            ];
+            openAppearanceOptionPicker('Lyrics text size', 'Choose lyrics font scale', 'fa-solid fa-bars-staggered', options, cur, (val) => {
+                setLyricsSize(val);
+                const el = document.getElementById('valLyricsSize');
+                if (el) el.textContent = val;
+                showNotification(`Lyrics size set to ${val}`, "success");
+            });
+        });
+
+        // Wire Lyrics line spacing selector
+        document.getElementById('rowLyricsSpacing')?.addEventListener('click', () => {
+            const cur = localStorage.getItem('vibentra_lyrics_spacing') || '1.3x';
+            const options = [
+                { value: '1.1x', label: '1.1x (Tight)', desc: 'Compact line spacing', icon: 'fa-solid fa-arrows-up-down' },
+                { value: '1.3x', label: '1.3x (Default)', desc: 'Balanced comfortable spacing', icon: 'fa-solid fa-arrows-up-down' },
+                { value: '1.5x', label: '1.5x (Relaxed)', desc: 'Open spacious breathing room', icon: 'fa-solid fa-arrows-up-down' },
+                { value: '1.8x', label: '1.8x (Spacious)', desc: 'Maximum spacing between verses', icon: 'fa-solid fa-arrows-up-down' }
+            ];
+            openAppearanceOptionPicker('Lyrics line spacing', 'Choose vertical verse spacing', 'fa-solid fa-bars-staggered', options, cur, (val) => {
+                setLyricsSpacing(val);
+                const el = document.getElementById('valLyricsSpacing');
+                if (el) el.textContent = val;
+                showNotification(`Lyrics spacing set to ${val}`, "success");
+            });
+        });
+
+        // Wire Change lyrics on click toggle
+        document.getElementById('chkLyricsClick')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_change_lyrics_click', e.target.checked);
+            showNotification(e.target.checked ? "Clicking a lyric seeks audio ⏱️" : "Seek on click disabled", "success");
+        });
+
+        // Wire Auto Playlists toggles
+        document.getElementById('chkAutoLiked')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_auto_pl_liked', e.target.checked);
+            showNotification(e.target.checked ? "Liked playlist visible in Library" : "Liked playlist hidden", "success");
+        });
+        document.getElementById('chkAutoDownloaded')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_auto_pl_downloaded', e.target.checked);
+            showNotification(e.target.checked ? "Downloaded vault visible in Library" : "Downloaded vault hidden", "success");
+        });
+        document.getElementById('chkAutoExported')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_auto_pl_exported', e.target.checked);
+            showNotification(e.target.checked ? "Exported playlists enabled" : "Exported playlists hidden", "success");
+        });
+        document.getElementById('chkAutoTop')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_auto_pl_top', e.target.checked);
+            showNotification(e.target.checked ? "Top playlist visible" : "Top playlist hidden", "success");
+        });
+        document.getElementById('chkAutoCached')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_auto_pl_cached', e.target.checked);
+            showNotification(e.target.checked ? "Cached playlist visible" : "Cached playlist hidden", "success");
         });
 
     } else if (id === 'player_audio') {
@@ -1338,7 +2497,7 @@ async function openSettingsCategoryDetail(id, title) {
 
         document.getElementById('btnExportJsonFile')?.addEventListener('click', () => {
             const data = {
-                version: "1.2.2",
+                version: "1.4.0",
                 exportedAt: new Date().toISOString(),
                 user: currentUser ? { email: currentUser.email, uid: currentUser.uid } : null,
                 playlists: getCustomPlaylists(),
@@ -1734,8 +2893,9 @@ async function fetchLivePlaylistTracks(listId, title = '') {
 
 async function fetchLiveYouTubePlaylistTracks(ytListId, title = '') {
     const pipedInstances = [
+        'https://api.piped.private.coffee',
+        'https://piped.video',
         'https://pipedapi.kavin.rocks',
-        'https://api.piped.privacy.com.de',
         'https://piped-api.lunar.icu'
     ];
     for (let inst of pipedInstances) {
@@ -1785,8 +2945,9 @@ async function fetchPlaylistTracks(playlist) {
     }
 
     // 2. If it is a Playlist with a listId or type 'playlist', fetch authentic playlist tracks
-    if (tracks.length === 0 && (playlist.listId || playlist.type === 'playlist')) {
-        const plTracks = await fetchLivePlaylistTracks(playlist.listId, playlist.title);
+    const plId = playlist.listId || playlist.id;
+    if (tracks.length === 0 && (plId || playlist.type === 'playlist')) {
+        const plTracks = await fetchLivePlaylistTracks(plId, playlist.title);
         if (plTracks && plTracks.length > 0) tracks = plTracks;
     }
 
@@ -1800,8 +2961,8 @@ async function fetchPlaylistTracks(playlist) {
 
         // Ordered list of queries to guarantee songs load
         const candidates = [
+            playlist.exactTrack ? `${cleanTitle || rawTitle} ${playlist.exactTrack.title}` : null,
             playlist.query,
-            playlist.exactTrack ? playlist.exactTrack.title : null,
             playlist.artist ? `${cleanTitle || rawTitle} ${playlist.artist}` : null,
             cleanTitle && cleanTitle.length >= 2 ? cleanTitle : null,
             rawTitle
@@ -2247,6 +3408,16 @@ function playTrack(song, playlist = []) {
     if (playerCurrentTime) playerCurrentTime.textContent = '0:00';
     if (playerTotalDuration) playerTotalDuration.textContent = song.duration || '3:30';
 
+    const hideThumb = localStorage.getItem('vibentra_hide_thumbnail') === 'true';
+    if (fullPlayerCover) fullPlayerCover.style.display = hideThumb ? 'none' : 'block';
+    const fallback = document.getElementById('fullPlayerLogoFallback');
+    if (fallback) fallback.style.display = hideThumb ? 'flex' : 'none';
+
+    const codecBadge = document.getElementById('playerCodecBadge');
+    if (codecBadge) {
+        codecBadge.textContent = (song.quality || 'FLAC 24-BIT • 96KHZ • LOSSLESS').toUpperCase();
+    }
+
     updateFavoriteButtonsUI(isSongFavorited(song.id));
     updatePlayPauseIcons(true);
     saveToListeningHistory(song);
@@ -2604,6 +3775,19 @@ function updatePlayPauseIcons(playing) {
         updateHomeWidgetPlaybackState(playing);
     }
     syncNativeAndroidWidget(null, playing);
+
+    // Live vinyl rotating thumbnail support
+    const cover = document.getElementById('fullPlayerCover');
+    if (cover) {
+        const isRotating = localStorage.getItem('vibentra_rotating_thumbnail') === 'true';
+        if (isRotating) {
+            cover.classList.add('vinyl-spinning');
+            cover.style.animationPlayState = playing ? 'running' : 'paused';
+        } else {
+            cover.classList.remove('vinyl-spinning');
+            cover.style.animationPlayState = '';
+        }
+    }
 }
 
 function togglePlayPause() {
@@ -3352,29 +4536,67 @@ async function openLyricsModal() {
     }
 
     try {
-        const cleanTitle = currentSongObj.title.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
-        const primaryArtist = currentSongObj.artist.split(',')[0].trim();
+        const cleanTitle = currentSongObj.title
+            .replace(/\([^)]*\)/g, '')
+            .replace(/\[[^\]]*\]/g, '')
+            .replace(/-\s*Single|-\s*EP|Original Motion Picture Soundtrack|Soundtrack|OST|Official|Video/gi, '')
+            .trim();
+        const primaryArtist = currentSongObj.artist.split(',')[0].split('•')[0].trim();
 
-        // 1. Try LRCLIB for synced lyrics
         let rawLyrics = null;
+        let providerName = 'None';
+        const badge = document.getElementById('lyricsProviderBadge');
+
+        // 1. Provider 1: LRCLIB Exact Match (Synced LRC)
         try {
-            const res = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(primaryArtist)}`);
+            const res = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(primaryArtist)}`, { signal: AbortSignal.timeout(3500) });
             if (res.ok) {
                 const data = await res.json();
-                rawLyrics = data?.syncedLyrics || data?.plainLyrics;
+                if (data?.syncedLyrics) {
+                    rawLyrics = data.syncedLyrics;
+                    providerName = 'LRCLIB Synced';
+                } else if (data?.plainLyrics) {
+                    rawLyrics = data.plainLyrics;
+                    providerName = 'LRCLIB Plain';
+                }
             }
         } catch (e) {
-            console.warn("LRCLIB query:", e);
+            console.warn("LRCLIB exact match:", e);
         }
 
-        // 2. Fallback to JioSaavn Lyrics API
+        // 2. Provider 2: LRCLIB Multi-Search Engine (Fuzzy Synced & Plain for regional/complex titles)
+        if (!rawLyrics) {
+            try {
+                const queryStr = `${cleanTitle} ${primaryArtist}`;
+                const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(queryStr)}`, { signal: AbortSignal.timeout(4000) });
+                if (res.ok) {
+                    const list = await res.json();
+                    if (Array.isArray(list) && list.length > 0) {
+                        const syncedItem = list.find(x => x.syncedLyrics);
+                        if (syncedItem) {
+                            rawLyrics = syncedItem.syncedLyrics;
+                            providerName = 'LRCLIB Search Synced';
+                        } else if (list[0].plainLyrics) {
+                            rawLyrics = list[0].plainLyrics;
+                            providerName = 'LRCLIB Search';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("LRCLIB fuzzy search:", e);
+            }
+        }
+
+        // 3. Provider 3: JioSaavn Official Lyrics API
         if (!rawLyrics && currentSongObj.id) {
             try {
-                const jioRes = await fetch(`https://vibentra.vercel.app/api/jiosaavn/lyrics?id=${encodeURIComponent(currentSongObj.id)}`);
+                const cleanSongId = String(currentSongObj.id).replace(/^saavn_/, '');
+                const jioRes = await fetch(`https://vibentra.vercel.app/api/jiosaavn/lyrics?id=${encodeURIComponent(cleanSongId)}`, { signal: AbortSignal.timeout(3500) });
                 if (jioRes.ok) {
                     const jioData = await jioRes.json();
                     if (jioData && jioData.lyrics) {
                         rawLyrics = jioData.lyrics;
+                        providerName = 'JioSaavn Official';
                     }
                 }
             } catch (e) {
@@ -3382,7 +4604,32 @@ async function openLyricsModal() {
             }
         }
 
+        // 4. Provider 4: Lyrics.ovh Global Library
+        if (!rawLyrics) {
+            try {
+                const ovhRes = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(primaryArtist)}/${encodeURIComponent(cleanTitle)}`, { signal: AbortSignal.timeout(3500) });
+                if (ovhRes.ok) {
+                    const ovhData = await ovhRes.json();
+                    if (ovhData && ovhData.lyrics) {
+                        rawLyrics = ovhData.lyrics;
+                        providerName = 'Lyrics.ovh Global';
+                    }
+                }
+            } catch (e) {
+                console.warn("Lyrics.ovh query:", e);
+            }
+        }
+
         if (loader) loader.style.display = 'none';
+
+        if (badge) {
+            if (rawLyrics && providerName !== 'None') {
+                badge.textContent = `✓ ${providerName}`;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
 
         if (rawLyrics) {
             parseAndRenderLyrics(rawLyrics);
@@ -3429,8 +4676,10 @@ function parseAndRenderLyrics(lrcText) {
                 el.textContent = text;
                 el.dataset.time = totalSec;
                 el.addEventListener('click', () => {
-                    audioPlayer.currentTime = totalSec;
-                    if (audioPlayer.paused) audioPlayer.play();
+                    if (localStorage.getItem('vibentra_change_lyrics_click') !== 'false') {
+                        audioPlayer.currentTime = totalSec;
+                        if (audioPlayer.paused) audioPlayer.play();
+                    }
                 });
                 linesList.appendChild(el);
                 currentLyricsLines.push({ time: totalSec, el });
@@ -4396,6 +5645,9 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
 
 function applyFilterToSearchResults(filter) {
     if (!currentSearchResults) return;
+    if (searchResultsView) {
+        searchResultsView.className = `search-results-view filter-${filter}`;
+    }
     const groups = document.querySelectorAll('.result-group');
 
     groups.forEach(group => {
@@ -4408,6 +5660,38 @@ function applyFilterToSearchResults(filter) {
             group.style.display = 'none';
         }
     });
+
+    // Check for empty state on selected filter
+    const emptyNoticeId = 'searchFilterEmptyNotice';
+    let emptyNotice = document.getElementById(emptyNoticeId);
+    if (emptyNotice) emptyNotice.remove();
+
+    let isEmpty = false;
+    let emptyMsg = '';
+    if (filter === 'videos' && (!currentSearchResults.videos || currentSearchResults.videos.length === 0)) {
+        isEmpty = true;
+        emptyMsg = 'No video tracks found for this search.';
+    } else if (filter === 'playlists' && (!currentSearchResults.playlists || currentSearchResults.playlists.length === 0)) {
+        isEmpty = true;
+        emptyMsg = 'No playlists found for this search.';
+    } else if (filter === 'songs' && (!currentSearchResults.songs || currentSearchResults.songs.length === 0)) {
+        isEmpty = true;
+        emptyMsg = 'No songs found for this search.';
+    } else if (filter === 'albums' && (!currentSearchResults.albums || currentSearchResults.albums.length === 0)) {
+        isEmpty = true;
+        emptyMsg = 'No albums found for this search.';
+    } else if (filter === 'artists' && (!currentSearchResults.artists || currentSearchResults.artists.length === 0)) {
+        isEmpty = true;
+        emptyMsg = 'No artists found for this search.';
+    }
+
+    if (isEmpty && searchResultsContent) {
+        emptyNotice = document.createElement('div');
+        emptyNotice.id = emptyNoticeId;
+        emptyNotice.style.cssText = 'text-align: center; padding: 48px 20px; color: #94A3B8; font-size: 0.95rem;';
+        emptyNotice.innerHTML = `<i class="fa-solid fa-magnifying-glass" style="font-size: 2.2rem; margin-bottom: 12px; display: block; opacity: 0.4;"></i>${emptyMsg}`;
+        searchResultsContent.appendChild(emptyNotice);
+    }
 }
 
 // E. 100% Live Multi-Source Search (JioSaavn + YouTube Music)
@@ -4428,8 +5712,8 @@ async function performLiveSearch(query) {
         const albums = allData.albums || [];
         const artists = allData.artists || ytData.artists || [];
         let rawVideos = ytData.videos || [];
-        const jioPlaylists = allData.playlists || [];
-        const ytPlaylists = ytData.playlists || [];
+        let jioPlaylists = allData.playlists || [];
+        let ytPlaylists = ytData.playlists || [];
 
         const exactSong = songs.length > 0 ? songs[0] : null;
         const topArtist = exactSong ? (exactSong.artist || 'Artist').split('•')[0].split(',')[0].trim() : query;
@@ -4471,7 +5755,7 @@ async function performLiveSearch(query) {
                 }
             ];
 
-            songs.slice(1, 4).forEach((s, idx) => {
+            songs.slice(1, 6).forEach((s, idx) => {
                 const sArtist = s.artist ? s.artist.split('•')[0].split(',')[0].trim() : 'Artist';
                 generatedVideos.push({
                     id: `yt_v_${idx + 4}_${s.id}`,
@@ -4488,70 +5772,74 @@ async function performLiveSearch(query) {
             videos = [...videos, ...generatedVideos];
         }
 
-        // Build authentic playlists guaranteed to feature the exact track
-        let playlists = [];
-
+        // Exact Match Guarantee on Videos:
+        // Video #1 must feature the exact searched song!
         if (exactSong) {
-            // 1. YouTube Music Mix: Exact searched track is at index 0!
-            playlists.push({
-                id: `ytm_mix_${Date.now()}`,
-                title: `${query.charAt(0).toUpperCase() + query.slice(1)} - YouTube Music Mix`,
-                author: `YouTube Music • Official Auto-Mix`,
-                thumbnail: exactSong.cover,
-                cover: exactSong.cover,
-                videos: `${songs.length} tracks`,
-                badge: 'YouTube Music',
-                isYouTube: true,
-                exactTrack: exactSong,
-                songs: songs
+            const baseSongName = (exactSong.title || '').split(/[-–—(]/)[0].trim().toLowerCase();
+            const exactIdx = videos.findIndex(v => {
+                if (!v.title) return false;
+                const vt = v.title.toLowerCase();
+                return vt.includes(exactSong.title.toLowerCase()) || (baseSongName.length >= 3 && vt.includes(baseSongName));
             });
-
-            // 2. Best of Artist YouTube Music Radio: Exact track is at index 0!
-            playlists.push({
-                id: `ytm_artist_${Date.now()}`,
-                title: `Best of ${topArtist} - YouTube Music Radio`,
-                author: `${topArtist} • 250K+ Listeners`,
-                thumbnail: songs[1]?.cover || exactSong.cover,
-                cover: songs[1]?.cover || exactSong.cover,
-                videos: '25 tracks',
-                badge: 'YouTube Music',
-                isYouTube: true,
-                exactTrack: exactSong,
-                query: `${topArtist} hits`,
-                songs: [exactSong, ...songs.slice(1)]
-            });
-
-            // 3. Complete Album Collection: Exact track is guaranteed!
-            if (topAlbum && topAlbum !== query) {
-                const albumSongs = songs.filter(s => s.album === topAlbum);
-                playlists.push({
-                    id: `ytm_alb_${Date.now()}`,
-                    title: `${topAlbum} - Complete Collection`,
-                    author: `${topArtist} • Official Album Playlist`,
-                    thumbnail: songs[2]?.cover || exactSong.cover,
-                    cover: songs[2]?.cover || exactSong.cover,
-                    videos: `${albumSongs.length || 12} tracks`,
-                    badge: 'YouTube Music',
-                    isYouTube: true,
-                    exactTrack: exactSong,
-                    albumId: exactSong.albumId,
-                    songs: albumSongs.length > 0 ? albumSongs : songs
+            if (exactIdx > 0) {
+                const [exactV] = videos.splice(exactIdx, 1);
+                videos.unshift({ ...exactV, exactTrack: exactSong });
+            } else if (exactIdx === -1) {
+                videos.unshift({
+                    id: `yt_exact_${exactSong.id}`,
+                    title: `${exactSong.title} - Official Music Video`,
+                    channel: `${topArtist} • YouTube Music`,
+                    thumbnail: exactSong.cover,
+                    date: exactSong.album || 'Official Music Video',
+                    duration: exactSong.duration || '3:30',
+                    streamUrl: exactSong.streamUrl,
+                    exactTrack: exactSong
                 });
+            } else if (exactIdx === 0) {
+                videos[0] = { ...videos[0], exactTrack: exactSong };
             }
         }
 
-        // 4. Combine with real live playlists from JioSaavn and YouTube (attach exactTrack so they guarantee exact track)
-        const combinedLive = [...ytPlaylists, ...jioPlaylists].map(pl => ({
-            ...pl,
-            exactTrack: exactSong,
-            badge: pl.badge || (pl.isYouTube ? 'YouTube Music' : 'Playlist')
-        }));
+        // Build 100% authentic playlists directly from JioSaavn and YouTube Music (Zero mock/synthesized playlists)
+        if (jioPlaylists.length === 0) {
+            try {
+                const extraAll = await fetchJioSaavnSearchAll(`${query} playlist`);
+                if (extraAll.playlists && extraAll.playlists.length > 0) {
+                    jioPlaylists = extraAll.playlists;
+                } else if (topArtist) {
+                    const extraArtistAll = await fetchJioSaavnSearchAll(`${topArtist} playlist`);
+                    if (extraArtistAll.playlists && extraArtistAll.playlists.length > 0) {
+                        jioPlaylists = extraArtistAll.playlists;
+                    }
+                }
+            } catch (_) {}
+        }
 
-        playlists = [...playlists, ...combinedLive];
+        if (ytPlaylists.length === 0) {
+            try {
+                const extraPiped = await fetchYouTubePipedSearch(`${query} playlist`);
+                if (extraPiped.playlists && extraPiped.playlists.length > 0) {
+                    ytPlaylists = extraPiped.playlists;
+                }
+            } catch (_) {}
+        }
+
+        // Combine ONLY real playlists from JioSaavn & YouTube Music, attaching exactTrack
+        const playlists = [...jioPlaylists, ...ytPlaylists].map(pl => ({
+            ...pl,
+            id: pl.id || pl.listId,
+            listId: pl.listId || pl.id,
+            exactTrack: exactSong,
+            badge: pl.badge || (pl.isYouTube ? 'YouTube Music' : 'JioSaavn Playlist')
+        }));
 
         currentSearchResults = { songs, albums, artists, videos, playlists };
 
-        renderFullSearchResults(query, currentSearchResults);
+        const activeChip = document.querySelector('.filter-chip.active');
+        const activeFilter = activeChip ? activeChip.getAttribute('data-filter') : 'all';
+
+        renderFullSearchResults(query, currentSearchResults, activeFilter);
+        applyFilterToSearchResults(activeFilter);
     } catch (err) {
         console.error("Search error:", err);
         searchLoader.style.display = 'none';
@@ -4619,6 +5907,7 @@ async function fetchYouTubePipedSearch(query) {
                             channel: item.uploaderName,
                             thumbnail: item.thumbnail,
                             date: item.uploadedDate || 'Trending',
+                            duration: item.duration ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : '3:30',
                             url: item.url
                         });
                     } else if (item.type === 'channel') {
@@ -4676,17 +5965,35 @@ function formatArtistItem(ar) {
 }
 
 function formatPlaylistItem(p) {
+    const plId = p.id || p.listid || p.listId || null;
     return {
-        id: p.id || p.listid || p.listId || null,
+        id: plId,
+        listId: plId,
         title: (p.title || p.name || 'Playlist').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
-        author: (p.subtitle || p.header_desc || p.author || 'Vibentra Mix').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
-        cover: (p.image && p.image.length > 0) ? (typeof p.image === 'string' ? p.image : p.image[p.image.length - 1].url) : (p.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80')
+        author: (p.subtitle || p.header_desc || p.author || 'JioSaavn Official').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+        cover: (p.image && p.image.length > 0) ? (typeof p.image === 'string' ? p.image : p.image[p.image.length - 1].url) : (p.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80'),
+        badge: p.isYouTube ? 'YouTube Music' : 'JioSaavn Playlist'
     };
 }
 
 // F. Render Grouped Results (Screenshots 2, 3, 4)
-function renderFullSearchResults(query, { songs, albums, artists, videos, playlists }) {
+function renderFullSearchResults(query, { songs, albums, artists, videos, playlists }, activeFilter = 'all') {
     searchResultsContent.innerHTML = '';
+
+    // Helper to switch filter chip programmatically
+    const activateFilterTab = (targetFilter) => {
+        document.querySelectorAll('.filter-chip').forEach(c => {
+            const f = c.getAttribute('data-filter');
+            if (f === targetFilter) {
+                c.classList.add('active');
+                c.innerHTML = `<i class="fa-solid fa-check"></i> ${f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}`;
+            } else {
+                c.classList.remove('active');
+                c.innerHTML = f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1);
+            }
+        });
+        applyFilterToSearchResults(targetFilter);
+    };
 
     // 1. TOP RESULT (Screenshot 2)
     if (songs.length > 0) {
@@ -4722,12 +6029,18 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         const songsDiv = document.createElement('div');
         songsDiv.className = 'result-group songs-group';
         songsDiv.setAttribute('data-type', 'songs');
-        songsDiv.innerHTML = `<h3 class="result-group-title">Songs</h3><div class="result-list" id="songsResultList"></div>`;
+        songsDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Songs</h3>
+            </div>
+            <div class="result-list" id="songsResultList"></div>
+            ${songs.length > 6 ? `<button class="btn-see-all-results" data-filter="songs">See all ${songs.length} songs <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+        `;
         const list = songsDiv.querySelector('#songsResultList');
 
         songs.forEach((song, idx) => {
             const row = document.createElement('div');
-            row.className = 'result-item-row';
+            row.className = `result-item-row ${idx >= 6 ? 'search-item-hidden-in-all' : ''}`;
             row.innerHTML = `
                 <img class="result-item-cover" src="${song.cover}" alt="${song.title}">
                 <div class="result-item-details">
@@ -4747,10 +6060,15 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
             });
             list.appendChild(row);
         });
+
+        songsDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('songs');
+        });
+
         searchResultsContent.appendChild(songsDiv);
     }
 
-    // 3. VIDEOS LIST (Screenshot 3) - Enabled Playable Video Tracks & Video Playlist
+    // 3. VIDEOS LIST (Screenshot 3) - 100% Operational Video Tracks & Video Playlist
     if (videos.length > 0) {
         const vidDiv = document.createElement('div');
         vidDiv.className = 'result-group videos-group';
@@ -4763,10 +6081,11 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                 </button>
             </div>
             <div class="result-list" id="videosResultList"></div>
+            ${videos.length > 6 ? `<button class="btn-see-all-results" data-filter="videos">See all ${videos.length} video tracks <i class="fa-solid fa-chevron-right"></i></button>` : ''}
         `;
         const list = vidDiv.querySelector('#videosResultList');
 
-        // Create playable video tracks linked with authentic audio streams
+        // Build authentic playable tracks linked to audio streams with exact track guarantee
         const videoTracks = videos.map((vid, vIdx) => {
             const cleanTitle = (vid.title || 'Song')
                 .replace(/\|\s*[^|]+/g, '')
@@ -4777,6 +6096,10 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                 .replace(/\s+/g, ' ')
                 .trim();
 
+            const isExactTop = vIdx === 0 && songs.length > 0;
+            const chosenCover = vid.thumbnail || (songs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80');
+            const chosenStream = vid.streamUrl || vid.exactTrack?.streamUrl || (isExactTop ? songs[0]?.streamUrl : (songs[vIdx]?.streamUrl || songs[0]?.streamUrl));
+
             return {
                 id: vid.id || `yt_vid_${vIdx}_${Math.random().toString(36).substring(2, 7)}`,
                 title: cleanTitle || vid.title,
@@ -4784,18 +6107,19 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                 originalTitle: vid.title,
                 artist: vid.channel ? vid.channel.split(/\u2022/)[0].trim() : (songs[0]?.artist || 'YouTube Music'),
                 album: vid.date || 'YouTube Video Track',
-                cover: vid.thumbnail || (songs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80'),
+                cover: chosenCover,
                 duration: vid.duration || (songs[vIdx]?.duration || '3:30'),
-                streamUrl: vid.streamUrl || (vid.exactTrack?.streamUrl || (songs[vIdx]?.streamUrl || (vIdx === 0 ? songs[0]?.streamUrl : null))),
+                streamUrl: chosenStream,
                 isLive: true,
-                badge: 'YouTube Video Track'
+                badge: 'YouTube Video Track',
+                exactTrack: vid.exactTrack || (songs.length > 0 ? songs[0] : null)
             };
         });
 
-        videos.slice(0, 6).forEach((vid, vIdx) => {
+        videos.forEach((vid, vIdx) => {
             const trackObj = videoTracks[vIdx];
             const row = document.createElement('div');
-            row.className = 'result-item-row result-video-row';
+            row.className = `result-item-row result-video-row ${vIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
             row.innerHTML = `
                 <div class="result-video-thumb-box">
                     <img class="result-item-cover" src="${vid.thumbnail || trackObj.cover}" alt="${vid.title}">
@@ -4833,7 +6157,7 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
             list.appendChild(row);
         });
 
-        // "Play Video Playlist" button handler: opens detail view with all video tracks and starts playing!
+        // "Play Video Playlist" button: opens detail view with all video tracks and starts playing exact song!
         vidDiv.querySelector('#playAllVideosBtn')?.addEventListener('click', () => {
             if (videoTracks.length > 0) {
                 openPlaylistDetailView({
@@ -4851,6 +6175,10 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
             }
         });
 
+        vidDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('videos');
+        });
+
         searchResultsContent.appendChild(vidDiv);
     }
 
@@ -4859,12 +6187,18 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         const albDiv = document.createElement('div');
         albDiv.className = 'result-group albums-group';
         albDiv.setAttribute('data-type', 'albums');
-        albDiv.innerHTML = `<h3 class="result-group-title">Albums</h3><div class="result-list" id="albumsResultList"></div>`;
+        albDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Albums</h3>
+            </div>
+            <div class="result-list" id="albumsResultList"></div>
+            ${albums.length > 6 ? `<button class="btn-see-all-results" data-filter="albums">See all ${albums.length} albums <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+        `;
         const list = albDiv.querySelector('#albumsResultList');
 
-        albums.slice(0, 6).forEach(alb => {
+        albums.forEach((alb, aIdx) => {
             const row = document.createElement('div');
-            row.className = 'result-item-row';
+            row.className = `result-item-row ${aIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
             row.innerHTML = `
                 <img class="result-item-cover" src="${alb.cover}" alt="${alb.title}">
                 <div class="result-item-details">
@@ -4888,6 +6222,11 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
             });
             list.appendChild(row);
         });
+
+        albDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('albums');
+        });
+
         searchResultsContent.appendChild(albDiv);
     }
 
@@ -4896,12 +6235,18 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         const artDiv = document.createElement('div');
         artDiv.className = 'result-group artists-group';
         artDiv.setAttribute('data-type', 'artists');
-        artDiv.innerHTML = `<h3 class="result-group-title">Artists</h3><div class="result-list" id="artistsResultList"></div>`;
+        artDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Artists</h3>
+            </div>
+            <div class="result-list" id="artistsResultList"></div>
+            ${artists.length > 6 ? `<button class="btn-see-all-results" data-filter="artists">See all ${artists.length} artists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+        `;
         const list = artDiv.querySelector('#artistsResultList');
 
-        artists.slice(0, 5).forEach(art => {
+        artists.forEach((art, arIdx) => {
             const row = document.createElement('div');
-            row.className = 'result-item-row';
+            row.className = `result-item-row ${arIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
             row.innerHTML = `
                 <img class="result-item-cover result-artist-cover" src="${art.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}" alt="${art.name}">
                 <div class="result-item-details">
@@ -4918,20 +6263,31 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
             });
             list.appendChild(row);
         });
+
+        artDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('artists');
+        });
+
         searchResultsContent.appendChild(artDiv);
     }
 
-    // 6. PLAYLISTS (Screenshot 4) - Guaranteed Exact Track Preserved
+    // 6. PLAYLISTS (Screenshot 4) - 100% Real Playlists with Guaranteed Exact Track
     if (playlists.length > 0) {
         const plDiv = document.createElement('div');
         plDiv.className = 'result-group playlists-group';
         plDiv.setAttribute('data-type', 'playlists');
-        plDiv.innerHTML = `<h3 class="result-group-title">Playlists</h3><div class="result-list" id="playlistsResultList"></div>`;
+        plDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Playlists</h3>
+            </div>
+            <div class="result-list" id="playlistsResultList"></div>
+            ${playlists.length > 6 ? `<button class="btn-see-all-results" data-filter="playlists">See all ${playlists.length} playlists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+        `;
         const list = plDiv.querySelector('#playlistsResultList');
 
-        playlists.slice(0, 6).forEach(pl => {
+        playlists.forEach((pl, pIdx) => {
             const row = document.createElement('div');
-            row.className = 'result-item-row';
+            row.className = `result-item-row ${pIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
             const isYt = pl.badge === 'YouTube Music' || pl.isYouTube || (pl.title && pl.title.includes('YouTube'));
             row.innerHTML = `
                 <div class="result-playlist-thumb-box">
@@ -4944,9 +6300,11 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                         ${isYt ? `<span class="yt-playlist-badge"><i class="fa-brands fa-youtube"></i> YouTube Music</span> ` : ''}${pl.author || pl.videos || 'Playlist'}
                     </div>
                 </div>
-                <button class="result-item-play-btn" title="Open Playlist"><i class="fa-solid fa-play"></i></button>
+                <button class="result-item-play-btn" title="Open and Play Playlist"><i class="fa-solid fa-play"></i></button>
             `;
-            row.addEventListener('click', () => {
+
+            const handleOpenPlaylist = (autoPlay = false) => {
+                const targetExactTrack = pl.exactTrack || (songs.length > 0 ? songs[0] : null);
                 openPlaylistDetailView({
                     id: pl.id ? `search_pl_${pl.id}` : `search_pl_${Math.random().toString(36).substring(2, 9)}`,
                     listId: pl.id,
@@ -4956,12 +6314,33 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                     cover: pl.thumbnail || pl.cover,
                     isLive: true,
                     badge: pl.badge || (isYt ? 'YouTube Music' : 'Playlist'),
-                    exactTrack: pl.exactTrack || (songs.length > 0 ? songs[0] : null),
+                    exactTrack: targetExactTrack,
                     songs: (pl.songs && pl.songs.length > 0) ? pl.songs : null
                 }, 'search');
+
+                if (autoPlay && targetExactTrack) {
+                    playTrack(targetExactTrack, [targetExactTrack]);
+                    showNotification(`Playing "${pl.title}" (Exact Track: ${targetExactTrack.title}) 🎵`, 'success');
+                }
+            };
+
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.result-item-play-btn')) return;
+                handleOpenPlaylist(false);
             });
+
+            row.querySelector('.result-item-play-btn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleOpenPlaylist(true);
+            });
+
             list.appendChild(row);
         });
+
+        plDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('playlists');
+        });
+
         searchResultsContent.appendChild(plDiv);
     }
 }
@@ -6675,7 +8054,7 @@ document.getElementById('wrappedBackdrop')?.addEventListener('click', () => clos
 // =========================================================
 // 25. GITHUB IN-APP AUTO UPDATE SYSTEM & MOBILE SYSTEM NOTIFICATIONS
 // =========================================================
-let CURRENT_APP_VERSION = localStorage.getItem('vibentra_app_version') || "1.2.3.1";
+let CURRENT_APP_VERSION = localStorage.getItem('vibentra_app_version') || "1.4.0";
 const GITHUB_REPO_PATH = "srivatsan2007/Vibentra";
 let latestUpdateData = null;
 let isDownloadingUpdate = false;

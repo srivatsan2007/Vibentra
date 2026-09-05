@@ -2,8 +2,8 @@ package com.vibentra.music.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vibentra.music.data.model.Song
-import com.vibentra.music.data.repository.MusicRepository
+import com.srivatsan.vibentra.data.model.Song
+import com.srivatsan.vibentra.data.repository.MusicRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,9 +80,52 @@ class SearchViewModel(
                 videos = emptyList(),
                 albums = emptyList(),
                 artists = emptyList(),
+                playlists = emptyList(),
                 errorMessage = null
             ) 
         }
+    }
+
+    fun loadPlaylistTracks(playlist: PlaylistResult, onTracksLoaded: (List<Song>) -> Unit) {
+        viewModelScope.launch {
+            val tracks = repository.getPlaylistTracksLive(playlist.id, exactTrack = playlist.exactTrack)
+            onTracksLoaded(tracks)
+        }
+    }
+
+    fun getVideoTrackAsSong(video: VideoResult): Song {
+        val top = _uiState.value.topResult
+        if (video.exactTrack != null) return video.exactTrack
+        val baseName = top?.title?.split(Regex("[-–—(]"))?.firstOrNull()?.trim()?.lowercase() ?: ""
+        if (top != null && (video.title.contains(top.title, ignoreCase = true) || (baseName.length >= 3 && video.title.contains(baseName, ignoreCase = true)) || _uiState.value.videos.firstOrNull() == video)) {
+            return top
+        }
+        val matched = _uiState.value.songs.find { s -> 
+            val sBase = s.title.split(Regex("[-–—(]")).firstOrNull()?.trim()?.lowercase() ?: ""
+            video.title.contains(s.title, ignoreCase = true) || (sBase.length >= 3 && video.title.contains(sBase, ignoreCase = true))
+        }
+        if (matched != null) return matched
+        return Song(
+            id = if (video.url.contains("v=")) video.url.substringAfter("v=").substringBefore("&") else "vid_${video.title.hashCode()}",
+            title = video.title,
+            artist = video.channel,
+            album = video.date,
+            duration = video.duration,
+            coverUrl = video.thumbnail,
+            streamUrl = top?.streamUrl ?: ""
+        )
+    }
+
+    fun loadVideoPlaylistTracks(): List<Song> {
+        val ui = _uiState.value
+        val top = ui.topResult
+        val list = ui.videos.map { vid -> getVideoTrackAsSong(vid) }.toMutableList()
+        if (top != null && (list.isEmpty() || list[0].id != top.id)) {
+            val existingIdx = list.indexOfFirst { it.id == top.id }
+            if (existingIdx > 0) list.removeAt(existingIdx)
+            list.add(0, top)
+        }
+        return list
     }
 
     private suspend fun executeSearch(query: String) {
@@ -98,7 +141,7 @@ class SearchViewModel(
                         id = s.id,
                         title = s.album,
                         artist = s.artist,
-                        cover = s.albumArtUrl,
+                        cover = s.coverUrl,
                         year = "2024"
                     )
                 } else null
@@ -108,39 +151,21 @@ class SearchViewModel(
                 val primaryArtist = s.artist.split(",").first().trim()
                 ArtistResult(
                     name = primaryArtist,
-                    avatar = s.albumArtUrl,
+                    avatar = s.coverUrl,
                     role = "Artist"
                 )
             }.distinctBy { it.name }
 
-            val playlists = mutableListOf<PlaylistResult>()
-            if (songs.isNotEmpty()) {
-                val primaryArtist = songs.first().artist.split(",").first().trim()
-                playlists.add(
-                    PlaylistResult(
-                        id = "pl_1",
-                        title = "${query.replaceFirstChar { it.uppercase() }} OST & Mix",
-                        author = "$primaryArtist • Official Playlist",
-                        cover = songs.first().albumArtUrl,
-                        trackCount = "${songs.size} tracks"
-                    )
-                )
-                playlists.add(
-                    PlaylistResult(
-                        id = "pl_2",
-                        title = "Best of $primaryArtist Radio",
-                        author = "Vibentra Curated • 100K+ listeners",
-                        cover = songs.getOrNull(1)?.albumArtUrl ?: songs.first().albumArtUrl,
-                        trackCount = "25 tracks"
-                    )
-                )
-            }
+            // 100% Real Live Videos & Playlists from JioSaavn & YouTube Music with exactTrack guarantee
+            val videos = repository.searchVideosLive(query, exactSong = topResult)
+            val playlists = repository.searchPlaylistsLive(query, exactSong = topResult)
 
             _uiState.update { 
                 it.copy(
                     isLoading = false,
                     topResult = topResult,
                     songs = songs,
+                    videos = videos,
                     albums = albums,
                     artists = artists,
                     playlists = playlists

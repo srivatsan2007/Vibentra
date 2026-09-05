@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vibentra - Sound of India</title>
+    <meta name="theme-color" id="metaThemeColor" content="#0B0F17">
     <link rel="icon" type="image/png" href="./logo.png">
     <link rel="apple-touch-icon" href="./logo.png">
     <link rel="stylesheet" href="./style.css">
@@ -784,6 +785,9 @@
             <!-- Big Square Album Art -->
             <div class="full-player-artwork-container">
                 <img id="fullPlayerCover" class="full-player-artwork" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80" alt="Album Cover">
+                <div class="player-logo-fallback" id="fullPlayerLogoFallback" style="display: none;">
+                    <img src="./logo.png" alt="Vibentra" class="player-fallback-logo-img">
+                </div>
             </div>
 
             <!-- Song Info & Quick Actions Row -->
@@ -835,6 +839,11 @@
                     <span id="playerCurrentTime">0:00</span>
                     <span id="playerTotalDuration">3:30</span>
                 </div>
+                <!-- Audio Codec Information Badge -->
+                <div class="player-codec-badge" id="playerCodecBadge" style="display: none;">
+                    <i class="fa-solid fa-compact-disc"></i>
+                    <span id="playerCodecText">FLAC 24-bit • 96kHz Master</span>
+                </div>
             </div>
 
             <!-- Main Playback Controls Row (with Scalloped Starburst Play Button) -->
@@ -858,11 +867,12 @@
                 </button>
             </div>
 
-            <!-- Bottom Action Toolbar (Lyrics, Sleep Timer, Ringtone, Shuffle, Repeat, More) -->
+            <!-- Bottom Action Toolbar (Lyrics, Sleep Timer, Ringtone, Shuffle, Repeat, Comments, More) -->
             <div class="full-player-bottom-toolbar">
                 <button class="tool-btn" id="toolLyricsBtn" title="Live Synced Lyrics"><i class="fa-solid fa-microphone-lines"></i></button>
                 <button class="tool-btn" id="toolTimerBtn" title="Sleep Timer"><i class="fa-regular fa-moon"></i><span class="timer-badge" id="timerBadge"></span></button>
                 <button class="tool-btn" id="toolRingtoneBtn" title="Ringtone Downloader"><i class="fa-solid fa-bell"></i></button>
+                <button class="tool-btn" id="toolCommentBtn" title="View Comments" style="display: none;"><i class="fa-solid fa-comment"></i></button>
                 <button class="tool-btn" id="toolShuffleBtn" title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
                 <button class="tool-btn" id="toolRepeatBtn" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
                 <button class="tool-circle-btn" id="toolMoreBtn" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
@@ -903,6 +913,7 @@
                     <div>
                         <h3 class="feature-modal-title">Live Lyrics</h3>
                         <p class="feature-modal-sub" id="lyricsSongSubtitle">Song Title - Artist</p>
+                        <span id="lyricsProviderBadge" class="lyrics-provider-badge" style="display:none;">LRCLIB Synced</span>
                     </div>
                 </div>
                 <button class="feature-modal-close" id="closeLyricsBtn"><i class="fa-solid fa-xmark"></i></button>
@@ -1289,7 +1300,7 @@
                                     <div class="sheet-item-name">About</div>
                                 </div>
                             </div>
-                            <span class="sheet-version-badge">1.2.2</span>
+                            <span class="sheet-version-badge">1.4.0</span>
                         </div>
                     </div>
                 </div>
@@ -1352,6 +1363,27 @@
                         <span>Sign Out</span>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Appearance Option Picker Modal -->
+    <div id="appearanceOptionPickerModal" class="custom-feature-modal bottom-sheet-mode">
+        <div class="feature-modal-backdrop" id="appearancePickerBackdrop"></div>
+        <div class="feature-modal-box appearance-picker-box">
+            <div class="sheet-drag-handle"></div>
+            <div class="feature-modal-header">
+                <div class="feature-header-left">
+                    <i class="fa-solid fa-sliders feature-header-icon" id="appearancePickerIcon"></i>
+                    <div>
+                        <h3 class="feature-modal-title" id="appearancePickerTitle">Select Option</h3>
+                        <p class="feature-modal-sub" id="appearancePickerSub">Choose your preferred setting</p>
+                    </div>
+                </div>
+                <button class="feature-modal-close" id="closeAppearancePickerBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="appearance-picker-options" id="appearancePickerOptions">
+                <!-- Dynamically populated options with checkmarks -->
             </div>
         </div>
     </div>
@@ -1829,7 +1861,7 @@
         <div class="feature-modal-backdrop" id="updatePromptBackdrop"></div>
         <div class="update-prompt-card" id="updatePromptCard">
             <h2 class="update-prompt-title">Update available</h2>
-            <p class="update-prompt-sub" id="updatePromptSub">Version v1.2.3.1 is available. Update now?</p>
+            <p class="update-prompt-sub" id="updatePromptSub">Version v1.4.0 is available. Update now?</p>
             <div class="update-prompt-actions">
                 <button class="btn-prompt-next-time" id="btnUpdateNextTime">Next time</button>
                 <button class="btn-prompt-update" id="btnUpdateNow">Update</button>

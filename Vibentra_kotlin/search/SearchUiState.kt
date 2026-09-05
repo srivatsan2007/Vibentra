@@ -1,6 +1,6 @@
 package com.vibentra.music.search
 
-import com.vibentra.music.data.model.Song
+import com.srivatsan.vibentra.data.model.Song
 
 enum class SearchTab {
     EXPLORE, CHARTS, ALBUM
@@ -15,7 +15,9 @@ data class VideoResult(
     val channel: String,
     val thumbnail: String,
     val date: String,
-    val url: String
+    val url: String,
+    val duration: String = "3:30",
+    val exactTrack: Song? = null
 )
 
 data class AlbumResult(
@@ -37,7 +39,9 @@ data class PlaylistResult(
     val title: String,
     val author: String,
     val cover: String,
-    val trackCount: String
+    val trackCount: String,
+    val isYouTube: Boolean = false,
+    val exactTrack: Song? = null
 )
 
 data class SearchUiState(

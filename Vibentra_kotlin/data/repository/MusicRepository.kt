@@ -13,6 +13,8 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import com.vibentra.music.search.PlaylistResult
+import com.vibentra.music.search.VideoResult
 
 /**
  * 100% Dynamic MusicRepository for Vibentra
@@ -388,4 +390,400 @@ class MusicRepository {
             .replace("&lt;", "<")
             .replace("&gt;", ">")
     }
+
+    /**
+     * Live combined search across JioSaavn and YouTube Music
+     */
+    suspend fun searchSongsLive(query: String): List<Song> = withContext(Dispatchers.IO) {
+        val jioDeferred = async { searchJioSaavn(query) }
+        val ytDeferred = async { searchYouTubeMusic(query) }
+
+        val jioResults = jioDeferred.await()
+        val ytResults = ytDeferred.await()
+
+        val combined = mutableListOf<Song>()
+        combined.addAll(jioResults)
+        combined.addAll(ytResults)
+        combined
+    }
+
+    /**
+     * Real YouTube Music Videos Search with exact track guarantee
+     */
+    suspend fun searchVideosLive(query: String, exactSong: Song? = null): List<VideoResult> = withContext(Dispatchers.IO) {
+        val videos = mutableListOf<VideoResult>()
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+
+        val ytPipedUrls = listOf(
+            "https://api.piped.private.coffee/search?q=$encodedQuery&filter=videos",
+            "https://api.piped.private.coffee/search?q=$encodedQuery&filter=all",
+            "https://pipedapi.kavin.rocks/search?q=$encodedQuery&filter=videos"
+        )
+        for (u in ytPipedUrls) {
+            try {
+                val jsonStr = fetchHttpGet(u, timeoutMs = 5000) ?: continue
+                val root = JSONObject(jsonStr)
+                val items = root.optJSONArray("items") ?: JSONArray()
+                for (i in 0 until items.length()) {
+                    val item = items.getJSONObject(i)
+                    if (item.optString("type", "stream") != "stream") continue
+                    val rawUrl = item.optString("url", "")
+                    val title = cleanHtmlEntities(item.optString("title", item.optString("name", "")))
+                    val channel = cleanHtmlEntities(item.optString("uploaderName", "YouTube Music"))
+                    val thumb = item.optString("thumbnail", "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80")
+                    val date = item.optString("uploadedDate", "Official Video")
+                    val durSeconds = item.optInt("duration", 210)
+                    val durStr = String.format("%d:%02d", durSeconds / 60, durSeconds % 60)
+
+                    if (title.isNotEmpty()) {
+                        videos.add(
+                            VideoResult(
+                                title = title,
+                                channel = channel,
+                                thumbnail = thumb,
+                                date = date,
+                                url = rawUrl,
+                                duration = durStr,
+                                exactTrack = exactSong
+                            )
+                        )
+                    }
+                }
+                if (videos.isNotEmpty()) break
+            } catch (e: Exception) {}
+        }
+
+        // Exact Match Guarantee: Guarantee the exact searched song is at index 0
+        if (exactSong != null) {
+            val baseName = exactSong.title.split(Regex("[-–—(]")).firstOrNull()?.trim()?.lowercase() ?: ""
+            val idx = videos.indexOfFirst { 
+                it.title.contains(exactSong.title, ignoreCase = true) || 
+                (baseName.length >= 3 && it.title.contains(baseName, ignoreCase = true))
+            }
+            if (idx > 0) {
+                val exactVid = videos.removeAt(idx)
+                videos.add(0, exactVid.copy(exactTrack = exactSong))
+            } else if (idx == -1) {
+                videos.add(
+                    0,
+                    VideoResult(
+                        title = "${exactSong.title} - Official Music Video",
+                        channel = "${exactSong.artist} • YouTube Music",
+                        thumbnail = exactSong.coverUrl,
+                        date = "Official Video",
+                        url = "https://youtube.com/watch?v=${exactSong.id}",
+                        duration = exactSong.duration.ifEmpty { "3:30" },
+                        exactTrack = exactSong
+                    )
+                )
+            } else if (idx == 0) {
+                videos[0] = videos[0].copy(exactTrack = exactSong)
+            }
+        }
+
+        videos
+    }
+
+    /**
+     * 100% Real Live Playlists Search from JioSaavn and YouTube Music.
+     * ZERO mock / synthesized dummy playlists.
+     * Guarantees exact searched song is attached for exact track guarantee.
+     */
+    suspend fun searchPlaylistsLive(query: String, exactSong: Song? = null): List<PlaylistResult> = withContext(Dispatchers.IO) {
+        val playlists = mutableListOf<PlaylistResult>()
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+
+        // 1. Fetch Real JioSaavn Playlists
+        val jioUrls = listOf(
+            "https://vibentra.vercel.app/api/jiosaavn/search/all?q=$encodedQuery",
+            "https://saavn.me/search/all?query=$encodedQuery"
+        )
+        for (u in jioUrls) {
+            try {
+                val jsonStr = fetchHttpGet(u, timeoutMs = 5000) ?: continue
+                val root = JSONObject(jsonStr)
+                val plArray = when {
+                    root.has("playlists") && root.get("playlists") is JSONArray -> root.getJSONArray("playlists")
+                    root.has("data") && root.getJSONObject("data").has("playlists") -> {
+                        val dPl = root.getJSONObject("data").get("playlists")
+                        if (dPl is JSONObject) dPl.optJSONArray("results") ?: JSONArray()
+                        else if (dPl is JSONArray) dPl else JSONArray()
+                    }
+                    else -> JSONArray()
+                }
+
+                for (i in 0 until plArray.length()) {
+                    val p = plArray.getJSONObject(i)
+                    val id = p.optString("id", p.optString("listid", ""))
+                    val title = cleanHtmlEntities(p.optString("title", p.optString("name", "Playlist")))
+                    if (id.isNotEmpty() && title.isNotEmpty()) {
+                        val author = cleanHtmlEntities(p.optString("artist", p.optString("subtitle", p.optString("header_desc", "JioSaavn"))))
+                        var cover = p.optString("cover", "")
+                        if (cover.isEmpty() && p.has("image")) {
+                            val img = p.get("image")
+                            if (img is JSONArray && img.length() > 0) {
+                                cover = img.getJSONObject(img.length() - 1).optString("url", "")
+                            } else if (img is String) {
+                                cover = img
+                            }
+                        }
+                        if (cover.isEmpty()) cover = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80"
+                        
+                        playlists.add(
+                            PlaylistResult(
+                                id = id,
+                                title = title,
+                                author = "$author • JioSaavn Official",
+                                cover = cover,
+                                trackCount = "Live Playlist",
+                                isYouTube = false,
+                                exactTrack = exactSong
+                            )
+                        )
+                    }
+                }
+                if (playlists.isNotEmpty()) break
+            } catch (e: Exception) {}
+        }
+
+        // Fallback for JioSaavn: try with "${query} playlist" or artist if initial list was empty
+        if (playlists.isEmpty()) {
+            try {
+                val altQuery = if (exactSong != null) "${exactSong.artist} playlist" else "$query playlist"
+                val extraJson = fetchHttpGet("https://vibentra.vercel.app/api/jiosaavn/search/all?q=${URLEncoder.encode(altQuery, "UTF-8")}", timeoutMs = 4000)
+                if (extraJson != null) {
+                    val root = JSONObject(extraJson)
+                    val plArray = root.optJSONArray("playlists") ?: JSONArray()
+                    for (i in 0 until plArray.length()) {
+                        val p = plArray.getJSONObject(i)
+                        val id = p.optString("id", p.optString("listid", ""))
+                        val title = cleanHtmlEntities(p.optString("title", "Playlist"))
+                        if (id.isNotEmpty() && title.isNotEmpty()) {
+                            playlists.add(
+                                PlaylistResult(
+                                    id = id,
+                                    title = title,
+                                    author = "JioSaavn Official",
+                                    cover = p.optString("cover", "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80"),
+                                    trackCount = "Live Playlist",
+                                    isYouTube = false,
+                                    exactTrack = exactSong
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {}
+        }
+
+        // 2. Fetch Real YouTube Music Playlists
+        val ytPipedUrls = listOf(
+            "https://api.piped.private.coffee/search?q=${URLEncoder.encode("$query playlist", "UTF-8")}&filter=playlists",
+            "https://pipedapi.kavin.rocks/search?q=${URLEncoder.encode("$query playlist", "UTF-8")}&filter=playlists"
+        )
+        for (u in ytPipedUrls) {
+            try {
+                val jsonStr = fetchHttpGet(u, timeoutMs = 5000) ?: continue
+                val root = JSONObject(jsonStr)
+                val items = root.optJSONArray("items") ?: JSONArray()
+                for (i in 0 until items.length()) {
+                    val item = items.getJSONObject(i)
+                    val rawUrl = item.optString("url", "")
+                    val listId = if (rawUrl.contains("list=")) rawUrl.substringAfter("list=").substringBefore("&")
+                                 else if (rawUrl.contains("/playlist/")) rawUrl.substringAfter("/playlist/")
+                                 else item.optString("id", "")
+                    val title = cleanHtmlEntities(item.optString("name", item.optString("title", "")))
+                    if (listId.isNotEmpty() && title.isNotEmpty()) {
+                        val author = cleanHtmlEntities(item.optString("uploaderName", "YouTube Music"))
+                        val videos = item.optInt("videos", 15)
+                        val thumb = item.optString("thumbnail", "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80")
+                        playlists.add(
+                            PlaylistResult(
+                                id = listId,
+                                title = title,
+                                author = "$author • YouTube Music",
+                                cover = thumb,
+                                trackCount = "$videos tracks",
+                                isYouTube = true,
+                                exactTrack = exactSong
+                            )
+                        )
+                    }
+                }
+                if (playlists.any { it.isYouTube }) break
+            } catch (e: Exception) {}
+        }
+
+        playlists
+    }
+
+    /**
+     * Fetches authentic playlist tracks directly from JioSaavn or YouTube Music.
+     * Guarantees that the exact searched song (exactTrack) is positioned at Track #1!
+     */
+    suspend fun getPlaylistTracksLive(playlistId: String, exactTrack: Song? = null): List<Song> = withContext(Dispatchers.IO) {
+        val tracks = mutableListOf<Song>()
+        val cleanId = playlistId.removePrefix("pl_").removePrefix("search_pl_")
+
+        // 1. Fetch real tracks if JioSaavn playlist
+        if (!cleanId.startsWith("PL") && !cleanId.startsWith("UU") && !cleanId.startsWith("RD") && !cleanId.startsWith("OLAK5uy_")) {
+            val urls = listOf(
+                "https://vibentra.vercel.app/api/jiosaavn/playlist?id=$cleanId",
+                "https://saavn.me/playlists?id=$cleanId"
+            )
+            for (u in urls) {
+                try {
+                    val jsonStr = fetchHttpGet(u, timeoutMs = 6000) ?: continue
+                    val songs = parseJioSaavnResponse(jsonStr)
+                    if (songs.isNotEmpty()) {
+                        tracks.addAll(songs)
+                        break
+                    }
+                } catch (e: Exception) {}
+            }
+        }
+
+        // 2. Fetch real tracks if YouTube playlist or if JioSaavn was empty
+        if (tracks.isEmpty()) {
+            val pipedUrls = listOf(
+                "https://api.piped.private.coffee/playlists/$cleanId",
+                "https://pipedapi.kavin.rocks/playlists/$cleanId"
+            )
+            for (u in pipedUrls) {
+                try {
+                    val jsonStr = fetchHttpGet(u, timeoutMs = 5000) ?: continue
+                    val root = JSONObject(jsonStr)
+                    val relatedStreams = root.optJSONArray("relatedStreams") ?: JSONArray()
+                    for (i in 0 until relatedStreams.length()) {
+                        val item = relatedStreams.getJSONObject(i)
+                        val title = cleanHtmlEntities(item.optString("title", ""))
+                        val uploader = cleanHtmlEntities(item.optString("uploaderName", "YouTube Music"))
+                        val thumb = item.optString("thumbnail", "")
+                        val duration = item.optInt("duration", 210)
+                        val durStr = String.format("%d:%02d", duration / 60, duration % 60)
+                        val rawUrl = item.optString("url", "")
+                        val vidId = if (rawUrl.contains("v=")) rawUrl.substringAfter("v=").substringBefore("&") else "yt_$i"
+                        if (title.isNotEmpty()) {
+                            tracks.add(
+                                Song(
+                                    id = vidId,
+                                    title = title,
+                                    artist = uploader,
+                                    album = root.optString("name", "YouTube Playlist"),
+                                    duration = durStr,
+                                    coverUrl = thumb.ifEmpty { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80" },
+                                    streamUrl = ""
+                                )
+                            )
+                        }
+                    }
+                    if (tracks.isNotEmpty()) break
+                } catch (e: Exception) {}
+            }
+        }
+
+        // 3. Exact Match Guarantee: If user searched for an exact song, ALWAYS guarantee it is present at index 0!
+        if (exactTrack != null) {
+            val idx = tracks.indexOfFirst { it.id == exactTrack.id || it.title.equals(exactTrack.title, ignoreCase = true) }
+            if (idx > 0) {
+                val matched = tracks.removeAt(idx)
+                tracks.add(0, matched)
+            } else if (idx == -1) {
+                tracks.add(0, exactTrack)
+            }
+        }
+
+        tracks
+    }
+
+    /**
+     * Auto-Switching Multi-Provider Lyrics Engine
+     * Automatically waterfalls through 4 providers:
+     * 1. LRCLIB Exact Match (Synced LRC)
+     * 2. LRCLIB Multi-Search Fuzzy Engine (Synced LRC for complex / regional titles)
+     * 3. JioSaavn Official Lyrics API
+     * 4. Lyrics.ovh Global Library
+     */
+    suspend fun fetchLyricsMultiProvider(title: String, artist: String, songId: String = ""): LyricsResult = withContext(Dispatchers.IO) {
+        val cleanTitle = title
+            .replace(Regex("\\([^)]*\\)"), "")
+            .replace(Regex("\\[[^\\]]*\\]"), "")
+            .replace(Regex("(?i)-\\s*Single|-\\s*EP|Original Motion Picture Soundtrack|Soundtrack|OST|Official|Video"), "")
+            .trim()
+        val primaryArtist = artist.split(",").firstOrNull()?.split("•")?.firstOrNull()?.trim() ?: artist.trim()
+        val encTitle = URLEncoder.encode(cleanTitle, "UTF-8")
+        val encArtist = URLEncoder.encode(primaryArtist, "UTF-8")
+
+        // Provider 1: LRCLIB Exact Match
+        try {
+            val url1 = "https://lrclib.net/api/get?track_name=$encTitle&artist_name=$encArtist"
+            val res1 = fetchHttpGet(url1, timeoutMs = 4000)
+            if (res1 != null) {
+                val obj = JSONObject(res1)
+                val synced = obj.optString("syncedLyrics", "")
+                val plain = obj.optString("plainLyrics", "")
+                if (synced.isNotEmpty()) {
+                    return@withContext LyricsResult(lyrics = synced, isSynced = true, provider = "LRCLIB Synced")
+                } else if (plain.isNotEmpty()) {
+                    return@withContext LyricsResult(lyrics = plain, isSynced = false, provider = "LRCLIB Plain")
+                }
+            }
+        } catch (e: Exception) {}
+
+        // Provider 2: LRCLIB Multi-Search Engine (Fuzzy Match for regional & complex titles)
+        try {
+            val queryStr = URLEncoder.encode("$cleanTitle $primaryArtist", "UTF-8")
+            val url2 = "https://lrclib.net/api/search?q=$queryStr"
+            val res2 = fetchHttpGet(url2, timeoutMs = 4500)
+            if (res2 != null && res2.trim().startsWith("[")) {
+                val array = JSONArray(res2.trim())
+                for (i in 0 until array.length()) {
+                    val item = array.getJSONObject(i)
+                    val synced = item.optString("syncedLyrics", "")
+                    val plain = item.optString("plainLyrics", "")
+                    if (synced.isNotEmpty()) {
+                        return@withContext LyricsResult(lyrics = synced, isSynced = true, provider = "LRCLIB Search Synced")
+                    } else if (plain.isNotEmpty()) {
+                        return@withContext LyricsResult(lyrics = plain, isSynced = false, provider = "LRCLIB Search")
+                    }
+                }
+            }
+        } catch (e: Exception) {}
+
+        // Provider 3: JioSaavn Official Lyrics API
+        if (songId.isNotEmpty()) {
+            try {
+                val url3 = "https://vibentra.vercel.app/api/jiosaavn/lyrics?id=${URLEncoder.encode(songId, "UTF-8")}"
+                val res3 = fetchHttpGet(url3, timeoutMs = 4000)
+                if (res3 != null) {
+                    val obj = JSONObject(res3)
+                    val lyrics = obj.optString("lyrics", "")
+                    if (lyrics.isNotEmpty()) {
+                        return@withContext LyricsResult(lyrics = cleanHtmlEntities(lyrics), isSynced = false, provider = "JioSaavn Official")
+                    }
+                }
+            } catch (e: Exception) {}
+        }
+
+        // Provider 4: Lyrics.ovh Global Library
+        try {
+            val url4 = "https://api.lyrics.ovh/v1/$encArtist/$encTitle"
+            val res4 = fetchHttpGet(url4, timeoutMs = 4000)
+            if (res4 != null) {
+                val obj = JSONObject(res4)
+                val lyrics = obj.optString("lyrics", "")
+                if (lyrics.isNotEmpty()) {
+                    return@withContext LyricsResult(lyrics = lyrics.trim(), isSynced = false, provider = "Lyrics.ovh Global")
+                }
+            }
+        } catch (e: Exception) {}
+
+        LyricsResult(lyrics = "", isSynced = false, provider = "None")
+    }
 }
+
+data class LyricsResult(
+    val lyrics: String,
+    val isSynced: Boolean,
+    val provider: String
+)

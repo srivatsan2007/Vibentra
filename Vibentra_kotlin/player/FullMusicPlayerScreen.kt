@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.vibentra.music.data.model.Song
+import com.srivatsan.vibentra.data.model.Song
 
 /**
  * Full-Screen Music Player Card (Matching Screenshot 2)

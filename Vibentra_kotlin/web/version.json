@@ -1,14 +1,14 @@
 {
-  "version": "1.3.0",
-  "name": "Vibentra v1.3.0 - Offline Mode & Download Vault Update",
+  "version": "1.4.0",
+  "name": "Vibentra v1.4.0 - Exact Track Search & Multi-Provider Lyrics Update",
   "releaseDate": "September 2026",
-  "size": "18.8 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.3.0/Vibentra-v1.3.0.apk",
+  "size": "19.2 MB",
+  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.0/Vibentra-v1.4.0.apk",
   "changelog": [
-    "⚡ Full Offline Mode: Download tracks, albums, and playlists directly to device storage for zero-buffering offline playback",
-    "📥 Library Download Vault: Dedicated 'Downloaded' section in Library organizing all offline music with file size insights",
-    "📴 Zero-Internet Shell: Instant launch without connection errors via Service Worker and auto-fallback offline playback",
-    "💾 Local Audio Storage: Full-quality IndexedDB binary audio and artwork vault with storage manager in Settings",
-    "📱 Tactile Mobile Gestures: Smooth player pull-down to collapse, swipe up to expand, and track skipping gestures"
+    "🎯 100% Exact Track Guarantee: Real playlist search guarantees the searched track is positioned at Track #1 across YouTube Music and JioSaavn",
+    "🎥 Full Video Playlist & Video Search: Video tracks featuring the exact searched song at #1, with play actions and full video pagination",
+    "🎙️ Auto-Switching Multi-Provider Lyrics Engine: Automatic waterfall fallback across LRCLIB Synced, LRCLIB Plain, JioSaavn, and Lyrics.ovh with live provider badges",
+    "🎨 Complete System Theme Suite: 100% working System Default, Dark Mode, Light Mode, and AMOLED Pure Black themes with instant persistence",
+    "⚡ Pure Live Music Stream Engine: 100% real live songs and playlists with zero hardcoded or placeholder tracks"
   ]
 }
