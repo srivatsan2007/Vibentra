@@ -917,23 +917,109 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    height: 250px;
+    gap: 16px;
+    min-height: 220px;
+    padding: 40px 16px;
     color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
-.spinner {
-    width: 34px;
-    height: 34px;
-    border: 3px solid rgba(19, 128, 134, 0.25);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+/* =========================================================
+   GOOGLE MATERIAL 4-COLOR SPINNER (Iconic Google Loading Animation)
+   ========================================================= */
+.google-loader,
+.google-spinner-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    position: relative;
+    margin: 0 auto;
 }
 
-@keyframes spin {
+.google-spinner {
+    animation: google-spin-rotate 2s linear infinite;
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    display: block;
+}
+
+.google-spinner .google-spinner-path,
+.google-spinner circle {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+    animation: google-spin-dash 1.5s ease-in-out infinite, google-spin-color 6s ease-in-out infinite;
+    stroke-linecap: round;
+}
+
+@keyframes google-spin-rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes google-spin-dash {
+    0% {
+        stroke-dasharray: 1, 200;
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dasharray: 90, 200;
+        stroke-dashoffset: -35px;
+    }
+    100% {
+        stroke-dasharray: 90, 200;
+        stroke-dashoffset: -125px;
+    }
+}
+
+@keyframes google-spin-color {
+    100%, 0% {
+        stroke: #4285F4; /* Google Blue */
+    }
+    40% {
+        stroke: #EA4335; /* Google Red */
+    }
+    66% {
+        stroke: #FBBC05; /* Google Yellow */
+    }
+    80%, 90% {
+        stroke: #34A853; /* Google Green */
+    }
+}
+
+/* Standard .spinner with Google 4-Color Material cycle for buttons & inline loaders */
+.spinner {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: 3px solid rgba(255, 255, 255, 0.08);
+    border-top-color: #4285F4;
+    animation: google-material-spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite, google-border-color-cycle 6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+@keyframes google-material-spin {
     to { transform: rotate(360deg); }
+}
+
+@keyframes google-border-color-cycle {
+    0%, 100% {
+        border-top-color: #4285F4; /* Google Blue */
+    }
+    25% {
+        border-top-color: #EA4335; /* Google Red */
+    }
+    50% {
+        border-top-color: #FBBC05; /* Google Yellow */
+    }
+    75% {
+        border-top-color: #34A853; /* Google Green */
+    }
 }
 
 /* =========================================================
@@ -8854,16 +8940,34 @@ body, .screen, .home-screen, .search-screen, .library-screen, .settings-screen {
     transform: scale(1.04);
 }
 
-.apple-lyrics-blur .lyrics-line:not(.active) {
+.apple-lyrics-blur:not(.plain-lyrics-mode) .lyrics-line:not(.active) {
     filter: blur(2.5px);
     opacity: 0.38 !important;
     transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
-.standard-lyrics-blur .lyrics-line:not(.active) {
+.standard-lyrics-blur:not(.plain-lyrics-mode) .lyrics-line:not(.active) {
     filter: blur(1.2px);
     opacity: 0.55 !important;
     transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+/* Plain (Unsynced) Lyrics Styling - 100% Crisp & High Readability */
+.plain-lyrics-mode .lyrics-line {
+    filter: none !important;
+    opacity: 0.9 !important;
+    color: #f1f5f9 !important;
+    font-size: 1.18rem !important;
+    line-height: 1.85 !important;
+    margin-bottom: 12px !important;
+    cursor: default !important;
+    text-shadow: none !important;
+}
+
+.plain-lyrics-mode .lyrics-line:hover {
+    opacity: 1 !important;
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.06) !important;
 }
 
 .lyrics-size-20 .lyrics-line { font-size: 1.1rem !important; }

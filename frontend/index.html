@@ -228,8 +228,11 @@
         <!-- Home Sections Container (Populated Live from JioSaavn & YouTube Music) -->
         <main class="home-sections-container" id="homeSections">
             <div class="loading-spinner-box" id="homeLoader">
-                <div class="spinner"></div>
-                <p>Connecting live to JioSaavn & YouTube Music...</p>
+                <div class="google-spinner-wrap">
+                    <svg class="google-spinner" viewBox="25 25 50 50">
+                        <circle class="google-spinner-path" cx="50" cy="50" r="20" fill="none" stroke-width="3.5" stroke-miterlimit="10"></circle>
+                    </svg>
+                </div>
             </div>
         </main>
     </div>
@@ -348,8 +351,11 @@
         <!-- B. SEARCH RESULTS VIEW (When searching e.g. 'karuppu' - Screenshots 2, 3, 4) -->
         <div class="search-results-view" id="searchResultsView" style="display: none;">
             <div id="searchLoader" class="loading-spinner-box" style="display: none;">
-                <div class="spinner"></div>
-                <p>Searching live across JioSaavn & YouTube Music...</p>
+                <div class="google-spinner-wrap">
+                    <svg class="google-spinner" viewBox="25 25 50 50">
+                        <circle class="google-spinner-path" cx="50" cy="50" r="20" fill="none" stroke-width="3.5" stroke-miterlimit="10"></circle>
+                    </svg>
+                </div>
             </div>
 
             <div id="searchResultsContent">
@@ -920,7 +926,11 @@
             </div>
             <div class="lyrics-scroll-container" id="lyricsContainer">
                 <div class="lyrics-loading" id="lyricsLoader">
-                    <div class="spinner"></div>
+                    <div class="google-spinner-wrap">
+                        <svg class="google-spinner" viewBox="25 25 50 50">
+                            <circle class="google-spinner-path" cx="50" cy="50" r="20" fill="none" stroke-width="3.5" stroke-miterlimit="10"></circle>
+                        </svg>
+                    </div>
                     <p>Fetching real synchronized lyrics...</p>
                 </div>
                 <div class="lyrics-lines-list" id="lyricsLinesList"></div>
@@ -2030,6 +2040,13 @@
     <!-- Hidden HTML5 Audio Element for Background Playback (Screen on/off & lock screen) -->
     <audio id="globalAudioPlayer" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></audio>
 
+    <!-- YouTube IFrame Player Container for Real YouTube Audio/Video Playback -->
+    <div id="ytPlayerContainer" style="position:fixed; left:-9999px; top:-9999px; width:200px; height:200px; pointer-events:none; opacity:0.001; z-index:-100;">
+        <div id="ytPlayer"></div>
+    </div>
+
+    <!-- Official YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
     <!-- Firebase SDKs & App Scripts -->
     <script type="module" src="./app.js"></script>
 </body>

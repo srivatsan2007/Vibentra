@@ -1,15 +1,13 @@
 {
-  "version": "1.4.1",
-  "name": "Vibentra v1.4.1 - Video Audio Track & Duration Synchronization Update",
+  "version": "1.4.2",
+  "name": "Vibentra v1.4.2 - Google Material UI & Direct Video Audio Update",
   "releaseDate": "September 2026",
   "size": "19.2 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.1/Vibentra-v1.4.1.apk",
+  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.2/Vibentra-v1.4.2.apk",
   "changelog": [
-    "🎵 100% Video Audio Stream Synchronization: Every video track resolves and plays its own authentic matching song audio instead of mismatched tracks",
-    "⏱️ Exact Duration Alignment: Video card duration badges and player time bars are 100% synchronized with the actual playing audio length",
-    "🎯 High-Precision Video Song Matching: High-precision title cleaning and live JioSaavn matching ensures video tracks map to their true high-definition audio",
-    "🎥 Dynamic Live Stream Resolution: Asynchronous stream resolution seamlessly connects YouTube video queries to lossless audio streams",
-    "🎨 Complete System Theme Suite: 100% working System Default, Dark Mode, Light Mode, and AMOLED Pure Black themes with instant persistence",
-    "🎙️ Auto-Switching Multi-Provider Lyrics Engine: Automatic fallback across LRCLIB Synced, LRCLIB Plain, JioSaavn, and Lyrics.ovh"
+    "✨ Iconic Google Material 4-Color Circular Loading Animation across all screens",
+    "🎵 Authentic YouTube Native Streaming & Exact Duration Preservation",
+    "🎙️ Crisp Plain Lyrics Mode with zero blur and enhanced readability",
+    "⚡ Live Update Notifications & Real-Time Sync"
   ]
 }

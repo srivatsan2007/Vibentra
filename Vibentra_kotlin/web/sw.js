@@ -1,5 +1,5 @@
-// Vibentra Service Worker - v1.3.0 Offline Shell & Mobile System Notifications
-const CACHE_NAME = 'vibentra-offline-v1.3.0';
+// Vibentra Service Worker - v1.4.2 Offline Shell & Mobile System Notifications
+const CACHE_NAME = 'vibentra-offline-v1.4.2';
 const PRECACHE_ASSETS = [
     '/',
     '/index.html',
@@ -76,6 +76,33 @@ self.addEventListener('fetch', (event) => {
                 });
             })
     );
+});
+
+// Handle Incoming Remote Push Notifications (FCM / Web Push)
+self.addEventListener('push', (event) => {
+    let data = {};
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (_) {
+        data = { title: 'Vibentra Update Available 🚀', body: event.data ? event.data.text() : 'Tap to update!' };
+    }
+
+    const title = data.title || 'Vibentra Update Available 🚀';
+    const options = {
+        body: data.body || 'A new version of Vibentra is live. Tap to update in-app!',
+        icon: './logo.png',
+        badge: './logo.png',
+        tag: `vibentra-update-${data.version || 'live'}`,
+        renotify: true,
+        vibrate: [250, 100, 250],
+        data: {
+            action: 'OPEN_UPDATE_MODAL',
+            version: data.version || 'latest',
+            url: data.url || '/'
+        }
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
 });
 
 // Handle Notification Clicks in Mobile Phone Notification Bar
