@@ -1,5 +1,5 @@
 /**
- * Vibentra Portfolio Interactive Controller (v1.2.5)
+ * Vibentra Portfolio Interactive Controller (v1.4.3)
  * Themed in #95E9E9 & Deep Ocean Night Palette
  * Crafted by SRIVATSAN R
  */
@@ -199,5 +199,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    console.log("🚀 Vibentra Portfolio v1.2.5 loaded successfully with #95E9E9 theme! Created by SRIVATSAN R.");
+    console.log("🚀 Vibentra Portfolio v1.4.3 loaded successfully with #95E9E9 theme! Created by SRIVATSAN R.");
 });
