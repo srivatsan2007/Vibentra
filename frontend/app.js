@@ -88,6 +88,65 @@ let currentTrackIndex = -1;
 let isPlaying = false;
 const audioPlayer = document.getElementById('globalAudioPlayer');
 
+// =========================================================
+// NATIVE TELEPHONY & CALL INTERRUPT AUDIO FOCUS BRIDGE
+// =========================================================
+window.musicService = {
+    wasPlayingBeforeCall: false,
+    forceCallPause: function() {
+        console.log('[MusicService] Incoming call: pausing playback');
+        if (audioPlayer && !audioPlayer.paused) {
+            this.wasPlayingBeforeCall = true;
+            try { audioPlayer.pause(); } catch (e) {}
+        } else if (typeof isYouTubeTrackPlaying !== 'undefined' && isYouTubeTrackPlaying && typeof ytPlayerInstance !== 'undefined' && ytPlayerInstance?.pauseVideo) {
+            this.wasPlayingBeforeCall = true;
+            try { ytPlayerInstance.pauseVideo(); } catch (e) {}
+        } else {
+            this.wasPlayingBeforeCall = false;
+        }
+        if (typeof updatePlayPauseIcons === 'function') {
+            updatePlayPauseIcons(false);
+        }
+    },
+    forceCallResume: function() {
+        console.log('[MusicService] Call ended: un-muting and resuming playback');
+        if (audioPlayer) {
+            audioPlayer.muted = false;
+            audioPlayer.volume = parseFloat(localStorage.getItem('vibentra_volume') || '1');
+            if (this.wasPlayingBeforeCall) {
+                audioPlayer.play().catch(err => {
+                    console.warn('[MusicService] Call resume play error:', err);
+                });
+                if (typeof updatePlayPauseIcons === 'function') {
+                    updatePlayPauseIcons(true);
+                }
+            }
+        }
+        if (typeof isYouTubeTrackPlaying !== 'undefined' && isYouTubeTrackPlaying && this.wasPlayingBeforeCall && typeof ytPlayerInstance !== 'undefined' && ytPlayerInstance?.playVideo) {
+            try {
+                ytPlayerInstance.unMute();
+                ytPlayerInstance.playVideo();
+                if (typeof updatePlayPauseIcons === 'function') {
+                    updatePlayPauseIcons(true);
+                }
+            } catch (e) {}
+        }
+        this.wasPlayingBeforeCall = false;
+    }
+};
+
+// Safeguard against hardware/OS muting on app return
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && audioPlayer) {
+        audioPlayer.muted = false;
+    }
+});
+window.addEventListener('focus', () => {
+    if (audioPlayer) {
+        audioPlayer.muted = false;
+    }
+});
+
 // UI Screen Elements
 const splashScreen = document.getElementById('splashScreen');
 const authScreen = document.getElementById('authScreen');
@@ -794,6 +853,16 @@ function applyAppThemeMode(mode, accent) {
         document.body.style.backgroundColor = '#0B0F17';
     }
 
+    if (document.body.classList.contains('dynamic-theme-active')) {
+        if (resolvedTheme === 'light') {
+            document.documentElement.style.setProperty('--dynamic-text', '#0B0F17');
+            document.documentElement.style.setProperty('--dynamic-text-muted', 'rgba(15, 23, 42, 0.72)');
+        } else {
+            document.documentElement.style.setProperty('--dynamic-text', '#FFFFFF');
+            document.documentElement.style.setProperty('--dynamic-text-muted', 'rgba(255, 255, 255, 0.75)');
+        }
+    }
+
     const metaTheme = document.getElementById('metaThemeColor');
     if (metaTheme) {
         metaTheme.content = resolvedTheme === 'amoled' ? '#000000' : (resolvedTheme === 'light' ? '#F3F4F8' : '#0B0F17');
@@ -963,9 +1032,243 @@ function setLegacyIcon(enabled) {
     });
 }
 
+// =========================================================
+// AUTOMATIC DYNAMIC ARTWORK THEME & CONTRAST ENGINE
+// =========================================================
+function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) {
+        h = s = 0;
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return [h * 360, s, l];
+}
+
+function getRelativeLuminance(r, g, b) {
+    const sRGB = [r, g, b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * sRGB[0] + 0.7152 * sRGB[1] + 0.0722 * sRGB[2];
+}
+
+function hslToRgbString(h, s, l) {
+    let r, g, b;
+    if (s === 0) {
+        r = g = b = l;
+    } else {
+        const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, (h / 360) + 1/3);
+        g = hue2rgb(p, q, h / 360);
+        b = hue2rgb(p, q, (h / 360) - 1/3);
+    }
+    return `${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}`;
+}
+
+function getDeterministicPalette(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    const h1 = Math.abs(hash) % 360;
+    const h2 = (h1 + 50) % 360;
+    return {
+        primary: `hsl(${h1}, 75%, 55%)`,
+        primaryRgb: hslToRgbString(h1, 0.75, 0.55),
+        secondary: `hsl(${h2}, 85%, 60%)`,
+        secondaryRgb: hslToRgbString(h2, 0.85, 0.60),
+        glow1: `hsla(${h1}, 80%, 55%, 0.25)`,
+        glow2: `hsla(${h2}, 85%, 55%, 0.18)`,
+        isDark: true
+    };
+}
+
+let activeArtworkColorCache = new Map();
+
+function extractSongArtworkPalette(song, callback) {
+    if (!song) return;
+    const cacheKey = song.id || song.title || song.cover;
+    if (activeArtworkColorCache.has(cacheKey)) {
+        callback(activeArtworkColorCache.get(cacheKey));
+        return;
+    }
+
+    if (!song.cover) {
+        const palette = getDeterministicPalette(song.title || 'Vibentra');
+        activeArtworkColorCache.set(cacheKey, palette);
+        callback(palette);
+        return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
+
+    let hasHandled = false;
+    const finishWithFallback = () => {
+        if (hasHandled) return;
+        hasHandled = true;
+        const palette = getDeterministicPalette((song.title || '') + (song.artist || ''));
+        activeArtworkColorCache.set(cacheKey, palette);
+        callback(palette);
+    };
+
+    const timeout = setTimeout(finishWithFallback, 2500);
+
+    img.onload = () => {
+        if (hasHandled) return;
+        clearTimeout(timeout);
+        hasHandled = true;
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 36;
+            canvas.height = 36;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) { finishWithFallback(); return; }
+
+            ctx.drawImage(img, 0, 0, 36, 36);
+            const imgData = ctx.getImageData(0, 0, 36, 36).data;
+
+            let bestPixel = null;
+            let highestScore = -1;
+            let secondBestPixel = null;
+            let secondScore = -1;
+
+            for (let i = 0; i < imgData.length; i += 4) {
+                const r = imgData[i];
+                const g = imgData[i + 1];
+                const b = imgData[i + 2];
+                const a = imgData[i + 3];
+
+                if (a < 128) continue;
+                const [h, s, l] = rgbToHsl(r, g, b);
+
+                if (l < 0.12 || l > 0.88 || s < 0.18) continue;
+
+                const score = s * 2.2 + (1 - Math.abs(l - 0.5)) * 1.5;
+
+                if (score > highestScore) {
+                    secondScore = highestScore;
+                    secondBestPixel = bestPixel;
+                    highestScore = score;
+                    bestPixel = [r, g, b];
+                } else if (score > secondScore) {
+                    secondScore = score;
+                    secondBestPixel = [r, g, b];
+                }
+            }
+
+            if (!bestPixel) {
+                const mid = Math.floor(imgData.length / 8) * 4;
+                bestPixel = [imgData[mid] || 120, imgData[mid + 1] || 100, imgData[mid + 2] || 220];
+                secondBestPixel = [imgData[mid + 4] || 30, imgData[mid + 5] || 180, imgData[mid + 6] || 200];
+            }
+
+            const [pr, pg, pb] = bestPixel;
+            const [sr, sg, sb] = secondBestPixel || [Math.min(255, pr + 40), Math.max(0, pg - 30), Math.min(255, pb + 50)];
+
+            const lum = getRelativeLuminance(pr, pg, pb);
+            const isDark = lum < 0.45;
+
+            const palette = {
+                primary: `rgb(${pr}, ${pg}, ${pb})`,
+                primaryRgb: `${pr}, ${pg}, ${pb}`,
+                secondary: `rgb(${sr}, ${sg}, ${sb})`,
+                secondaryRgb: `${sr}, ${sg}, ${sb}`,
+                glow1: `rgba(${pr}, ${pg}, ${pb}, 0.28)`,
+                glow2: `rgba(${sr}, ${sg}, ${sb}, 0.20)`,
+                luminance: lum,
+                isDark: isDark
+            };
+
+            activeArtworkColorCache.set(cacheKey, palette);
+            callback(palette);
+        } catch (e) {
+            finishWithFallback();
+        }
+    };
+
+    img.onerror = finishWithFallback;
+    img.src = song.cover;
+}
+
+function applyDynamicThemeColors(palette) {
+    if (!palette) return;
+    const root = document.documentElement;
+    const body = document.body;
+
+    root.style.setProperty('--dynamic-primary', palette.primary);
+    root.style.setProperty('--dynamic-primary-rgb', palette.primaryRgb);
+    root.style.setProperty('--dynamic-secondary', palette.secondary);
+    root.style.setProperty('--dynamic-secondary-rgb', palette.secondaryRgb);
+    root.style.setProperty('--dynamic-bg-glow', palette.glow1);
+    root.style.setProperty('--dynamic-bg-glow-2', palette.glow2);
+    root.style.setProperty('--dynamic-glass-tint', `rgba(${palette.primaryRgb}, 0.22)`);
+
+    const curMode = localStorage.getItem('vibentra_theme_mode') || 'dark';
+    if (curMode === 'light') {
+        root.style.setProperty('--dynamic-text', '#0B0F17');
+        root.style.setProperty('--dynamic-text-muted', 'rgba(15, 23, 42, 0.72)');
+    } else {
+        root.style.setProperty('--dynamic-text', '#FFFFFF');
+        root.style.setProperty('--dynamic-text-muted', 'rgba(255, 255, 255, 0.75)');
+    }
+
+    body.classList.add('dynamic-theme-active');
+}
+
+function clearDynamicThemeColors() {
+    const root = document.documentElement;
+    const body = document.body;
+    root.style.removeProperty('--dynamic-primary');
+    root.style.removeProperty('--dynamic-primary-rgb');
+    root.style.removeProperty('--dynamic-secondary');
+    root.style.removeProperty('--dynamic-secondary-rgb');
+    root.style.removeProperty('--dynamic-bg-glow');
+    root.style.removeProperty('--dynamic-bg-glow-2');
+    root.style.removeProperty('--dynamic-glass-tint');
+    root.style.removeProperty('--dynamic-text');
+    root.style.removeProperty('--dynamic-text-muted');
+    body.classList.remove('dynamic-theme-active');
+}
+
+function setDynamicTheme(enabled) {
+    localStorage.setItem('vibentra_dynamic_theme', enabled);
+    if (enabled) {
+        if (typeof currentSongObj !== 'undefined' && currentSongObj) {
+            extractSongArtworkPalette(currentSongObj, applyDynamicThemeColors);
+        }
+        showNotification("Dynamic artwork theme enabled", "success");
+    } else {
+        clearDynamicThemeColors();
+        showNotification("Dynamic theme disabled", "info");
+    }
+}
+
 function setLiquidGlass(enabled) {
     localStorage.setItem('vibentra_liquid_glass', enabled);
     document.body.classList.toggle('disable-glass', !enabled);
+    document.body.classList.toggle('ios-liquid-glass', enabled);
 }
 
 function setHighRefresh(enabled) {
@@ -975,21 +1278,25 @@ function setHighRefresh(enabled) {
 
 function setMiniBgStyle(style) {
     localStorage.setItem('vibentra_mini_bg_style', style);
-    const mini = document.getElementById('floatingMiniPlayer');
+    const mini = document.getElementById('miniPlayer') || document.getElementById('floatingMiniPlayer');
     if (mini) {
         if (style === 'Solid') {
             mini.style.background = 'var(--bg-surface)';
             mini.style.backdropFilter = 'none';
+            mini.style.webkitBackdropFilter = 'none';
         } else if (style === 'Blurred') {
             mini.style.background = 'rgba(15, 20, 30, 0.7)';
             mini.style.backdropFilter = 'blur(30px)';
+            mini.style.webkitBackdropFilter = 'blur(30px)';
         } else if (style === 'Transparent') {
             mini.style.background = 'transparent';
             mini.style.backdropFilter = 'none';
+            mini.style.webkitBackdropFilter = 'none';
             mini.style.border = '1px solid var(--app-border)';
         } else {
             mini.style.background = '';
             mini.style.backdropFilter = '';
+            mini.style.webkitBackdropFilter = '';
             mini.style.border = '';
         }
     }
@@ -1100,13 +1407,19 @@ function setGlowingLyrics(enabled) {
 function setAppleLyricsBlur(enabled) {
     localStorage.setItem('vibentra_apple_lyrics_blur', enabled);
     const container = document.getElementById('lyricsContainer');
-    if (container) container.classList.toggle('apple-lyrics-blur', enabled);
+    if (container) {
+        container.classList.toggle('apple-lyrics-blur', enabled);
+        container.classList.toggle('enable-blur', enabled);
+    }
 }
 
 function setStdLyricsBlur(enabled) {
     localStorage.setItem('vibentra_standard_lyrics_blur', enabled);
     const container = document.getElementById('lyricsContainer');
-    if (container) container.classList.toggle('standard-lyrics-blur', enabled);
+    if (container) {
+        container.classList.toggle('standard-lyrics-blur', enabled);
+        container.classList.toggle('enable-blur', enabled);
+    }
 }
 
 function setLyricsSize(size) {
@@ -1166,6 +1479,9 @@ function initAppearanceSettings() {
     setLegacyIcon(localStorage.getItem('vibentra_legacy_icon') === 'true');
     setLiquidGlass(localStorage.getItem('vibentra_liquid_glass') !== 'false');
     setHighRefresh(localStorage.getItem('vibentra_high_refresh') !== 'false');
+    if (localStorage.getItem('vibentra_dynamic_theme') !== 'false' && typeof currentSongObj !== 'undefined' && currentSongObj) {
+        extractSongArtworkPalette(currentSongObj, applyDynamicThemeColors);
+    }
 
     // 3. Mini-player & Player
     setMiniBgStyle(localStorage.getItem('vibentra_mini_bg_style') || 'Liquid Glass');
@@ -1183,7 +1499,7 @@ function initAppearanceSettings() {
     // 4. Lyrics
     setLyricsPosition(localStorage.getItem('vibentra_lyrics_position') || 'Left');
     setGlowingLyrics(localStorage.getItem('vibentra_glowing_lyrics') === 'true');
-    setAppleLyricsBlur(localStorage.getItem('vibentra_apple_lyrics_blur') !== 'false');
+    setAppleLyricsBlur(localStorage.getItem('vibentra_apple_lyrics_blur') === 'true');
     setStdLyricsBlur(localStorage.getItem('vibentra_standard_lyrics_blur') === 'true');
     setLyricsSize(localStorage.getItem('vibentra_lyrics_size') || '24 sp');
     setLyricsSpacing(localStorage.getItem('vibentra_lyrics_spacing') || '1.3x');
@@ -1370,7 +1686,7 @@ async function openSettingsCategoryDetail(id, title) {
         const lyricsPos = localStorage.getItem('vibentra_lyrics_position') || 'Left';
         const wordAnim = localStorage.getItem('vibentra_word_anim_style') || 'Vivi Music (Fluid)';
         const glowingLyrics = localStorage.getItem('vibentra_glowing_lyrics') === 'true';
-        const appleLyricsBlur = localStorage.getItem('vibentra_apple_lyrics_blur') !== 'false';
+        const appleLyricsBlur = localStorage.getItem('vibentra_apple_lyrics_blur') === 'true';
         const stdLyricsBlur = localStorage.getItem('vibentra_standard_lyrics_blur') === 'true';
         const lyricsSize = localStorage.getItem('vibentra_lyrics_size') || '24 sp';
         const lyricsSpacing = localStorage.getItem('vibentra_lyrics_spacing') || '1.3x';
@@ -1414,13 +1730,13 @@ async function openSettingsCategoryDetail(id, title) {
                         <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
                     </div>
 
-                    <!-- Liquid Glass (Beta) -->
+                    <!-- iOS Liquid Glass -->
                     <div class="appearance-row">
                         <div class="appearance-row-left">
                             <div class="appearance-icon-box"><i class="fa-solid fa-droplet"></i></div>
                             <div class="appearance-text">
-                                <div class="appearance-title">Liquid Glass (Beta)</div>
-                                <div class="appearance-sub">Liquid Glass (Beta)</div>
+                                <div class="appearance-title">iOS Liquid Glass Theme</div>
+                                <div class="appearance-sub">Transform navigation bar & mini player into iOS frosted liquid glass</div>
                             </div>
                         </div>
                         <label class="sheet-switch">
@@ -1444,13 +1760,13 @@ async function openSettingsCategoryDetail(id, title) {
                         </label>
                     </div>
 
-                    <!-- Enable dynamic theme -->
+                    <!-- Dynamic artwork theme -->
                     <div class="appearance-row">
                         <div class="appearance-row-left">
                             <div class="appearance-icon-box"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                             <div class="appearance-text">
-                                <div class="appearance-title">Enable dynamic theme</div>
-                                <div class="appearance-sub">Enable or disable dynamic theme</div>
+                                <div class="appearance-title">Dynamic artwork theme</div>
+                                <div class="appearance-sub">Automatically change background theme and text contrast to match current song</div>
                             </div>
                         </div>
                         <label class="sheet-switch">
@@ -1860,7 +2176,7 @@ async function openSettingsCategoryDetail(id, title) {
         // Wire Liquid Glass toggle
         document.getElementById('chkLiquidGlass')?.addEventListener('change', (e) => {
             setLiquidGlass(e.target.checked);
-            showNotification(e.target.checked ? "Liquid Glass enabled" : "Liquid Glass disabled", "success");
+            showNotification(e.target.checked ? "iOS Liquid Glass theme enabled" : "Liquid Glass disabled", "success");
         });
 
         // Wire High Refresh toggle
@@ -1871,8 +2187,7 @@ async function openSettingsCategoryDetail(id, title) {
 
         // Wire Dynamic Theme toggle
         document.getElementById('chkDynamicTheme')?.addEventListener('change', (e) => {
-            localStorage.setItem('vibentra_dynamic_theme', e.target.checked);
-            showNotification(e.target.checked ? "Dynamic artwork colors active" : "Dynamic theme disabled", "success");
+            setDynamicTheme(e.target.checked);
         });
 
         // Wire Mini-player background style selector
@@ -3683,6 +3998,11 @@ function playTrack(song, playlist = []) {
     saveToListeningHistory(song);
     if (typeof renderHomeWidget === 'function') renderHomeWidget();
 
+    // Dynamic Artwork Theme & Automatic Contrast
+    if (localStorage.getItem('vibentra_dynamic_theme') !== 'false') {
+        extractSongArtworkPalette(song, applyDynamicThemeColors);
+    }
+
     // Refresh lyrics if lyrics modal is open
     const lyricsModal = document.getElementById('lyricsModal');
     if (lyricsModal && lyricsModal.classList.contains('active')) {
@@ -4929,7 +5249,14 @@ async function openLyricsModal() {
 
     if (!modal) return;
     modal.classList.add('active');
-    if (lyricsContainer) lyricsContainer.classList.remove('plain-lyrics-mode');
+    if (lyricsContainer) {
+        lyricsContainer.classList.remove('plain-lyrics-mode');
+        const appleBlur = localStorage.getItem('vibentra_apple_lyrics_blur') === 'true';
+        const stdBlur = localStorage.getItem('vibentra_standard_lyrics_blur') === 'true';
+        lyricsContainer.classList.toggle('apple-lyrics-blur', appleBlur);
+        lyricsContainer.classList.toggle('standard-lyrics-blur', stdBlur);
+        lyricsContainer.classList.toggle('enable-blur', appleBlur || stdBlur);
+    }
 
     if (currentSongObj) {
         if (subTitle) subTitle.textContent = `${currentSongObj.title} • ${currentSongObj.artist}`;
@@ -9231,6 +9558,18 @@ window.handleAppBackNavigation = function(isPopState = false) {
     isBackNavigationInProgress = true;
     setTimeout(() => { isBackNavigationInProgress = false; }, 250);
 
+    // 0. Check for active Lyrics Modal first
+    const lyricsModal = document.getElementById('lyricsModal');
+    if (lyricsModal && lyricsModal.classList.contains('active')) {
+        if (typeof closeModal === 'function') {
+            closeModal('lyricsModal');
+        } else {
+            lyricsModal.classList.remove('active');
+        }
+        consumeBackHistory(isPopState);
+        return true;
+    }
+
     // 1. Check for any active modal or sheet
     const activeModals = Array.from(document.querySelectorAll('.custom-feature-modal.active, #voiceSearchModal.active'));
     if (activeModals.length > 0) {
@@ -9319,7 +9658,7 @@ window.handleAppBackNavigation = function(isPopState = false) {
         return false;
     } else {
         lastBackPressTime = now;
-        showNotification("Press back again to exit Vibentra", "success");
+        showNotification("Press back again to exit Vibentra", "info");
         if (navigator.vibrate) {
             try { navigator.vibrate(25); } catch (e) {}
         }
@@ -9327,12 +9666,27 @@ window.handleAppBackNavigation = function(isPopState = false) {
     }
 };
 
+function ensureHistoryTrap() {
+    try {
+        window.history.pushState({ vibentraTrap: true, time: Date.now() }, '', window.location.pathname + window.location.search);
+    } catch (e) {}
+}
+
+function initHistoryTrap() {
+    try {
+        window.history.replaceState({ vibentraRoot: true }, '', window.location.pathname + window.location.search);
+        window.history.pushState({ vibentraTrap: true }, '', window.location.pathname + window.location.search);
+    } catch (e) {}
+}
+
 // Popstate listener for browser navigation / PWA back gesture
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', (e) => {
     if (suppressNextPopState) {
         suppressNextPopState = false;
         return;
     }
+    // Re-arm history trap so Android never terminates the activity to home launcher
+    ensureHistoryTrap();
     window.handleAppBackNavigation(true);
 });
 
@@ -9344,6 +9698,21 @@ if (window.Capacitor?.Plugins?.App?.addListener) {
         });
     } catch (e) {}
 }
+
+window.NativeBackBridge = {
+    handleBack: function() {
+        return window.handleAppBackNavigation(false);
+    },
+    exitApp: function() {
+        try {
+            if (window.Capacitor?.Plugins?.App?.exitApp) {
+                window.Capacitor.Plugins.App.exitApp();
+            } else if (navigator.app && navigator.app.exitApp) {
+                navigator.app.exitApp();
+            }
+        } catch (e) {}
+    }
+};
 
 // Observe all modals to automatically maintain browser history state
 function setupModalHistoryObservers() {
@@ -9524,7 +9893,36 @@ function setupMobileTouchGestures() {
         }, { passive: true });
     });
 
-    // 4. Edge Swipe Back Gesture (Swipe right from left edge < 35px)
+    // 3b. Lyrics Modal Drag Down to Dismiss
+    const lyricsModal = document.getElementById('lyricsModal');
+    if (lyricsModal) {
+        let lStartY = 0;
+        let lStartX = 0;
+        let isDragLyrics = false;
+        lyricsModal.addEventListener('touchstart', (e) => {
+            if (!lyricsModal.classList.contains('active')) return;
+            const scrollable = document.getElementById('lyricsLinesList') || document.getElementById('lyricsContainer');
+            if (scrollable && scrollable.scrollTop > 8) return;
+            lStartY = e.touches[0].clientY;
+            lStartX = e.touches[0].clientX;
+            isDragLyrics = true;
+        }, { passive: true });
+
+        lyricsModal.addEventListener('touchend', (e) => {
+            if (!isDragLyrics) return;
+            isDragLyrics = false;
+            const endY = e.changedTouches[0]?.clientY || lStartY;
+            const endX = e.changedTouches[0]?.clientX || lStartX;
+            const deltaY = endY - lStartY;
+            const deltaX = endX - lStartX;
+            if (deltaY > 65 && Math.abs(deltaY) > Math.abs(deltaX) * 1.25) {
+                if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
+                closeModal('lyricsModal');
+            }
+        }, { passive: true });
+    }
+
+    // 4. Edge Swipe Back Gesture (Swipe right from left edge <= 48px)
     let edgeStartX = 0;
     let edgeStartY = 0;
     let isEdgeSwipe = false;
@@ -9532,7 +9930,7 @@ function setupMobileTouchGestures() {
     document.addEventListener('touchstart', (e) => {
         if (!e.touches || e.touches.length === 0) return;
         const touch = e.touches[0];
-        if (touch.clientX <= 35) {
+        if (touch.clientX <= 48) {
             edgeStartX = touch.clientX;
             edgeStartY = touch.clientY;
             isEdgeSwipe = true;
@@ -9549,16 +9947,17 @@ function setupMobileTouchGestures() {
         const deltaX = endX - edgeStartX;
         const deltaY = endY - edgeStartY;
 
-        if (deltaX >= 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+        if (deltaX >= 55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
             if (navigator.vibrate) {
-                try { navigator.vibrate(30); } catch (err) {}
+                try { navigator.vibrate(25); } catch (err) {}
             }
             window.handleAppBackNavigation(false);
         }
     }, { passive: true });
 }
 
-// Initialize Gestures, History Observers, and Offline Network Status
+// Initialize Gestures, History Observers, History Trap, and Offline Network Status
+initHistoryTrap();
 setupModalHistoryObservers();
 setupMobileTouchGestures();
 setupNetworkStatusListeners();
