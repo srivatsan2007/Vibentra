@@ -4,13 +4,13 @@
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { 
-    getAuth, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, 
-    signInWithPopup, 
-    GoogleAuthProvider, 
-    sendPasswordResetEmail, 
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signInWithPopup,
+    GoogleAuthProvider,
+    sendPasswordResetEmail,
     updateProfile,
     onAuthStateChanged,
     signOut
@@ -68,7 +68,7 @@ function getStoredUserSession() {
             const parsed = JSON.parse(raw);
             if (parsed && parsed.isLoggedIn) return parsed;
         }
-    } catch (_) {}
+    } catch (_) { }
     return null;
 }
 
@@ -93,14 +93,14 @@ const audioPlayer = document.getElementById('globalAudioPlayer');
 // =========================================================
 window.musicService = {
     wasPlayingBeforeCall: false,
-    forceCallPause: function() {
+    forceCallPause: function () {
         console.log('[MusicService] Incoming call: pausing playback');
         if (audioPlayer && !audioPlayer.paused) {
             this.wasPlayingBeforeCall = true;
-            try { audioPlayer.pause(); } catch (e) {}
+            try { audioPlayer.pause(); } catch (e) { }
         } else if (typeof isYouTubeTrackPlaying !== 'undefined' && isYouTubeTrackPlaying && typeof ytPlayerInstance !== 'undefined' && ytPlayerInstance?.pauseVideo) {
             this.wasPlayingBeforeCall = true;
-            try { ytPlayerInstance.pauseVideo(); } catch (e) {}
+            try { ytPlayerInstance.pauseVideo(); } catch (e) { }
         } else {
             this.wasPlayingBeforeCall = false;
         }
@@ -108,7 +108,7 @@ window.musicService = {
             updatePlayPauseIcons(false);
         }
     },
-    forceCallResume: function() {
+    forceCallResume: function () {
         console.log('[MusicService] Call ended: un-muting and resuming playback');
         if (audioPlayer) {
             audioPlayer.muted = false;
@@ -129,7 +129,7 @@ window.musicService = {
                 if (typeof updatePlayPauseIcons === 'function') {
                     updatePlayPauseIcons(true);
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
         this.wasPlayingBeforeCall = false;
     }
@@ -166,7 +166,7 @@ function pushHistoryNavigationState(state) {
     try {
         window.history.pushState(state, '', window.location.pathname + window.location.search);
         appNavHistoryDepth++;
-    } catch (e) {}
+    } catch (e) { }
 }
 
 function consumeBackHistory(isPopState) {
@@ -175,7 +175,7 @@ function consumeBackHistory(isPopState) {
         appNavHistoryDepth--;
         try {
             window.history.back();
-        } catch (e) {}
+        } catch (e) { }
     }
 }
 
@@ -214,7 +214,7 @@ function switchScreen(screenName, skipHistory = false) {
     }
 
     [splashScreen, authScreen, homeScreen, searchScreen, libraryScreen, settingsScreen].forEach(s => s && s.classList.remove('active'));
-    
+
     // Update bottom nav active indicators
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.desktop-nav-link').forEach(n => n.classList.remove('active'));
@@ -254,7 +254,7 @@ function switchScreen(screenName, skipHistory = false) {
             const navLibrary = document.getElementById('navLibrary');
             if (navLibrary) navLibrary.classList.add('active');
             document.querySelectorAll('#desktopNavLibrary, #desktopSearchNavLibrary, #desktopLibNavLibrary').forEach(btn => btn.classList.add('active'));
-            
+
             // Switch directly to My Playlists sub-tab (Option 1)
             const plTab = document.querySelector('.library-tab[data-tab="playlists"]');
             if (plTab) {
@@ -521,7 +521,7 @@ document.getElementById('googleSignInBtn')?.addEventListener('click', async () =
                 profileImage: user.photoURL || "",
                 createdAt: new Date().toISOString()
             }, { merge: true });
-        } catch (_) {}
+        } catch (_) { }
 
         showNotification('Google Sign-in successful! Session remembered ✨', 'success');
         switchScreen('home');
@@ -1070,16 +1070,16 @@ function hslToRgbString(h, s, l) {
         const hue2rgb = (p, q, t) => {
             if (t < 0) t += 1;
             if (t > 1) t -= 1;
-            if (t < 1/6) return p + (q - p) * 6 * t;
-            if (t < 1/2) return q;
-            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
             return p;
         };
         const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         const p = 2 * l - q;
-        r = hue2rgb(p, q, (h / 360) + 1/3);
+        r = hue2rgb(p, q, (h / 360) + 1 / 3);
         g = hue2rgb(p, q, h / 360);
-        b = hue2rgb(p, q, (h / 360) - 1/3);
+        b = hue2rgb(p, q, (h / 360) - 1 / 3);
     }
     return `${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}`;
 }
@@ -2713,7 +2713,7 @@ async function openSettingsCategoryDetail(id, title) {
                 storageUsedMB = ((est.usage || 0) / (1024 * 1024)).toFixed(1);
                 quotaGB = ((est.quota || 0) / (1024 * 1024 * 1024)).toFixed(1);
             }
-        } catch {}
+        } catch { }
 
         let offlineTracks = [];
         let offlineMB = '0.0';
@@ -2724,7 +2724,7 @@ async function openSettingsCategoryDetail(id, title) {
                 offlineTracks.forEach(t => bytes += (t.size || 0));
                 offlineMB = (bytes / (1024 * 1024)).toFixed(1);
             }
-        } catch {}
+        } catch { }
 
         settingsDetailBody.innerHTML = `
             <div class="settings-sub-card">
@@ -2779,7 +2779,7 @@ async function openSettingsCategoryDetail(id, title) {
                     const keys = await caches.keys();
                     await Promise.all(keys.map(k => caches.delete(k)));
                 }
-            } catch {}
+            } catch { }
             showNotification("Temporary audio cache cleared! 🧹", "success");
             openSettingsCategoryDetail('storage', 'Storage');
         });
@@ -2877,10 +2877,10 @@ async function openSettingsCategoryDetail(id, title) {
                 <div class="settings-data-row">
                     <span class="settings-data-label">Update Status</span>
                     <span class="settings-data-val">
-                        ${hasUpdate 
-                            ? `<span class="real-data-badge" style="background:rgba(239,68,68,0.18); color:#F87171; border-color:rgba(239,68,68,0.3);"><i class="fa-solid fa-arrow-up"></i> Update Available (v${latestUpdateData?.version || '1.2.4'})</span>`
-                            : '<span class="real-data-badge"><i class="fa-solid fa-check"></i> Up to date (No update)</span>'
-                        }
+                        ${hasUpdate
+                ? `<span class="real-data-badge" style="background:rgba(239,68,68,0.18); color:#F87171; border-color:rgba(239,68,68,0.3);"><i class="fa-solid fa-arrow-up"></i> Update Available (v${latestUpdateData?.version || '1.2.4'})</span>`
+                : '<span class="real-data-badge"><i class="fa-solid fa-check"></i> Up to date (No update)</span>'
+            }
                     </span>
                 </div>
                 <div class="settings-data-row">
@@ -2993,7 +2993,7 @@ async function openSettingsCategoryDetail(id, title) {
                 const u = new URL(raw);
                 if (u.searchParams.get('v')) query = u.searchParams.get('v');
                 else if (u.pathname) query = u.pathname.split('/').pop().replace(/-/g, ' ');
-            } catch {}
+            } catch { }
             switchScreen('search');
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
@@ -3071,7 +3071,7 @@ document.getElementById('btnProfileSwitchGoogle')?.addEventListener('click', asy
 document.getElementById('btnProfileSignOut')?.addEventListener('click', async () => {
     try {
         await signOut(auth);
-    } catch (_) {}
+    } catch (_) { }
     clearUserSession();
     closeModal('userProfileModal');
     switchScreen('auth');
@@ -3093,7 +3093,7 @@ async function fetchLiveJioSaavn(query) {
 
     for (let u of urls) {
         try {
-            const res = await fetch(u, { signal: AbortSignal.timeout(5000) });
+            const res = await fetch(u, { signal: AbortSignal.timeout(2800) });
             if (res.ok) {
                 const data = await res.json();
                 const rawList = Array.isArray(data) ? data : (data?.data?.results || data?.results || []);
@@ -3157,7 +3157,7 @@ async function fetchLiveAlbumTracks(albumId, title = '', artist = '') {
                         return rawSongs.map(formatTrackItem);
                     }
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
     }
 
@@ -3171,7 +3171,7 @@ async function fetchLiveAlbumTracks(albumId, title = '', artist = '') {
                     if (tracks && tracks.length > 0) return tracks;
                 }
             }
-        } catch (_) {}
+        } catch (_) { }
     }
     return [];
 }
@@ -3199,7 +3199,7 @@ async function fetchLivePlaylistTracks(listId, title = '') {
                         return rawSongs.map(formatTrackItem);
                     }
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
     }
 
@@ -3213,7 +3213,7 @@ async function fetchLivePlaylistTracks(listId, title = '') {
                     if (tracks && tracks.length > 0) return tracks;
                 }
             }
-        } catch (_) {}
+        } catch (_) { }
     }
     return [];
 }
@@ -3248,7 +3248,7 @@ async function fetchLiveYouTubePlaylistTracks(ytListId, title = '') {
                     });
                 }
             }
-        } catch (_) {}
+        } catch (_) { }
     }
     return [];
 }
@@ -3304,7 +3304,7 @@ async function fetchPlaylistTracks(playlist) {
                     tracks = songs;
                     break;
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
     }
 
@@ -3793,7 +3793,7 @@ function ensureYouTubePlayer(onReadyCallback) {
     }
 }
 
-window.onYouTubeIframeAPIReady = function() {
+window.onYouTubeIframeAPIReady = function () {
     ensureYouTubePlayer();
 };
 
@@ -3819,7 +3819,7 @@ function onYouTubePlayerStateChange(event) {
             syncNativeAndroidWidget(currentSongObj, false);
         } else {
             console.warn("Unexpected YouTube pause detected. Auto-resuming or seamlessly falling back to master audio...");
-            try { ytPlayer.playVideo(); } catch (_) {}
+            try { ytPlayer.playVideo(); } catch (_) { }
             setTimeout(() => {
                 if (!isUserInitiatedPause && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
                     if (ytPlayer.getPlayerState() === 2) {
@@ -3847,7 +3847,7 @@ function fallbackToLiveAudioStream(song) {
     isYouTubeTrackPlaying = false;
     stopYtProgressTicker();
     if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-        try { ytPlayer.stopVideo(); } catch (_) {}
+        try { ytPlayer.stopVideo(); } catch (_) { }
     }
     const viewport = document.getElementById('ytVideoViewport');
     if (viewport) viewport.style.display = 'none';
@@ -3887,7 +3887,7 @@ function startYtProgressTicker() {
                             playbackRate: 1,
                             position: Math.min(curTime, dur)
                         });
-                    } catch (_) {}
+                    } catch (_) { }
                 }
 
                 // Sync Home dynamic widget
@@ -3901,7 +3901,7 @@ function startYtProgressTicker() {
                     t.textContent = totalDurationFormatted;
                 });
             }
-        } catch (_) {}
+        } catch (_) { }
     }, 250);
 }
 
@@ -3920,7 +3920,7 @@ function playYouTubeVideo(videoId) {
         if (audioPlayer && !audioPlayer.paused) {
             audioPlayer.pause();
         }
-    } catch (_) {}
+    } catch (_) { }
 
     // Mount and display the video viewport in full-screen player artwork
     const viewport = document.getElementById('ytVideoViewport');
@@ -4019,7 +4019,7 @@ function playTrack(song, playlist = []) {
         try {
             audioPlayer.pause();
             audioPlayer.src = '';
-        } catch (_) {}
+        } catch (_) { }
 
         const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
         if (ytId) {
@@ -4033,7 +4033,7 @@ function playTrack(song, playlist = []) {
     isUserInitiatedPause = false;
     stopYtProgressTicker();
     if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-        try { ytPlayer.stopVideo(); } catch (_) {}
+        try { ytPlayer.stopVideo(); } catch (_) { }
     }
     const viewport = document.getElementById('ytVideoViewport');
     if (viewport) viewport.style.display = 'none';
@@ -4048,7 +4048,7 @@ function playTrack(song, playlist = []) {
         getOfflineTrack(song.id).then(offlineTrack => {
             if (offlineTrack && offlineTrack.audioBlob) {
                 if (activeBlobUrl) {
-                    try { URL.revokeObjectURL(activeBlobUrl); } catch (_) {}
+                    try { URL.revokeObjectURL(activeBlobUrl); } catch (_) { }
                 }
                 activeBlobUrl = URL.createObjectURL(offlineTrack.audioBlob);
                 audioPlayer.src = activeBlobUrl;
@@ -4140,7 +4140,7 @@ function updateMediaSession(song) {
                     isPlaying = true;
                     updatePlayPauseIcons(true);
                     navigator.mediaSession.playbackState = 'playing';
-                }).catch(() => {});
+                }).catch(() => { });
             }
         });
 
@@ -4222,7 +4222,7 @@ function updateMediaSessionPositionState() {
                 position: Math.min(audioPlayer.currentTime || 0, audioPlayer.duration)
             });
         }
-    } catch (_) {}
+    } catch (_) { }
 }
 
 // Native Android Phone Home Screen Widget Bridge (Capacitor BackgroundAudioPlugin)
@@ -4268,7 +4268,7 @@ function syncNativeAndroidWidget(track = null, playing = isPlaying) {
 }
 
 // Native Android Direct & Capacitor Media Action Handler (Background Widget & Notification)
-window.handleNativeMediaAction = function(action) {
+window.handleNativeMediaAction = function (action) {
     console.log(`[Native Android Media Action Handler]: ${action}`);
     if (!action) return;
     const act = String(action).toLowerCase();
@@ -4343,7 +4343,7 @@ async function acquireWakeLock() {
             appWakeLock = await navigator.wakeLock.request('screen');
             appWakeLock.addEventListener('release', () => { appWakeLock = null; });
         }
-    } catch (_) {}
+    } catch (_) { }
 }
 
 document.addEventListener('visibilitychange', async () => {
@@ -4393,7 +4393,7 @@ function resolveAndPlayLiveStream(song, forceAudioOnly = false) {
                         return matched;
                     }
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
         return null;
     };
@@ -4611,7 +4611,7 @@ audioPlayer.addEventListener('timeupdate', () => {
                 playbackRate: audioPlayer.playbackRate || 1,
                 position: Math.min(audioPlayer.currentTime, audioPlayer.duration)
             });
-        } catch (_) {}
+        } catch (_) { }
     }
 
     // Sync Home Dynamic Glass Widget Progress Slider & Time
@@ -4633,7 +4633,7 @@ audioPlayer.addEventListener('timeupdate', () => {
             nextSong._preloading = true;
             fetchLiveJioSaavn(nextSong.title).then(r => {
                 if (r && r[0]?.streamUrl) nextSong.streamUrl = r[0].streamUrl;
-            }).catch(() => {});
+            }).catch(() => { });
         }
     }
 });
@@ -4740,7 +4740,7 @@ audioPlayer.addEventListener('error', (e) => {
 audioPlayer.addEventListener('stalled', () => {
     console.warn("Audio playback buffer stalled, checking stream...");
     if (isPlaying && !audioPlayer.paused) {
-        audioPlayer.play().catch(() => {});
+        audioPlayer.play().catch(() => { });
     }
 });
 
@@ -4831,8 +4831,8 @@ function triggerAudioDownload(song, isRingtone = false) {
     }
     const cleanTitle = (song.title || 'Song').replace(/[\\/:*?"<>|]/g, '');
     const cleanArtist = (song.artist || 'Artist').replace(/[\\/:*?"<>|]/g, '');
-    const filename = isRingtone 
-        ? `${cleanTitle} [Ringtone Hook].mp3` 
+    const filename = isRingtone
+        ? `${cleanTitle} [Ringtone Hook].mp3`
         : `${cleanTitle} - ${cleanArtist}.mp3`;
 
     showNotification(isRingtone ? `Downloading ringtone hook... 🔔` : `Downloading: ${cleanTitle} (320kbps High Quality)...`, 'success');
@@ -4969,7 +4969,7 @@ async function resolveStreamUrlForDownload(song) {
                 const match = results.find(r => r.streamUrl || r.url) || results[0];
                 return match.streamUrl || match.url || match.media_url;
             }
-        } catch (_) {}
+        } catch (_) { }
     }
     return null;
 }
@@ -5003,7 +5003,7 @@ async function downloadSongForOffline(song) {
             try {
                 const coverRes = await fetch(song.cover);
                 if (coverRes.ok) coverBlob = await coverRes.blob();
-            } catch (_) {}
+            } catch (_) { }
         }
 
         await saveTrackOffline({
@@ -5022,7 +5022,7 @@ async function downloadSongForOffline(song) {
 
         showNotification(`Downloaded "${song.title}" for offline playback! ⚡💾`, "success");
         if (navigator.vibrate) {
-            try { navigator.vibrate([30, 50, 30]); } catch (_) {}
+            try { navigator.vibrate([30, 50, 30]); } catch (_) { }
         }
 
         // Refresh downloads view if active
@@ -5055,7 +5055,7 @@ async function downloadPlaylistForOffline(playlist) {
             try {
                 await downloadSongForOffline(s);
                 count++;
-            } catch (_) {}
+            } catch (_) { }
         } else {
             count++;
         }
@@ -5103,7 +5103,7 @@ async function renderDownloadsView() {
 
     let filtered = tracks;
     if (query) {
-        filtered = tracks.filter(t => 
+        filtered = tracks.filter(t =>
             (t.title && t.title.toLowerCase().includes(query)) ||
             (t.artist && t.artist.toLowerCase().includes(query)) ||
             (t.album && t.album.toLowerCase().includes(query))
@@ -5671,7 +5671,7 @@ if (playerShareBtn) {
                     title: currentSongObj.title,
                     text: `Listen to ${currentSongObj.title} by ${currentSongObj.artist} on Vibentra!`,
                     url: window.location.href
-                }).catch(() => {});
+                }).catch(() => { });
             } else {
                 navigator.clipboard.writeText(window.location.href);
                 showNotification("Song link copied to clipboard! 🔗", "success");
@@ -5756,7 +5756,7 @@ document.getElementById('optShareSong')?.addEventListener('click', () => {
                 title: currentSongObj.title,
                 text: `Listen to ${currentSongObj.title} by ${currentSongObj.artist} on Vibentra!`,
                 url: window.location.href
-            }).catch(() => {});
+            }).catch(() => { });
         } else {
             navigator.clipboard.writeText(window.location.href);
             showNotification("Song link copied to clipboard! 🔗", "success");
@@ -5956,7 +5956,7 @@ document.getElementById('btnHubCreateRoom')?.addEventListener('click', async () 
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             hubMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
         }
-    } catch (_) {}
+    } catch (_) { }
 
     currentHubRoom = {
         id: roomId,
@@ -6021,7 +6021,7 @@ document.getElementById('btnHubJoinRoom')?.addEventListener('click', async () =>
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             hubMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
         }
-    } catch (_) {}
+    } catch (_) { }
 
     currentHubRoom = {
         id: enteredId,
@@ -6094,7 +6094,7 @@ function setupHubRoomListener(roomId) {
                 renderHubUI();
             }
         });
-    } catch (_) {}
+    } catch (_) { }
 }
 
 // 3. Silent to Songs Feature (Requested by user: "can silent to the songs by using the room ID")
@@ -6112,9 +6112,9 @@ function applyHubSilentSong(shouldSilent) {
     if (chk) chk.checked = shouldSilent;
 
     showNotification(
-        shouldSilent 
-            ? "Music silenced! Voice call is now crystal clear 🔇" 
-            : "Music audio restored in room 🔊", 
+        shouldSilent
+            ? "Music silenced! Voice call is now crystal clear 🔇"
+            : "Music audio restored in room 🔊",
         "success"
     );
 
@@ -6125,7 +6125,7 @@ function applyHubSilentSong(shouldSilent) {
                 isSongSilenced: shouldSilent,
                 updatedAt: Date.now()
             }, { merge: true });
-        } catch (_) {}
+        } catch (_) { }
     }
 }
 
@@ -6501,7 +6501,7 @@ async function performLiveSearch(query) {
                         jioPlaylists = extraArtistAll.playlists;
                     }
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
 
         if (ytPlaylists.length === 0) {
@@ -6510,7 +6510,7 @@ async function performLiveSearch(query) {
                 if (extraPiped.playlists && extraPiped.playlists.length > 0) {
                     ytPlaylists = extraPiped.playlists;
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
 
         // Combine ONLY real playlists from JioSaavn & YouTube Music, attaching exactTrack
@@ -6543,16 +6543,15 @@ async function performLiveSearch(query) {
 // Fetch JioSaavn search/all (returns songs, albums, artists)
 async function fetchJioSaavnSearchAll(query) {
     const urls = [
-        `https://vibentra.vercel.app/api/jiosaavn/search/all?q=${encodeURIComponent(query)}`,
-        `https://saavn.me/search/all?query=${encodeURIComponent(query)}`
+        `https://vibentra.vercel.app/api/jiosaavn/search/all?q=${encodeURIComponent(query)}`
     ];
 
     for (let u of urls) {
         try {
-            const res = await fetch(u);
+            const res = await fetch(u, { signal: AbortSignal.timeout(3000) });
             if (res.ok) {
                 const data = await res.json();
-                if (data && (data.songs || data.data)) {
+                if (data && (data.songs || data.data || data.albums || data.playlists)) {
                     const parsedData = data.data || data;
                     return {
                         songs: (parsedData.songs?.results || parsedData.songs || []).map(formatTrackItem),
@@ -6568,20 +6567,24 @@ async function fetchJioSaavnSearchAll(query) {
     }
 
     // Fallback to standard songs search if search/all is unavailable
-    const fallbackSongs = await fetchLiveJioSaavn(query);
-    return { songs: fallbackSongs, albums: [], artists: [], playlists: [] };
+    try {
+        const fallbackSongs = await fetchLiveJioSaavn(query);
+        return { songs: fallbackSongs || [], albums: [], artists: [], playlists: [] };
+    } catch (e) {
+        return { songs: [], albums: [], artists: [], playlists: [] };
+    }
 }
 
 // Fetch YouTube Piped API (returns videos, artists, playlists)
 async function fetchYouTubePipedSearch(query) {
     const endpoints = [
         `https://api.piped.private.coffee/search?q=${encodeURIComponent(query)}&filter=all`,
-        `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`
+        `https://pipedapi.tokhmi.xyz/search?q=${encodeURIComponent(query)}&filter=all`
     ];
 
     for (let u of endpoints) {
         try {
-            const res = await fetch(u);
+            const res = await fetch(u, { signal: AbortSignal.timeout(2400) });
             if (res.ok) {
                 const data = await res.json();
                 const items = data.items || [];
@@ -7153,7 +7156,7 @@ function addDeletedPlaylistId(playlistId) {
             list.push(playlistId);
             localStorage.setItem('vibentra_deleted_playlists', JSON.stringify(list));
         }
-    } catch (_) {}
+    } catch (_) { }
 }
 
 // State for custom playlists (Filtered against deleted registry)
@@ -7367,7 +7370,7 @@ async function retrievePlaylistsFromGoogleCloud(user) {
     if (!user) return;
     try {
         updateGoogleSyncCardUI(user);
-        
+
         // 1. Check primary doc: users/{uid}
         const userDocRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userDocRef);
@@ -7436,7 +7439,7 @@ async function savePlaylistsToGoogleCloud(playlists) {
                 deletedPlaylistIds: deletedIds,
                 updatedAt: Date.now()
             }, { merge: true });
-        } catch (_) {}
+        } catch (_) { }
 
         console.log("Playlists backed up to Google Cloud account for:", currentUser.email);
     } catch (err) {
@@ -7577,7 +7580,7 @@ function renderFavoritesView() {
     if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
 
     if (query) {
-        filtered = filtered.filter(s => 
+        filtered = filtered.filter(s =>
             (s.title && s.title.toLowerCase().includes(query)) ||
             (s.artist && s.artist.toLowerCase().includes(query)) ||
             (s.album && s.album.toLowerCase().includes(query))
@@ -8007,7 +8010,7 @@ async function openPlaylistDetailView(playlist, fromScreen = 'library') {
     songs.forEach((song, idx) => {
         const item = document.createElement('div');
         const isExactMatch = playlist.exactTrack && (
-            song.id === playlist.exactTrack.id || 
+            song.id === playlist.exactTrack.id ||
             (song.title && song.title.toLowerCase() === playlist.exactTrack.title.toLowerCase()) ||
             (idx === 0 && (playlist.exactTrack.title && song.title && song.title.toLowerCase().includes(playlist.exactTrack.title.toLowerCase())))
         );
@@ -8166,7 +8169,7 @@ document.getElementById('detailShareBtn')?.addEventListener('click', () => {
         url: window.location.href
     };
     if (navigator.share) {
-        navigator.share(shareData).catch(() => {});
+        navigator.share(shareData).catch(() => { });
     } else {
         navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`).then(() => {
             showNotification("Playlist details copied to clipboard! 🔗", "success");
@@ -8723,7 +8726,7 @@ document.getElementById('btnWrappedPrev')?.addEventListener('click', () => {
 document.getElementById('btnWrappedShare')?.addEventListener('click', () => {
     const text = `🎧 My Vibentra Wrapped 2024!\nI listened to music on Vibentra - Sound of India!\nExplore your vibe at https://vibentra.web.app`;
     if (navigator.share) {
-        navigator.share({ title: "My Vibentra Wrapped 2024", text: text }).catch(() => {});
+        navigator.share({ title: "My Vibentra Wrapped 2024", text: text }).catch(() => { });
     } else if (navigator.clipboard) {
         navigator.clipboard.writeText(text);
         showNotification("Wrapped stats copied to clipboard! 🌟", "success");
@@ -8869,7 +8872,7 @@ async function checkForAppUpdates(isManual = false) {
                     };
                 }
             }
-        } catch (_) {}
+        } catch (_) { }
 
         // 2. Fallback to live version.json endpoint
         if (!releaseData) {
@@ -8878,7 +8881,7 @@ async function checkForAppUpdates(isManual = false) {
                 if (vRes.ok) {
                     releaseData = await vRes.json();
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
 
         if (!releaseData) {
@@ -8982,7 +8985,7 @@ function startUpdateDownload() {
             setTimeout(() => dlLink.remove(), 800);
         } catch (e) {
             console.warn("Direct download link trigger failed:", e);
-            try { window.location.href = apkUrl; } catch (_) {}
+            try { window.location.href = apkUrl; } catch (_) { }
         }
     }
 
@@ -9019,7 +9022,7 @@ function startUpdateDownload() {
 
             // Refresh service worker cache for web bundle
             if (swRegistration && swRegistration.update) {
-                try { swRegistration.update(); } catch (_) {}
+                try { swRegistration.update(); } catch (_) { }
             }
 
             setTimeout(() => {
@@ -9193,9 +9196,9 @@ function initPictureInPictureWidget() {
         if (!video.srcObject) {
             const stream = canvas.captureStream(30);
             video.srcObject = stream;
-            video.play().catch(() => {});
+            video.play().catch(() => { });
         }
-    } catch (_) {}
+    } catch (_) { }
 }
 
 async function togglePictureInPicture() {
@@ -9553,7 +9556,7 @@ setTimeout(() => {
 // MOBILE BACK BUTTON & GESTURE NAVIGATION SYSTEM
 // =========================================================
 
-window.handleAppBackNavigation = function(isPopState = false) {
+window.handleAppBackNavigation = function (isPopState = false) {
     if (isBackNavigationInProgress) return true;
     isBackNavigationInProgress = true;
     setTimeout(() => { isBackNavigationInProgress = false; }, 250);
@@ -9576,7 +9579,7 @@ window.handleAppBackNavigation = function(isPopState = false) {
         const topModal = activeModals[activeModals.length - 1];
         if (topModal.id === 'voiceSearchModal') {
             if (typeof speechRecognitionInstance !== 'undefined' && speechRecognitionInstance) {
-                try { speechRecognitionInstance.abort(); } catch (e) {}
+                try { speechRecognitionInstance.abort(); } catch (e) { }
             }
             topModal.classList.remove('active');
         } else {
@@ -9660,7 +9663,7 @@ window.handleAppBackNavigation = function(isPopState = false) {
         lastBackPressTime = now;
         showNotification("Press back again to exit Vibentra", "info");
         if (navigator.vibrate) {
-            try { navigator.vibrate(25); } catch (e) {}
+            try { navigator.vibrate(25); } catch (e) { }
         }
         return true;
     }
@@ -9669,14 +9672,14 @@ window.handleAppBackNavigation = function(isPopState = false) {
 function ensureHistoryTrap() {
     try {
         window.history.pushState({ vibentraTrap: true, time: Date.now() }, '', window.location.pathname + window.location.search);
-    } catch (e) {}
+    } catch (e) { }
 }
 
 function initHistoryTrap() {
     try {
         window.history.replaceState({ vibentraRoot: true }, '', window.location.pathname + window.location.search);
         window.history.pushState({ vibentraTrap: true }, '', window.location.pathname + window.location.search);
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // Popstate listener for browser navigation / PWA back gesture
@@ -9696,21 +9699,21 @@ if (window.Capacitor?.Plugins?.App?.addListener) {
         window.Capacitor.Plugins.App.addListener('backButton', () => {
             window.handleAppBackNavigation(false);
         });
-    } catch (e) {}
+    } catch (e) { }
 }
 
 window.NativeBackBridge = {
-    handleBack: function() {
+    handleBack: function () {
         return window.handleAppBackNavigation(false);
     },
-    exitApp: function() {
+    exitApp: function () {
         try {
             if (window.Capacitor?.Plugins?.App?.exitApp) {
                 window.Capacitor.Plugins.App.exitApp();
             } else if (navigator.app && navigator.app.exitApp) {
                 navigator.app.exitApp();
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 };
 
@@ -9783,7 +9786,7 @@ function setupMobileTouchGestures() {
             if (deltaY > 80 || (deltaY > 35 && velocityY > 0.4 && Math.abs(deltaY) > Math.abs(deltaX))) {
                 fullPlayer.style.transform = 'translateY(100%)';
                 if (navigator.vibrate) {
-                    try { navigator.vibrate(25); } catch (err) {}
+                    try { navigator.vibrate(25); } catch (err) { }
                 }
                 setTimeout(() => {
                     closeFullPlayer();
@@ -9830,7 +9833,7 @@ function setupMobileTouchGestures() {
             // Vertical Swipe UP -> Open Full Player
             if (deltaY < -40 && Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
                 if (navigator.vibrate) {
-                    try { navigator.vibrate(25); } catch (err) {}
+                    try { navigator.vibrate(25); } catch (err) { }
                 }
                 openFullPlayer();
                 return;
@@ -9840,13 +9843,13 @@ function setupMobileTouchGestures() {
             if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
                 if (deltaX < 0) {
                     if (navigator.vibrate) {
-                        try { navigator.vibrate(25); } catch (err) {}
+                        try { navigator.vibrate(25); } catch (err) { }
                     }
                     playNextTrack();
                     showNotification("Next track ⏭️", "success");
                 } else {
                     if (navigator.vibrate) {
-                        try { navigator.vibrate(25); } catch (err) {}
+                        try { navigator.vibrate(25); } catch (err) { }
                     }
                     playPreviousTrack();
                     showNotification("Previous track ⏮️", "success");
@@ -9882,7 +9885,7 @@ function setupMobileTouchGestures() {
 
             if (deltaY > 65 && Math.abs(deltaY) > Math.abs(deltaX) * 1.25) {
                 if (navigator.vibrate) {
-                    try { navigator.vibrate(20); } catch (err) {}
+                    try { navigator.vibrate(20); } catch (err) { }
                 }
                 if (typeof closeModal === 'function') {
                     closeModal(sheet.id);
@@ -9916,7 +9919,7 @@ function setupMobileTouchGestures() {
             const deltaY = endY - lStartY;
             const deltaX = endX - lStartX;
             if (deltaY > 65 && Math.abs(deltaY) > Math.abs(deltaX) * 1.25) {
-                if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) {}
+                if (navigator.vibrate) try { navigator.vibrate(20); } catch (err) { }
                 closeModal('lyricsModal');
             }
         }, { passive: true });
@@ -9949,7 +9952,7 @@ function setupMobileTouchGestures() {
 
         if (deltaX >= 55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
             if (navigator.vibrate) {
-                try { navigator.vibrate(25); } catch (err) {}
+                try { navigator.vibrate(25); } catch (err) { }
             }
             window.handleAppBackNavigation(false);
         }
