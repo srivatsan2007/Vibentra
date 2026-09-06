@@ -3324,111 +3324,172 @@ async function fetchPlaylistTracks(playlist) {
 }
 
 // =========================================================
-// LOAD HOME FEED (LIVE & LATEST ALBUMS, PLAYLISTS FROM JIOSAAVN & YOUTUBE MUSIC)
+// LOAD HOME FEED (100% REAL LIVE SONGS FROM JIOSAAVN & YOUTUBE MUSIC)
 // =========================================================
 let homeLiveFeedTimer = null;
+const LIVE_FEED_CACHE_KEY = 'vibentra_live_feed_cache_v2';
+
+function renderLiveHomeFeedContent(container, data) {
+    if (!container || !data) return;
+    container.innerHTML = '';
+
+    // Live Feed Status Header Bar
+    const statusBar = document.createElement('div');
+    statusBar.className = 'home-live-status-bar';
+    statusBar.innerHTML = `
+        <div class="live-status-left">
+            <span class="live-pulse-dot"></span>
+            <span class="live-status-label">Live: JioSaavn & YouTube Music</span>
+        </div>
+        <button class="btn-refresh-home-live" id="btnRefreshLiveHome" title="Refresh Live Music Feed">
+            <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+    `;
+    container.appendChild(statusBar);
+    document.getElementById('btnRefreshLiveHome')?.addEventListener('click', () => {
+        loadHomeFeed(true);
+        showNotification("Refreshed live feed from JioSaavn & YouTube! 🔄", "success");
+    });
+
+    // 1. Live & Latest Albums Section (JioSaavn Official)
+    if (data.albums && data.albums.length > 0) {
+        renderAlbumsSection(container, {
+            title: 'Latest & Trending Albums',
+            prefix: 'FRESH DROPS',
+            badge: 'LIVE ALBUMS',
+            badgeClass: 'album-badge',
+            albums: data.albums.slice(0, 10)
+        });
+    }
+
+    // 2. Live Chartbuster Playlists Section (JioSaavn Official)
+    if (data.playlists && data.playlists.length > 0) {
+        renderPlaylistsSection(container, {
+            title: 'Top Chartbuster Playlists',
+            prefix: 'OFFICIAL CHARTS',
+            badge: 'JIOSAAVN',
+            badgeClass: 'jio-badge',
+            playlists: data.playlists.slice(0, 10)
+        });
+    }
+
+    // 3. YouTube Music Trending Playlists
+    if (data.ytPlaylists && data.ytPlaylists.length > 0) {
+        renderPlaylistsSection(container, {
+            title: 'Trending on YouTube Music',
+            prefix: 'LIVE STREAM',
+            badge: 'YT MUSIC',
+            badgeClass: 'yt-badge',
+            playlists: data.ytPlaylists.slice(0, 10)
+        });
+    }
+
+    // 4. Trending & Viral Tracks (JioSaavn Official)
+    if (data.viralSongs && data.viralSongs.length > 0) {
+        renderSection(container, {
+            title: 'Viral Hits India',
+            prefix: 'TOP STREAMING',
+            avatar: data.viralSongs[0]?.cover,
+            songs: data.viralSongs,
+            hasCollageFirst: false
+        });
+    }
+}
 
 async function loadHomeFeed(forceRefresh = false) {
     const container = document.getElementById('homeSections');
     if (!container) return;
 
-    container.innerHTML = `
-        <div class="loading-spinner-box">
-            ${getGoogleSpinnerHtml(46)}
-        </div>
-    `;
+    // 1. If previous real live songs were fetched, show them instantly (0ms) so user never waits
+    let hasRenderedCached = false;
+    if (!forceRefresh) {
+        try {
+            const cached = localStorage.getItem(LIVE_FEED_CACHE_KEY);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                const hasCachedSongs = (parsed.viralSongs && parsed.viralSongs.length > 0) ||
+                                       (parsed.albums && parsed.albums.length > 0) ||
+                                       (parsed.playlists && parsed.playlists.length > 0);
+                if (hasCachedSongs) {
+                    renderLiveHomeFeedContent(container, parsed);
+                    hasRenderedCached = true;
+                }
+            }
+        } catch (e) {}
+    }
+
+    if (!hasRenderedCached) {
+        container.innerHTML = `
+            <div class="loading-spinner-box">
+                ${getGoogleSpinnerHtml(46)}
+            </div>
+        `;
+    }
 
     try {
         // Parallel queries to real live JioSaavn API & YouTube Music
-        const [liveAlbumsData, liveJioPlaylistsData, ytTrendingData, viralSongs] = await Promise.all([
+        const results = await Promise.allSettled([
             fetchJioSaavnSearchAll('Latest Tamil Albums 2024'),
             fetchJioSaavnSearchAll('Tamil Top 50 Chartbusters'),
             fetchYouTubePipedSearch('Tamil Trending Music Playlist'),
             fetchLiveJioSaavn('Tamil Viral Hits')
         ]);
 
-        container.innerHTML = '';
+        const liveAlbumsData = (results[0].status === 'fulfilled' && results[0].value) ? results[0].value : { albums: [] };
+        const liveJioPlaylistsData = (results[1].status === 'fulfilled' && results[1].value) ? results[1].value : { playlists: [] };
+        const ytTrendingData = (results[2].status === 'fulfilled' && results[2].value) ? results[2].value : { playlists: [] };
+        const viralSongs = (results[3].status === 'fulfilled' && Array.isArray(results[3].value)) ? results[3].value : [];
 
-        // Live Feed Status Header Bar
-        const statusBar = document.createElement('div');
-        statusBar.className = 'home-live-status-bar';
-        statusBar.innerHTML = `
-            <div class="live-status-left">
-                <span class="live-pulse-dot"></span>
-                <span class="live-status-label">Live: JioSaavn & YouTube Music</span>
-            </div>
-            <button class="btn-refresh-home-live" id="btnRefreshLiveHome" title="Refresh Live Music Feed">
-                <i class="fa-solid fa-rotate"></i> Refresh
-            </button>
-        `;
-        container.appendChild(statusBar);
-        document.getElementById('btnRefreshLiveHome')?.addEventListener('click', () => {
-            loadHomeFeed(true);
-            showNotification("Refreshed live feed from JioSaavn & YouTube! 🔄", "success");
-        });
+        const hasRealSongs = (liveAlbumsData.albums && liveAlbumsData.albums.length > 0) ||
+                             (liveJioPlaylistsData.playlists && liveJioPlaylistsData.playlists.length > 0) ||
+                             (ytTrendingData.playlists && ytTrendingData.playlists.length > 0) ||
+                             (viralSongs && viralSongs.length > 0);
 
-        // 1. Live & Latest Albums Section (JioSaavn & YouTube Music)
-        if (liveAlbumsData.albums && liveAlbumsData.albums.length > 0) {
-            renderAlbumsSection(container, {
-                title: 'Latest & Trending Albums',
-                prefix: 'FRESH DROPS',
-                badge: 'LIVE ALBUMS',
-                badgeClass: 'album-badge',
-                albums: liveAlbumsData.albums.slice(0, 10)
-            });
+        if (hasRealSongs) {
+            const liveFeedData = {
+                albums: liveAlbumsData.albums || [],
+                playlists: liveJioPlaylistsData.playlists || [],
+                ytPlaylists: ytTrendingData.playlists || [],
+                viralSongs: viralSongs || []
+            };
+
+            // Cache live provider response for instant subsequent visits
+            try {
+                localStorage.setItem(LIVE_FEED_CACHE_KEY, JSON.stringify(liveFeedData));
+            } catch (e) {}
+
+            renderLiveHomeFeedContent(container, liveFeedData);
+        } else {
+            if (!container.children.length || container.querySelector('.loading-spinner-box')) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding: 40px 20px; color: #EF4444;">
+                        <p>Unable to connect to live music provider.</p>
+                        <button class="btn-refresh-home-live" style="margin: 12px auto;" onclick="loadHomeFeed(true)">Tap to Retry</button>
+                    </div>
+                `;
+            }
         }
 
-        // 2. Live Chartbuster Playlists Section (JioSaavn Official)
-        if (liveJioPlaylistsData.playlists && liveJioPlaylistsData.playlists.length > 0) {
-            renderPlaylistsSection(container, {
-                title: 'Top Chartbuster Playlists',
-                prefix: 'OFFICIAL CHARTS',
-                badge: 'JIOSAAVN',
-                badgeClass: 'jio-badge',
-                playlists: liveJioPlaylistsData.playlists.slice(0, 10)
-            });
-        }
-
-        // 3. YouTube Music Trending Playlists
-        if (ytTrendingData.playlists && ytTrendingData.playlists.length > 0) {
-            renderPlaylistsSection(container, {
-                title: 'Trending on YouTube Music',
-                prefix: 'LIVE STREAM',
-                badge: 'YT MUSIC',
-                badgeClass: 'yt-badge',
-                playlists: ytTrendingData.playlists.slice(0, 10)
-            });
-        }
-
-        // 4. Trending & Viral Tracks
-        if (viralSongs && viralSongs.length > 0) {
-            renderSection(container, {
-                title: 'Viral Hits India',
-                prefix: 'TOP STREAMING',
-                avatar: viralSongs[0]?.cover,
-                songs: viralSongs,
-                hasCollageFirst: false
-            });
-        }
-
-        // 5. Setup auto-refresh every 5 minutes to catch real-time API changes
+        // Setup auto-refresh every 5 minutes to catch real-time API changes
         if (!homeLiveFeedTimer) {
             homeLiveFeedTimer = setInterval(() => {
                 const homeScreen = document.getElementById('homeScreen');
                 if (homeScreen && homeScreen.classList.contains('active')) {
-                    loadHomeFeed(true);
+                    loadHomeFeed(false);
                 }
             }, 300000);
         }
 
     } catch (err) {
         console.warn("Home feed error:", err);
-        container.innerHTML = `
-            <div style="text-align:center; padding: 40px 20px; color: #EF4444;">
-                <p>Failed to connect to live music gateways.</p>
-                <button class="btn-refresh-home-live" style="margin: 12px auto;" onclick="loadHomeFeed(true)">Tap to Retry</button>
-            </div>
-        `;
+        if (!container.children.length || container.querySelector('.loading-spinner-box')) {
+            container.innerHTML = `
+                <div style="text-align:center; padding: 40px 20px; color: #EF4444;">
+                    <p>Failed to connect to live music gateways.</p>
+                    <button class="btn-refresh-home-live" style="margin: 12px auto;" onclick="loadHomeFeed(true)">Tap to Retry</button>
+                </div>
+            `;
+        }
     }
 }
 
@@ -3634,41 +3695,53 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
         `;
 
         const query = categoryQueries[category] || `Tamil ${category}`;
-        const [catData, songs] = await Promise.all([
-            fetchJioSaavnSearchAll(query),
-            fetchLiveJioSaavn(query)
-        ]);
+        try {
+            const results = await Promise.allSettled([
+                fetchJioSaavnSearchAll(query),
+                fetchLiveJioSaavn(query)
+            ]);
 
-        container.innerHTML = '';
+            const catData = (results[0].status === 'fulfilled' && results[0].value) ? results[0].value : { albums: [], playlists: [] };
+            const songs = (results[1].status === 'fulfilled' && Array.isArray(results[1].value)) ? results[1].value : [];
 
-        if (catData.albums && catData.albums.length > 0) {
-            renderAlbumsSection(container, {
-                title: `${category} Albums`,
-                prefix: 'LATEST RELEASES',
-                badge: 'JIOSAAVN',
-                badgeClass: 'album-badge',
-                albums: catData.albums.slice(0, 8)
-            });
-        }
+            container.innerHTML = '';
 
-        if (catData.playlists && catData.playlists.length > 0) {
-            renderPlaylistsSection(container, {
-                title: `${category} Playlists`,
-                prefix: 'CURATED MIX',
-                badge: 'LIVE',
-                badgeClass: 'jio-badge',
-                playlists: catData.playlists.slice(0, 8)
-            });
-        }
+            if (catData.albums && catData.albums.length > 0) {
+                renderAlbumsSection(container, {
+                    title: `${category} Albums`,
+                    prefix: 'LATEST RELEASES',
+                    badge: 'JIOSAAVN',
+                    badgeClass: 'album-badge',
+                    albums: catData.albums.slice(0, 8)
+                });
+            }
 
-        if (songs && songs.length > 0) {
-            renderSection(container, {
-                title: `${category} Top Songs`,
-                prefix: 'TRENDING',
-                avatar: songs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80',
-                songs: songs,
-                hasCollageFirst: songs.length >= 4
-            });
+            if (catData.playlists && catData.playlists.length > 0) {
+                renderPlaylistsSection(container, {
+                    title: `${category} Playlists`,
+                    prefix: 'CURATED MIX',
+                    badge: 'LIVE',
+                    badgeClass: 'jio-badge',
+                    playlists: catData.playlists.slice(0, 8)
+                });
+            }
+
+            if (songs && songs.length > 0) {
+                renderSection(container, {
+                    title: `${category} Top Songs`,
+                    prefix: 'TRENDING',
+                    avatar: songs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80',
+                    songs: songs,
+                    hasCollageFirst: songs.length >= 4
+                });
+            }
+        } catch (err) {
+            console.warn("Mood category query error:", err);
+            container.innerHTML = `
+                <div style="text-align:center; padding: 30px 20px; color: var(--text-secondary);">
+                    <p>No results found for ${category}.</p>
+                </div>
+            `;
         }
     });
 });
