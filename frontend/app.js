@@ -8531,14 +8531,16 @@ async function checkForAppUpdates(isManual = false) {
                 const gh = await res.json();
                 const version = (gh.tag_name || '').replace(/^v/, '');
                 const apkAsset = (gh.assets || []).find(a => a.name.endsWith('.apk'));
-                releaseData = {
-                    version: version,
-                    name: gh.name || `Vibentra v${version}`,
-                    releaseDate: gh.published_at ? new Date(gh.published_at).toLocaleDateString() : 'Live Release',
-                    size: apkAsset ? `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB` : '18.5 MB',
-                    apkUrl: apkAsset ? apkAsset.browser_download_url : (gh.html_url || `https://github.com/${GITHUB_REPO_PATH}/releases`),
-                    changelog: gh.body ? gh.body.split('\n').map(l => l.trim()).filter(l => l.length > 0) : []
-                };
+                if (apkAsset) {
+                    releaseData = {
+                        version: version,
+                        name: gh.name || `Vibentra v${version}`,
+                        releaseDate: gh.published_at ? new Date(gh.published_at).toLocaleDateString() : 'Live Release',
+                        size: `${(apkAsset.size / (1024 * 1024)).toFixed(1)} MB`,
+                        apkUrl: apkAsset.browser_download_url,
+                        changelog: gh.body ? gh.body.split('\n').map(l => l.trim()).filter(l => l.length > 0) : []
+                    };
+                }
             }
         } catch (_) {}
 
@@ -8634,28 +8636,26 @@ function startUpdateDownload() {
     if (progressBox) progressBox.style.display = 'block';
     if (installBtn) installBtn.disabled = true;
 
-    const apkUrl = latestUpdateData?.apkUrl;
-    const version = latestUpdateData?.version || "1.4.1";
-    const totalSizeMB = parseFloat(latestUpdateData?.size) || 19.2;
+    const apkUrl = latestUpdateData?.apkUrl || "https://raw.githubusercontent.com/srivatsan2007/Vibentra/main/Portfolio/app-debug.apk";
+    const version = latestUpdateData?.version || "1.4.3";
+    const totalSizeMB = parseFloat(latestUpdateData?.size) || 33.2;
     const startTime = Date.now();
     let progress = 0;
 
-    if (statusText) statusText.textContent = `Connecting to release server for v${version}...`;
+    if (statusText) statusText.textContent = `Downloading Vibentra v${version} APK...`;
 
-    // Trigger true real APK download in browser / Android system download manager
+    // Trigger true real APK direct binary download (No redirect to GitHub)
     if (apkUrl) {
         try {
             const dlLink = document.createElement('a');
             dlLink.href = apkUrl;
-            dlLink.download = `Vibentra-v${version}.apk`;
-            dlLink.target = '_blank';
-            dlLink.rel = 'noopener noreferrer';
+            dlLink.setAttribute('download', `Vibentra-v${version}.apk`);
             document.body.appendChild(dlLink);
             dlLink.click();
-            setTimeout(() => dlLink.remove(), 1000);
+            setTimeout(() => dlLink.remove(), 800);
         } catch (e) {
             console.warn("Direct download link trigger failed:", e);
-            try { window.open(apkUrl, '_system'); } catch (_) {}
+            try { window.location.href = apkUrl; } catch (_) {}
         }
     }
 

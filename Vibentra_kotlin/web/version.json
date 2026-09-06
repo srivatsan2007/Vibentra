@@ -2,8 +2,8 @@
   "version": "1.4.3",
   "name": "Vibentra v1.4.3 - Continuous Playback & Non-Stop Video Audio Engine",
   "releaseDate": "September 2026",
-  "size": "19.2 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.3/Vibentra-v1.4.3.apk",
+  "size": "33.2 MB",
+  "apkUrl": "https://raw.githubusercontent.com/srivatsan2007/Vibentra/main/Portfolio/app-debug.apk",
   "changelog": [
     "🚀 100% Continuous Non-Stop Playback: Solved the 2-second YouTube playback pause with visible artwork video viewport",
     "🛡️ Automatic Lossless Audio Failover: Instant seamless fallback to 320kbps CD Quality audio if video streams encounter copyright embed blocks",
