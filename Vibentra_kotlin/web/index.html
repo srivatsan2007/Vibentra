@@ -789,10 +789,14 @@
         <!-- Player Body Content -->
         <div class="full-player-body">
             <!-- Big Square Album Art -->
-            <div class="full-player-artwork-container">
+            <div class="full-player-artwork-container" id="playerArtworkContainer">
                 <img id="fullPlayerCover" class="full-player-artwork" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80" alt="Album Cover">
                 <div class="player-logo-fallback" id="fullPlayerLogoFallback" style="display: none;">
                     <img src="./logo.png" alt="Vibentra" class="player-fallback-logo-img">
+                </div>
+                <!-- Dedicated YouTube Native Video Viewport (Prevents 2-second background pause) -->
+                <div id="ytVideoViewport" class="yt-video-viewport" style="display: none;">
+                    <div id="ytPlayer"></div>
                 </div>
             </div>
 
@@ -2040,10 +2044,6 @@
     <!-- Hidden HTML5 Audio Element for Background Playback (Screen on/off & lock screen) -->
     <audio id="globalAudioPlayer" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></audio>
 
-    <!-- YouTube IFrame Player Container for Real YouTube Audio/Video Playback -->
-    <div id="ytPlayerContainer" style="position:fixed; left:-9999px; top:-9999px; width:200px; height:200px; pointer-events:none; opacity:0.001; z-index:-100;">
-        <div id="ytPlayer"></div>
-    </div>
 
     <!-- Official YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>

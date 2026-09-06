@@ -1334,12 +1334,38 @@ body {
     overflow: hidden;
     box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75);
     flex-shrink: 0;
+    position: relative;
 }
 
 .full-player-artwork {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+}
+
+/* YouTube Video Player Viewport (Full Player & Mobile) */
+.yt-video-viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #000;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.yt-video-viewport iframe,
+.yt-video-viewport #ytPlayer {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    border-radius: 18px;
     display: block;
 }
 

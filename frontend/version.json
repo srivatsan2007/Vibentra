@@ -1,13 +1,13 @@
 {
-  "version": "1.4.2",
-  "name": "Vibentra v1.4.2 - Google Material UI & Direct Video Audio Update",
+  "version": "1.4.3",
+  "name": "Vibentra v1.4.3 - Continuous Playback & Non-Stop Video Audio Engine",
   "releaseDate": "September 2026",
   "size": "19.2 MB",
-  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.2/Vibentra-v1.4.2.apk",
+  "apkUrl": "https://github.com/srivatsan2007/Vibentra/releases/download/v1.4.3/Vibentra-v1.4.3.apk",
   "changelog": [
+    "🚀 100% Continuous Non-Stop Playback: Solved the 2-second YouTube playback pause with visible artwork video viewport",
+    "🛡️ Automatic Lossless Audio Failover: Instant seamless fallback to 320kbps CD Quality audio if video streams encounter copyright embed blocks",
     "✨ Iconic Google Material 4-Color Circular Loading Animation across all screens",
-    "🎵 Authentic YouTube Native Streaming & Exact Duration Preservation",
-    "🎙️ Crisp Plain Lyrics Mode with zero blur and enhanced readability",
-    "⚡ Live Update Notifications & Real-Time Sync"
+    "🎙️ Crisp Plain Lyrics Mode with zero blur and high contrast readability"
   ]
 }

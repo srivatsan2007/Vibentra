@@ -1,5 +1,5 @@
-// Vibentra Service Worker - v1.4.2 Offline Shell & Mobile System Notifications
-const CACHE_NAME = 'vibentra-offline-v1.4.2';
+// Vibentra Service Worker - v1.4.3 Offline Shell & Mobile System Notifications
+const CACHE_NAME = 'vibentra-offline-v1.4.3';
 const PRECACHE_ASSETS = [
     '/',
     '/index.html',
