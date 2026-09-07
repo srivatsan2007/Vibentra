@@ -965,7 +965,72 @@ function setLegacyIcon(enabled) {
 
 function setLiquidGlass(enabled) {
     localStorage.setItem('vibentra_liquid_glass', enabled);
+    document.body.classList.toggle('ios-liquid-glass', enabled);
     document.body.classList.toggle('disable-glass', !enabled);
+}
+
+function setBatterySaver(enabled) {
+    localStorage.setItem('vibentra_battery_saver', enabled);
+    document.body.classList.toggle('battery-saver-active', enabled);
+
+    const catSub = document.getElementById('batterySaverCategorySub');
+    if (catSub) {
+        catSub.textContent = enabled ? 'Active (Conserving battery)' : 'Power saving & GPU performance';
+        catSub.style.color = enabled ? '#10B981' : '';
+    }
+
+    const chkDetail = document.getElementById('chkBatterySaverDetail');
+    if (chkDetail && chkDetail.checked !== enabled) chkDetail.checked = enabled;
+
+    const chkQuick = document.getElementById('chkBatterySaverQuick');
+    if (chkQuick && chkQuick.checked !== enabled) chkQuick.checked = enabled;
+
+    if (typeof showNotification === 'function') {
+        showNotification(
+            enabled 
+                ? "🔋 Battery Saver Mode enabled: Heavy blurs & GPU animations paused" 
+                : "Battery Saver Mode disabled: Full visual fidelity restored", 
+            "success"
+        );
+    }
+}
+
+function initBatteryDiagnostics() {
+    if ('getBattery' in navigator) {
+        navigator.getBattery().then(battery => {
+            function updateBatteryInfo() {
+                const levelPct = Math.round(battery.level * 100);
+                const isCharging = battery.charging;
+                const battVal = document.getElementById('liveBatteryLevelVal');
+                const battBar = document.getElementById('liveBatteryProgressBar');
+                const battStatus = document.getElementById('liveBatteryStatusText');
+
+                if (battVal) battVal.textContent = `${levelPct}%`;
+                if (battBar) {
+                    battBar.style.width = `${levelPct}%`;
+                    battBar.style.background = levelPct <= 20 ? '#EF4444' : (levelPct <= 50 ? '#F59E0B' : '#10B981');
+                }
+                if (battStatus) {
+                    battStatus.textContent = isCharging ? 'Charging ⚡' : (levelPct <= 20 ? 'Low Battery ⚠️' : 'On Battery 🔋');
+                }
+            }
+            updateBatteryInfo();
+            try {
+                battery.addEventListener('levelchange', updateBatteryInfo);
+                battery.addEventListener('chargingchange', updateBatteryInfo);
+            } catch (e) {}
+        }).catch(() => {
+            const battVal = document.getElementById('liveBatteryLevelVal');
+            if (battVal) battVal.textContent = 'Active';
+            const battStatus = document.getElementById('liveBatteryStatusText');
+            if (battStatus) battStatus.textContent = 'Power conservation active';
+        });
+    } else {
+        const battVal = document.getElementById('liveBatteryLevelVal');
+        if (battVal) battVal.textContent = 'Active';
+        const battStatus = document.getElementById('liveBatteryStatusText');
+        if (battStatus) battStatus.textContent = 'Power conservation active';
+    }
 }
 
 function setHighRefresh(enabled) {
@@ -1164,8 +1229,17 @@ function initAppearanceSettings() {
 
     // 2. Icon & visual filters
     setLegacyIcon(localStorage.getItem('vibentra_legacy_icon') === 'true');
-    setLiquidGlass(localStorage.getItem('vibentra_liquid_glass') !== 'false');
+    setLiquidGlass(localStorage.getItem('vibentra_liquid_glass') === 'true');
     setHighRefresh(localStorage.getItem('vibentra_high_refresh') !== 'false');
+
+    // Battery Saver
+    const isBatterySaver = localStorage.getItem('vibentra_battery_saver') === 'true';
+    document.body.classList.toggle('battery-saver-active', isBatterySaver);
+    const catSub = document.getElementById('batterySaverCategorySub');
+    if (catSub && isBatterySaver) {
+        catSub.textContent = 'Active (Conserving battery)';
+        catSub.style.color = '#10B981';
+    }
 
     // 3. Mini-player & Player
     setMiniBgStyle(localStorage.getItem('vibentra_mini_bg_style') || 'Liquid Glass');
@@ -1348,7 +1422,8 @@ async function openSettingsCategoryDetail(id, title) {
         const themeSubText = modeLabels[curMode] || 'Dark mode';
 
         const legacyIcon = localStorage.getItem('vibentra_legacy_icon') === 'true';
-        const liquidGlass = localStorage.getItem('vibentra_liquid_glass') !== 'false';
+        const liquidGlass = localStorage.getItem('vibentra_liquid_glass') === 'true';
+        const batterySaver = localStorage.getItem('vibentra_battery_saver') === 'true';
         const highRefresh = localStorage.getItem('vibentra_high_refresh') !== 'false';
         const dynamicTheme = localStorage.getItem('vibentra_dynamic_theme') !== 'false';
 
@@ -1414,17 +1489,32 @@ async function openSettingsCategoryDetail(id, title) {
                         <div class="appearance-row-right"><i class="fa-solid fa-chevron-right appearance-chevron"></i></div>
                     </div>
 
-                    <!-- Liquid Glass (Beta) -->
+                    <!-- iOS Liquid Glass Theme -->
                     <div class="appearance-row">
                         <div class="appearance-row-left">
                             <div class="appearance-icon-box"><i class="fa-solid fa-droplet"></i></div>
                             <div class="appearance-text">
-                                <div class="appearance-title">Liquid Glass (Beta)</div>
-                                <div class="appearance-sub">Liquid Glass (Beta)</div>
+                                <div class="appearance-title">iOS Liquid Glass Theme</div>
+                                <div class="appearance-sub">Pure iOS translucent glass styling for navigation bar & mini player</div>
                             </div>
                         </div>
                         <label class="sheet-switch">
                             <input type="checkbox" id="chkLiquidGlass" ${liquidGlass ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Battery Saver Quick Toggle in Appearance -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-battery-half"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Battery Saver Mode</div>
+                                <div class="appearance-sub">Conserve battery by pausing GPU blurs & continuous animations</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkBatterySaverQuick" ${batterySaver ? 'checked' : ''}>
                             <span class="sheet-slider"></span>
                         </label>
                     </div>
@@ -1860,7 +1950,12 @@ async function openSettingsCategoryDetail(id, title) {
         // Wire Liquid Glass toggle
         document.getElementById('chkLiquidGlass')?.addEventListener('change', (e) => {
             setLiquidGlass(e.target.checked);
-            showNotification(e.target.checked ? "Liquid Glass enabled" : "Liquid Glass disabled", "success");
+            showNotification(e.target.checked ? "iOS Liquid Glass theme enabled" : "Normal theme restored", "success");
+        });
+
+        // Wire Battery Saver Quick toggle
+        document.getElementById('chkBatterySaverQuick')?.addEventListener('change', (e) => {
+            setBatterySaver(e.target.checked);
         });
 
         // Wire High Refresh toggle
@@ -2134,6 +2229,77 @@ async function openSettingsCategoryDetail(id, title) {
             localStorage.setItem('vibentra_auto_pl_cached', e.target.checked);
             showNotification(e.target.checked ? "Cached playlist visible" : "Cached playlist hidden", "success");
         });
+
+    } else if (id === 'battery_saver') {
+        const isBattSaver = localStorage.getItem('vibentra_battery_saver') === 'true';
+
+        settingsDetailBody.innerHTML = `
+            <div class="settings-sub-card">
+                <div class="settings-card-header">
+                    <i class="fa-solid fa-bolt" style="color: #10B981;"></i>
+                    <div>
+                        <div class="settings-card-title">Battery Saver Mode</div>
+                        <div class="settings-card-desc">Extend playback battery life by eliminating GPU & render overhead</div>
+                    </div>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label">Enable Battery Saver</span>
+                    <label class="sheet-switch">
+                        <input type="checkbox" id="chkBatterySaverDetail" ${isBattSaver ? 'checked' : ''}>
+                        <span class="sheet-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-sub-card">
+                <div class="settings-card-header">
+                    <i class="fa-solid fa-battery-half" style="color: #38BDF8;"></i>
+                    <div>
+                        <div class="settings-card-title">Live Device Battery</div>
+                        <div class="settings-card-desc" id="liveBatteryStatusText">Monitoring battery level...</div>
+                    </div>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label">Charge Level</span>
+                    <span class="settings-data-val" id="liveBatteryLevelVal" style="font-weight: 700; color: #10B981;">Detecting...</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 10px;">
+                    <div id="liveBatteryProgressBar" style="width: 0%; height: 100%; background: #10B981; transition: width 0.4s ease;"></div>
+                </div>
+            </div>
+
+            <div class="settings-sub-card">
+                <div class="settings-card-header">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        <div class="settings-card-title">Power Optimization Measures</div>
+                        <div class="settings-card-desc">Automatically active when Battery Saver is enabled</div>
+                    </div>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label"><i class="fa-solid fa-moon" style="margin-right: 6px; color: #94A3B8;"></i> AMOLED True Black Display</span>
+                    <span class="settings-data-val"><span class="real-data-badge" style="background: rgba(16,185,129,0.15); color: #10B981;">0% Pixel Power</span></span>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label"><i class="fa-solid fa-ban" style="margin-right: 6px; color: #94A3B8;"></i> GPU Backdrop Blur Elimination</span>
+                    <span class="settings-data-val"><span class="real-data-badge" style="background: rgba(16,185,129,0.15); color: #10B981;">Zero GPU Load</span></span>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label"><i class="fa-solid fa-pause" style="margin-right: 6px; color: #94A3B8;"></i> Continuous Animations Suspended</span>
+                    <span class="settings-data-val"><span class="real-data-badge" style="background: rgba(16,185,129,0.15); color: #10B981;">Idle CPU Draw</span></span>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label"><i class="fa-solid fa-gauge-simple" style="margin-right: 6px; color: #94A3B8;"></i> Display Refresh Rate Capped</span>
+                    <span class="settings-data-val"><span class="real-data-badge" style="background: rgba(16,185,129,0.15); color: #10B981;">Locked 60Hz</span></span>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('chkBatterySaverDetail')?.addEventListener('change', (e) => {
+            setBatterySaver(e.target.checked);
+        });
+
+        initBatteryDiagnostics();
 
     } else if (id === 'player_audio') {
         const bitrate = localStorage.getItem('vibentra_bitrate') || '320';

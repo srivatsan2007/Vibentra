@@ -9035,3 +9035,190 @@ body.high-refresh {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* =========================================================
+   13. PURE IOS LIQUID GLASS THEME (NAVBAR & FLOATING MINI-PLAYER)
+   CRITICAL: Activates ONLY when user toggles ON 'iOS Liquid Glass'
+   Otherwise, standard normal styling is preserved.
+   ========================================================= */
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav {
+    background: rgba(18, 25, 38, 0.52) !important;
+    backdrop-filter: blur(28px) saturate(210%) brightness(1.12) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(210%) brightness(1.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.55),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
+                0 0 24px var(--dynamic-glass-tint, rgba(165, 180, 252, 0.16)) !important;
+    position: fixed;
+    overflow: hidden;
+    transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: 40px 40px 0 0;
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav .nav-item {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav .nav-item:hover {
+    color: #ffffff !important;
+    transform: scale(1.06);
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav .nav-item.active {
+    background: rgba(255, 255, 255, 0.22) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.38) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.55) !important;
+    color: #ffffff !important;
+    transform: scale(1.05);
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-mini-player.capsule-player {
+    background: rgba(18, 25, 38, 0.52) !important;
+    backdrop-filter: blur(32px) saturate(220%) brightness(1.12) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(220%) brightness(1.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.24) !important;
+    box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.55),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
+                0 0 28px var(--dynamic-glass-tint, rgba(165, 180, 252, 0.16)) !important;
+    position: fixed;
+    overflow: hidden;
+    transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-mini-player.capsule-player::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: 9999px 9999px 0 0;
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .mini-player-cover-ring {
+    border: 2px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.28);
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .mini-play-circle-btn {
+    background: rgba(255, 255, 255, 0.24) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 1.2px rgba(255, 255, 255, 0.6) !important;
+    color: #ffffff !important;
+    transition: transform 0.15s ease, background 0.2s ease;
+}
+
+body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .mini-play-circle-btn:active {
+    transform: scale(0.92) !important;
+}
+
+/* Light Mode Adaptations for iOS Liquid Glass */
+[data-theme="light"].ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav,
+body.theme-light.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12),
+                inset 0 1.2px 1.2px rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-theme="light"].ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav .nav-item {
+    color: #475569 !important;
+}
+
+[data-theme="light"].ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-bottom-nav .nav-item.active {
+    background: rgba(15, 23, 42, 0.1) !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    color: #0F172A !important;
+}
+
+[data-theme="light"].ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-mini-player.capsule-player,
+body.theme-light.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-mini-player.capsule-player {
+    background: rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.14),
+                inset 0 1.2px 1.5px rgba(255, 255, 255, 0.98) !important;
+}
+
+[data-theme="light"].ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .mini-title {
+    color: #0F172A !important;
+}
+
+[data-theme="light"].ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .mini-play-circle-btn {
+    background: rgba(15, 23, 42, 0.1) !important;
+    border: 1px solid rgba(15, 23, 42, 0.2) !important;
+    color: #0F172A !important;
+}
+
+/* Desktop Dock Variant for iOS Liquid Glass */
+@media (min-width: 1024px) {
+    body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-mini-player.capsule-player {
+        border-radius: 0 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        box-shadow: 0 -12px 42px rgba(0, 0, 0, 0.55), inset 0 1.2px 0 rgba(255, 255, 255, 0.4) !important;
+    }
+    body.ios-liquid-glass:not(.disable-glass):not(.battery-saver-active) .floating-mini-player.capsule-player::before {
+        border-radius: 0 !important;
+    }
+}
+
+/* =========================================================
+   14. BATTERY SAVER MODE (100% POWER OPTIMIZATION)
+   ========================================================= */
+body.battery-saver-active {
+    --bg-base: #000000 !important;
+    --bg-surface: #0a0a0a !important;
+    --bg-card: #111111 !important;
+    background-color: #000000 !important;
+}
+
+/* Disable expensive blurs and multi-layered backdrop filters */
+body.battery-saver-active * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+/* Stop continuous CPU/GPU animations */
+body.battery-saver-active .album-art-rotating,
+body.battery-saver-active .vinyl-spinning,
+body.battery-saver-active .pulse-glow,
+body.battery-saver-active .ambient-glow-circle,
+body.battery-saver-active .hero-mesh-blob {
+    animation: none !important;
+    transform: none !important;
+}
+
+/* Optimized solid surfaces for Navbar & Mini Controller */
+body.battery-saver-active .floating-bottom-nav {
+    background: #0d0d0d !important;
+    border: 1px solid #222222 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8) !important;
+}
+
+body.battery-saver-active .floating-mini-player.capsule-player {
+    background: #0d0d0d !important;
+    border: 1px solid #222222 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8) !important;
+}
+
