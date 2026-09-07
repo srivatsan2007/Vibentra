@@ -1033,6 +1033,72 @@ function initBatteryDiagnostics() {
     }
 }
 
+// =========================================================
+// AUTOMATIC DAILY DYNAMIC TEXT & ACCENT ROTATION
+// Automatically adapts theme text highlights every day of the week
+// =========================================================
+const DAILY_ACCENT_PALETTE = [
+    { day: 0, name: 'Sunrise Coral', color: '#FF6B6B', rgb: '255, 107, 107', secondary: '#F59E0B' }, // Sunday
+    { day: 1, name: 'Electric Indigo', color: '#818CF8', rgb: '129, 140, 248', secondary: '#A78BFA' }, // Monday
+    { day: 2, name: 'Mint Emerald', color: '#10B981', rgb: '16, 185, 129', secondary: '#34D399' },    // Tuesday
+    { day: 3, name: 'Ocean Sky', color: '#06B6D4', rgb: '6, 182, 212', secondary: '#38BDF8' },        // Wednesday
+    { day: 4, name: 'Amber Topaz', color: '#F59E0B', rgb: '245, 158, 11', secondary: '#FBBF24' },      // Thursday
+    { day: 5, name: 'Neon Rose', color: '#F43F5E', rgb: '244, 63, 94', secondary: '#FB7185' },        // Friday
+    { day: 6, name: 'Cosmic Violet', color: '#A855F7', rgb: '168, 85, 247', secondary: '#C084FC' }     // Saturday
+];
+
+function applyDailyDynamicColors() {
+    if (localStorage.getItem('vibentra_daily_colors') === 'false') return;
+
+    const todayDay = new Date().getDay();
+    const theme = DAILY_ACCENT_PALETTE.find(p => p.day === todayDay) || DAILY_ACCENT_PALETTE[1];
+
+    document.documentElement.style.setProperty('--daily-accent', theme.color);
+    document.documentElement.style.setProperty('--daily-accent-rgb', theme.rgb);
+    document.documentElement.style.setProperty('--daily-secondary', theme.secondary);
+    document.documentElement.setAttribute('data-daily-theme', theme.name.toLowerCase().replace(/\s+/g, '-'));
+    console.log(`[Vibentra Daily Dynamic Text Accent]: Active day ${todayDay} (${theme.name}: ${theme.color})`);
+}
+
+// =========================================================
+// PERSIST & RESTORE LAST PLAYED SONG ON LAUNCH
+// =========================================================
+function initLastPlayedSong() {
+    try {
+        const raw = localStorage.getItem('vibentra_last_played_song');
+        if (!raw) return;
+        const song = JSON.parse(raw);
+        if (!song || !song.title) return;
+
+        currentSongObj = song;
+        currentPlaylist = [song];
+        currentTrackIndex = 0;
+
+        // 1. Populate Capsule Mini-Player (Screenshot 1)
+        if (miniPlayerCover && song.cover) miniPlayerCover.src = song.cover;
+        if (miniPlayerTitle) miniPlayerTitle.textContent = song.title;
+        if (miniPlayerArtist) miniPlayerArtist.textContent = song.artist || 'Vibentra';
+        if (miniPlayer) miniPlayer.classList.add('show');
+
+        // 2. Pre-populate Full-Screen Player (Screenshot 2)
+        if (fullPlayerHeaderTitle) fullPlayerHeaderTitle.textContent = song.title;
+        if (fullPlayerCover && song.cover) fullPlayerCover.src = song.cover;
+        if (fullPlayerTitle) fullPlayerTitle.textContent = song.title;
+        if (fullPlayerArtist) fullPlayerArtist.textContent = song.artist || 'Vibentra';
+        if (playerTotalDuration && song.duration) playerTotalDuration.textContent = normalizeDuration(song.duration);
+
+        // Render in paused/ready state
+        updatePlayPauseIcons(false);
+        if ('mediaSession' in navigator) {
+            updateMediaSession(song);
+            navigator.mediaSession.playbackState = 'paused';
+        }
+        syncNativeAndroidWidget(song, false);
+    } catch (e) {
+        console.warn("Error restoring last played song on launch:", e);
+    }
+}
+
 function setHighRefresh(enabled) {
     localStorage.setItem('vibentra_high_refresh', enabled);
     document.body.classList.toggle('high-refresh', enabled);
@@ -1264,6 +1330,12 @@ function initAppearanceSettings() {
 
     // 5. Gestures
     setupSwipeGestures();
+
+    // 6. Automatic Daily Dynamic Text Accent Colors
+    applyDailyDynamicColors();
+
+    // 7. Restore Last Played Song to Mini Floating Player
+    initLastPlayedSong();
 }
 
 // Call on startup
@@ -1424,6 +1496,7 @@ async function openSettingsCategoryDetail(id, title) {
         const legacyIcon = localStorage.getItem('vibentra_legacy_icon') === 'true';
         const liquidGlass = localStorage.getItem('vibentra_liquid_glass') === 'true';
         const batterySaver = localStorage.getItem('vibentra_battery_saver') === 'true';
+        const dailyColors = localStorage.getItem('vibentra_daily_colors') !== 'false';
         const highRefresh = localStorage.getItem('vibentra_high_refresh') !== 'false';
         const dynamicTheme = localStorage.getItem('vibentra_dynamic_theme') !== 'false';
 
@@ -1515,6 +1588,21 @@ async function openSettingsCategoryDetail(id, title) {
                         </div>
                         <label class="sheet-switch">
                             <input type="checkbox" id="chkBatterySaverQuick" ${batterySaver ? 'checked' : ''}>
+                            <span class="sheet-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Automatic Daily Colors -->
+                    <div class="appearance-row">
+                        <div class="appearance-row-left">
+                            <div class="appearance-icon-box"><i class="fa-solid fa-calendar-day"></i></div>
+                            <div class="appearance-text">
+                                <div class="appearance-title">Automatic Daily Text Colors</div>
+                                <div class="appearance-sub">Dynamically rotates highlight text accents every day of the week</div>
+                            </div>
+                        </div>
+                        <label class="sheet-switch">
+                            <input type="checkbox" id="chkDailyColors" ${dailyColors ? 'checked' : ''}>
                             <span class="sheet-slider"></span>
                         </label>
                     </div>
@@ -1956,6 +2044,20 @@ async function openSettingsCategoryDetail(id, title) {
         // Wire Battery Saver Quick toggle
         document.getElementById('chkBatterySaverQuick')?.addEventListener('change', (e) => {
             setBatterySaver(e.target.checked);
+        });
+
+        // Wire Automatic Daily Text Colors toggle
+        document.getElementById('chkDailyColors')?.addEventListener('change', (e) => {
+            localStorage.setItem('vibentra_daily_colors', e.target.checked);
+            if (e.target.checked) {
+                applyDailyDynamicColors();
+                showNotification("Automatic daily colors enabled", "success");
+            } else {
+                document.documentElement.style.removeProperty('--daily-accent');
+                document.documentElement.style.removeProperty('--daily-accent-rgb');
+                document.documentElement.style.removeProperty('--daily-secondary');
+                showNotification("Daily colors disabled, default theme restored", "info");
+            }
         });
 
         // Wire High Refresh toggle
@@ -3847,6 +3949,9 @@ function playTrack(song, playlist = []) {
     updateFavoriteButtonsUI(isSongFavorited(song.id));
     updatePlayPauseIcons(true);
     saveToListeningHistory(song);
+    try {
+        localStorage.setItem('vibentra_last_played_song', JSON.stringify(song));
+    } catch (_) {}
     if (typeof renderHomeWidget === 'function') renderHomeWidget();
 
     // Refresh lyrics if lyrics modal is open
@@ -4384,9 +4489,16 @@ function togglePlayPause() {
     }
 
     if (audioPlayer.paused) {
+        if ((!audioPlayer.src || audioPlayer.src === window.location.href) && currentSongObj) {
+            playTrack(currentSongObj);
+            return;
+        }
         audioPlayer.play().then(() => {
             updatePlayPauseIcons(true);
-        }).catch(e => console.warn(e));
+        }).catch(e => {
+            console.warn("Play error, re-resolving stream:", e);
+            if (currentSongObj) playTrack(currentSongObj);
+        });
     } else {
         audioPlayer.pause();
         updatePlayPauseIcons(false);

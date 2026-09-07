@@ -9222,3 +9222,43 @@ body.battery-saver-active .floating-mini-player.capsule-player {
     box-shadow: 0 4px 12px rgba(0,0,0,0.8) !important;
 }
 
+/* =========================================================
+   15. AUTOMATIC DAILY DYNAMIC TEXT & ACCENT SYSTEM
+   Rotates the app's highlight text & accents every day
+   ========================================================= */
+:root {
+    --daily-accent: #818CF8;
+    --daily-accent-rgb: 129, 140, 248;
+    --daily-secondary: #A78BFA;
+}
+
+/* Daily dynamic text color accent highlights */
+.daily-text-accent,
+.section-header h2 span,
+.section-title span,
+.featured-sub-badge,
+.real-data-badge.badge-daily {
+    color: var(--daily-accent) !important;
+}
+
+/* Automatic daily accent brand title gradient */
+body:not(.battery-saver-active) .top-header .brand-logo-text {
+    background: linear-gradient(135deg, #FFFFFF 40%, var(--daily-accent) 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+/* Active bottom navigation tab glowing daily accent */
+body:not(.battery-saver-active) .floating-bottom-nav .nav-item.active i {
+    color: var(--daily-accent) !important;
+    filter: drop-shadow(0 0 6px rgba(var(--daily-accent-rgb), 0.6));
+}
+
+/* Active Category Pill dynamic daily color */
+body:not(.battery-saver-active) .category-pill.active {
+    background: rgba(var(--daily-accent-rgb), 0.22) !important;
+    border-color: var(--daily-accent) !important;
+    color: var(--daily-accent) !important;
+    box-shadow: 0 0 14px rgba(var(--daily-accent-rgb), 0.3) !important;
+}
+

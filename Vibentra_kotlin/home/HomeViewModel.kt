@@ -167,7 +167,53 @@ class HomeViewModel @JvmOverloads constructor(
         } catch (_: Exception) {}
     }
 
+    private val prefs by lazy {
+        getApplication<Application>().getSharedPreferences("vibentra_native_prefs", Context.MODE_PRIVATE)
+    }
+
+    private fun saveLastPlayedSong(song: Song) {
+        try {
+            prefs.edit().apply {
+                putString("last_song_id", song.id)
+                putString("last_song_title", song.title)
+                putString("last_song_artist", song.artist)
+                putString("last_song_album", song.album)
+                putString("last_song_cover", song.coverUrl)
+                putString("last_song_stream", song.streamUrl)
+                putString("last_song_duration", song.duration)
+                apply()
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun loadLastPlayedSong(): Song? {
+        return try {
+            val id = prefs.getString("last_song_id", null) ?: return null
+            val title = prefs.getString("last_song_title", "") ?: ""
+            val artist = prefs.getString("last_song_artist", "") ?: ""
+            val album = prefs.getString("last_song_album", "") ?: ""
+            val cover = prefs.getString("last_song_cover", "") ?: ""
+            val stream = prefs.getString("last_song_stream", null)
+            val duration = prefs.getString("last_song_duration", "3:30") ?: "3:30"
+            Song(
+                id = id,
+                title = title,
+                artist = artist,
+                album = album,
+                coverUrl = cover,
+                streamUrl = stream,
+                duration = duration
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     init {
+        val lastSong = loadLastPlayedSong()
+        if (lastSong != null) {
+            _uiState.update { it.copy(currentSong = lastSong, isPlaying = false) }
+        }
         loadHomeData()
     }
 
@@ -225,6 +271,7 @@ class HomeViewModel @JvmOverloads constructor(
      * Play a song with instant audio streaming
      */
     fun playSong(song: Song) {
+        saveLastPlayedSong(song)
         _uiState.update {
             it.copy(currentSong = song, isPlaying = true)
         }
