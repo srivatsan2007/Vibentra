@@ -3947,6 +3947,59 @@ function syncNativeAndroidWidget(track = null, playing = isPlaying) {
     }
 }
 
+// =========================================================
+// NATIVE TELEPHONY & CALL INTERRUPT AUDIO FOCUS BRIDGE
+// =========================================================
+window.musicService = {
+    wasPlayingBeforeCall: false,
+    forceCallPause: function() {
+        console.log('[MusicService] Incoming call: pausing playback');
+        const isYt = (typeof isYouTubeTrackPlaying !== 'undefined' && isYouTubeTrackPlaying && typeof ytPlayer !== 'undefined' && ytPlayer?.pauseVideo);
+        if (isYt) {
+            this.wasPlayingBeforeCall = true;
+            try { ytPlayer.pauseVideo(); } catch (e) {}
+        } else if (audioPlayer && !audioPlayer.paused) {
+            this.wasPlayingBeforeCall = true;
+            try { audioPlayer.pause(); } catch (e) {}
+        }
+        isPlaying = false;
+        if (typeof updatePlayPauseIcons === 'function') updatePlayPauseIcons(false);
+        if (typeof syncNativeAndroidWidget === 'function') syncNativeAndroidWidget(null, false);
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    },
+    forceCallResume: function() {
+        console.log('[MusicService] Call ended: un-muting and resuming playback');
+        if (audioPlayer) {
+            audioPlayer.muted = false;
+            const savedVol = parseFloat(localStorage.getItem('vibentra_volume') || '1');
+            audioPlayer.volume = isNaN(savedVol) ? 1 : savedVol;
+        }
+        if (this.wasPlayingBeforeCall) {
+            this.wasPlayingBeforeCall = false;
+            const isYt = (typeof isYouTubeTrackPlaying !== 'undefined' && isYouTubeTrackPlaying && typeof ytPlayer !== 'undefined' && ytPlayer?.playVideo);
+            if (isYt) {
+                try { ytPlayer.playVideo(); } catch (e) {}
+                isPlaying = true;
+                if (typeof updatePlayPauseIcons === 'function') updatePlayPauseIcons(true);
+                if (typeof syncNativeAndroidWidget === 'function') syncNativeAndroidWidget(null, true);
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+            } else if (audioPlayer) {
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        isPlaying = true;
+                        if (typeof updatePlayPauseIcons === 'function') updatePlayPauseIcons(true);
+                        if (typeof syncNativeAndroidWidget === 'function') syncNativeAndroidWidget(null, true);
+                        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                    }).catch(err => {
+                        console.warn('[MusicService] Call resume play error:', err);
+                    });
+                }
+            }
+        }
+    }
+};
+
 // Native Android Direct & Capacitor Media Action Handler (Background Widget & Notification)
 window.handleNativeMediaAction = function(action) {
     console.log(`[Native Android Media Action Handler]: ${action}`);
