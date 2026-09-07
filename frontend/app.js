@@ -183,6 +183,7 @@ function switchScreen(screenName, skipHistory = false) {
             if (navHome) navHome.classList.add('active');
             document.querySelectorAll('#desktopNavHome, #desktopSearchNavHome, #desktopLibNavHome').forEach(btn => btn.classList.add('active'));
             if (typeof renderHomeWidget === 'function') renderHomeWidget();
+            if (typeof initLastPlayedSong === 'function') initLastPlayedSong();
         }
         if (screenName === 'search') {
             searchScreen.classList.add('active');
@@ -1070,30 +1071,64 @@ function initLastPlayedSong() {
         const song = JSON.parse(raw);
         if (!song || !song.title) return;
 
-        currentSongObj = song;
-        currentPlaylist = [song];
-        currentTrackIndex = 0;
+        if (typeof currentSongObj !== 'undefined') currentSongObj = song;
+        if (typeof currentPlaylist !== 'undefined') currentPlaylist = [song];
+        if (typeof currentTrackIndex !== 'undefined') currentTrackIndex = 0;
 
-        // 1. Populate Capsule Mini-Player (Screenshot 1)
-        if (miniPlayerCover && song.cover) miniPlayerCover.src = song.cover;
-        if (miniPlayerTitle) miniPlayerTitle.textContent = song.title;
-        if (miniPlayerArtist) miniPlayerArtist.textContent = song.artist || 'Vibentra';
-        if (miniPlayer) miniPlayer.classList.add('show');
+        // 1. Populate Capsule Mini-Player (Safe direct DOM retrieval)
+        const mini = document.getElementById('miniPlayer') || document.getElementById('floatingMiniPlayer');
+        const miniCover = document.getElementById('miniPlayerCover');
+        const miniTitle = document.getElementById('miniPlayerTitle');
+        const miniArtist = document.getElementById('miniPlayerArtist');
 
-        // 2. Pre-populate Full-Screen Player (Screenshot 2)
-        if (fullPlayerHeaderTitle) fullPlayerHeaderTitle.textContent = song.title;
-        if (fullPlayerCover && song.cover) fullPlayerCover.src = song.cover;
-        if (fullPlayerTitle) fullPlayerTitle.textContent = song.title;
-        if (fullPlayerArtist) fullPlayerArtist.textContent = song.artist || 'Vibentra';
-        if (playerTotalDuration && song.duration) playerTotalDuration.textContent = normalizeDuration(song.duration);
+        if (miniCover && song.cover) miniCover.src = song.cover;
+        if (miniTitle) miniTitle.textContent = song.title;
+        if (miniArtist) miniArtist.textContent = song.artist || 'Vibentra';
+        if (mini) {
+            mini.classList.add('show');
+            mini.style.removeProperty('display');
+        }
 
-        // Render in paused/ready state
-        updatePlayPauseIcons(false);
+        // 2. Pre-populate Full-Screen Player
+        const fpHeader = document.getElementById('fullPlayerHeaderTitle');
+        const fpCover = document.getElementById('fullPlayerCover');
+        const fpTitle = document.getElementById('fullPlayerTitle');
+        const fpArtist = document.getElementById('fullPlayerArtist');
+        const fpDuration = document.getElementById('playerTotalDuration');
+
+        if (fpHeader) fpHeader.textContent = song.title;
+        if (fpCover && song.cover) fpCover.src = song.cover;
+        if (fpTitle) fpTitle.textContent = song.title;
+        if (fpArtist) fpArtist.textContent = song.artist || 'Vibentra';
+        if (fpDuration && song.duration) {
+            fpDuration.textContent = (typeof normalizeDuration === 'function')
+                ? normalizeDuration(song.duration)
+                : song.duration;
+        }
+
+        // 3. Render icons in paused/ready state
+        if (typeof updatePlayPauseIcons === 'function') {
+            updatePlayPauseIcons(false);
+        }
+
+        // 4. Update MediaSession
         if ('mediaSession' in navigator) {
-            updateMediaSession(song);
+            if (typeof updateMediaSession === 'function') {
+                updateMediaSession(song);
+            }
             navigator.mediaSession.playbackState = 'paused';
         }
-        syncNativeAndroidWidget(song, false);
+
+        // 5. Post paused media notification to Android notification bar
+        if (typeof syncNativeAndroidWidget === 'function') {
+            syncNativeAndroidWidget(song, false);
+            setTimeout(() => {
+                syncNativeAndroidWidget(song, false);
+            }, 600);
+            setTimeout(() => {
+                syncNativeAndroidWidget(song, false);
+            }, 1600);
+        }
     } catch (e) {
         console.warn("Error restoring last played song on launch:", e);
     }
@@ -4199,17 +4234,29 @@ function syncNativeAndroidWidget(track = null, playing = isPlaying) {
     try {
         const bgPlugin = getBackgroundAudioPlugin();
         if (!bgPlugin) return;
-        const current = track || currentSongObj || (currentPlaylist && currentPlaylist[currentTrackIndex]);
+        const current = track || (typeof currentSongObj !== 'undefined' ? currentSongObj : null) || ((typeof currentPlaylist !== 'undefined' && currentPlaylist) ? currentPlaylist[currentTrackIndex] : null);
         if (!current) return;
 
-        const durMs = Math.floor((audioPlayer.duration || 0) * 1000);
-        const posMs = Math.floor((audioPlayer.currentTime || 0) * 1000);
+        let durMs = Math.floor(((typeof audioPlayer !== 'undefined' && audioPlayer?.duration) || 0) * 1000);
+        if ((!durMs || isNaN(durMs) || durMs <= 0) && current.duration) {
+            if (typeof current.duration === 'number') {
+                durMs = Math.floor(current.duration * 1000);
+            } else if (typeof current.duration === 'string') {
+                const parts = current.duration.split(':');
+                if (parts.length === 2) {
+                    durMs = (parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10)) * 1000;
+                } else if (!isNaN(parseInt(current.duration, 10))) {
+                    durMs = parseInt(current.duration, 10) * 1000;
+                }
+            }
+        }
+        const posMs = Math.floor(((typeof audioPlayer !== 'undefined' && audioPlayer?.currentTime) || 0) * 1000);
 
         bgPlugin.startService({
             title: current.title || "Vibentra Music",
             artist: current.artist || "Playing...",
             cover: current.cover || "",
-            isPlaying: playing,
+            isPlaying: Boolean(playing),
             duration: durMs > 0 ? durMs : 0,
             position: posMs > 0 ? posMs : 0
         });
@@ -4284,6 +4331,10 @@ window.handleNativeMediaAction = function(action) {
             syncNativeAndroidWidget(null, true);
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         } else if (audioPlayer.paused) {
+            if ((!audioPlayer.src || audioPlayer.src === window.location.href) && currentSongObj) {
+                playTrack(currentSongObj);
+                return;
+            }
             const playPromise = audioPlayer.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
@@ -4538,6 +4589,9 @@ if (fullPlayerPlayPauseBtn) fullPlayerPlayPauseBtn.addEventListener('click', () 
 if (fullPlayerPrevBtn) fullPlayerPrevBtn.addEventListener('click', () => playPreviousTrack());
 if (fullPlayerNextBtn) fullPlayerNextBtn.addEventListener('click', () => playNextTrack());
 if (collapsePlayerBtn) collapsePlayerBtn.addEventListener('click', () => closeFullPlayer());
+
+// Restore last played track to mini player and notification bar once controls are established
+initLastPlayedSong();
 
 function openFullPlayer() {
     if (fullPlayerScreen) {
