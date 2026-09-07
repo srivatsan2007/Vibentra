@@ -7,4 +7,6 @@ frontend_old_backup/
 .agents/
 .gradle/
 *.gradle/
+.idea/caches/
+**/deploymentTargetSelector.xml
 
