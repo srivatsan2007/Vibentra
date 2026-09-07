@@ -84,6 +84,24 @@ Streaming across multi-source audio aggregators (JioSaavn, YouTube Music, and gl
 * **Zero-Stutter Background Audio**: Native Android service bridge in Capacitor and active WebAudio keep-alive worker preventing browser background throttling.
 * **Full MediaSession Integration**: Rich notification drawer controls, lock screen artwork streaming, and headphone media button hooks.
 
+### 📞 8. Phone Call Interruption & Seamless Auto-Resume
+* **Smart Audio Focus Management**: Automatically detects incoming and ongoing phone calls via Android `TelephonyManager` & `AudioManager`.
+* **Zero Sound Bleed**: Instantly silences music when an incoming call rings or is answered.
+* **Intelligent Auto-Resume**: Un-mutes and smoothly resumes playback right where you left off the moment the phone call ends.
+
+### 🔋 9. Battery Saver & Performance Diagnostics Hub
+* **Live Diagnostic Battery Widget**: Real-time monitoring of device battery percentage, charging state, and power status.
+* **1-Tap Battery Saver Mode**: Pauses heavy GPU backdrop blurs, disables continuous CSS animations, and activates true-black OLED styling to dramatically extend battery life.
+
+### 💧 10. iOS Liquid Glass Theme & Automatic Daily Colors
+* **Pure iOS Liquid Glass Theme**: Optional Apple-grade specular translucent glass styling with 28px/32px backdrop blur, top refraction highlight, and glowing rim reflections for the floating navigation bar and mini player (strictly OFF by default, transforms instantly on toggle).
+* **Automatic Daily Dynamic Accent Rotation**: Automatically adapts text highlight accents every day of the week (*Sunrise Coral, Electric Indigo, Mint Emerald, Ocean Sky, Amber Topaz, Neon Rose, Cosmic Violet*).
+
+### 🔄 11. Cold-Launch Last Song Persistence & Notification Bar Sync
+* **Cold-Restart Song Memory**: Persists your last played track across app restarts, reboots, and recent app clearing.
+* **Instant Ready-to-Play State**: Automatically populates the floating capsule mini-player and posts the interactive `MediaStyle` notification to your phone's notification bar upon app entry.
+* **1-Tap Resume**: Tap play on either the mini player or the notification drawer to immediately stream and continue listening.
+
 ---
 
 ## 🛠️ Architecture & Tech Stack
@@ -173,8 +191,8 @@ serve -s . -p 3000
 | Category | Features Included |
 | :--- | :--- |
 | 👤 **Account** | Profile avatar customizer, QR sharing, password management, session tokens. |
-| 🎨 **Interface & Themes** | 7+ Presets (*Midnight Purple*, *Ocean Blue*, *Forest Green*, *Sunset Orange*, *Cherry Red*, *Cyberpunk*, *Vibentra Tricolor*) + Custom Hex Theme Studio. |
-| 🔋 **Battery Saver** | Pure `#000000` AMOLED dark theme, GPU shader disablement, low-battery auto triggers. |
+| 🎨 **Interface & Themes** | 7+ Presets (*Midnight Purple*, *Ocean Blue*, *Forest Green*, *Sunset Orange*, *Cherry Red*, *Cyberpunk*, *Vibentra Tricolor*), iOS Liquid Glass Theme toggle, Automatic Daily Dynamic Colors rotation, Custom Hex Theme Studio. |
+| 🔋 **Battery & Performance** | Live hardware battery diagnostics widget, 1-tap Battery Saver mode, GPU blur & shader bypass, true-black OLED power conservation. |
 | 🌐 **Content & Languages** | Regional languages (*Tamil, Telugu, Hindi, Malayalam, Kannada, Punjabi, English*), 320kbps audio quality picker, explicit content filters. |
 | 🎵 **Playback** | Gapless audio playback toggle, Crossfade duration slider (`0s` to `12s`), Autoplay similar recommendations, Stop on app exit. |
 | 🕵️ **History & Privacy** | Incognito private session mode, Pause history recording, Clear playback cache, Clear search queries. |
