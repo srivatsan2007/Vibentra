@@ -1,6 +1,7 @@
 /**
  * VIBENTRA - MODERN WEB ENGINE
  * 100% Real Live APIs (JioSaavn & YouTube Music) + Firebase Auth + Echo Music UI Reference
+ * Build: 2026.09.07-stable
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
