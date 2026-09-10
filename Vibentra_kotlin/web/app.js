@@ -73,6 +73,12 @@ function getStoredUserSession() {
     return null;
 }
 
+// Safe DOM string sanitization utility (Option 1 - Frontend Security)
+function sanitizeText(str) {
+    if (typeof str !== 'string') return str || '';
+    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+}
+
 // Iconic Google Material 4-Color Circular Loader Component
 function getGoogleSpinnerHtml(size = 46) {
     return `
@@ -2646,6 +2652,7 @@ async function openSettingsCategoryDetail(id, title) {
         const hist = JSON.parse(localStorage.getItem('vibentra_history') || '[]');
         const searches = JSON.parse(localStorage.getItem('vibentra_search_history') || '[]');
         const isIncognito = localStorage.getItem('vibentra_incognito') === 'true';
+        const isAppLock = localStorage.getItem('vibentra_app_lock_enabled') === 'true';
 
         settingsDetailBody.innerHTML = `
             <div class="settings-sub-card">
@@ -2675,6 +2682,29 @@ async function openSettingsCategoryDetail(id, title) {
                     <i class="fa-solid fa-trash"></i> Clear All History & Searches
                 </button>
             </div>
+
+            <!-- In-App Biometric & PIN Security Lock Card (Option 3) -->
+            <div class="settings-sub-card" style="margin-top: 14px;">
+                <div class="settings-card-header">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    <div>
+                        <div class="settings-card-title">App Lock & Biometrics</div>
+                        <div class="settings-card-desc">Fingerprint, Face Unlock or 4-digit PIN</div>
+                    </div>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label">Require Biometric / PIN Lock</span>
+                    <label class="sheet-switch">
+                        <input type="checkbox" id="chkAppLockEnabled" ${isAppLock ? 'checked' : ''}>
+                        <span class="sheet-slider"></span>
+                    </label>
+                </div>
+                <div id="appLockSubControls" style="display: ${isAppLock ? 'block' : 'none'}; margin-top: 10px;">
+                    <button class="btn-setting-action" id="btnChangeAppLockPin" style="width: 100%;">
+                        <i class="fa-solid fa-key"></i> Set / Change 4-Digit PIN
+                    </button>
+                </div>
+            </div>
         `;
 
         document.getElementById('chkPrivacyIncognito')?.addEventListener('change', (e) => {
@@ -2690,6 +2720,46 @@ async function openSettingsCategoryDetail(id, title) {
             if (elH) elH.textContent = '0 songs logged';
             if (elS) elS.textContent = '0 queries';
             showNotification("Listening & Search history successfully erased 🛡️", "success");
+        });
+
+        document.getElementById('chkAppLockEnabled')?.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            if (enabled) {
+                const currentPin = localStorage.getItem('vibentra_app_lock_pin');
+                if (!currentPin) {
+                    const newPin = prompt("Enter a 4-digit security PIN for Vibentra:", "1234");
+                    if (newPin && /^\d{4}$/.test(newPin.trim())) {
+                        localStorage.setItem('vibentra_app_lock_pin', newPin.trim());
+                        localStorage.setItem('vibentra_app_lock_enabled', 'true');
+                        const sub = document.getElementById('appLockSubControls');
+                        if (sub) sub.style.display = 'block';
+                        showNotification("Biometric & PIN App Lock enabled! 🔒", "success");
+                    } else {
+                        e.target.checked = false;
+                        showNotification("App lock cancelled (PIN must be 4 digits)", "error");
+                    }
+                } else {
+                    localStorage.setItem('vibentra_app_lock_enabled', 'true');
+                    const sub = document.getElementById('appLockSubControls');
+                    if (sub) sub.style.display = 'block';
+                    showNotification("Biometric & PIN App Lock enabled! 🔒", "success");
+                }
+            } else {
+                localStorage.setItem('vibentra_app_lock_enabled', 'false');
+                const sub = document.getElementById('appLockSubControls');
+                if (sub) sub.style.display = 'none';
+                showNotification("App Lock disabled", "success");
+            }
+        });
+
+        document.getElementById('btnChangeAppLockPin')?.addEventListener('click', () => {
+            const newPin = prompt("Enter a new 4-digit security PIN:", "");
+            if (newPin && /^\d{4}$/.test(newPin.trim())) {
+                localStorage.setItem('vibentra_app_lock_pin', newPin.trim());
+                showNotification("PIN updated successfully! 🔑", "success");
+            } else if (newPin !== null) {
+                showNotification("Invalid PIN (must be exactly 4 digits)", "error");
+            }
         });
 
     } else if (id === 'storage') {
@@ -3131,7 +3201,14 @@ async function fetchLiveJioSaavn(query) {
 // =========================================================
 async function fetchLiveAlbumTracks(albumId, title = '', artist = '') {
     if (albumId) {
-        const cleanId = String(albumId).replace(/^album_/, '');
+        const cleanId = String(albumId).replace(/^album_|^alb_/, '');
+
+        // 1. If it is a YouTube Music album / playlist ID
+        if (cleanId.startsWith('OLAK5uy_') || cleanId.startsWith('PL') || cleanId.startsWith('UU') || cleanId.startsWith('RD') || cleanId.startsWith('yt_')) {
+            const ytTracks = await fetchLiveYouTubePlaylistTracks(cleanId.replace(/^yt_/, ''), title);
+            if (ytTracks && ytTracks.length > 0) return ytTracks;
+        }
+
         const urls = [
             `https://vibentra.vercel.app/api/jiosaavn/album?id=${encodeURIComponent(cleanId)}`,
             `https://saavn.me/albums?id=${encodeURIComponent(cleanId)}`
@@ -3161,6 +3238,26 @@ async function fetchLiveAlbumTracks(albumId, title = '', artist = '') {
                 }
             }
         } catch (_) {}
+
+        // Fallback: search YouTube Music for this album
+        try {
+            const ytSearch = await fetchYouTubePipedSearch(`${title} album songs`);
+            if (ytSearch.playlists && ytSearch.playlists.length > 0) {
+                const tracks = await fetchLiveYouTubePlaylistTracks(ytSearch.playlists[0].id, title);
+                if (tracks && tracks.length > 0) return tracks;
+            }
+            if (ytSearch.videos && ytSearch.videos.length > 0) {
+                return ytSearch.videos.map(v => ({
+                    ...v,
+                    id: v.id,
+                    title: v.title,
+                    artist: v.artist || artist || 'YouTube Music',
+                    album: title,
+                    cover: v.cover || v.thumbnail,
+                    duration: v.duration
+                }));
+            }
+        } catch (_) {}
     }
     return [];
 }
@@ -3169,8 +3266,8 @@ async function fetchLivePlaylistTracks(listId, title = '') {
     if (listId) {
         const cleanId = String(listId).replace(/^pl_|^search_pl_/, '');
 
-        if (cleanId.startsWith('PL') || cleanId.startsWith('UU') || cleanId.startsWith('RD') || cleanId.startsWith('OLAK5uy_')) {
-            const ytTracks = await fetchLiveYouTubePlaylistTracks(cleanId, title);
+        if (cleanId.startsWith('PL') || cleanId.startsWith('UU') || cleanId.startsWith('RD') || cleanId.startsWith('OLAK5uy_') || cleanId.startsWith('yt_')) {
+            const ytTracks = await fetchLiveYouTubePlaylistTracks(cleanId.replace(/^yt_/, ''), title);
             if (ytTracks && ytTracks.length > 0) return ytTracks;
         }
 
@@ -3201,6 +3298,15 @@ async function fetchLivePlaylistTracks(listId, title = '') {
                     const tracks = await fetchLivePlaylistTracks(matched.id, '');
                     if (tracks && tracks.length > 0) return tracks;
                 }
+            }
+        } catch (_) {}
+
+        // Fallback: search YouTube Music for this playlist
+        try {
+            const ytSearch = await fetchYouTubePipedSearch(`${title} playlist`);
+            if (ytSearch.playlists && ytSearch.playlists.length > 0) {
+                const tracks = await fetchLiveYouTubePlaylistTracks(ytSearch.playlists[0].id, title);
+                if (tracks && tracks.length > 0) return tracks;
             }
         } catch (_) {}
     }
@@ -3328,13 +3434,137 @@ async function loadHomeFeed(forceRefresh = false) {
     `;
 
     try {
-        // Parallel queries to real live JioSaavn API & YouTube Music
-        const [liveAlbumsData, liveJioPlaylistsData, ytTrendingData, viralSongs] = await Promise.all([
-            fetchJioSaavnSearchAll('Latest Tamil Albums 2024'),
-            fetchJioSaavnSearchAll('Tamil Top 50 Chartbusters'),
-            fetchYouTubePipedSearch('Tamil Trending Music Playlist'),
-            fetchLiveJioSaavn('Tamil Viral Hits')
+        // 1. Read user's selected languages & current year dynamically
+        const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
+        const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+        const currentYear = new Date().getFullYear();
+
+        // 2. Fetch official JioSaavn Launch Modules (Real-time live charts & trending from JioSaavn API)
+        let modulesData = null;
+        try {
+            const mRes = await fetch('https://vibentra.vercel.app/api/jiosaavn/modules', { signal: AbortSignal.timeout(6000) });
+            if (mRes.ok) {
+                modulesData = await mRes.json();
+            }
+        } catch (e) {
+            console.warn("JioSaavn modules fetch fallback:", e);
+        }
+
+        // 3. Parallel queries for YouTube Music & language-specific dynamic trending
+        const [langSearchData, ytTrendingData, ytHitsData, viralSongs] = await Promise.all([
+            fetchJioSaavnSearchAll(`${primaryLang} Trending Hits ${currentYear}`),
+            fetchYouTubePipedSearch(`${primaryLang} Trending Music Playlist`),
+            fetchYouTubePipedSearch(`${primaryLang} Top Hits ${currentYear}`),
+            fetchLiveJioSaavn(`${primaryLang} Top Hits ${currentYear}`)
         ]);
+
+        // Merge Albums (Live JioSaavn official launch albums + current language fresh drops + YouTube Music albums)
+        let mergedAlbums = [];
+        if (modulesData?.albums && modulesData.albums.length > 0) {
+            mergedAlbums.push(...modulesData.albums.map(a => ({
+                id: a.id,
+                title: a.title,
+                artist: a.subtitle || a.artist || 'JioSaavn Official',
+                cover: a.cover,
+                year: 'Latest',
+                badge: 'JioSaavn'
+            })));
+        }
+        if (langSearchData?.albums && langSearchData.albums.length > 0) {
+            mergedAlbums.push(...langSearchData.albums.map(a => ({ ...a, badge: a.badge || 'JioSaavn' })));
+        }
+        if (ytTrendingData?.albums && ytTrendingData.albums.length > 0) {
+            mergedAlbums.push(...ytTrendingData.albums);
+        }
+        if (ytHitsData?.albums && ytHitsData.albums.length > 0) {
+            mergedAlbums.push(...ytHitsData.albums);
+        }
+        const seenAlbums = new Set();
+        mergedAlbums = mergedAlbums.filter(a => {
+            const key = (a.title || '').toLowerCase().trim();
+            if (!key || seenAlbums.has(key)) return false;
+            seenAlbums.add(key);
+            return true;
+        });
+
+        // Merge Playlists (Live JioSaavn official top charts + chartbusters)
+        let mergedPlaylists = [];
+        if (modulesData?.charts && modulesData.charts.length > 0) {
+            mergedPlaylists.push(...modulesData.charts.map(c => ({
+                id: c.id,
+                title: c.title,
+                author: c.subtitle || 'JioSaavn Official Chart',
+                thumbnail: c.cover,
+                cover: c.cover,
+                badge: 'JioSaavn'
+            })));
+        }
+        if (modulesData?.playlists && modulesData.playlists.length > 0) {
+            mergedPlaylists.push(...modulesData.playlists.map(p => ({
+                id: p.id,
+                title: p.title,
+                author: p.subtitle || 'Top Playlist',
+                thumbnail: p.cover,
+                cover: p.cover,
+                badge: 'JioSaavn'
+            })));
+        }
+        if (langSearchData?.playlists && langSearchData.playlists.length > 0) {
+            mergedPlaylists.push(...langSearchData.playlists.map(p => ({ ...p, badge: p.badge || 'JioSaavn' })));
+        }
+        const seenPlaylists = new Set();
+        mergedPlaylists = mergedPlaylists.filter(p => {
+            const key = (p.title || '').toLowerCase().trim();
+            if (!key || seenPlaylists.has(key)) return false;
+            seenPlaylists.add(key);
+            return true;
+        });
+
+        // YouTube Music Playlists
+        let ytPlaylists = [];
+        if (ytTrendingData?.playlists && ytTrendingData.playlists.length > 0) {
+            ytPlaylists.push(...ytTrendingData.playlists);
+        }
+        if (ytHitsData?.playlists && ytHitsData.playlists.length > 0) {
+            ytPlaylists.push(...ytHitsData.playlists);
+        }
+        const seenYtPl = new Set();
+        ytPlaylists = ytPlaylists.filter(p => {
+            const key = (p.title || '').toLowerCase().trim();
+            if (!key || seenYtPl.has(key)) return false;
+            seenYtPl.add(key);
+            return true;
+        });
+
+        // YouTube Music Tracks
+        let ytTracks = [];
+        if (ytHitsData?.videos && ytHitsData.videos.length > 0) {
+            ytTracks.push(...ytHitsData.videos);
+        } else if (ytTrendingData?.videos && ytTrendingData.videos.length > 0) {
+            ytTracks.push(...ytTrendingData.videos);
+        }
+
+        // Merge Viral Tracks (JioSaavn)
+        let mergedViral = [];
+        if (viralSongs && viralSongs.length > 0) {
+            mergedViral.push(...viralSongs);
+        }
+        if (langSearchData?.songs && langSearchData.songs.length > 0) {
+            mergedViral.push(...langSearchData.songs);
+        }
+        if (modulesData?.trending) {
+            const trendingSongs = modulesData.trending.filter(t => t.type === 'song');
+            if (trendingSongs.length > 0) {
+                mergedViral.unshift(...trendingSongs);
+            }
+        }
+        const seenSongs = new Set();
+        mergedViral = mergedViral.filter(s => {
+            const key = (s.title || '').toLowerCase().trim();
+            if (!key || seenSongs.has(key)) return false;
+            seenSongs.add(key);
+            return true;
+        });
 
         container.innerHTML = '';
 
@@ -3357,45 +3587,56 @@ async function loadHomeFeed(forceRefresh = false) {
         });
 
         // 1. Live & Latest Albums Section (JioSaavn & YouTube Music)
-        if (liveAlbumsData.albums && liveAlbumsData.albums.length > 0) {
+        if (mergedAlbums.length > 0) {
             renderAlbumsSection(container, {
                 title: 'Latest & Trending Albums',
                 prefix: 'FRESH DROPS',
                 badge: 'LIVE ALBUMS',
                 badgeClass: 'album-badge',
-                albums: liveAlbumsData.albums.slice(0, 10)
+                albums: mergedAlbums.slice(0, 10)
             });
         }
 
         // 2. Live Chartbuster Playlists Section (JioSaavn Official)
-        if (liveJioPlaylistsData.playlists && liveJioPlaylistsData.playlists.length > 0) {
+        if (mergedPlaylists.length > 0) {
             renderPlaylistsSection(container, {
                 title: 'Top Chartbuster Playlists',
                 prefix: 'OFFICIAL CHARTS',
                 badge: 'JIOSAAVN',
                 badgeClass: 'jio-badge',
-                playlists: liveJioPlaylistsData.playlists.slice(0, 10)
+                playlists: mergedPlaylists.slice(0, 10)
             });
         }
 
         // 3. YouTube Music Trending Playlists
-        if (ytTrendingData.playlists && ytTrendingData.playlists.length > 0) {
+        if (ytPlaylists.length > 0) {
             renderPlaylistsSection(container, {
                 title: 'Trending on YouTube Music',
                 prefix: 'LIVE STREAM',
                 badge: 'YT MUSIC',
                 badgeClass: 'yt-badge',
-                playlists: ytTrendingData.playlists.slice(0, 10)
+                playlists: ytPlaylists.slice(0, 10)
             });
         }
 
-        // 4. Trending & Viral Tracks
-        if (viralSongs && viralSongs.length > 0) {
+        // 4. YouTube Music Hit Songs & Official Audio (Direct playback from YouTube Music)
+        if (ytTracks.length > 0) {
+            renderSection(container, {
+                title: 'YouTube Music Top Hits',
+                prefix: 'OFFICIAL AUDIO',
+                avatar: ytTracks[0]?.thumbnail || ytTracks[0]?.cover,
+                songs: ytTracks.slice(0, 12),
+                hasCollageFirst: false
+            });
+        }
+
+        // 5. Trending & Viral Tracks (JioSaavn + Multi-Source)
+        if (mergedViral.length > 0) {
             renderSection(container, {
                 title: 'Viral Hits India',
                 prefix: 'TOP STREAMING',
-                avatar: viralSongs[0]?.cover,
-                songs: viralSongs,
+                avatar: mergedViral[0]?.cover,
+                songs: mergedViral.slice(0, 12),
                 hasCollageFirst: false
             });
         }
@@ -3405,7 +3646,9 @@ async function loadHomeFeed(forceRefresh = false) {
             homeLiveFeedTimer = setInterval(() => {
                 const homeScreen = document.getElementById('homeScreen');
                 if (homeScreen && homeScreen.classList.contains('active')) {
-                    loadHomeFeed(true);
+                    const activePill = document.querySelector('.mood-pill.active');
+                    const cat = activePill ? activePill.getAttribute('data-category') : 'All';
+                    if (cat === 'All') loadHomeFeed(true);
                 }
             }, 300000);
         }
@@ -3596,17 +3839,23 @@ function renderSection(parent, { title, prefix, avatar, songs, hasCollageFirst }
     parent.appendChild(section);
 }
 
-// Mood Pills category switching with high-precision live API queries
-const categoryQueries = {
-    'Romance': 'Tamil Romance',
-    'Feel good': 'Tamil Feel Good',
-    'Party': 'Tamil Party Hits',
-    'Relax': 'Tamil Melody',
-    'Energize': 'Tamil Workout',
-    'Tamil Hits': 'Tamil Top Hits',
-    '90s Road Trip': 'Tamil 90s Hits',
-    'Indie': 'Tamil Indie'
-};
+// Mood Pills category switching with high-precision live API queries (JioSaavn & YouTube Music)
+function getCategoryQuery(category) {
+    const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
+    const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+    const currentYear = new Date().getFullYear();
+    const queries = {
+        'Romance': `${primaryLang} Romance Melody`,
+        'Feel good': `${primaryLang} Feel Good Hits`,
+        'Party': `${primaryLang} Party Dance Hits`,
+        'Relax': `${primaryLang} Relaxing Acoustic`,
+        'Energize': `${primaryLang} Workout Mass Hits`,
+        'Tamil Hits': `Tamil Top Hits ${currentYear}`,
+        '90s Road Trip': `${primaryLang} 90s Classic Hits`,
+        'Indie': `${primaryLang} Indie Independent Songs`
+    };
+    return queries[category] || `${primaryLang} ${category}`;
+}
 
 document.querySelectorAll('.mood-pill').forEach(pill => {
     pill.addEventListener('click', async () => {
@@ -3615,6 +3864,13 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
 
         const category = pill.getAttribute('data-category');
         const container = document.getElementById('homeSections');
+        if (!container) return;
+
+        // If user taps 'All', restore the unified live feed
+        if (category === 'All') {
+            loadHomeFeed(false);
+            return;
+        }
 
         container.innerHTML = `
             <div class="loading-spinner-box">
@@ -3622,25 +3878,208 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
             </div>
         `;
 
-        const query = categoryQueries[category] || `Tamil ${category}`;
-        const [catData, songs] = await Promise.all([
+        const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
+        const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+        const currentYear = new Date().getFullYear();
+
+        // 1. DEDICATED YOUTUBE MUSIC VIEW
+        if (category === 'YouTube Music') {
+            try {
+                const [ytPlData, ytHitsData, ytAlbumsData] = await Promise.all([
+                    fetchYouTubePipedSearch(`${primaryLang} Trending Music Playlist`),
+                    fetchYouTubePipedSearch(`${primaryLang} Top Hits ${currentYear}`),
+                    fetchYouTubePipedSearch(`${primaryLang} Official Audio Album ${currentYear}`)
+                ]);
+
+                container.innerHTML = '';
+
+                const statusBar = document.createElement('div');
+                statusBar.className = 'home-live-status-bar';
+                statusBar.innerHTML = `
+                    <div class="live-status-left">
+                        <span class="live-pulse-dot" style="background:#EF4444;"></span>
+                        <span class="live-status-label"><i class="fa-brands fa-youtube" style="color:#EF4444;"></i> YouTube Music: Live Stream & Charts</span>
+                    </div>
+                    <button class="btn-refresh-home-live" id="btnBackToHomeFeed" title="Back to All Music">
+                        <i class="fa-solid fa-house"></i> All
+                    </button>
+                `;
+                container.appendChild(statusBar);
+                document.getElementById('btnBackToHomeFeed')?.addEventListener('click', () => {
+                    document.querySelectorAll('.mood-pill').forEach(p => p.classList.remove('active'));
+                    document.querySelector('.mood-pill[data-category="All"]')?.classList.add('active');
+                    loadHomeFeed(true);
+                });
+
+                // A. YouTube Music Trending Playlists
+                if (ytPlData.playlists && ytPlData.playlists.length > 0) {
+                    renderPlaylistsSection(container, {
+                        title: 'Trending on YouTube Music',
+                        prefix: 'OFFICIAL PLAYLISTS',
+                        badge: 'YT MUSIC',
+                        badgeClass: 'yt-badge',
+                        playlists: ytPlData.playlists.slice(0, 10)
+                    });
+                }
+
+                // B. YouTube Music Top Hits & Official Audio
+                const ytSongs = (ytHitsData.videos && ytHitsData.videos.length > 0) ? ytHitsData.videos : (ytPlData.videos || []);
+                if (ytSongs.length > 0) {
+                    renderSection(container, {
+                        title: 'YouTube Music Top Hits',
+                        prefix: 'OFFICIAL AUDIO',
+                        avatar: ytSongs[0]?.thumbnail || ytSongs[0]?.cover,
+                        songs: ytSongs.slice(0, 12),
+                        hasCollageFirst: false
+                    });
+                }
+
+                // C. YouTube Music Fresh Albums & EPs
+                const ytAlbs = [...(ytAlbumsData.albums || []), ...(ytPlData.albums || [])];
+                if (ytAlbs.length > 0) {
+                    renderAlbumsSection(container, {
+                        title: 'YouTube Music Albums & EPs',
+                        prefix: 'LATEST RELEASES',
+                        badge: 'YT MUSIC',
+                        badgeClass: 'yt-badge',
+                        albums: ytAlbs.slice(0, 10)
+                    });
+                }
+
+            } catch (err) {
+                console.warn("YouTube Music mood error:", err);
+                loadHomeFeed(true);
+            }
+            return;
+        }
+
+        // 2. DEDICATED JIOSAAVN VIEW
+        if (category === 'JioSaavn') {
+            try {
+                let modulesData = null;
+                try {
+                    const mRes = await fetch('https://vibentra.vercel.app/api/jiosaavn/modules', { signal: AbortSignal.timeout(6000) });
+                    if (mRes.ok) modulesData = await mRes.json();
+                } catch (_) {}
+
+                const [jioSearch, jioSongs] = await Promise.all([
+                    fetchJioSaavnSearchAll(`${primaryLang} Top Charts ${currentYear}`),
+                    fetchLiveJioSaavn(`${primaryLang} Top Hits ${currentYear}`)
+                ]);
+
+                container.innerHTML = '';
+
+                const statusBar = document.createElement('div');
+                statusBar.className = 'home-live-status-bar';
+                statusBar.innerHTML = `
+                    <div class="live-status-left">
+                        <span class="live-pulse-dot" style="background:#06B6D4;"></span>
+                        <span class="live-status-label"><i class="fa-solid fa-bolt" style="color:#06B6D4;"></i> JioSaavn: Official 320kbps Master CDN</span>
+                    </div>
+                    <button class="btn-refresh-home-live" id="btnBackToHomeFeed" title="Back to All Music">
+                        <i class="fa-solid fa-house"></i> All
+                    </button>
+                `;
+                container.appendChild(statusBar);
+                document.getElementById('btnBackToHomeFeed')?.addEventListener('click', () => {
+                    document.querySelectorAll('.mood-pill').forEach(p => p.classList.remove('active'));
+                    document.querySelector('.mood-pill[data-category="All"]')?.classList.add('active');
+                    loadHomeFeed(true);
+                });
+
+                // A. JioSaavn Fresh Albums
+                const jioAlbums = modulesData?.albums || jioSearch.albums || [];
+                if (jioAlbums.length > 0) {
+                    renderAlbumsSection(container, {
+                        title: 'JioSaavn Fresh Releases',
+                        prefix: 'LATEST ALBUMS',
+                        badge: 'JIOSAAVN',
+                        badgeClass: 'album-badge',
+                        albums: jioAlbums.slice(0, 10)
+                    });
+                }
+
+                // B. JioSaavn Chartbusters
+                const jioPls = modulesData?.charts || modulesData?.playlists || jioSearch.playlists || [];
+                if (jioPls.length > 0) {
+                    renderPlaylistsSection(container, {
+                        title: 'JioSaavn Top Chartbusters',
+                        prefix: 'OFFICIAL CHARTS',
+                        badge: 'JIOSAAVN',
+                        badgeClass: 'jio-badge',
+                        playlists: jioPls.slice(0, 10)
+                    });
+                }
+
+                // C. JioSaavn Top Songs
+                if (jioSongs && jioSongs.length > 0) {
+                    renderSection(container, {
+                        title: 'JioSaavn Trending Hits',
+                        prefix: 'HIGH DEFINITION 320KBPS',
+                        avatar: jioSongs[0]?.cover,
+                        songs: jioSongs.slice(0, 12),
+                        hasCollageFirst: false
+                    });
+                }
+
+            } catch (err) {
+                console.warn("JioSaavn mood error:", err);
+                loadHomeFeed(true);
+            }
+            return;
+        }
+
+        // 3. MOOD CATEGORIES (Romance, Feel good, Party, Relax, Energize, etc.)
+        const query = getCategoryQuery(category);
+        const [catData, songs, ytData] = await Promise.all([
             fetchJioSaavnSearchAll(query),
-            fetchLiveJioSaavn(query)
+            fetchLiveJioSaavn(query),
+            fetchYouTubePipedSearch(`${query} songs playlist`)
         ]);
 
         container.innerHTML = '';
 
-        if (catData.albums && catData.albums.length > 0) {
+        // Mood category status header
+        const statusBar = document.createElement('div');
+        statusBar.className = 'home-live-status-bar';
+        statusBar.innerHTML = `
+            <div class="live-status-left">
+                <span class="live-pulse-dot"></span>
+                <span class="live-status-label">${category}: JioSaavn & YouTube Music</span>
+            </div>
+            <button class="btn-refresh-home-live" id="btnBackToHomeFeed" title="Back to All Music">
+                <i class="fa-solid fa-house"></i> All
+            </button>
+        `;
+        container.appendChild(statusBar);
+        document.getElementById('btnBackToHomeFeed')?.addEventListener('click', () => {
+            document.querySelectorAll('.mood-pill').forEach(p => p.classList.remove('active'));
+            document.querySelector('.mood-pill[data-category="All"]')?.classList.add('active');
+            loadHomeFeed(true);
+        });
+
+        // 1. Category Albums from JioSaavn & YouTube
+        const mergedCatAlbums = [...(catData.albums || []), ...(ytData.albums || [])];
+        if (mergedCatAlbums.length > 0) {
             renderAlbumsSection(container, {
                 title: `${category} Albums`,
                 prefix: 'LATEST RELEASES',
-                badge: 'JIOSAAVN',
+                badge: 'LIVE',
                 badgeClass: 'album-badge',
-                albums: catData.albums.slice(0, 8)
+                albums: mergedCatAlbums.slice(0, 8)
             });
         }
 
-        if (catData.playlists && catData.playlists.length > 0) {
+        // 2. Category Playlists from YouTube Music
+        if (ytData.playlists && ytData.playlists.length > 0) {
+            renderPlaylistsSection(container, {
+                title: `${category} YouTube Music Mixes`,
+                prefix: 'YOUTUBE MUSIC',
+                badge: 'YT MUSIC',
+                badgeClass: 'yt-badge',
+                playlists: ytData.playlists.slice(0, 8)
+            });
+        } else if (catData.playlists && catData.playlists.length > 0) {
             renderPlaylistsSection(container, {
                 title: `${category} Playlists`,
                 prefix: 'CURATED MIX',
@@ -3650,13 +4089,25 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
             });
         }
 
+        // 3. Category YouTube Music Top Video Tracks
+        if (ytData.videos && ytData.videos.length > 0) {
+            renderSection(container, {
+                title: `${category} YouTube Hits`,
+                prefix: 'OFFICIAL AUDIO',
+                avatar: ytData.videos[0]?.thumbnail || ytData.videos[0]?.cover,
+                songs: ytData.videos.slice(0, 10),
+                hasCollageFirst: false
+            });
+        }
+
+        // 4. Category Songs from JioSaavn
         if (songs && songs.length > 0) {
             renderSection(container, {
-                title: `${category} Top Songs`,
+                title: `${category} JioSaavn Songs`,
                 prefix: 'TRENDING',
                 avatar: songs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80',
-                songs: songs,
-                hasCollageFirst: songs.length >= 4
+                songs: songs.slice(0, 12),
+                hasCollageFirst: false
             });
         }
     });
@@ -5691,10 +6142,20 @@ function openSongInfoModal() {
     const infoTitle = document.getElementById('infoTitle');
     const infoArtist = document.getElementById('infoArtist');
     const infoAlbum = document.getElementById('infoAlbum');
+    const infoQuality = document.getElementById('infoQuality');
+    const infoCodec = document.getElementById('infoCodec');
+    const infoSource = document.getElementById('infoSource');
 
     if (infoTitle) infoTitle.textContent = currentSongObj.title || 'Unknown Title';
     if (infoArtist) infoArtist.textContent = currentSongObj.artist || 'Unknown Artist';
     if (infoAlbum) infoAlbum.textContent = currentSongObj.album || currentSongObj.title;
+
+    const isYt = !!(currentSongObj.isYouTube || currentSongObj.youtubeId);
+    if (infoQuality) infoQuality.textContent = isYt ? '160 kbps (HD Opus Stream)' : '320 kbps (High Definition)';
+    if (infoCodec) infoCodec.textContent = isYt ? 'WebM / Opus Audio (Lossless Stream)' : 'MPEG-4 Audio (AAC / MP4)';
+    if (infoSource) {
+        infoSource.textContent = isYt ? 'YouTube Music HD Audio Stream' : 'JioSaavn Official Master CDN';
+    }
 
     if (modal) modal.classList.add('active');
 }
@@ -6412,21 +6873,37 @@ document.querySelectorAll('.explore-playlist-card').forEach(card => {
     });
 });
 
-// C. Sub-navigation tabs (Explore, Charts, Album)
+// C. Sub-navigation tabs (Explore, Charts, YouTube Music, JioSaavn, Albums)
 document.querySelectorAll('.search-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
 
+        const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
+        const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+        const currentYear = new Date().getFullYear();
+
         const tabType = tab.getAttribute('data-tab');
         if (tabType === 'charts') {
-            searchInput.value = 'Top Charts Tamil 2024';
-            handleSearchInputChange('Top Charts Tamil 2024');
-            performLiveSearch('Top Charts Tamil 2024');
+            const q = `Top Charts ${primaryLang} ${currentYear}`;
+            searchInput.value = q;
+            handleSearchInputChange(q);
+            performLiveSearch(q);
+        } else if (tabType === 'youtube') {
+            const q = `${primaryLang} YouTube Music Top Hits`;
+            searchInput.value = q;
+            handleSearchInputChange(q);
+            performLiveSearch(q);
+        } else if (tabType === 'jiosaavn') {
+            const q = `${primaryLang} JioSaavn Chartbusters ${currentYear}`;
+            searchInput.value = q;
+            handleSearchInputChange(q);
+            performLiveSearch(q);
         } else if (tabType === 'album') {
-            searchInput.value = 'Latest Tamil Albums';
-            handleSearchInputChange('Latest Tamil Albums');
-            performLiveSearch('Latest Tamil Albums');
+            const q = `Latest ${primaryLang} Albums ${currentYear}`;
+            searchInput.value = q;
+            handleSearchInputChange(q);
+            performLiveSearch(q);
         } else {
             resetSearchToExplore();
         }
@@ -6514,8 +6991,30 @@ async function performLiveSearch(query) {
 
         searchLoader.style.display = 'none';
 
-        const songs = allData.songs || [];
-        const albums = allData.albums || [];
+        // Merge songs from JioSaavn and YouTube Music
+        const jioSongs = (allData.songs || []).map(s => ({ ...s, badge: s.badge || 'JioSaavn' }));
+        const ytSongs = (ytData.songs || []).map(s => ({ ...s, badge: s.badge || 'YouTube Music' }));
+        let songs = [...jioSongs, ...ytSongs];
+        const seenSongs = new Set();
+        songs = songs.filter(s => {
+            const key = `${(s.title || '').toLowerCase().trim()}__${(s.artist || '').toLowerCase().trim()}`;
+            if (!key || seenSongs.has(key)) return false;
+            seenSongs.add(key);
+            return true;
+        });
+
+        // Merge albums from JioSaavn and YouTube Music
+        const jioAlbums = (allData.albums || []).map(a => ({ ...a, badge: a.badge || 'JioSaavn' }));
+        const ytAlbums = (ytData.albums || []).map(a => ({ ...a, badge: a.badge || 'YouTube Music' }));
+        let albums = [...jioAlbums, ...ytAlbums];
+        const seenAlbums = new Set();
+        albums = albums.filter(a => {
+            const key = (a.title || '').toLowerCase().trim();
+            if (!key || seenAlbums.has(key)) return false;
+            seenAlbums.add(key);
+            return true;
+        });
+
         const artists = allData.artists || ytData.artists || [];
         let rawVideos = ytData.videos || [];
         let jioPlaylists = allData.playlists || [];
@@ -6534,8 +7033,8 @@ async function performLiveSearch(query) {
                 const sArtist = s.artist ? s.artist.split('•')[0].split(',')[0].trim() : 'Artist';
                 generatedVideos.push({
                     id: `yt_v_${idx}_${s.id}`,
-                    youtubeId: null,
-                    isYouTube: false,
+                    youtubeId: s.youtubeId || null,
+                    isYouTube: !!s.isYouTube,
                     title: `${s.title} - Official Video Song`,
                     channel: `${sArtist} • YouTube Music`,
                     thumbnail: s.cover,
@@ -6631,36 +7130,52 @@ async function fetchJioSaavnSearchAll(query) {
     return { songs: fallbackSongs, albums: [], artists: [], playlists: [] };
 }
 
-// Fetch YouTube Piped API (returns videos, artists, playlists)
+// Fetch YouTube Piped API (returns videos, songs, artists, playlists, albums)
 async function fetchYouTubePipedSearch(query) {
     const endpoints = [
         `https://api.piped.private.coffee/search?q=${encodeURIComponent(query)}&filter=all`,
-        `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`
+        `https://piped.video/api/v1/search?q=${encodeURIComponent(query)}&filter=all`,
+        `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`,
+        `https://piped-api.lunar.icu/search?q=${encodeURIComponent(query)}&filter=all`
     ];
 
     for (let u of endpoints) {
         try {
-            const res = await fetch(u);
+            const res = await fetch(u, { signal: AbortSignal.timeout(6000) });
             if (res.ok) {
                 const data = await res.json();
                 const items = data.items || [];
                 const videos = [];
+                const songs = [];
                 const artists = [];
                 const playlists = [];
+                const albums = [];
 
                 items.forEach(item => {
                     if (item.type === 'stream') {
                         const ytId = item.url ? item.url.replace('/watch?v=', '').split('&')[0] : null;
-                        videos.push({
+                        const durationStr = item.duration ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : '3:30';
+                        const vObj = {
                             id: `yt_${ytId || Math.random().toString(36).slice(2)}`,
                             youtubeId: ytId,
                             isYouTube: true,
-                            title: item.title,
-                            channel: item.uploaderName,
+                            title: (item.title || '').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&'),
+                            artist: item.uploaderName || 'YouTube Music',
+                            channel: item.uploaderName || 'YouTube Music',
+                            album: 'YouTube Music Track',
                             thumbnail: item.thumbnail,
+                            cover: item.thumbnail || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80',
                             date: item.uploadedDate || 'Trending',
-                            duration: item.duration ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : '3:30',
-                            url: item.url
+                            duration: durationStr,
+                            url: item.url,
+                            streamUrl: null,
+                            badge: 'YouTube Music'
+                        };
+                        videos.push(vObj);
+                        songs.push({
+                            ...vObj,
+                            id: `yt_${ytId || Math.random().toString(36).slice(2)}`,
+                            album: 'YouTube Music'
                         });
                     } else if (item.type === 'channel') {
                         artists.push({
@@ -6668,23 +7183,52 @@ async function fetchYouTubePipedSearch(query) {
                             avatar: item.avatarUrl || item.thumbnail,
                             subscribers: item.subscriberCount ? `${Math.round(item.subscriberCount / 1000)}K subscribers` : 'Artist'
                         });
+                    } else if (item.type === 'album' || item.type === 'music_album') {
+                        const albId = item.url ? item.url.replace('/playlist?list=', '').replace('/playlist/', '').replace('/album/', '') : (item.id || null);
+                        albums.push({
+                            id: albId,
+                            albumId: albId,
+                            title: (item.name || item.title || 'Album').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&'),
+                            artist: item.uploaderName || item.artist || 'YouTube Music',
+                            cover: item.thumbnail || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80',
+                            year: String(new Date().getFullYear()),
+                            isYouTube: true,
+                            badge: 'YouTube Music'
+                        });
                     } else if (item.type === 'playlist') {
+                        const plId = item.url ? item.url.replace('/playlist?list=', '').replace('/playlist/', '') : (item.id || null);
+                        const plTitle = (item.name || '').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+                        if (plId && (plId.startsWith('OLAK5uy_') || plTitle.toLowerCase().includes('album') || plTitle.toLowerCase().includes('ep -') || plTitle.toLowerCase().includes('single -'))) {
+                            albums.push({
+                                id: plId,
+                                albumId: plId,
+                                title: plTitle,
+                                artist: item.uploaderName || 'YouTube Music',
+                                cover: item.thumbnail || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80',
+                                year: String(new Date().getFullYear()),
+                                isYouTube: true,
+                                badge: 'YouTube Music'
+                            });
+                        }
                         playlists.push({
-                            id: item.url ? item.url.replace('/playlist?list=', '').replace('/playlist/', '') : (item.id || null),
-                            title: item.name,
+                            id: plId,
+                            listId: plId,
+                            title: plTitle,
                             author: item.uploaderName ? `${item.uploaderName} • ${item.videos || 10} tracks` : `${item.videos || 10} tracks`,
                             thumbnail: item.thumbnail,
+                            cover: item.thumbnail,
                             videos: `${item.videos || 10} tracks`,
-                            isYouTube: true
+                            isYouTube: true,
+                            badge: 'YouTube Music'
                         });
                     }
                 });
 
-                return { videos, artists, playlists };
+                return { videos, songs, artists, playlists, albums };
             }
         } catch (e) {}
     }
-    return { videos: [], artists: [], playlists: [] };
+    return { videos: [], songs: [], artists: [], playlists: [], albums: [] };
 }
 
 function formatTrackItem(t) {
@@ -6705,7 +7249,7 @@ function formatAlbumItem(a) {
         title: (a.title || a.name || 'Album').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
         artist: a.artist || a.primaryArtists || 'Various Artists',
         cover: (a.image && a.image.length > 0) ? (typeof a.image === 'string' ? a.image : a.image[a.image.length - 1].url) : (a.cover || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&q=80'),
-        year: a.year || '2024'
+        year: a.year || String(new Date().getFullYear())
     };
 }
 
@@ -8780,9 +9324,10 @@ document.getElementById('btnWrappedPrev')?.addEventListener('click', () => {
 });
 
 document.getElementById('btnWrappedShare')?.addEventListener('click', () => {
-    const text = `🎧 My Vibentra Wrapped 2024!\nI listened to music on Vibentra - Sound of India!\nExplore your vibe at https://vibentra.web.app`;
+    const yr = new Date().getFullYear();
+    const text = `🎧 My Vibentra Wrapped ${yr}!\nI listened to music on Vibentra - Sound of India!\nExplore your vibe at https://vibentra.web.app`;
     if (navigator.share) {
-        navigator.share({ title: "My Vibentra Wrapped 2024", text: text }).catch(() => {});
+        navigator.share({ title: `My Vibentra Wrapped ${yr}`, text: text }).catch(() => {});
     } else if (navigator.clipboard) {
         navigator.clipboard.writeText(text);
         showNotification("Wrapped stats copied to clipboard! 🌟", "success");
@@ -8827,16 +9372,24 @@ if ('serviceWorker' in navigator) {
 
 // Trigger real Mobile Phone Notification Bar Notification with App Logo
 async function sendSystemUpdateNotification(version, releaseData) {
-    const title = `Vibentra Update Available 🚀`;
-    const body = `Vibentra has latest update v${version}. Tap to update!`;
+    const cleanVer = (version || '').replace(/^v/, '');
+    const title = "Update available";
+    const body = `v${cleanVer}`;
 
     // 1. Real Native Android Mobile Notification Bar (via Capacitor Native Bridge)
     try {
-        if (window.Capacitor?.Plugins?.BackgroundAudio?.showNotification) {
+        const bgPlugin = getBackgroundAudioPlugin();
+        if (bgPlugin && typeof bgPlugin.showNotification === 'function') {
+            await bgPlugin.showNotification({
+                title: title,
+                body: body,
+                version: cleanVer
+            });
+        } else if (window.Capacitor?.Plugins?.BackgroundAudio?.showNotification) {
             await window.Capacitor.Plugins.BackgroundAudio.showNotification({
                 title: title,
                 body: body,
-                version: version
+                version: cleanVer
             });
         }
     } catch (e) {
@@ -9023,7 +9576,7 @@ function startUpdateDownload() {
     if (installBtn) installBtn.disabled = true;
 
     const apkUrl = latestUpdateData?.apkUrl || "https://raw.githubusercontent.com/srivatsan2007/Vibentra/main/Portfolio/app-debug.apk";
-    const version = latestUpdateData?.version || "1.4.3";
+    const version = latestUpdateData?.version || "1.4.4";
     const totalSizeMB = parseFloat(latestUpdateData?.size) || 33.2;
     const startTime = Date.now();
     let progress = 0;
@@ -9123,6 +9676,25 @@ document.getElementById('btnInstallUpdate')?.addEventListener('click', () => {
 setTimeout(() => {
     checkForAppUpdates(false);
 }, 2200);
+
+// Global window hooks for native Android notification clicks and external triggers
+if (typeof window !== 'undefined') {
+    window.openUpdateDetailsModal = openUpdateDetailsModal;
+    window.checkForAppUpdates = checkForAppUpdates;
+    window.sendSystemUpdateNotification = sendSystemUpdateNotification;
+}
+
+// Check for updates on app resume from background (throttled to 15 min) or every 30 min
+let lastAppUpdateCheckTs = Date.now();
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && (Date.now() - lastAppUpdateCheckTs > 15 * 60 * 1000)) {
+        lastAppUpdateCheckTs = Date.now();
+        checkForAppUpdates(false);
+    }
+});
+setInterval(() => {
+    checkForAppUpdates(false);
+}, 30 * 60 * 1000);
 
 // =========================================================
 // 29. PICTURE-IN-PICTURE (PiP) FLOATING MINI PLAYER WIDGET
@@ -9944,9 +10516,192 @@ function setupMobileTouchGestures() {
     }, { passive: true });
 }
 
-// Initialize Gestures, History Observers, and Offline Network Status
+// =========================================================
+// 30. IN-APP BIOMETRIC & PIN APP LOCK SYSTEM (Option 3)
+// =========================================================
+let isAppLocked = false;
+let enteredAppLockPin = '';
+let appLockAwayTimestamp = 0;
+
+function initAppLockSystem() {
+    const overlay = document.getElementById('appLockOverlay');
+    if (!overlay) return;
+
+    const isEnabled = localStorage.getItem('vibentra_app_lock_enabled') === 'true';
+    if (!isEnabled) {
+        overlay.style.display = 'none';
+        return;
+    }
+
+    // App is locked on startup if enabled
+    lockAppSession();
+
+    // Numpad key listeners
+    const numpadKeys = overlay.querySelectorAll('.numpad-key[data-key]');
+    numpadKeys.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.getAttribute('data-key');
+            handleAppLockInput(key);
+        });
+    });
+
+    // Backspace button
+    document.getElementById('btnLockPinBackspace')?.addEventListener('click', () => {
+        if (enteredAppLockPin.length > 0) {
+            enteredAppLockPin = enteredAppLockPin.slice(0, -1);
+            updateAppLockPinDots();
+        }
+    });
+
+    // Biometric buttons
+    document.getElementById('btnTriggerBiometrics')?.addEventListener('click', () => {
+        authenticateWithBiometrics(false);
+    });
+    document.getElementById('btnLockBiometricFallback')?.addEventListener('click', () => {
+        authenticateWithBiometrics(false);
+    });
+
+    // Physical keyboard listener for desktop/laptop
+    window.addEventListener('keydown', (e) => {
+        if (!isAppLocked) return;
+        if (/^[0-9]$/.test(e.key)) {
+            handleAppLockInput(e.key);
+        } else if (e.key === 'Backspace') {
+            if (enteredAppLockPin.length > 0) {
+                enteredAppLockPin = enteredAppLockPin.slice(0, -1);
+                updateAppLockPinDots();
+            }
+        }
+    });
+
+    // Auto-lock when app is left in background for >60 seconds
+    document.addEventListener('visibilitychange', () => {
+        const enabled = localStorage.getItem('vibentra_app_lock_enabled') === 'true';
+        if (!enabled) return;
+
+        if (document.visibilityState === 'hidden') {
+            appLockAwayTimestamp = Date.now();
+        } else if (document.visibilityState === 'visible') {
+            if (appLockAwayTimestamp > 0 && Date.now() - appLockAwayTimestamp > 60 * 1000) {
+                lockAppSession();
+            }
+            appLockAwayTimestamp = 0;
+        }
+    });
+}
+
+function lockAppSession() {
+    const overlay = document.getElementById('appLockOverlay');
+    if (!overlay) return;
+    isAppLocked = true;
+    enteredAppLockPin = '';
+    updateAppLockPinDots();
+    overlay.classList.remove('unlocked');
+    overlay.style.display = 'flex';
+    // Auto-prompt biometrics if supported
+    setTimeout(() => {
+        if (isAppLocked) {
+            authenticateWithBiometrics(true);
+        }
+    }, 450);
+}
+
+function unlockAppSession() {
+    const overlay = document.getElementById('appLockOverlay');
+    if (!overlay) return;
+    isAppLocked = false;
+    enteredAppLockPin = '';
+    updateAppLockPinDots();
+    overlay.classList.add('unlocked');
+    setTimeout(() => {
+        if (!isAppLocked) overlay.style.display = 'none';
+    }, 360);
+    if (navigator.vibrate) {
+        try { navigator.vibrate([40, 30, 40]); } catch (_) {}
+    }
+}
+
+function updateAppLockPinDots() {
+    const dotsContainer = document.getElementById('appLockPinDots');
+    if (!dotsContainer) return;
+    const dots = dotsContainer.querySelectorAll('.pin-dot');
+    dots.forEach((dot, idx) => {
+        if (idx < enteredAppLockPin.length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled');
+        }
+    });
+}
+
+function handleAppLockInput(digit) {
+    if (!isAppLocked || enteredAppLockPin.length >= 4) return;
+    enteredAppLockPin += digit;
+    updateAppLockPinDots();
+
+    if (navigator.vibrate) {
+        try { navigator.vibrate(15); } catch (_) {}
+    }
+
+    if (enteredAppLockPin.length === 4) {
+        const correctPin = localStorage.getItem('vibentra_app_lock_pin') || '1234';
+        if (enteredAppLockPin === correctPin) {
+            unlockAppSession();
+        } else {
+            const dotsContainer = document.getElementById('appLockPinDots');
+            if (dotsContainer) dotsContainer.classList.add('error');
+            const promptText = document.getElementById('appLockPromptText');
+            if (promptText) promptText.textContent = "Incorrect PIN. Try again.";
+            if (navigator.vibrate) {
+                try { navigator.vibrate([100, 50, 100]); } catch (_) {}
+            }
+            setTimeout(() => {
+                enteredAppLockPin = '';
+                updateAppLockPinDots();
+                if (dotsContainer) dotsContainer.classList.remove('error');
+                if (promptText) promptText.textContent = "Touch fingerprint sensor or enter PIN";
+            }, 600);
+        }
+    }
+}
+
+async function authenticateWithBiometrics(isSilent = false) {
+    if (!isAppLocked) return;
+
+    if (window.PublicKeyCredential) {
+        try {
+            const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            if (available) {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+                const credential = await navigator.credentials.get({
+                    publicKey: {
+                        challenge: challenge,
+                        timeout: 60000,
+                        userVerification: 'required'
+                    }
+                }).catch(() => null);
+
+                if (credential) {
+                    unlockAppSession();
+                    return;
+                }
+            }
+        } catch (e) {
+            if (!isSilent) console.warn("Biometric authentication notice:", e);
+        }
+    }
+
+    if (!isSilent) {
+        const promptText = document.getElementById('appLockPromptText');
+        if (promptText) promptText.textContent = "Biometric prompt dismissed. Enter 4-digit PIN.";
+    }
+}
+
+// Initialize Gestures, History Observers, Offline Network Status & App Lock
 setupModalHistoryObservers();
 setupMobileTouchGestures();
 setupNetworkStatusListeners();
+initAppLockSystem();
 
 

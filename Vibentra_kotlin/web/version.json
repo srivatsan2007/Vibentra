@@ -1,13 +1,14 @@
 {
-  "version": "1.4.3",
-  "name": "Vibentra v1.4.3 - Continuous Playback & Non-Stop Video Audio Engine",
+  "version": "1.4.4",
+  "name": "Vibentra v1.4.4 - YouTube Music Parity, Security Hardening & Status Bar Updates",
   "releaseDate": "September 2026",
   "size": "33.2 MB",
   "apkUrl": "https://raw.githubusercontent.com/srivatsan2007/Vibentra/main/Portfolio/app-debug.apk",
   "changelog": [
-    "🚀 100% Continuous Non-Stop Playback: Solved the 2-second YouTube playback pause with visible artwork video viewport",
-    "🛡️ Automatic Lossless Audio Failover: Instant seamless fallback to 320kbps CD Quality audio if video streams encounter copyright embed blocks",
-    "✨ Iconic Google Material 4-Color Circular Loading Animation across all screens",
-    "🎙️ Crisp Plain Lyrics Mode with zero blur and high contrast readability"
+    "✨ 100% YouTube Music Parity: YouTube Music Top Charts, Trending Playlists, Albums & Direct HD Audio streaming alongside JioSaavn",
+    "🔔 Native Status Bar Update Notifications: Immediate system alert when a new update is available with tap-to-install",
+    "🔒 In-App Biometric App Lock & PIN: Protect your music player with Fingerprint, Face Unlock or 4-digit PIN",
+    "🛡️ Enterprise Security Hardening: HTTP nosniff, strict origin, framing protection, and sanitized inputs",
+    "⚡ Dynamic Real-Time Home Feed: Live Launch Modules & Dynamic Language Query Filters with zero static songs"
   ]
 }

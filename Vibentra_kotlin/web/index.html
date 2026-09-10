@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vibentra - Sound of India</title>
     <meta name="theme-color" id="metaThemeColor" content="#0B0F17">
@@ -208,9 +209,12 @@
             </div>
         </header>
 
-        <!-- Mood & Category Filter Pills -->
+        <!-- Mood & Category Filter Pills (All, JioSaavn, YouTube Music & Moods) -->
         <div class="mood-pills-row" id="moodPillsRow">
-            <button class="mood-pill active" data-category="Romance">Romance</button>
+            <button class="mood-pill active" data-category="All">All</button>
+            <button class="mood-pill" data-category="JioSaavn"><i class="fa-solid fa-bolt" style="color: #06B6D4;"></i> JioSaavn</button>
+            <button class="mood-pill" data-category="YouTube Music"><i class="fa-brands fa-youtube" style="color: #EF4444;"></i> YouTube Music</button>
+            <button class="mood-pill" data-category="Romance">Romance</button>
             <button class="mood-pill" data-category="Feel good">Feel good</button>
             <button class="mood-pill" data-category="Party">Party</button>
             <button class="mood-pill" data-category="Relax">Relax</button>
@@ -260,11 +264,13 @@
             </div>
         </div>
 
-        <!-- Sub-Navigation Tabs (Explore, Echo Chart, Album) -->
+        <!-- Sub-Navigation Tabs (Explore, Top Charts, YouTube Music, JioSaavn, Albums) -->
         <div class="search-tabs-row" id="searchTabsRow">
             <button class="search-tab active" data-tab="explore">Explore</button>
-            <button class="search-tab" data-tab="charts">Vibentra Chart</button>
-            <button class="search-tab" data-tab="album">Album</button>
+            <button class="search-tab" data-tab="charts">Top Charts</button>
+            <button class="search-tab" data-tab="youtube"><i class="fa-brands fa-youtube" style="color: #EF4444;"></i> YouTube Music</button>
+            <button class="search-tab" data-tab="jiosaavn"><i class="fa-solid fa-bolt" style="color: #06B6D4;"></i> JioSaavn</button>
+            <button class="search-tab" data-tab="album">Albums</button>
         </div>
 
         <!-- Filter Chips Row (When Query is Active: All, Songs, Videos, Albums, Artists, Playlists) -->
@@ -667,12 +673,12 @@
                         </div>
                     </div>
 
-                    <!-- 7. Privacy -->
-                    <div class="settings-item" data-id="privacy" data-title="Privacy" data-keywords="privacy history tracking incognito clear data delete">
+                    <!-- 7. Privacy & Security -->
+                    <div class="settings-item" data-id="privacy" data-title="Privacy & Security" data-keywords="privacy security lock fingerprint faceid pin history tracking incognito clear data delete">
                         <div class="settings-item-icon"><i class="fa-solid fa-shield-halved"></i></div>
                         <div class="settings-item-info">
-                            <div class="settings-item-title">Privacy</div>
-                            <div class="settings-item-sub">History and tracking</div>
+                            <div class="settings-item-title">Privacy & Security</div>
+                            <div class="settings-item-sub">History, App Lock & Fingerprint</div>
                         </div>
                     </div>
 
@@ -1078,9 +1084,9 @@
                 <div class="info-row"><span class="info-label">Title</span><span class="info-val" id="infoTitle">-</span></div>
                 <div class="info-row"><span class="info-label">Artist</span><span class="info-val" id="infoArtist">-</span></div>
                 <div class="info-row"><span class="info-label">Album</span><span class="info-val" id="infoAlbum">-</span></div>
-                <div class="info-row"><span class="info-label">Audio Quality</span><span class="info-val highlight-quality">320 kbps (High Definition)</span></div>
-                <div class="info-row"><span class="info-label">Codec / Format</span><span class="info-val">MPEG-4 Audio (AAC / MP4)</span></div>
-                <div class="info-row"><span class="info-label">Audio Source</span><span class="info-val highlight-source">JioSaavn Official Master CDN</span></div>
+                <div class="info-row"><span class="info-label">Audio Quality</span><span class="info-val highlight-quality" id="infoQuality">320 kbps (High Definition)</span></div>
+                <div class="info-row"><span class="info-label">Codec / Format</span><span class="info-val" id="infoCodec">MPEG-4 Audio (AAC / MP4)</span></div>
+                <div class="info-row"><span class="info-label">Audio Source</span><span class="info-val highlight-source" id="infoSource">JioSaavn Official Master CDN</span></div>
             </div>
         </div>
     </div>
@@ -2053,6 +2059,48 @@
     <!-- Hidden HTML5 Audio Element for Background Playback (Screen on/off & lock screen) -->
     <audio id="globalAudioPlayer" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></audio>
 
+
+    <!-- Biometric & PIN In-App Lock Screen (Option 3 - Default Inactive) -->
+    <div id="appLockOverlay" class="app-lock-overlay" style="display: none;">
+        <div class="app-lock-card">
+            <div class="app-lock-logo-wrap">
+                <div class="app-lock-glow"></div>
+                <img src="./logo.png" alt="Vibentra" class="app-lock-logo">
+            </div>
+            <h2 class="app-lock-title">Vibentra Locked</h2>
+            <p class="app-lock-sub" id="appLockPromptText">Touch fingerprint sensor or enter PIN</p>
+
+            <!-- Biometric Quick Trigger Button -->
+            <button class="app-lock-bio-btn" id="btnTriggerBiometrics" title="Unlock with Biometrics">
+                <i class="fa-solid fa-fingerprint"></i>
+                <span>Unlock with Biometrics</span>
+            </button>
+
+            <!-- 4-Digit PIN Indicators -->
+            <div class="app-lock-pin-dots" id="appLockPinDots">
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+            </div>
+
+            <!-- PIN Numpad -->
+            <div class="app-lock-numpad" id="appLockNumpad">
+                <button class="numpad-key" data-key="1">1</button>
+                <button class="numpad-key" data-key="2">2</button>
+                <button class="numpad-key" data-key="3">3</button>
+                <button class="numpad-key" data-key="4">4</button>
+                <button class="numpad-key" data-key="5">5</button>
+                <button class="numpad-key" data-key="6">6</button>
+                <button class="numpad-key" data-key="7">7</button>
+                <button class="numpad-key" data-key="8">8</button>
+                <button class="numpad-key" data-key="9">9</button>
+                <button class="numpad-key action-key" id="btnLockBiometricFallback" title="Biometrics"><i class="fa-solid fa-fingerprint"></i></button>
+                <button class="numpad-key" data-key="0">0</button>
+                <button class="numpad-key action-key" id="btnLockPinBackspace" title="Backspace"><i class="fa-solid fa-delete-left"></i></button>
+            </div>
+        </div>
+    </div>
 
     <!-- Official YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>

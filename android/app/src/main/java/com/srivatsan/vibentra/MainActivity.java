@@ -54,6 +54,31 @@ public class MainActivity extends BridgeActivity {
         }
 
         webViewActiveHandler.post(keepActiveRunnable);
+        handleIncomingUpdateIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingUpdateIntent(intent);
+    }
+
+    private void handleIncomingUpdateIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("open_update", false)) {
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    if (getBridge() != null && getBridge().getWebView() != null) {
+                        getBridge().getWebView().evaluateJavascript(
+                            "if (typeof window.openUpdateDetailsModal === 'function') { window.openUpdateDetailsModal(); }",
+                            null
+                        );
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "Error triggering update modal from intent", t);
+                }
+            }, 900);
+        }
     }
 
     private void setupBackNavigation() {

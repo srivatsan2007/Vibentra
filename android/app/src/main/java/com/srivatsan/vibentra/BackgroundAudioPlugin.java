@@ -169,8 +169,9 @@ public class BackgroundAudioPlugin extends Plugin {
     @PluginMethod
     public void showNotification(PluginCall call) {
         try {
-            String title = call.getString("title", "Vibentra Update Available 🚀");
-            String body = call.getString("body", "Vibentra update is available. Tap to update!");
+            String title = call.getString("title", "Update available");
+            String version = call.getString("version", "");
+            String body = call.getString("body", version != null && !version.isEmpty() ? (version.startsWith("v") ? version : "v" + version) : "v1.4.4");
             Context context = getContext();
             if (context != null) {
                 android.app.NotificationManager nm = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -183,16 +184,33 @@ public class BackgroundAudioPlugin extends Plugin {
                                 android.app.NotificationManager.IMPORTANCE_HIGH
                         );
                         channel.setDescription("Notifications about new app updates and releases");
+                        channel.enableLights(true);
+                        channel.enableVibration(true);
+                        channel.setShowBadge(true);
                         nm.createNotificationChannel(channel);
                     }
 
                     Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-                    android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(
-                            context,
-                            2001,
-                            launchIntent,
-                            android.app.PendingIntent.FLAG_UPDATE_CURRENT | (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? android.app.PendingIntent.FLAG_IMMUTABLE : 0)
-                    );
+                    android.app.PendingIntent pendingIntent = null;
+                    if (launchIntent != null) {
+                        launchIntent.setAction(Intent.ACTION_MAIN);
+                        launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        launchIntent.putExtra("open_update", true);
+                        launchIntent.putExtra("version", version);
+
+                        pendingIntent = android.app.PendingIntent.getActivity(
+                                context,
+                                2001,
+                                launchIntent,
+                                android.app.PendingIntent.FLAG_UPDATE_CURRENT | (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? android.app.PendingIntent.FLAG_IMMUTABLE : 0)
+                        );
+                    }
+
+                    android.graphics.Bitmap largeIcon = null;
+                    try {
+                        largeIcon = android.graphics.BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
+                    } catch (Throwable t) {}
 
                     androidx.core.app.NotificationCompat.Builder builder = new androidx.core.app.NotificationCompat.Builder(context, channelId)
                             .setSmallIcon(R.mipmap.ic_launcher)
@@ -200,7 +218,14 @@ public class BackgroundAudioPlugin extends Plugin {
                             .setContentText(body)
                             .setAutoCancel(true)
                             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
-                            .setContentIntent(pendingIntent);
+                            .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL);
+
+                    if (largeIcon != null) {
+                        builder.setLargeIcon(largeIcon);
+                    }
+                    if (pendingIntent != null) {
+                        builder.setContentIntent(pendingIntent);
+                    }
 
                     nm.notify(2001, builder.build());
                 }

@@ -1,5 +1,5 @@
-// Vibentra Service Worker - v1.4.3 Offline Shell & Mobile System Notifications
-const CACHE_NAME = 'vibentra-offline-v1.4.3';
+// Vibentra Service Worker - v1.4.4 Offline Shell & Mobile System Notifications
+const CACHE_NAME = 'vibentra-offline-v1.4.4';
 const PRECACHE_ASSETS = [
     '/',
     '/index.html',
@@ -87,12 +87,13 @@ self.addEventListener('push', (event) => {
         data = { title: 'Vibentra Update Available 🚀', body: event.data ? event.data.text() : 'Tap to update!' };
     }
 
-    const title = data.title || 'Vibentra Update Available 🚀';
+    const title = data.title || 'Update available';
+    const cleanVer = (data.version || '1.4.4').replace(/^v/, '');
     const options = {
-        body: data.body || 'A new version of Vibentra is live. Tap to update in-app!',
+        body: data.body || `v${cleanVer}`,
         icon: './logo.png',
         badge: './logo.png',
-        tag: `vibentra-update-${data.version || 'live'}`,
+        tag: `vibentra-update-${cleanVer}`,
         renotify: true,
         vibrate: [250, 100, 250],
         data: {
