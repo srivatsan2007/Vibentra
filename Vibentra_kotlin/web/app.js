@@ -4677,34 +4677,26 @@ function playTrack(song, playlist = []) {
     syncNativeAndroidWidget(song, true);
     acquireWakeLock();
 
-    // YouTube / Video Track Audio-First Playback Branch
+    // YouTube / Video Track Audio-First Playback Branch (100% Background Audio Resolution)
     if (song.isYouTube || song.youtubeId) {
         if (fullPlayerCover) fullPlayerCover.style.display = 'block';
         const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
 
-        // If a verified non-saavn audio stream exists (e.g. direct opus/m4a stream), play via HTML5 audio
-        if (song.streamUrl && !song.streamUrl.includes('saavn')) {
+        // If direct stream URL already exists, play immediately via background-safe HTML5 audio
+        if (song.streamUrl) {
             isYouTubeTrackPlaying = false;
             audioPlayer.src = song.streamUrl;
             audioPlayer.play().then(() => {
                 isPlaying = true;
                 updatePlayPauseIcons(true);
+                syncNativeAndroidWidget(song, true);
             }).catch(() => {
-                if (ytId) {
-                    playYouTubeVideo(ytId);
-                } else {
-                    resolveAndPlayLiveStream(song, true);
-                }
+                resolveAndPlayLiveStream(song, true);
             });
             return;
         }
 
-        // Direct authentic playback: play the exact YouTube video audio
-        if (ytId) {
-            playYouTubeVideo(ytId);
-            return;
-        }
-
+        // 100% Background Audio Resolution: Resolve authentic high-quality audio stream
         resolveAndPlayLiveStream(song, true);
         return;
     }
@@ -5253,6 +5245,7 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
             updatePlayPauseIcons(true);
             isAutoRecovering = false;
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+            syncNativeAndroidWidget(song, true);
         }).catch(e => {
             console.warn("Auto-play error:", e);
             isAutoRecovering = false;
