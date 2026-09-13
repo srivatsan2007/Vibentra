@@ -5121,51 +5121,63 @@ async function fetchYouTubeAudioOnlyStream(youtubeId) {
 }
 
 // Strict Track Verification: Ensures a search match is genuine before swapping audio streams
+const isRecordLabelOrChannel = (art) => {
+    const l = (art || '').toLowerCase();
+    return /sun\s*(tv|pictures)|sony|t-series|series|saregama|zee|think\s*music|aditya|lahari|divo|tips|speed|muzik|records|studios|channel|entertainment|productions|media|vevo/i.test(l);
+};
+
+const cleanTitleTokens = (str) => {
+    return (str || '')
+        .toLowerCase()
+        .replace(/\|\s*[^|]+/g, ' ')
+        .replace(/\b(official\s*(music\s*)?video|video\s*song|lyric(al)?\s*video|full\s*video|full\s*song|hd|4k|remix|cover|audio|ost|shorts|teaser|promo|visualizer|from|the|motion|picture|soundtrack)\b/gi, ' ')
+        .replace(/[^a-z0-9\s]/gi, ' ')
+        .split(/\s+/)
+        .map(w => w.trim())
+        .filter(w => w.length >= 3);
+};
+
 function isGenuineTrackMatch(candidate, target) {
     if (!candidate || !target) return false;
 
-    const norm = (str) => (str || '')
-        .toLowerCase()
-        .replace(/\|\s*[^|]+/g, '')
-        .replace(/\b(official\s*(music\s*)?video|video\s*song|lyric(al)?\s*video|full\s*video|full\s*song|hd|4k|remix|cover|audio|ost|shorts|teaser|promo|visualizer)\b/gi, '')
-        .replace(/[^a-z0-9]/gi, '')
-        .trim();
+    const targetTokens = cleanTitleTokens(target.cleanTitle || target.title);
+    const candTokens = cleanTitleTokens(candidate.title || candidate.name);
 
-    const targetTitleNorm = norm(target.cleanTitle || target.title);
-    const candTitleNorm = norm(candidate.title || candidate.name);
+    if (targetTokens.length === 0 || candTokens.length === 0) return false;
 
-    if (!targetTitleNorm || !candTitleNorm) return false;
+    // Check if main title tokens are shared (e.g. "hukum", "jailer", "arabic", "kuthu", "believer")
+    const commonTokens = targetTokens.filter(t => candTokens.includes(t));
+    const isTitleMatch = commonTokens.length >= 2 || (commonTokens.length === 1 && (commonTokens[0].length >= 4 || targetTokens.length === 1));
 
-    // Direct match or exact inclusion (minimum 5 chars to avoid partial collision)
-    const titleMatches = targetTitleNorm === candTitleNorm ||
-        (targetTitleNorm.length >= 5 && candTitleNorm.includes(targetTitleNorm)) ||
-        (candTitleNorm.length >= 5 && targetTitleNorm.includes(candTitleNorm));
+    if (!isTitleMatch) return false;
 
-    if (!titleMatches) return false;
-
-    // Artist verification
     const targetArtist = (target.artist || '').toLowerCase();
     const candArtist = (candidate.artist || candidate.primaryArtists || '').toLowerCase();
+    const fullTargetText = ((target.title || '') + ' ' + (target.cleanTitle || '') + ' ' + targetArtist).toLowerCase();
 
-    // Check artist overlap if both have artists specified
+    // If target artist is a channel or label (e.g. Sun TV, Sony Music, T-Series), allow title match or artist mentioned in title
+    if (isRecordLabelOrChannel(targetArtist) || !targetArtist || targetArtist.includes('youtube')) {
+        return true;
+    }
+
     if (candArtist && targetArtist &&
-        !targetArtist.includes('youtube') && !candArtist.includes('various') &&
+        !targetArtist.includes('various') && !candArtist.includes('various') &&
         !targetArtist.includes('topic') && !candArtist.includes('unknown')) {
 
-        const cleanArtists = (art) => art
+        const cleanWords = (art) => art
             .replace(/music|records|official|channel|studio|vevo/gi, '')
             .split(/[,•/&\s]+/)
             .map(w => w.trim().toLowerCase())
             .filter(w => w.length >= 3);
 
-        const targetWords = cleanArtists(targetArtist);
-        const candWords = cleanArtists(candArtist);
+        const targetWords = cleanWords(targetArtist);
+        const candWords = cleanWords(candArtist);
 
         if (targetWords.length > 0 && candWords.length > 0) {
-            const hasArtistOverlap = targetWords.some(tw =>
+            const hasOverlap = targetWords.some(tw =>
                 candWords.some(cw => tw === cw || (tw.length >= 4 && cw.includes(tw)) || (cw.length >= 4 && tw.includes(cw)))
-            );
-            if (!hasArtistOverlap) return false;
+            ) || candWords.some(cw => cw.length >= 4 && fullTargetText.includes(cw));
+            if (!hasOverlap) return false;
         }
     }
 
@@ -5181,8 +5193,8 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
 
     // Clean title of any video-specific clutter (e.g. Official Music Video, 4K, Lyrical, etc.)
     const cleanQuery = (song.cleanTitle || song.title || '')
-        .replace(/\|\s*[^|]+/g, '')
-        .replace(/\b(Official\s*(Music\s*)?Video|Video\s*Song|Lyric(al)?\s*Video|Full\s*Video|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo)\b/gi, '')
+        .replace(/\|\s*[^|]+/g, ' ')
+        .replace(/\b(Official\s*(Music\s*)?Video|Video\s*Song|Lyric(al)?\s*Video|Full\s*Video|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo|Visualizer)\b/gi, ' ')
         .replace(/[-–—]/g, ' ')
         .replace(/\(\s*\)/g, '')
         .replace(/\[\s*\]/g, '')
@@ -5190,13 +5202,25 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
         .trim();
 
     const artistName = song.artist ? song.artist.split('•')[0].split(',')[0].trim() : '';
+    const isLabel = isRecordLabelOrChannel(artistName);
     const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
 
-    const candidates = [
-        cleanQuery && artistName && !cleanQuery.toLowerCase().includes(artistName.toLowerCase()) ? `${cleanQuery} ${artistName}` : null,
-        cleanQuery && cleanQuery.length >= 2 ? cleanQuery : null,
-        song.title
-    ].filter(Boolean);
+    const candidateSet = new Set();
+    if (cleanQuery && !isLabel && artistName && !cleanQuery.toLowerCase().includes(artistName.toLowerCase())) {
+        candidateSet.add(`${cleanQuery} ${artistName}`);
+    }
+    if (cleanQuery) candidateSet.add(cleanQuery);
+
+    // If title has a hyphen separating movie and song (e.g. "JAILER - Hukum")
+    const titleParts = (song.title || '').split(/[-–—|]/).map(p => p.trim()).filter(p => p.length >= 3);
+    if (titleParts.length >= 2) {
+        const part1 = titleParts[1].replace(/\b(Official|Video|Song|Lyric(al)?|HD|4K)\b/gi, '').trim();
+        const part0 = titleParts[0].replace(/\b(Official|Video|Song|Lyric(al)?|HD|4K)\b/gi, '').trim();
+        if (part1 && part0) candidateSet.add(`${part1} ${part0}`);
+        if (part1) candidateSet.add(part1);
+    }
+    if (song.title) candidateSet.add(song.title);
+    const candidates = [...candidateSet].filter(Boolean);
 
     let fresh = null;
     let freshDuration = null;
