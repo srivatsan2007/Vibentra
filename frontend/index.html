@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&family=Fredoka:wght@500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -273,13 +273,14 @@
             <button class="search-tab" data-tab="album">Albums</button>
         </div>
 
-        <!-- Filter Chips Row (When Query is Active: All, Songs, Playlists, Albums, Artists) -->
+        <!-- Filter Chips Row (When Query is Active: All, Songs, Videos, Albums, Artists, Playlists) -->
         <div class="search-filter-chips" id="searchFilterChips" style="display: none;">
             <button class="filter-chip active" data-filter="all"><i class="fa-solid fa-check"></i> All</button>
             <button class="filter-chip" data-filter="songs">Songs</button>
-            <button class="filter-chip" data-filter="playlists">Playlists</button>
+            <button class="filter-chip" data-filter="videos">Videos</button>
             <button class="filter-chip" data-filter="albums">Albums</button>
             <button class="filter-chip" data-filter="artists">Artists</button>
+            <button class="filter-chip" data-filter="playlists">Playlists</button>
         </div>
 
         <!-- A. EXPLORE VIEW (Default State - Screenshot 1) -->
@@ -879,7 +880,7 @@
                 <!-- Scalloped 12-lobed Starburst / Flower Play/Pause Button matching Screenshot 2 -->
                 <button class="scalloped-play-btn" id="fullPlayerPlayPauseBtn" title="Play/Pause">
                     <svg class="scallop-svg" viewBox="0 0 100 100">
-                        <path fill="#ffffff" d="M50 2 C54 2 57 8 61 10 C66 12 72 10 76 14 C80 18 80 25 83 29 C87 34 94 36 96 41 C98 46 94 51 94 56 C94 61 98 66 96 71 C94 76 87 78 83 83 C80 87 80 94 76 98 C72 102 66 100 61 102 C57 104 54 110 50 110 C46 110 43 104 39 102 C34 100 28 102 24 98 C20 94 20 87 17 83 C13 78 6 76 4 71 C2 66 6 61 6 56 C6 51 2 46 4 41 C6 36 13 34 17 29 C20 25 20 18 24 14 C28 10 34 12 39 10 C43 8 46 2 50 2 Z"/>
+                        <path fill="#ffffff" d="M 39.9 12.3 Q 50.0 2.0 60.1 12.3 Q 74.0 8.4 77.6 22.4 Q 91.6 26.0 87.7 39.9 Q 98.0 50.0 87.7 60.1 Q 91.6 74.0 77.6 77.6 Q 74.0 91.6 60.1 87.7 Q 50.0 98.0 39.9 87.7 Q 26.0 91.6 22.4 77.6 Q 8.4 74.0 12.3 60.1 Q 2.0 50.0 12.3 39.9 Q 8.4 26.0 22.4 22.4 Q 26.0 8.4 39.9 12.3 Z"/>
                     </svg>
                     <span class="scallop-icon-wrapper" id="fullPlayerPlayIcon">
                         <i class="fa-solid fa-play"></i>
@@ -891,25 +892,39 @@
                 </button>
             </div>
 
-            <!-- Bottom Action Toolbar (Lyrics, Sleep Timer, Ringtone, Shuffle, Repeat, Comments, More) -->
+            <!-- Bottom Action Toolbar (Lyrics, Sleep Timer, Equalizer, Shuffle, Repeat, More) -->
             <div class="full-player-bottom-toolbar">
-                <button class="tool-btn" id="toolLyricsBtn" title="Live Synced Lyrics"><i class="fa-solid fa-microphone-lines"></i></button>
+                <button class="tool-btn" id="toolLyricsBtn" title="Live Synced Lyrics"><i class="fa-solid fa-bars-staggered"></i></button>
                 <button class="tool-btn" id="toolTimerBtn" title="Sleep Timer"><i class="fa-regular fa-moon"></i><span class="timer-badge" id="timerBadge"></span></button>
-                <button class="tool-btn" id="toolRingtoneBtn" title="Ringtone Downloader"><i class="fa-solid fa-bell"></i></button>
+                <button class="tool-btn" id="toolRingtoneBtn" title="Equalizer & Effects"><i class="fa-solid fa-sliders"></i></button>
                 <button class="tool-btn" id="toolCommentBtn" title="View Comments" style="display: none;"><i class="fa-solid fa-comment"></i></button>
                 <button class="tool-btn" id="toolShuffleBtn" title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
                 <button class="tool-btn" id="toolRepeatBtn" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
                 <button class="tool-circle-btn" id="toolMoreBtn" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             </div>
+            <!-- Bottom Home Indicator Bar (Screenshot 2) -->
+            <div class="full-player-home-bar"></div>
         </div>
     </div>
 
-    <!-- Floating Capsule Bottom Navigation Bar (Mobile & Tablet) -->
+    <!-- Floating Capsule Bottom Navigation Bar (Mobile & Tablet - Matching Screenshot 1) -->
     <nav class="floating-bottom-nav" id="globalBottomNav">
-        <button class="nav-item active" id="navHome" title="Home"><i class="fa-solid fa-house"></i></button>
-        <button class="nav-item" id="navSearch" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
-        <button class="nav-item" id="navLibrary" title="Library"><i class="fa-solid fa-music"></i></button>
-        <button class="nav-item more-badge" id="navMore" title="More Quick Actions"><i class="fa-solid fa-ellipsis"></i></button>
+        <button class="nav-item active" id="navHome" title="Home">
+            <i class="fa-solid fa-house"></i>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" id="navRecognition" title="Voice Recognition">
+            <i class="fa-solid fa-microphone"></i>
+            <span class="nav-label">Recognition</span>
+        </button>
+        <button class="nav-item" id="navLibrary" title="Library">
+            <i class="fa-solid fa-music"></i>
+            <span class="nav-label">Library</span>
+        </button>
+        <button class="nav-item" id="navSearch" title="Search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <button class="nav-item more-badge" id="navMore" title="More Quick Actions" style="display: none;"><i class="fa-solid fa-ellipsis"></i></button>
     </nav>
 
     <!-- 5. VOICE SEARCH MODAL OVERLAY -->

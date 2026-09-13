@@ -6364,6 +6364,12 @@ if (navSearch) {
     });
 }
 if (navLibrary) navLibrary.addEventListener('click', () => switchScreen('library'));
+const navRecognition = document.getElementById('navRecognition');
+if (navRecognition) {
+    navRecognition.addEventListener('click', () => {
+        if (typeof startVoiceSearch === 'function') startVoiceSearch();
+    });
+}
 
 // Three Dots More Sheet in Mobile & Tablet
 function openNavMoreSheet() {
@@ -7018,6 +7024,9 @@ function applyFilterToSearchResults(filter) {
     if (filter === 'songs' && (!currentSearchResults.songs || currentSearchResults.songs.length === 0)) {
         isEmpty = true;
         emptyMsg = 'No songs found for this search.';
+    } else if (filter === 'videos' && (!currentSearchResults.videos || currentSearchResults.videos.length === 0)) {
+        isEmpty = true;
+        emptyMsg = 'No videos found for this search.';
     } else if (filter === 'playlists' && (!currentSearchResults.playlists || currentSearchResults.playlists.length === 0)) {
         isEmpty = true;
         emptyMsg = 'No playlists found for this search.';
@@ -7057,25 +7066,32 @@ async function performLiveSearch(query) {
         const liveJio = (directJio || []).map(s => ({ ...s, badge: s.badge || 'JioSaavn' }));
         const ytSongs = (ytData.songs || []).map(s => ({ ...s, badge: s.badge || 'YouTube Music' }));
 
-        // Convert any YouTube videos into playable audio songs with clean titles
-        const ytVideoSongs = (ytData.videos || []).map(v => {
+        // Convert YouTube videos into dedicated video tracks (audio-first) and songs
+        const videos = (ytData.videos || []).map(v => {
             const cleanTitle = extractCleanSongTitle(v.title);
             return {
                 id: v.id || `yt_${v.youtubeId || Math.random().toString(36).substring(2, 7)}`,
                 youtubeId: v.youtubeId || (v.url ? v.url.replace('/watch?v=', '').split('&')[0] : null),
                 isYouTube: true,
-                title: cleanTitle || v.title,
+                title: v.title,
                 cleanTitle: cleanTitle,
                 originalTitle: v.title,
-                artist: v.channel ? v.channel.split('•')[0].trim() : 'YouTube Music',
-                album: v.date || 'YouTube Music',
+                artist: v.channel ? v.channel.split('•')[0].trim() : 'YouTube Video',
+                album: v.date || 'YouTube Video',
                 cover: v.thumbnail || v.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
                 duration: normalizeDuration(v.duration),
                 streamUrl: v.streamUrl || null,
                 isLive: true,
-                badge: 'YouTube Music'
+                badge: 'YouTube Video',
+                score: getSearchScore(v.title, v.channel || '', query)
             };
         });
+        videos.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+        const ytVideoSongs = videos.map(v => ({
+            ...v,
+            title: v.cleanTitle || v.title
+        }));
 
         let allSongs = [...jioSongs, ...liveJio, ...ytSongs, ...ytVideoSongs];
         const seenSongs = new Set();
@@ -7220,7 +7236,7 @@ async function performLiveSearch(query) {
             topResult = { type: 'album', data: bestAlbum };
         }
 
-        currentSearchResults = { songs, playlists, albums, artists, topResult };
+        currentSearchResults = { songs, videos, playlists, albums, artists, topResult };
 
         const activeChip = document.querySelector('.filter-chip.active');
         const activeFilter = activeChip ? activeChip.getAttribute('data-filter') : 'all';
@@ -7413,8 +7429,8 @@ function formatPlaylistItem(p) {
     };
 }
 
-// F. Render Grouped Results (Spotify & Echo Music Standard)
-function renderFullSearchResults(query, { songs = [], playlists = [], albums = [], artists = [], topResult = null }, activeFilter = 'all') {
+// F. Render Grouped Results (Matching Screenshot 1 & Spotify Standard)
+function renderFullSearchResults(query, { songs = [], videos = [], playlists = [], albums = [], artists = [], topResult = null }, activeFilter = 'all') {
     searchResultsContent.innerHTML = '';
 
     const activateFilterTab = (targetFilter) => {
@@ -7431,7 +7447,7 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
         applyFilterToSearchResults(targetFilter);
     };
 
-    // 1. TOP RESULT (Spotify / Echo Music Dynamic Card)
+    // 1. TOP RESULT (Matching Screenshot 1 Clean Card)
     if (topResult && topResult.data) {
         const topDiv = document.createElement('div');
         topDiv.className = 'result-group top-result-group';
@@ -7443,16 +7459,30 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
                 <h3 class="result-group-title">Top result</h3>
                 <div class="top-result-card" id="topResultCard">
                     <img class="top-result-artist-avatar" src="${art.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}" alt="${art.name}">
-                    <div class="result-item-details">
-                        <span class="top-result-pill artist"><i class="fa-solid fa-circle-check"></i> Artist</span>
-                        <div class="result-item-title top-result-title">${art.name}</div>
-                        <div class="result-item-sub">${art.role || 'Artist • Verified Creator'}</div>
+                    <div class="top-result-details">
+                        <div class="top-result-title">${art.name}</div>
+                        <div class="top-result-sub">${art.role || 'Artist'}</div>
                     </div>
-                    <button class="top-result-play-btn" title="Explore Artist"><i class="fa-solid fa-play"></i></button>
+                    <button class="top-result-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                 </div>
             `;
-            topDiv.querySelector('#topResultCard').addEventListener('click', () => {
+            topDiv.querySelector('#topResultCard').addEventListener('click', (e) => {
+                if (e.target.closest('.top-result-more')) return;
                 showNotification(`Browsing top tracks for: ${art.name}`, 'success');
+                openPlaylistDetailView({
+                    id: `art_${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'artist',
+                    title: art.name,
+                    query: `${art.name} top hits`,
+                    author: 'Top Hits & Albums',
+                    desc: `${art.role || 'Artist'} • Live JioSaavn & YouTube Music`,
+                    cover: art.avatar,
+                    isLive: true,
+                    badge: 'Artist Hits'
+                }, 'search');
+            });
+            topDiv.querySelector('.top-result-more')?.addEventListener('click', (e) => {
+                e.stopPropagation();
                 openPlaylistDetailView({
                     id: `art_${Math.random().toString(36).substring(2, 9)}`,
                     type: 'artist',
@@ -7471,15 +7501,29 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
                 <h3 class="result-group-title">Top result</h3>
                 <div class="top-result-card" id="topResultCard">
                     <img src="${alb.cover}" alt="${alb.title}">
-                    <div class="result-item-details">
-                        <span class="top-result-pill album"><i class="fa-solid fa-compact-disc"></i> Album</span>
-                        <div class="result-item-title top-result-title">${alb.title}</div>
-                        <div class="result-item-sub">${alb.artist} • ${alb.year || 'Album'}</div>
+                    <div class="top-result-details">
+                        <div class="top-result-title">${alb.title}</div>
+                        <div class="top-result-sub">${alb.artist}</div>
                     </div>
-                    <button class="top-result-play-btn" title="Open Album"><i class="fa-solid fa-play"></i></button>
+                    <button class="top-result-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                 </div>
             `;
-            topDiv.querySelector('#topResultCard').addEventListener('click', () => {
+            topDiv.querySelector('#topResultCard').addEventListener('click', (e) => {
+                if (e.target.closest('.top-result-more')) return;
+                openPlaylistDetailView({
+                    id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
+                    albumId: alb.id,
+                    type: 'album',
+                    title: alb.title,
+                    artist: alb.artist,
+                    desc: `${alb.artist} • ${alb.year || 'Album'}`,
+                    cover: alb.cover,
+                    isLive: true,
+                    badge: 'Album'
+                }, 'search');
+            });
+            topDiv.querySelector('.top-result-more')?.addEventListener('click', (e) => {
+                e.stopPropagation();
                 openPlaylistDetailView({
                     id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
                     albumId: alb.id,
@@ -7498,20 +7542,18 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
                 <h3 class="result-group-title">Top result</h3>
                 <div class="top-result-card" id="topResultCard">
                     <img src="${song.cover}" alt="${song.title}">
-                    <div class="result-item-details">
-                        <span class="top-result-pill song"><i class="fa-solid fa-music"></i> Song</span>
-                        <div class="result-item-title top-result-title">${song.title}</div>
-                        <div class="result-item-sub">${song.artist}</div>
+                    <div class="top-result-details">
+                        <div class="top-result-title">${song.title}</div>
+                        <div class="top-result-sub">${song.artist}</div>
                     </div>
-                    <button class="top-result-play-btn" title="Play Song"><i class="fa-solid fa-play"></i></button>
-                    <button class="result-item-more" title="Add to Playlist"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                    <button class="top-result-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                 </div>
             `;
             topDiv.querySelector('#topResultCard').addEventListener('click', (e) => {
-                if (e.target.closest('.result-item-more')) return;
+                if (e.target.closest('.top-result-more')) return;
                 playTrack(song, songs);
             });
-            topDiv.querySelector('.result-item-more')?.addEventListener('click', (e) => {
+            topDiv.querySelector('.top-result-more')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 currentSongObj = song;
                 openAddToPlaylistModal();
@@ -7520,7 +7562,7 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
         searchResultsContent.appendChild(topDiv);
     }
 
-    // 2. SONGS LIST
+    // 2. SONGS LIST (Matching Screenshot 1)
     if (songs.length > 0) {
         const songsDiv = document.createElement('div');
         songsDiv.className = 'result-group songs-group';
@@ -7537,15 +7579,13 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
         songs.forEach((song, idx) => {
             const row = document.createElement('div');
             row.className = `result-item-row ${idx >= 5 ? 'search-item-hidden-in-all' : ''}`;
-            const badgeIcon = song.isYouTube ? `<span style="color:#EF4444;font-size:0.75rem;margin-right:4px;"><i class="fa-brands fa-youtube"></i></span>` : '';
             row.innerHTML = `
                 <img class="result-item-cover" src="${song.cover}" alt="${song.title}">
                 <div class="result-item-details">
                     <div class="result-item-title">${song.title}</div>
-                    <div class="result-item-sub">${badgeIcon}${song.artist}</div>
+                    <div class="result-item-sub">${song.artist}</div>
                 </div>
-                <button class="result-item-play-btn" title="Play Song"><i class="fa-solid fa-play"></i></button>
-                <button class="result-item-more" title="Add to Playlist"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             `;
             row.addEventListener('click', (e) => {
                 if (e.target.closest('.result-item-more')) return;
@@ -7566,77 +7606,49 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
         searchResultsContent.appendChild(songsDiv);
     }
 
-    // 3. PLAYLISTS LIST
-    if (playlists.length > 0) {
-        const plDiv = document.createElement('div');
-        plDiv.className = 'result-group playlists-group';
-        plDiv.setAttribute('data-type', 'playlists');
-        plDiv.innerHTML = `
+    // 3. VIDEOS LIST (Matching Screenshot 1 - Plays Audio Only)
+    if (videos && videos.length > 0) {
+        const videosDiv = document.createElement('div');
+        videosDiv.className = 'result-group videos-group';
+        videosDiv.setAttribute('data-type', 'videos');
+        videosDiv.innerHTML = `
             <div class="result-group-header">
-                <h3 class="result-group-title">Playlists</h3>
+                <h3 class="result-group-title">Videos</h3>
             </div>
-            <div class="result-list" id="playlistsResultList"></div>
-            ${playlists.length > 5 ? `<button class="btn-see-all-results" data-filter="playlists">See all ${playlists.length} playlists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+            <div class="result-list" id="videosResultList"></div>
+            ${videos.length > 5 ? `<button class="btn-see-all-results" data-filter="videos">See all ${videos.length} videos <i class="fa-solid fa-chevron-right"></i></button>` : ''}
         `;
-        const list = plDiv.querySelector('#playlistsResultList');
+        const list = videosDiv.querySelector('#videosResultList');
 
-        playlists.forEach((pl, pIdx) => {
+        videos.forEach((video, vIdx) => {
             const row = document.createElement('div');
-            row.className = `result-item-row ${pIdx >= 5 ? 'search-item-hidden-in-all' : ''}`;
-            const isYt = pl.badge === 'YouTube Music' || pl.isYouTube || (pl.title && pl.title.includes('YouTube'));
+            row.className = `result-item-row ${vIdx >= 5 ? 'search-item-hidden-in-all' : ''}`;
             row.innerHTML = `
-                <div class="result-playlist-thumb-box">
-                    <img class="result-item-cover" src="${pl.thumbnail || pl.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80'}" alt="${pl.title}">
-                    <div class="playlist-icon-overlay"><i class="fa-solid fa-list-ul"></i></div>
-                </div>
+                <img class="result-item-cover result-video-cover" src="${video.cover}" alt="${video.title}">
                 <div class="result-item-details">
-                    <div class="result-item-title">${pl.title}</div>
-                    <div class="result-item-sub">
-                        ${isYt ? `<span class="yt-playlist-badge"><i class="fa-brands fa-youtube"></i> YouTube Music</span> ` : ''}${pl.author || pl.videos || 'Playlist'}
-                    </div>
+                    <div class="result-item-title">${video.title}</div>
+                    <div class="result-item-sub">${video.artist}</div>
                 </div>
-                <button class="result-item-play-btn" title="Open and Play Playlist"><i class="fa-solid fa-play"></i></button>
+                <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             `;
-
-            const handleOpenPlaylist = (autoPlay = false) => {
-                const targetExactTrack = pl.exactTrack || (songs.length > 0 ? songs[0] : null);
-                openPlaylistDetailView({
-                    id: pl.id ? `search_pl_${pl.id}` : `search_pl_${Math.random().toString(36).substring(2, 9)}`,
-                    listId: pl.id,
-                    type: 'playlist',
-                    title: pl.title,
-                    desc: pl.author || pl.videos || 'Playlist',
-                    cover: pl.thumbnail || pl.cover,
-                    isLive: true,
-                    badge: pl.badge || (isYt ? 'YouTube Music' : 'Playlist'),
-                    exactTrack: targetExactTrack,
-                    songs: (pl.songs && pl.songs.length > 0) ? pl.songs : null
-                }, 'search');
-
-                if (autoPlay && targetExactTrack) {
-                    playTrack(targetExactTrack, [targetExactTrack]);
-                    showNotification(`Playing "${pl.title}" (Exact Track: ${targetExactTrack.title}) 🎵`, 'success');
-                }
-            };
-
             row.addEventListener('click', (e) => {
-                if (e.target.closest('.result-item-play-btn')) return;
-                handleOpenPlaylist(false);
+                if (e.target.closest('.result-item-more')) return;
+                // Plays video audio directly via audio player
+                playTrack(video, videos);
             });
-
-            row.querySelector('.result-item-play-btn')?.addEventListener('click', (e) => {
+            row.querySelector('.result-item-more')?.addEventListener('click', (e) => {
                 e.stopPropagation();
-                handleOpenPlaylist(true);
+                currentSongObj = video;
+                openAddToPlaylistModal();
             });
-
             list.appendChild(row);
         });
 
-        plDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
-            activateFilterTab('playlists');
+        videosDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('videos');
         });
 
-        searchResultsContent.appendChild(plDiv);
+        searchResultsContent.appendChild(videosDiv);
     }
 
     // 4. ALBUMS LIST
@@ -7662,9 +7674,24 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
                     <div class="result-item-title">${alb.title}</div>
                     <div class="result-item-sub">${alb.artist} • ${alb.year || 'Album'}</div>
                 </div>
-                <button class="result-item-play-btn" title="Open Album"><i class="fa-solid fa-compact-disc"></i></button>
+                <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             `;
-            row.addEventListener('click', () => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.result-item-more')) return;
+                openPlaylistDetailView({
+                    id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
+                    albumId: alb.id,
+                    type: 'album',
+                    title: alb.title,
+                    artist: alb.artist,
+                    desc: `${alb.artist} • ${alb.year || 'Album'}`,
+                    cover: alb.cover,
+                    isLive: true,
+                    badge: 'Album'
+                }, 'search');
+            });
+            row.querySelector('.result-item-more')?.addEventListener('click', (e) => {
+                e.stopPropagation();
                 openPlaylistDetailView({
                     id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
                     albumId: alb.id,
@@ -7710,10 +7737,25 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
                     <div class="result-item-title">${art.name}</div>
                     <div class="result-item-sub">${art.role || 'Artist • Verified Creator'}</div>
                 </div>
-                <button class="result-item-play-btn" title="Explore Artist"><i class="fa-solid fa-play"></i></button>
+                <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             `;
-            row.addEventListener('click', () => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.result-item-more')) return;
                 showNotification(`Browsing artist: ${art.name}`, 'success');
+                openPlaylistDetailView({
+                    id: `art_${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'artist',
+                    title: art.name,
+                    query: `${art.name} top hits`,
+                    author: 'Top Hits & Albums',
+                    desc: `${art.role || 'Artist'} • Live JioSaavn & YouTube Music`,
+                    cover: art.avatar,
+                    isLive: true,
+                    badge: 'Artist Hits'
+                }, 'search');
+            });
+            row.querySelector('.result-item-more')?.addEventListener('click', (e) => {
+                e.stopPropagation();
                 openPlaylistDetailView({
                     id: `art_${Math.random().toString(36).substring(2, 9)}`,
                     type: 'artist',
@@ -7734,6 +7776,74 @@ function renderFullSearchResults(query, { songs = [], playlists = [], albums = [
         });
 
         searchResultsContent.appendChild(artDiv);
+    }
+
+    // 6. PLAYLISTS LIST
+    if (playlists.length > 0) {
+        const plDiv = document.createElement('div');
+        plDiv.className = 'result-group playlists-group';
+        plDiv.setAttribute('data-type', 'playlists');
+        plDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Playlists</h3>
+            </div>
+            <div class="result-list" id="playlistsResultList"></div>
+            ${playlists.length > 5 ? `<button class="btn-see-all-results" data-filter="playlists">See all ${playlists.length} playlists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+        `;
+        const list = plDiv.querySelector('#playlistsResultList');
+
+        playlists.forEach((pl, pIdx) => {
+            const row = document.createElement('div');
+            row.className = `result-item-row ${pIdx >= 5 ? 'search-item-hidden-in-all' : ''}`;
+            const isYt = pl.badge === 'YouTube Music' || pl.isYouTube || (pl.title && pl.title.includes('YouTube'));
+            row.innerHTML = `
+                <div class="result-playlist-thumb-box">
+                    <img class="result-item-cover" src="${pl.thumbnail || pl.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80'}" alt="${pl.title}">
+                    <div class="playlist-icon-overlay"><i class="fa-solid fa-list-ul"></i></div>
+                </div>
+                <div class="result-item-details">
+                    <div class="result-item-title">${pl.title}</div>
+                    <div class="result-item-sub">
+                        ${isYt ? `<span class="yt-playlist-badge"><i class="fa-brands fa-youtube"></i> YouTube Music</span> ` : ''}${pl.author || pl.videos || 'Playlist'}
+                    </div>
+                </div>
+                <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            `;
+
+            const handleOpenPlaylist = () => {
+                const targetExactTrack = pl.exactTrack || (songs.length > 0 ? songs[0] : null);
+                openPlaylistDetailView({
+                    id: pl.id ? `search_pl_${pl.id}` : `search_pl_${Math.random().toString(36).substring(2, 9)}`,
+                    listId: pl.id,
+                    type: 'playlist',
+                    title: pl.title,
+                    desc: pl.author || pl.videos || 'Playlist',
+                    cover: pl.thumbnail || pl.cover,
+                    isLive: true,
+                    badge: pl.badge || (isYt ? 'YouTube Music' : 'Playlist'),
+                    exactTrack: targetExactTrack,
+                    songs: (pl.songs && pl.songs.length > 0) ? pl.songs : null
+                }, 'search');
+            };
+
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('.result-item-more')) return;
+                handleOpenPlaylist();
+            });
+
+            row.querySelector('.result-item-more')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleOpenPlaylist();
+            });
+
+            list.appendChild(row);
+        });
+
+        plDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('playlists');
+        });
+
+        searchResultsContent.appendChild(plDiv);
     }
 }
 

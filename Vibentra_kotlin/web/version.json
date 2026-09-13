@@ -1,14 +1,13 @@
 {
-  "version": "1.4.4",
-  "name": "Vibentra v1.4.4 - YouTube Music Parity, Security Hardening & Status Bar Updates",
+  "version": "1.4.5",
+  "name": "Vibentra v1.4.5 - Crystal Clear Search & Refined Music Player Experience",
   "releaseDate": "September 2026",
   "size": "33.2 MB",
   "apkUrl": "https://raw.githubusercontent.com/srivatsan2007/Vibentra/main/Portfolio/app-debug.apk",
   "changelog": [
-    "✨ 100% YouTube Music Parity: YouTube Music Top Charts, Trending Playlists, Albums & Direct HD Audio streaming alongside JioSaavn",
-    "🔔 Native Status Bar Update Notifications: Immediate system alert when a new update is available with tap-to-install",
-    "🔒 In-App Biometric App Lock & PIN: Protect your music player with Fingerprint, Face Unlock or 4-digit PIN",
-    "🛡️ Enterprise Security Hardening: HTTP nosniff, strict origin, framing protection, and sanitized inputs",
-    "⚡ Dynamic Real-Time Home Feed: Live Launch Modules & Dynamic Language Query Filters with zero static songs"
+    "🎨 Clear Search Experience: Warm dark theme, golden-yellow headers, grouped Songs, Videos, Albums, Artists and Playlists",
+    "🎵 Audio-Only Video Tracks: YouTube video songs stream directly via audio player with album art preserved",
+    "✨ Scalloped Music Player Redesign: 12-lobed rosette flower play button, white squircle download & favorite actions, and slate-navy gradient",
+    "⚡ Precision Relevance Scoring: Instant match for songs, playlists, albums and song artists"
   ]
 }
