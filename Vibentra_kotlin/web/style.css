@@ -1344,7 +1344,7 @@ body {
     border-radius: 20px;
 }
 
-/* YouTube Video Player Viewport (Audio-first engine: active in DOM, permanently in viewport to prevent 1-second pause) */
+/* YouTube Video Player Viewport (Audio-first engine: active in DOM, permanently in viewport) */
 .yt-video-viewport {
     position: fixed !important;
     bottom: 0px !important;
@@ -1353,7 +1353,7 @@ body {
     height: 180px !important;
     pointer-events: none !important;
     z-index: 1 !important;
-    opacity: 0.015 !important;
+    opacity: 0.05 !important;
     overflow: hidden !important;
     display: block !important;
     visibility: visible !important;

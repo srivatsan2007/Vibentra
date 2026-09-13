@@ -4462,30 +4462,11 @@ function onYouTubePlayerStateChange(event) {
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         syncNativeAndroidWidget(currentSongObj, true);
     } else if (event.data === 2) { // YT.PlayerState.PAUSED
-        if (isUserInitiatedPause) {
-            isPlaying = false;
-            updatePlayPauseIcons(false);
-            stopYtProgressTicker();
-            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-            syncNativeAndroidWidget(currentSongObj, false);
-        } else {
-            // Unprompted pause from YouTube/browser: auto-resume immediately so playback never stops after 1s
-            console.log("[YouTube Engine] Unprompted pause detected; auto-resuming playback...");
-            if (isYouTubeTrackPlaying && ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                setTimeout(() => {
-                    if (!isUserInitiatedPause && isYouTubeTrackPlaying && ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                        try {
-                            ytPlayer.playVideo();
-                            isPlaying = true;
-                            updatePlayPauseIcons(true);
-                            startYtProgressTicker();
-                        } catch (err) {
-                            console.warn("Auto-resume play error:", err);
-                        }
-                    }
-                }, 80);
-            }
-        }
+        isPlaying = false;
+        updatePlayPauseIcons(false);
+        stopYtProgressTicker();
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+        syncNativeAndroidWidget(currentSongObj, false);
     } else if (event.data === 0) { // YT.PlayerState.ENDED
         isPlaying = false;
         updatePlayPauseIcons(false);
@@ -4524,8 +4505,10 @@ function fallbackToLiveAudioStream(song) {
     resolveAndPlayLiveStream(song, true);
 }
 
+let lastYtPositionSec = -1;
 function startYtProgressTicker() {
     stopYtProgressTicker();
+    lastYtPositionSec = -1;
     ytProgressInterval = setInterval(() => {
         if (!isYouTubeTrackPlaying || !ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
         try {
@@ -4546,15 +4529,19 @@ function startYtProgressTicker() {
                 // Sync live lyrics
                 syncLyricsToPlayback(curTime);
 
-                // Sync MediaSession position state
-                if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-                    try {
-                        navigator.mediaSession.setPositionState({
-                            duration: Math.max(dur, 0.1),
-                            playbackRate: 1,
-                            position: Math.min(curTime, dur)
-                        });
-                    } catch (_) {}
+                // Sync MediaSession position state throttled to 1s to eliminate audio IPC jitter
+                const secInt = Math.floor(curTime);
+                if (secInt !== lastYtPositionSec) {
+                    lastYtPositionSec = secInt;
+                    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+                        try {
+                            navigator.mediaSession.setPositionState({
+                                duration: Math.max(dur, 0.1),
+                                playbackRate: 1,
+                                position: Math.min(curTime, dur)
+                            });
+                        } catch (_) {}
+                    }
                 }
 
                 // Sync Home dynamic widget
