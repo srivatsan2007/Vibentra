@@ -1344,16 +1344,16 @@ body {
     border-radius: 20px;
 }
 
-/* YouTube Video Player Viewport (Audio-first engine: active in DOM, rendered offscreen) */
+/* YouTube Video Player Viewport (Audio-first engine: active in DOM, permanently in viewport to prevent 1-second pause) */
 .yt-video-viewport {
     position: fixed !important;
-    top: -9999px !important;
-    left: -9999px !important;
-    width: 320px !important;
-    height: 240px !important;
-    opacity: 0.001 !important;
+    bottom: 0px !important;
+    right: 0px !important;
+    width: 240px !important;
+    height: 180px !important;
     pointer-events: none !important;
-    z-index: -9999 !important;
+    z-index: 1 !important;
+    opacity: 0.015 !important;
     overflow: hidden !important;
     display: block !important;
     visibility: visible !important;
@@ -1361,10 +1361,11 @@ body {
 
 .yt-video-viewport iframe,
 .yt-video-viewport #ytPlayer {
-    width: 320px !important;
-    height: 240px !important;
+    width: 240px !important;
+    height: 180px !important;
     border: none !important;
     display: block !important;
+    visibility: visible !important;
 }
 
 /* Song Info & Quick Actions Row matching Screenshot 2 */
