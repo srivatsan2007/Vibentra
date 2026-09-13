@@ -4201,18 +4201,17 @@ function ensureYouTubePlayer(onReadyCallback) {
 
     if (window.YT && window.YT.Player) {
         try {
-            ytPlayer = new YT.Player('ytPlayer', {
-                height: '100%',
-                width: '100%',
+            const playerConfig = {
+                height: '240',
+                width: '320',
                 playerVars: {
                     'autoplay': 1,
                     'playsinline': 1,
-                    'controls': 1,
+                    'controls': 0,
                     'rel': 0,
                     'modestbranding': 1,
                     'fs': 0,
-                    'enablejsapi': 1,
-                    'origin': window.location.origin || 'http://localhost'
+                    'enablejsapi': 1
                 },
                 events: {
                     'onReady': () => {
@@ -4226,7 +4225,16 @@ function ensureYouTubePlayer(onReadyCallback) {
                     'onStateChange': onYouTubePlayerStateChange,
                     'onError': onYouTubePlayerError
                 }
-            });
+            };
+            if (pendingYouTubeVideoId) {
+                playerConfig.videoId = pendingYouTubeVideoId;
+            }
+            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                if (window.location.origin && window.location.origin !== 'null') {
+                    playerConfig.playerVars.origin = window.location.origin;
+                }
+            }
+            ytPlayer = new YT.Player('ytPlayer', playerConfig);
         } catch (e) {
             console.warn("Error creating YT.Player:", e);
         }
@@ -4258,16 +4266,8 @@ function onYouTubePlayerStateChange(event) {
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
             syncNativeAndroidWidget(currentSongObj, false);
         } else {
-            console.warn("Unexpected YouTube pause detected. Auto-resuming or seamlessly falling back to master audio...");
-            try { ytPlayer.playVideo(); } catch (_) {}
-            setTimeout(() => {
-                if (!isUserInitiatedPause && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
-                    if (ytPlayer.getPlayerState() === 2) {
-                        console.warn("YouTube embed restricted. Switching seamlessly to master audio stream...");
-                        fallbackToLiveAudioStream(currentSongObj);
-                    }
-                }
-            }, 700);
+            isPlaying = false;
+            updatePlayPauseIcons(false);
         }
     } else if (event.data === 0) { // YT.PlayerState.ENDED
         isPlaying = false;
@@ -4278,7 +4278,7 @@ function onYouTubePlayerStateChange(event) {
 }
 
 function onYouTubePlayerError(event) {
-    console.warn("YouTube Player error:", event.data, "Switching seamlessly to master audio stream...");
+    console.warn("YouTube Player error:", event.data, "Switching seamlessly to alternative audio stream...");
     fallbackToLiveAudioStream(currentSongObj);
 }
 
@@ -4289,11 +4289,9 @@ function fallbackToLiveAudioStream(song) {
     if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
         try { ytPlayer.stopVideo(); } catch (_) {}
     }
-    const viewport = document.getElementById('ytVideoViewport');
-    if (viewport) viewport.style.display = 'none';
     if (fullPlayerCover) fullPlayerCover.style.display = 'block';
 
-    showNotification(`Streaming master audio for "${song.title}" 🎶`, "success");
+    showNotification(`Finding alternative stream for "${song.title}"...`, "info");
     resolveAndPlayLiveStream(song, true);
 }
 
@@ -4362,15 +4360,15 @@ function playYouTubeVideo(videoId) {
         }
     } catch (_) {}
 
-    // Audio-Only Guarantee: Keep video viewport hidden and cover artwork visible
-    const viewport = document.getElementById('ytVideoViewport');
-    if (viewport) viewport.style.display = 'none';
+    // Audio-Only Guarantee: Cover artwork stays visible, YouTube iframe plays audio offscreen
     if (fullPlayerCover) fullPlayerCover.style.display = 'block';
+
+    const cleanId = String(videoId).replace(/^yt_/, '').split('_')[0].split('&')[0];
 
     if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
         try {
             ytPlayer.loadVideoById({
-                videoId: videoId,
+                videoId: cleanId,
                 suggestedQuality: 'small'
             });
             ytPlayer.playVideo();
@@ -4381,12 +4379,12 @@ function playYouTubeVideo(videoId) {
             fallbackToLiveAudioStream(currentSongObj);
         }
     } else {
-        pendingYouTubeVideoId = videoId;
+        pendingYouTubeVideoId = cleanId;
         ensureYouTubePlayer(() => {
             if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
                 try {
                     ytPlayer.loadVideoById({
-                        videoId: videoId,
+                        videoId: cleanId,
                         suggestedQuality: 'small'
                     });
                     ytPlayer.playVideo();
@@ -4453,19 +4451,29 @@ function playTrack(song, playlist = []) {
 
     // YouTube / Video Track Audio-First Playback Branch
     if (song.isYouTube || song.youtubeId) {
-        const viewport = document.getElementById('ytVideoViewport');
-        if (viewport) viewport.style.display = 'none';
         if (fullPlayerCover) fullPlayerCover.style.display = 'block';
+        const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
 
-        if (song.streamUrl) {
+        // If a verified non-saavn audio stream exists (e.g. direct opus/m4a stream), play via HTML5 audio
+        if (song.streamUrl && !song.streamUrl.includes('saavn')) {
             isYouTubeTrackPlaying = false;
             audioPlayer.src = song.streamUrl;
             audioPlayer.play().then(() => {
                 isPlaying = true;
                 updatePlayPauseIcons(true);
             }).catch(() => {
-                resolveAndPlayLiveStream(song, true);
+                if (ytId) {
+                    playYouTubeVideo(ytId);
+                } else {
+                    resolveAndPlayLiveStream(song, true);
+                }
             });
+            return;
+        }
+
+        // Direct authentic playback: play the exact YouTube video audio
+        if (ytId) {
+            playYouTubeVideo(ytId);
             return;
         }
 
@@ -4480,8 +4488,6 @@ function playTrack(song, playlist = []) {
     if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
         try { ytPlayer.stopVideo(); } catch (_) {}
     }
-    const viewport = document.getElementById('ytVideoViewport');
-    if (viewport) viewport.style.display = 'none';
     if (fullPlayerCover) fullPlayerCover.style.display = 'block';
 
     // 3. Audio Streaming (Screen On/Off & Background Playback Engine)
@@ -4892,12 +4898,64 @@ async function fetchYouTubeAudioOnlyStream(youtubeId) {
     return null;
 }
 
+// Strict Track Verification: Ensures a search match is genuine before swapping audio streams
+function isGenuineTrackMatch(candidate, target) {
+    if (!candidate || !target) return false;
+
+    const norm = (str) => (str || '')
+        .toLowerCase()
+        .replace(/\|\s*[^|]+/g, '')
+        .replace(/\b(official\s*(music\s*)?video|video\s*song|lyric(al)?\s*video|full\s*video|full\s*song|hd|4k|remix|cover|audio|ost|shorts|teaser|promo|visualizer)\b/gi, '')
+        .replace(/[^a-z0-9]/gi, '')
+        .trim();
+
+    const targetTitleNorm = norm(target.cleanTitle || target.title);
+    const candTitleNorm = norm(candidate.title || candidate.name);
+
+    if (!targetTitleNorm || !candTitleNorm) return false;
+
+    // Direct match or exact inclusion (minimum 5 chars to avoid partial collision)
+    const titleMatches = targetTitleNorm === candTitleNorm ||
+        (targetTitleNorm.length >= 5 && candTitleNorm.includes(targetTitleNorm)) ||
+        (candTitleNorm.length >= 5 && targetTitleNorm.includes(candTitleNorm));
+
+    if (!titleMatches) return false;
+
+    // Artist verification
+    const targetArtist = (target.artist || '').toLowerCase();
+    const candArtist = (candidate.artist || candidate.primaryArtists || '').toLowerCase();
+
+    // Check artist overlap if both have artists specified
+    if (candArtist && targetArtist &&
+        !targetArtist.includes('youtube') && !candArtist.includes('various') &&
+        !targetArtist.includes('topic') && !candArtist.includes('unknown')) {
+
+        const cleanArtists = (art) => art
+            .replace(/music|records|official|channel|studio|vevo/gi, '')
+            .split(/[,•/&\s]+/)
+            .map(w => w.trim().toLowerCase())
+            .filter(w => w.length >= 3);
+
+        const targetWords = cleanArtists(targetArtist);
+        const candWords = cleanArtists(candArtist);
+
+        if (targetWords.length > 0 && candWords.length > 0) {
+            const hasArtistOverlap = targetWords.some(tw =>
+                candWords.some(cw => tw === cw || (tw.length >= 4 && cw.includes(tw)) || (cw.length >= 4 && tw.includes(cw)))
+            );
+            if (!hasArtistOverlap) return false;
+        }
+    }
+
+    return true;
+}
+
 // Stream Auto-Recovery: Reconnects seamlessly if connection drops or token expires
 let isAutoRecovering = false;
 async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
     if (isAutoRecovering || !song) return;
     isAutoRecovering = true;
-    showNotification(`Connecting high-quality audio for "${song.title}"...`, "success");
+    showNotification(`Connecting audio for "${song.title}"...`, "success");
 
     // Clean title of any video-specific clutter (e.g. Official Music Video, 4K, Lyrical, etc.)
     const cleanQuery = (song.cleanTitle || song.title || '')
@@ -4921,12 +4979,12 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
     let fresh = null;
     let freshDuration = null;
 
-    // 1. Try JioSaavn 320kbps CD Quality Audio
+    // 1. Try JioSaavn 320kbps CD Quality Audio ONLY IF it genuinely matches target song
     for (let q of candidates) {
         try {
             const results = await fetchLiveJioSaavn(q);
             if (results && results.length > 0) {
-                const matched = results.find(r => r.streamUrl || r.url) || results[0];
+                const matched = results.find(r => (r.streamUrl || r.url) && isGenuineTrackMatch(r, song));
                 if (matched && (matched.streamUrl || matched.url)) {
                     fresh = matched.streamUrl || matched.url;
                     freshDuration = normalizeDuration(matched.duration);
@@ -4970,8 +5028,8 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
             isAutoRecovering = false;
         });
     } else {
-        // 3. Fail-safe: play via background player (video viewport hidden!)
-        if (ytId) {
+        // 3. Direct YouTube playback if it's a YouTube track
+        if (ytId && !isYouTubeTrackPlaying) {
             playYouTubeVideo(ytId);
         } else {
             showNotification(`Could not stream "${song.title}"`, "error");

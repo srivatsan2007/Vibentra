@@ -1,12 +1,13 @@
 {
-  "version": "1.4.5",
-  "name": "Vibentra v1.4.5 - Crystal Clear Search & Refined Music Player Experience",
+  "version": "1.4.6",
+  "name": "Vibentra v1.4.6 - Precision Audio Match & Authentic YouTube Playback",
   "releaseDate": "September 2026",
   "size": "33.2 MB",
   "apkUrl": "https://raw.githubusercontent.com/srivatsan2007/Vibentra/main/Portfolio/app-debug.apk",
   "changelog": [
+    "🎯 Authentic Audio Playback: Fixed track mismatch bug where YouTube Music songs (e.g. Mandaadi) were hijacked by unrelated regional tracks. Direct high-fidelity playback with strict artist/title verification.",
     "🎨 Clear Search Experience: Warm dark theme, golden-yellow headers, grouped Songs, Videos, Albums, Artists and Playlists",
-    "🎵 Audio-Only Video Tracks: YouTube video songs stream directly via audio player with album art preserved",
+    "🎵 Audio-First Video Engine: YouTube video songs stream directly via audio player with album art preserved",
     "✨ Scalloped Music Player Redesign: 12-lobed rosette flower play button, white squircle download & favorite actions, and slate-navy gradient",
     "⚡ Precision Relevance Scoring: Instant match for songs, playlists, albums and song artists"
   ]
