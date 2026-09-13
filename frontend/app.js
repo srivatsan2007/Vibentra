@@ -1380,11 +1380,98 @@ function initAppearanceSettings() {
     initLastPlayedSong();
 }
 
+// =========================================================
+// LANGUAGE PREFERENCES SYSTEM (SONGS & LYRICS)
+// =========================================================
+function getPreferredMusicLanguage() {
+    return localStorage.getItem('vibentra_preferred_language') || 'Tamil';
+}
+
+function setPreferredMusicLanguage(lang) {
+    if (!lang) return;
+    localStorage.setItem('vibentra_preferred_language', lang);
+    localStorage.setItem('vibentra_languages', JSON.stringify([lang]));
+    updateSettingsLanguageSubText();
+    if (typeof loadHomeFeed === 'function') {
+        loadHomeFeed(true);
+    }
+}
+
+function getPreferredLyricsLanguage() {
+    return localStorage.getItem('vibentra_lyrics_language') || 'Tamil';
+}
+
+function setPreferredLyricsLanguage(lang) {
+    if (!lang) return;
+    localStorage.setItem('vibentra_lyrics_language', lang);
+}
+
+function updateSettingsLanguageSubText() {
+    const lang = getPreferredMusicLanguage();
+    const subEl = document.getElementById('settingsLanguageSub');
+    if (subEl) {
+        subEl.textContent = `${lang} • Applied to Home, Search & Lyrics`;
+    }
+    const pill = document.querySelector('.mood-pill[data-category="Tamil Hits"]');
+    if (pill) {
+        pill.textContent = `${lang} Hits`;
+    }
+}
+
+function isItemMatchingPreferredLanguage(item, preferredLang) {
+    if (!item) return false;
+    if (!preferredLang) return true;
+    const target = preferredLang.toLowerCase().trim();
+
+    // 1. Explicit API language field
+    if (item.language) {
+        const itemLang = item.language.toLowerCase().trim();
+        return itemLang.includes(target) || (target === 'english' && itemLang.includes('eng'));
+    }
+
+    // 2. Cover image URL encoding (JioSaavn CDN files include language tag, e.g. -Tamil-, -Hindi-)
+    if (item.cover && typeof item.cover === 'string') {
+        const cLower = item.cover.toLowerCase();
+        const otherIndianLangs = ['tamil', 'hindi', 'telugu', 'kannada', 'malayalam', 'punjabi', 'gujarati', 'marathi', 'bengali', 'bhojpuri']
+            .filter(l => l !== target);
+        
+        const hasOtherLangInCover = otherIndianLangs.some(l => 
+            cLower.includes('-' + l + '-') || cLower.includes('_' + l + '_') || cLower.includes('/' + l + '/')
+        );
+        if (hasOtherLangInCover) return false;
+
+        if (cLower.includes('-' + target + '-') || cLower.includes('_' + target + '_') || cLower.includes('/' + target + '/')) {
+            return true;
+        }
+    }
+
+    // 3. Title / Artist / Album text
+    const text = ((item.title || '') + ' ' + (item.cleanTitle || '') + ' ' + (item.artist || '') + ' ' + (item.album || '') + ' ' + (item.channel || '')).toLowerCase();
+    
+    const otherLangs = ['hindi', 'telugu', 'tamil', 'kannada', 'malayalam', 'punjabi', 'gujarati', 'bhojpuri']
+        .filter(l => l !== target);
+    const mentionsOtherLanguage = otherLangs.some(l => 
+        text.includes('(' + l + ')') || text.includes('[' + l + ']') || text.includes(' - ' + l + ' ') || text.includes(' ' + l + ' song') || text.includes(' ' + l + ' video') || text.includes(' ' + l + ' hits')
+    );
+    if (mentionsOtherLanguage) return false;
+
+    if (target === 'english') {
+        const indianLangs = ['tamil', 'hindi', 'telugu', 'kannada', 'malayalam', 'punjabi', 'gujarati'];
+        if (indianLangs.some(l => text.includes(l))) return false;
+    }
+
+    return true;
+}
+
 // Call on startup
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAppearanceSettings);
+    document.addEventListener('DOMContentLoaded', () => {
+        initAppearanceSettings();
+        updateSettingsLanguageSubText();
+    });
 } else {
     initAppearanceSettings();
+    updateSettingsLanguageSubText();
 }
 
 async function openSettingsCategoryDetail(id, title) {
@@ -2588,6 +2675,105 @@ async function openSettingsCategoryDetail(id, title) {
             }
         });
 
+    } else if (id === 'language_preferences') {
+        const currentMusicLang = getPreferredMusicLanguage();
+        const currentLyricsLang = getPreferredLyricsLanguage();
+
+        const musicLangs = [
+            { id: 'Tamil', name: 'Tamil', native: 'தமிழ்', desc: 'Kollywood, Tamil Indipop & Classical Hits' },
+            { id: 'English', name: 'English', native: 'English', desc: 'Global Hits, Billboard, Hip-Hop & Pop' },
+            { id: 'Hindi', name: 'Hindi', native: 'हिन्दी', desc: 'Bollywood, Indie Pop & Desi Hits' },
+            { id: 'Telugu', name: 'Telugu', native: 'తెలుగు', desc: 'Tollywood, Telugu Mass Hits & Melodies' }
+        ];
+
+        const lyricsLangs = [
+            { id: 'Tamil', name: 'Tamil (தமிழ் & Tanglish)', desc: 'Original Tamil Script & Romanized Tanglish' },
+            { id: 'English', name: 'English (English)', desc: 'Standard English & International Translations' },
+            { id: 'Hindi', name: 'Hindi (हिन्दी & Hinglish)', desc: 'Devnagari Script & Romanized Hinglish' },
+            { id: 'Telugu', name: 'Telugu (తెలుగు)', desc: 'Telugu Script & Romanized Transliteration' }
+        ];
+
+        settingsDetailBody.innerHTML = `
+            <div class="settings-sub-card">
+                <div class="settings-card-header">
+                    <i class="fa-solid fa-music"></i>
+                    <div>
+                        <div class="settings-card-title">Songs & Music Language Preference</div>
+                        <div class="settings-card-desc">Select your preferred music language. Home page, Search page, and all collections will strictly display songs in this language.</div>
+                    </div>
+                </div>
+
+                <div class="lang-pref-grid" id="musicLangGrid">
+                    ${musicLangs.map(m => `
+                        <button class="lang-card-btn ${currentMusicLang === m.id ? 'active' : ''}" data-lang="${m.id}">
+                            <div class="lang-card-header-row">
+                                <span class="lang-card-name">${m.name}</span>
+                                ${currentMusicLang === m.id ? '<span class="lang-card-badge"><i class="fa-solid fa-check"></i> Active</span>' : ''}
+                            </div>
+                            <div class="lang-card-native">${m.native}</div>
+                            <div class="lang-card-desc">${m.desc}</div>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="settings-sub-card">
+                <div class="settings-card-header">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                    <div>
+                        <div class="settings-card-title">Lyrics Language Preference</div>
+                        <div class="settings-card-desc">Preferred script and translation for synchronized karaoke and plain song lyrics.</div>
+                    </div>
+                </div>
+
+                <div class="settings-pill-group" id="lyricsLangList">
+                    ${lyricsLangs.map(l => `
+                        <button class="settings-choice-pill ${currentLyricsLang === l.id ? 'active' : ''}" data-lyrics-lang="${l.id}">
+                            ${currentLyricsLang === l.id ? '✓ ' : ''}${l.name}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="settings-sub-card">
+                <div class="settings-card-header">
+                    <i class="fa-solid fa-circle-check" style="color: #F2C762;"></i>
+                    <div>
+                        <div class="settings-card-title">Active Filter Summary</div>
+                        <div class="settings-card-desc">Applied seamlessly to Home, Search, Explore, Charts & Karaoke</div>
+                    </div>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label">Songs Language</span>
+                    <span class="settings-data-val"><span class="real-data-badge" style="background:#F2C762; color:#12110D; font-weight:700;"><i class="fa-solid fa-music"></i> ${currentMusicLang} Songs Only</span></span>
+                </div>
+                <div class="settings-data-row">
+                    <span class="settings-data-label">Lyrics Preference</span>
+                    <span class="settings-data-val"><span class="real-data-badge"><i class="fa-solid fa-microphone"></i> ${currentLyricsLang} Lyrics</span></span>
+                </div>
+            </div>
+        `;
+
+        // Click handlers for Music Languages
+        document.querySelectorAll('#musicLangGrid .lang-card-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const selectedLang = btn.getAttribute('data-lang');
+                setPreferredMusicLanguage(selectedLang);
+                openSettingsCategoryDetail('language_preferences', 'Language Preferences for Songs and Lyrics');
+                showNotification(`Language set to ${selectedLang}! Home & Search updated to show only ${selectedLang} songs 🎵`, "success");
+            });
+        });
+
+        // Click handlers for Lyrics Languages
+        document.querySelectorAll('#lyricsLangList .settings-choice-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const selectedLyricsLang = btn.getAttribute('data-lyrics-lang');
+                setPreferredLyricsLanguage(selectedLyricsLang);
+                openSettingsCategoryDetail('language_preferences', 'Language Preferences for Songs and Lyrics');
+                showNotification(`Lyrics language set to ${selectedLyricsLang} 🎤`, "success");
+            });
+        });
+
     } else if (id === 'content') {
         const allLangs = ['Tamil', 'Hindi', 'Telugu', 'Malayalam', 'Kannada', 'Punjabi', 'English'];
         let userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
@@ -3434,15 +3620,14 @@ async function loadHomeFeed(forceRefresh = false) {
     `;
 
     try {
-        // 1. Read user's selected languages & current year dynamically
-        const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
-        const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+        // 1. Read user's preferred language (Tamil, English, Hindi, Telugu)
+        const primaryLang = getPreferredMusicLanguage();
         const currentYear = new Date().getFullYear();
 
-        // 2. Fetch official JioSaavn Launch Modules (Real-time live charts & trending from JioSaavn API)
+        // 2. Fetch official JioSaavn Launch Modules filtered by language
         let modulesData = null;
         try {
-            const mRes = await fetch('https://vibentra.vercel.app/api/jiosaavn/modules', { signal: AbortSignal.timeout(6000) });
+            const mRes = await fetch(`https://vibentra.vercel.app/api/jiosaavn/modules?language=${encodeURIComponent(primaryLang.toLowerCase())}`, { signal: AbortSignal.timeout(6000) });
             if (mRes.ok) {
                 modulesData = await mRes.json();
             }
@@ -3484,7 +3669,7 @@ async function loadHomeFeed(forceRefresh = false) {
             const key = (a.title || '').toLowerCase().trim();
             if (!key || seenAlbums.has(key)) return false;
             seenAlbums.add(key);
-            return true;
+            return isItemMatchingPreferredLanguage(a, primaryLang);
         });
 
         // Merge Playlists (Live JioSaavn official top charts + chartbusters)
@@ -3517,7 +3702,7 @@ async function loadHomeFeed(forceRefresh = false) {
             const key = (p.title || '').toLowerCase().trim();
             if (!key || seenPlaylists.has(key)) return false;
             seenPlaylists.add(key);
-            return true;
+            return isItemMatchingPreferredLanguage(p, primaryLang);
         });
 
         // YouTube Music Playlists
@@ -3533,7 +3718,7 @@ async function loadHomeFeed(forceRefresh = false) {
             const key = (p.title || '').toLowerCase().trim();
             if (!key || seenYtPl.has(key)) return false;
             seenYtPl.add(key);
-            return true;
+            return isItemMatchingPreferredLanguage(p, primaryLang);
         });
 
         // YouTube Music Tracks
@@ -3543,6 +3728,7 @@ async function loadHomeFeed(forceRefresh = false) {
         } else if (ytTrendingData?.videos && ytTrendingData.videos.length > 0) {
             ytTracks.push(...ytTrendingData.videos);
         }
+        ytTracks = ytTracks.filter(t => isItemMatchingPreferredLanguage(t, primaryLang));
 
         // Merge Viral Tracks (JioSaavn)
         let mergedViral = [];
@@ -3563,7 +3749,7 @@ async function loadHomeFeed(forceRefresh = false) {
             const key = (s.title || '').toLowerCase().trim();
             if (!key || seenSongs.has(key)) return false;
             seenSongs.add(key);
-            return true;
+            return isItemMatchingPreferredLanguage(s, primaryLang);
         });
 
         container.innerHTML = '';
@@ -3574,7 +3760,7 @@ async function loadHomeFeed(forceRefresh = false) {
         statusBar.innerHTML = `
             <div class="live-status-left">
                 <span class="live-pulse-dot"></span>
-                <span class="live-status-label">Live: JioSaavn & YouTube Music</span>
+                <span class="live-status-label">Live ${primaryLang}: JioSaavn & YouTube Music</span>
             </div>
             <button class="btn-refresh-home-live" id="btnRefreshLiveHome" title="Refresh Live Music Feed">
                 <i class="fa-solid fa-rotate"></i> Refresh
@@ -3583,15 +3769,15 @@ async function loadHomeFeed(forceRefresh = false) {
         container.appendChild(statusBar);
         document.getElementById('btnRefreshLiveHome')?.addEventListener('click', () => {
             loadHomeFeed(true);
-            showNotification("Refreshed live feed from JioSaavn & YouTube! 🔄", "success");
+            showNotification(`Refreshed live ${primaryLang} feed from JioSaavn & YouTube! 🔄`, "success");
         });
 
         // 1. Live & Latest Albums Section (JioSaavn & YouTube Music)
         if (mergedAlbums.length > 0) {
             renderAlbumsSection(container, {
-                title: 'Latest & Trending Albums',
+                title: `${primaryLang} Latest & Trending Albums`,
                 prefix: 'FRESH DROPS',
-                badge: 'LIVE ALBUMS',
+                badge: `${primaryLang.toUpperCase()} ALBUMS`,
                 badgeClass: 'album-badge',
                 albums: mergedAlbums.slice(0, 10)
             });
@@ -3600,9 +3786,9 @@ async function loadHomeFeed(forceRefresh = false) {
         // 2. Live Chartbuster Playlists Section (JioSaavn Official)
         if (mergedPlaylists.length > 0) {
             renderPlaylistsSection(container, {
-                title: 'Top Chartbuster Playlists',
+                title: `${primaryLang} Top Chartbusters`,
                 prefix: 'OFFICIAL CHARTS',
-                badge: 'JIOSAAVN',
+                badge: `${primaryLang.toUpperCase()}`,
                 badgeClass: 'jio-badge',
                 playlists: mergedPlaylists.slice(0, 10)
             });
@@ -3611,7 +3797,7 @@ async function loadHomeFeed(forceRefresh = false) {
         // 3. YouTube Music Trending Playlists
         if (ytPlaylists.length > 0) {
             renderPlaylistsSection(container, {
-                title: 'Trending on YouTube Music',
+                title: `Trending ${primaryLang} on YouTube Music`,
                 prefix: 'LIVE STREAM',
                 badge: 'YT MUSIC',
                 badgeClass: 'yt-badge',
@@ -3622,7 +3808,7 @@ async function loadHomeFeed(forceRefresh = false) {
         // 4. YouTube Music Hit Songs & Official Audio (Direct playback from YouTube Music)
         if (ytTracks.length > 0) {
             renderSection(container, {
-                title: 'YouTube Music Top Hits',
+                title: `${primaryLang} Top Hits`,
                 prefix: 'OFFICIAL AUDIO',
                 avatar: ytTracks[0]?.thumbnail || ytTracks[0]?.cover,
                 songs: ytTracks.slice(0, 12),
@@ -3633,7 +3819,7 @@ async function loadHomeFeed(forceRefresh = false) {
         // 5. Trending & Viral Tracks (JioSaavn + Multi-Source)
         if (mergedViral.length > 0) {
             renderSection(container, {
-                title: 'Viral Hits India',
+                title: `${primaryLang} Viral Hits`,
                 prefix: 'TOP STREAMING',
                 avatar: mergedViral[0]?.cover,
                 songs: mergedViral.slice(0, 12),
@@ -3841,8 +4027,7 @@ function renderSection(parent, { title, prefix, avatar, songs, hasCollageFirst }
 
 // Mood Pills category switching with high-precision live API queries (JioSaavn & YouTube Music)
 function getCategoryQuery(category) {
-    const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
-    const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+    const primaryLang = getPreferredMusicLanguage();
     const currentYear = new Date().getFullYear();
     const queries = {
         'Romance': `${primaryLang} Romance Melody`,
@@ -3850,7 +4035,7 @@ function getCategoryQuery(category) {
         'Party': `${primaryLang} Party Dance Hits`,
         'Relax': `${primaryLang} Relaxing Acoustic`,
         'Energize': `${primaryLang} Workout Mass Hits`,
-        'Tamil Hits': `Tamil Top Hits ${currentYear}`,
+        'Tamil Hits': `${primaryLang} Top Hits ${currentYear}`,
         '90s Road Trip': `${primaryLang} 90s Classic Hits`,
         'Indie': `${primaryLang} Indie Independent Songs`
     };
@@ -3878,8 +4063,7 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
             </div>
         `;
 
-        const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
-        const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+        const primaryLang = getPreferredMusicLanguage();
         const currentYear = new Date().getFullYear();
 
         // 1. DEDICATED YOUTUBE MUSIC VIEW
@@ -3898,7 +4082,7 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
                 statusBar.innerHTML = `
                     <div class="live-status-left">
                         <span class="live-pulse-dot" style="background:#EF4444;"></span>
-                        <span class="live-status-label"><i class="fa-brands fa-youtube" style="color:#EF4444;"></i> YouTube Music: Live Stream & Charts</span>
+                        <span class="live-status-label"><i class="fa-brands fa-youtube" style="color:#EF4444;"></i> YouTube Music: ${primaryLang} Live Stream & Charts</span>
                     </div>
                     <button class="btn-refresh-home-live" id="btnBackToHomeFeed" title="Back to All Music">
                         <i class="fa-solid fa-house"></i> All
@@ -3912,21 +4096,23 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
                 });
 
                 // A. YouTube Music Trending Playlists
-                if (ytPlData.playlists && ytPlData.playlists.length > 0) {
+                const ytPlaylists = (ytPlData.playlists || []).filter(p => isItemMatchingPreferredLanguage(p, primaryLang));
+                if (ytPlaylists.length > 0) {
                     renderPlaylistsSection(container, {
-                        title: 'Trending on YouTube Music',
+                        title: `Trending ${primaryLang} on YouTube Music`,
                         prefix: 'OFFICIAL PLAYLISTS',
                         badge: 'YT MUSIC',
                         badgeClass: 'yt-badge',
-                        playlists: ytPlData.playlists.slice(0, 10)
+                        playlists: ytPlaylists.slice(0, 10)
                     });
                 }
 
                 // B. YouTube Music Top Hits & Official Audio
-                const ytSongs = (ytHitsData.videos && ytHitsData.videos.length > 0) ? ytHitsData.videos : (ytPlData.videos || []);
+                let ytSongs = (ytHitsData.videos && ytHitsData.videos.length > 0) ? ytHitsData.videos : (ytPlData.videos || []);
+                ytSongs = ytSongs.filter(s => isItemMatchingPreferredLanguage(s, primaryLang));
                 if (ytSongs.length > 0) {
                     renderSection(container, {
-                        title: 'YouTube Music Top Hits',
+                        title: `${primaryLang} YouTube Music Top Hits`,
                         prefix: 'OFFICIAL AUDIO',
                         avatar: ytSongs[0]?.thumbnail || ytSongs[0]?.cover,
                         songs: ytSongs.slice(0, 12),
@@ -3935,10 +4121,11 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
                 }
 
                 // C. YouTube Music Fresh Albums & EPs
-                const ytAlbs = [...(ytAlbumsData.albums || []), ...(ytPlData.albums || [])];
+                let ytAlbs = [...(ytAlbumsData.albums || []), ...(ytPlData.albums || [])];
+                ytAlbs = ytAlbs.filter(a => isItemMatchingPreferredLanguage(a, primaryLang));
                 if (ytAlbs.length > 0) {
                     renderAlbumsSection(container, {
-                        title: 'YouTube Music Albums & EPs',
+                        title: `${primaryLang} Albums & EPs`,
                         prefix: 'LATEST RELEASES',
                         badge: 'YT MUSIC',
                         badgeClass: 'yt-badge',
@@ -3958,11 +4145,11 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
             try {
                 let modulesData = null;
                 try {
-                    const mRes = await fetch('https://vibentra.vercel.app/api/jiosaavn/modules', { signal: AbortSignal.timeout(6000) });
+                    const mRes = await fetch(`https://vibentra.vercel.app/api/jiosaavn/modules?language=${encodeURIComponent(primaryLang.toLowerCase())}`, { signal: AbortSignal.timeout(6000) });
                     if (mRes.ok) modulesData = await mRes.json();
                 } catch (_) {}
 
-                const [jioSearch, jioSongs] = await Promise.all([
+                const [jioSearch, jioSongsRaw] = await Promise.all([
                     fetchJioSaavnSearchAll(`${primaryLang} Top Charts ${currentYear}`),
                     fetchLiveJioSaavn(`${primaryLang} Top Hits ${currentYear}`)
                 ]);
@@ -3974,7 +4161,7 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
                 statusBar.innerHTML = `
                     <div class="live-status-left">
                         <span class="live-pulse-dot" style="background:#06B6D4;"></span>
-                        <span class="live-status-label"><i class="fa-solid fa-bolt" style="color:#06B6D4;"></i> JioSaavn: Official 320kbps Master CDN</span>
+                        <span class="live-status-label"><i class="fa-solid fa-bolt" style="color:#06B6D4;"></i> JioSaavn: ${primaryLang} Official 320kbps Master CDN</span>
                     </div>
                     <button class="btn-refresh-home-live" id="btnBackToHomeFeed" title="Back to All Music">
                         <i class="fa-solid fa-house"></i> All
@@ -3988,10 +4175,11 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
                 });
 
                 // A. JioSaavn Fresh Albums
-                const jioAlbums = modulesData?.albums || jioSearch.albums || [];
+                let jioAlbums = modulesData?.albums || jioSearch.albums || [];
+                jioAlbums = jioAlbums.filter(a => isItemMatchingPreferredLanguage(a, primaryLang));
                 if (jioAlbums.length > 0) {
                     renderAlbumsSection(container, {
-                        title: 'JioSaavn Fresh Releases',
+                        title: `${primaryLang} Fresh Releases`,
                         prefix: 'LATEST ALBUMS',
                         badge: 'JIOSAAVN',
                         badgeClass: 'album-badge',
@@ -4000,10 +4188,11 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
                 }
 
                 // B. JioSaavn Chartbusters
-                const jioPls = modulesData?.charts || modulesData?.playlists || jioSearch.playlists || [];
+                let jioPls = modulesData?.charts || modulesData?.playlists || jioSearch.playlists || [];
+                jioPls = jioPls.filter(p => isItemMatchingPreferredLanguage(p, primaryLang));
                 if (jioPls.length > 0) {
                     renderPlaylistsSection(container, {
-                        title: 'JioSaavn Top Chartbusters',
+                        title: `${primaryLang} Top Chartbusters`,
                         prefix: 'OFFICIAL CHARTS',
                         badge: 'JIOSAAVN',
                         badgeClass: 'jio-badge',
@@ -4012,9 +4201,10 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
                 }
 
                 // C. JioSaavn Top Songs
-                if (jioSongs && jioSongs.length > 0) {
+                let jioSongs = (jioSongsRaw || []).filter(s => isItemMatchingPreferredLanguage(s, primaryLang));
+                if (jioSongs.length > 0) {
                     renderSection(container, {
-                        title: 'JioSaavn Trending Hits',
+                        title: `${primaryLang} Trending Hits`,
                         prefix: 'HIGH DEFINITION 320KBPS',
                         avatar: jioSongs[0]?.cover,
                         songs: jioSongs.slice(0, 12),
@@ -4045,7 +4235,7 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
         statusBar.innerHTML = `
             <div class="live-status-left">
                 <span class="live-pulse-dot"></span>
-                <span class="live-status-label">${category}: JioSaavn & YouTube Music</span>
+                <span class="live-status-label">${primaryLang} ${category}: JioSaavn & YouTube Music</span>
             </div>
             <button class="btn-refresh-home-live" id="btnBackToHomeFeed" title="Back to All Music">
                 <i class="fa-solid fa-house"></i> All
@@ -4059,10 +4249,11 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
         });
 
         // 1. Category Albums from JioSaavn & YouTube
-        const mergedCatAlbums = [...(catData.albums || []), ...(ytData.albums || [])];
+        let mergedCatAlbums = [...(catData.albums || []), ...(ytData.albums || [])];
+        mergedCatAlbums = mergedCatAlbums.filter(a => isItemMatchingPreferredLanguage(a, primaryLang));
         if (mergedCatAlbums.length > 0) {
             renderAlbumsSection(container, {
-                title: `${category} Albums`,
+                title: `${primaryLang} ${category} Albums`,
                 prefix: 'LATEST RELEASES',
                 badge: 'LIVE',
                 badgeClass: 'album-badge',
@@ -4071,42 +4262,38 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
         }
 
         // 2. Category Playlists from YouTube Music
-        if (ytData.playlists && ytData.playlists.length > 0) {
+        let catPlaylists = (ytData.playlists && ytData.playlists.length > 0) ? ytData.playlists : (catData.playlists || []);
+        catPlaylists = catPlaylists.filter(p => isItemMatchingPreferredLanguage(p, primaryLang));
+        if (catPlaylists.length > 0) {
             renderPlaylistsSection(container, {
-                title: `${category} YouTube Music Mixes`,
-                prefix: 'YOUTUBE MUSIC',
-                badge: 'YT MUSIC',
-                badgeClass: 'yt-badge',
-                playlists: ytData.playlists.slice(0, 8)
-            });
-        } else if (catData.playlists && catData.playlists.length > 0) {
-            renderPlaylistsSection(container, {
-                title: `${category} Playlists`,
+                title: `${primaryLang} ${category} Mixes`,
                 prefix: 'CURATED MIX',
                 badge: 'LIVE',
                 badgeClass: 'jio-badge',
-                playlists: catData.playlists.slice(0, 8)
+                playlists: catPlaylists.slice(0, 8)
             });
         }
 
         // 3. Category YouTube Music Top Video Tracks
-        if (ytData.videos && ytData.videos.length > 0) {
+        let catYtVideos = (ytData.videos || []).filter(v => isItemMatchingPreferredLanguage(v, primaryLang));
+        if (catYtVideos.length > 0) {
             renderSection(container, {
-                title: `${category} YouTube Hits`,
+                title: `${primaryLang} ${category} YouTube Hits`,
                 prefix: 'OFFICIAL AUDIO',
-                avatar: ytData.videos[0]?.thumbnail || ytData.videos[0]?.cover,
-                songs: ytData.videos.slice(0, 10),
+                avatar: catYtVideos[0]?.thumbnail || catYtVideos[0]?.cover,
+                songs: catYtVideos.slice(0, 10),
                 hasCollageFirst: false
             });
         }
 
         // 4. Category Songs from JioSaavn
-        if (songs && songs.length > 0) {
+        let catSongs = (songs || []).filter(s => isItemMatchingPreferredLanguage(s, primaryLang));
+        if (catSongs.length > 0) {
             renderSection(container, {
-                title: `${category} JioSaavn Songs`,
+                title: `${primaryLang} ${category} Hits`,
                 prefix: 'TRENDING',
-                avatar: songs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80',
-                songs: songs.slice(0, 12),
+                avatar: catSongs[0]?.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80',
+                songs: catSongs.slice(0, 12),
                 hasCollageFirst: false
             });
         }
@@ -5868,7 +6055,8 @@ async function openLyricsModal() {
     if (lyricsContainer) lyricsContainer.classList.remove('plain-lyrics-mode');
 
     if (currentSongObj) {
-        if (subTitle) subTitle.textContent = `${currentSongObj.title} • ${currentSongObj.artist}`;
+        const prefLyricsLang = getPreferredLyricsLanguage();
+        if (subTitle) subTitle.textContent = `${currentSongObj.title} • ${currentSongObj.artist} (${prefLyricsLang})`;
     }
 
     if (loader) loader.style.display = 'flex';
@@ -5921,10 +6109,10 @@ async function openLyricsModal() {
                         const syncedItem = list.find(x => x.syncedLyrics);
                         if (syncedItem) {
                             rawLyrics = syncedItem.syncedLyrics;
-                            providerName = 'LRCLIB Search Synced';
+                            providerName = 'LRCLIB Synced';
                         } else if (list[0].plainLyrics) {
                             rawLyrics = list[0].plainLyrics;
-                            providerName = 'LRCLIB Search Plain';
+                            providerName = 'LRCLIB Plain';
                         }
                     }
                 }
@@ -5970,7 +6158,8 @@ async function openLyricsModal() {
 
         if (badge) {
             if (rawLyrics && providerName !== 'None') {
-                badge.textContent = `✓ ${providerName}`;
+                const prefLyricsLang = getPreferredLyricsLanguage();
+                badge.textContent = `✓ ${providerName} • ${prefLyricsLang}`;
                 badge.style.display = 'inline-flex';
             } else {
                 badge.style.display = 'none';
@@ -6957,8 +7146,12 @@ function resetSearchToExplore() {
 // B. Explore Cards Click Handler (Screenshot 1)
 document.querySelectorAll('.explore-card').forEach(card => {
     card.addEventListener('click', () => {
-        const query = card.getAttribute('data-query');
+        let query = card.getAttribute('data-query');
         if (query) {
+            const preferredLang = getPreferredMusicLanguage();
+            if (query.startsWith('Tamil ') || query === 'Tamil Hits') {
+                query = query.replace(/^Tamil\b/, preferredLang);
+            }
             searchInput.value = query;
             handleSearchInputChange(query);
             performLiveSearch(query);
@@ -6969,8 +7162,12 @@ document.querySelectorAll('.explore-card').forEach(card => {
 // B2. Suggested Playlists Click Handler
 document.querySelectorAll('.explore-playlist-card').forEach(card => {
     card.addEventListener('click', () => {
-        const query = card.getAttribute('data-query');
+        let query = card.getAttribute('data-query');
         if (query) {
+            const preferredLang = getPreferredMusicLanguage();
+            if (query.includes('Tamil')) {
+                query = query.replace(/Tamil/g, preferredLang);
+            }
             searchInput.value = query;
             handleSearchInputChange(query);
             performLiveSearch(query);
@@ -6984,8 +7181,7 @@ document.querySelectorAll('.search-tab').forEach(tab => {
         document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
 
-        const userLangs = JSON.parse(localStorage.getItem('vibentra_languages') || '["Tamil", "Hindi", "English"]');
-        const primaryLang = (Array.isArray(userLangs) && userLangs.length > 0) ? userLangs[0] : 'Tamil';
+        const primaryLang = getPreferredMusicLanguage();
         const currentYear = new Date().getFullYear();
 
         const tabType = tab.getAttribute('data-tab');
@@ -7111,10 +7307,22 @@ async function performLiveSearch(query) {
     searchResultsContent.innerHTML = '';
 
     try {
+        const preferredLang = getPreferredMusicLanguage();
+        const qLower = (query || '').toLowerCase().trim();
+        const otherLangs = ['tamil', 'english', 'hindi', 'telugu', 'kannada', 'malayalam', 'punjabi', 'gujarati', 'bhojpuri']
+            .filter(l => l !== preferredLang.toLowerCase());
+        const userExplicitlyQueriedOtherLang = otherLangs.some(l => qLower.includes(l));
+
+        let apiQuery = query;
+        const isGenericQuery = /^(top|latest|new|best|hit|hits|songs|melody|romantic|party|sad|folk|devotional|trending)\b/i.test(query.trim()) && !qLower.includes(preferredLang.toLowerCase());
+        if (isGenericQuery) {
+            apiQuery = `${preferredLang} ${query}`;
+        }
+
         const [allData, ytData, directJio] = await Promise.all([
-            fetchJioSaavnSearchAll(query),
-            fetchYouTubePipedSearch(query),
-            fetchLiveJioSaavn(query)
+            fetchJioSaavnSearchAll(apiQuery),
+            fetchYouTubePipedSearch(apiQuery),
+            fetchLiveJioSaavn(apiQuery)
         ]);
 
         searchLoader.style.display = 'none';
@@ -7125,7 +7333,7 @@ async function performLiveSearch(query) {
         const ytSongs = (ytData.songs || []).map(s => ({ ...s, badge: s.badge || 'YouTube Music' }));
 
         // Convert YouTube videos into dedicated video tracks (audio-first) and songs
-        const videos = (ytData.videos || []).map(v => {
+        let videos = (ytData.videos || []).map(v => {
             const cleanTitle = extractCleanSongTitle(v.title);
             return {
                 id: v.id || `yt_${v.youtubeId || Math.random().toString(36).substring(2, 7)}`,
@@ -7144,6 +7352,10 @@ async function performLiveSearch(query) {
                 score: getSearchScore(v.title, v.channel || '', query)
             };
         });
+
+        if (!userExplicitlyQueriedOtherLang) {
+            videos = videos.filter(v => isItemMatchingPreferredLanguage(v, preferredLang));
+        }
         videos.sort((a, b) => (b.score || 0) - (a.score || 0));
 
         const ytVideoSongs = videos.map(v => ({
@@ -7152,6 +7364,10 @@ async function performLiveSearch(query) {
         }));
 
         let allSongs = [...jioSongs, ...liveJio, ...ytSongs, ...ytVideoSongs];
+        if (!userExplicitlyQueriedOtherLang) {
+            allSongs = allSongs.filter(s => isItemMatchingPreferredLanguage(s, preferredLang));
+        }
+
         const seenSongs = new Set();
         let songs = [];
         allSongs.forEach(s => {
@@ -7203,6 +7419,9 @@ async function performLiveSearch(query) {
 
         // 3. Process Albums: JioSaavn + YouTube + Albums from songs
         let rawAlbums = [...(allData.albums || []), ...(ytData.albums || [])];
+        if (!userExplicitlyQueriedOtherLang) {
+            rawAlbums = rawAlbums.filter(al => isItemMatchingPreferredLanguage(al, preferredLang));
+        }
         const seenAlbums = new Set();
         let albums = [];
 
@@ -7241,7 +7460,7 @@ async function performLiveSearch(query) {
 
         if (jioPlaylists.length === 0) {
             try {
-                const extraAll = await fetchJioSaavnSearchAll(`${query} playlist`);
+                const extraAll = await fetchJioSaavnSearchAll(`${apiQuery} playlist`);
                 if (extraAll.playlists && extraAll.playlists.length > 0) jioPlaylists = extraAll.playlists;
                 else if (artists.length > 0) {
                     const extraArtist = await fetchJioSaavnSearchAll(`${artists[0].name} playlist`);
@@ -7252,9 +7471,14 @@ async function performLiveSearch(query) {
 
         if (ytPlaylists.length === 0) {
             try {
-                const extraPiped = await fetchYouTubePipedSearch(`${query} playlist`);
+                const extraPiped = await fetchYouTubePipedSearch(`${apiQuery} playlist`);
                 if (extraPiped.playlists && extraPiped.playlists.length > 0) ytPlaylists = extraPiped.playlists;
             } catch (_) {}
+        }
+
+        if (!userExplicitlyQueriedOtherLang) {
+            jioPlaylists = jioPlaylists.filter(pl => isItemMatchingPreferredLanguage(pl, preferredLang));
+            ytPlaylists = ytPlaylists.filter(pl => isItemMatchingPreferredLanguage(pl, preferredLang));
         }
 
         const seenPlaylists = new Set();
@@ -7277,7 +7501,6 @@ async function performLiveSearch(query) {
 
         // Determine Top Result (Intent Detection: Artist, Album, or Song)
         let topResult = null;
-        const qLower = query.toLowerCase().trim();
         const bestArtist = artists.length > 0 ? artists[0] : null;
         const bestSong = songs.length > 0 ? songs[0] : null;
         const bestAlbum = albums.length > 0 ? albums[0] : null;
