@@ -7397,28 +7397,52 @@ async function performLiveSearch(query) {
         }
         videos.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-        const ytVideoSongs = videos.map(v => ({
-            ...v,
-            title: v.cleanTitle || v.title
-        }));
+        // Deduplicate JioSaavn songs among themselves
+        const seenJio = new Set();
+        const cleanJioSongs = [];
+        [...jioSongs, ...liveJio].forEach(s => {
+            const cleanT = (s.cleanTitle || s.title || '').toLowerCase().trim();
+            const cleanA = (s.artist || '').toLowerCase().split(/[,•/&]/)[0].trim();
+            const key = `${cleanT}__${cleanA}`;
+            if (cleanT && !seenJio.has(key)) {
+                seenJio.add(key);
+                s.score = getSearchScore(s.title, s.artist, query);
+                cleanJioSongs.push(s);
+            }
+        });
 
-        let allSongs = [...jioSongs, ...liveJio, ...ytSongs, ...ytVideoSongs];
+        // Deduplicate YouTube Music songs among themselves (use videos as audio fallback only if music songs are empty)
+        const ytSongPool = ytSongs.length > 0 ? ytSongs : videos.map(v => ({
+            ...v,
+            title: v.cleanTitle || v.title,
+            badge: 'YouTube Music'
+        }));
+        const seenYt = new Set();
+        const cleanYtSongs = [];
+        ytSongPool.forEach(s => {
+            const cleanT = (s.cleanTitle || s.title || '').toLowerCase().trim();
+            const cleanA = (s.artist || '').toLowerCase().split(/[,•/&]/)[0].trim();
+            const key = `${cleanT}__${cleanA}`;
+            if (cleanT && !seenYt.has(key)) {
+                seenYt.add(key);
+                s.score = getSearchScore(s.title, s.artist, query);
+                cleanYtSongs.push(s);
+            }
+        });
+
+        // Interleave JioSaavn and YouTube Music songs so BOTH providers are represented in the Songs list
+        let allSongs = [];
+        const maxLen = Math.max(cleanJioSongs.length, cleanYtSongs.length);
+        for (let i = 0; i < maxLen; i++) {
+            if (i < cleanJioSongs.length) allSongs.push(cleanJioSongs[i]);
+            if (i < cleanYtSongs.length) allSongs.push(cleanYtSongs[i]);
+        }
+
         if (!userExplicitlyQueriedOtherLang) {
             allSongs = allSongs.filter(s => isItemMatchingPreferredLanguage(s, preferredLang));
         }
 
-        const seenSongs = new Set();
-        let songs = [];
-        allSongs.forEach(s => {
-            const cleanT = (s.cleanTitle || s.title || '').toLowerCase().trim();
-            const cleanA = (s.artist || '').toLowerCase().split(/[,•/&]/)[0].trim();
-            const key = `${cleanT}__${cleanA}`;
-            if (cleanT && !seenSongs.has(key)) {
-                seenSongs.add(key);
-                s.score = getSearchScore(s.title, s.artist, query);
-                songs.push(s);
-            }
-        });
+        let songs = allSongs;
         // Sort songs strictly by relevance
         songs.sort((a, b) => (b.score || 0) - (a.score || 0));
 
@@ -7606,56 +7630,43 @@ async function fetchJioSaavnSearchAll(query) {
     return { songs: fallbackSongs, albums: [], artists: [], playlists: [] };
 }
 
-// Fetch YouTube Piped API (returns videos, songs, artists, playlists, albums)
+// Fetch YouTube Piped API (returns authentic YouTube Music songs & YouTube videos, artists, playlists, albums)
 async function fetchYouTubePipedSearch(query) {
-    const endpoints = [
-        `https://api.piped.private.coffee/search?q=${encodeURIComponent(query)}&filter=all`,
-        `https://piped.video/api/v1/search?q=${encodeURIComponent(query)}&filter=all`,
-        `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`,
-        `https://piped-api.lunar.icu/search?q=${encodeURIComponent(query)}&filter=all`
+    const candidateHosts = [
+        'https://api.piped.private.coffee',
+        'https://piped.video',
+        'https://pipedapi.kavin.rocks'
     ];
 
-    for (let u of endpoints) {
-        try {
-            const res = await fetch(u, { signal: AbortSignal.timeout(6000) });
-            if (res.ok) {
-                const data = await res.json();
-                const items = data.items || [];
-                const videos = [];
-                const songs = [];
-                const artists = [];
-                const playlists = [];
-                const albums = [];
+    const cleanQ = encodeURIComponent(query.trim());
+    const videos = [];
+    const songs = [];
+    const artists = [];
+    const playlists = [];
+    const albums = [];
 
-                items.forEach(item => {
-                    if (item.type === 'stream') {
-                        const ytId = item.url ? item.url.replace('/watch?v=', '').split('&')[0] : null;
-                        const durationStr = item.duration ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : '3:30';
-                        const vObj = {
-                            id: `yt_${ytId || Math.random().toString(36).slice(2)}`,
-                            youtubeId: ytId,
-                            isYouTube: true,
-                            title: (item.title || '').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&'),
-                            artist: item.uploaderName || 'YouTube Music',
-                            channel: item.uploaderName || 'YouTube Music',
-                            album: 'YouTube Music Track',
-                            thumbnail: item.thumbnail,
-                            cover: item.thumbnail || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80',
-                            date: item.uploadedDate || 'Trending',
-                            duration: durationStr,
-                            url: item.url,
-                            streamUrl: null,
-                            badge: 'YouTube Music'
-                        };
-                        videos.push(vObj);
-                        songs.push({
-                            ...vObj,
-                            id: `yt_${ytId || Math.random().toString(36).slice(2)}`,
-                            album: 'YouTube Music'
-                        });
-                    } else if (item.type === 'channel') {
+    for (let host of candidateHosts) {
+        try {
+            // Concurrently fetch YouTube Music Songs and YouTube Videos
+            const [musicRes, videoRes] = await Promise.allSettled([
+                fetch(`${host}/search?q=${cleanQ}&filter=music_songs`, { signal: AbortSignal.timeout(5000) })
+                    .then(r => r.ok ? r.json() : null),
+                fetch(`${host}/search?q=${cleanQ}&filter=videos`, { signal: AbortSignal.timeout(5000) })
+                    .then(r => r.ok ? r.json() : null)
+            ]);
+
+            const musicData = musicRes.status === 'fulfilled' ? musicRes.value : null;
+            const videoData = videoRes.status === 'fulfilled' ? videoRes.value : null;
+
+            // 1. Process YouTube Music Songs
+            if (musicData && Array.isArray(musicData.items) && musicData.items.length > 0) {
+                musicData.items.forEach(item => {
+                    const ytId = item.url ? item.url.replace('/watch?v=', '').split('&')[0] : (item.id || null);
+                    if (!ytId && item.type !== 'channel' && item.type !== 'playlist' && item.type !== 'album') return;
+
+                    if (item.type === 'channel') {
                         artists.push({
-                            name: item.name,
+                            name: (item.name || '').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
                             avatar: item.avatarUrl || item.thumbnail,
                             subscribers: item.subscriberCount ? `${Math.round(item.subscriberCount / 1000)}K subscribers` : 'Artist'
                         });
@@ -7664,32 +7675,19 @@ async function fetchYouTubePipedSearch(query) {
                         albums.push({
                             id: albId,
                             albumId: albId,
-                            title: (item.name || item.title || 'Album').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&'),
+                            title: (item.name || item.title || 'Album').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
                             artist: item.uploaderName || item.artist || 'YouTube Music',
-                            cover: item.thumbnail || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80',
+                            cover: item.thumbnail || (albId ? `https://i.ytimg.com/vi/${albId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80'),
                             year: String(new Date().getFullYear()),
                             isYouTube: true,
                             badge: 'YouTube Music'
                         });
                     } else if (item.type === 'playlist') {
                         const plId = item.url ? item.url.replace('/playlist?list=', '').replace('/playlist/', '') : (item.id || null);
-                        const plTitle = (item.name || '').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
-                        if (plId && (plId.startsWith('OLAK5uy_') || plTitle.toLowerCase().includes('album') || plTitle.toLowerCase().includes('ep -') || plTitle.toLowerCase().includes('single -'))) {
-                            albums.push({
-                                id: plId,
-                                albumId: plId,
-                                title: plTitle,
-                                artist: item.uploaderName || 'YouTube Music',
-                                cover: item.thumbnail || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80',
-                                year: String(new Date().getFullYear()),
-                                isYouTube: true,
-                                badge: 'YouTube Music'
-                            });
-                        }
                         playlists.push({
                             id: plId,
                             listId: plId,
-                            title: plTitle,
+                            title: (item.name || '').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
                             author: item.uploaderName ? `${item.uploaderName} • ${item.videos || 10} tracks` : `${item.videos || 10} tracks`,
                             thumbnail: item.thumbnail,
                             cover: item.thumbnail,
@@ -7697,14 +7695,101 @@ async function fetchYouTubePipedSearch(query) {
                             isYouTube: true,
                             badge: 'YouTube Music'
                         });
+                    } else {
+                        // Authentic YouTube Music song track
+                        const rawTitle = (item.title || 'YouTube Track').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+                        const cleanTitle = extractCleanSongTitle(rawTitle);
+                        const durationStr = item.duration ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : '3:30';
+                        const thumb = item.thumbnail || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80');
+
+                        songs.push({
+                            id: `yt_${ytId || Math.random().toString(36).slice(2)}`,
+                            youtubeId: ytId,
+                            isYouTube: true,
+                            title: cleanTitle || rawTitle,
+                            cleanTitle: cleanTitle,
+                            originalTitle: rawTitle,
+                            artist: (item.uploaderName || 'YouTube Music').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                            channel: (item.uploaderName || 'YouTube Music').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                            album: 'YouTube Music',
+                            thumbnail: thumb,
+                            cover: thumb,
+                            duration: durationStr,
+                            url: item.url,
+                            streamUrl: null,
+                            isLive: true,
+                            badge: 'YouTube Music'
+                        });
                     }
                 });
+            }
 
+            // 2. Process YouTube Videos
+            if (videoData && Array.isArray(videoData.items) && videoData.items.length > 0) {
+                videoData.items.forEach(item => {
+                    const ytId = item.url ? item.url.replace('/watch?v=', '').split('&')[0] : (item.id || null);
+                    if (!ytId) return;
+
+                    const rawTitle = (item.title || 'YouTube Video').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&');
+                    const cleanTitle = extractCleanSongTitle(rawTitle);
+                    const durationStr = item.duration ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}` : '3:30';
+                    const thumb = item.thumbnail || (ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80');
+
+                    videos.push({
+                        id: `yt_${ytId || Math.random().toString(36).slice(2)}`,
+                        youtubeId: ytId,
+                        isYouTube: true,
+                        title: rawTitle,
+                        cleanTitle: cleanTitle,
+                        originalTitle: rawTitle,
+                        artist: (item.uploaderName || 'YouTube Video').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                        channel: (item.uploaderName || 'YouTube Video').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                        album: item.uploadedDate || 'YouTube Video',
+                        thumbnail: thumb,
+                        cover: thumb,
+                        date: item.uploadedDate || 'Trending',
+                        duration: durationStr,
+                        url: item.url,
+                        streamUrl: null,
+                        isLive: true,
+                        badge: 'YouTube Video',
+                        score: getSearchScore(rawTitle, item.uploaderName || '', query)
+                    });
+
+                    // If musicData didn't return any songs, use video tracks as audio fallback songs
+                    if (songs.length === 0) {
+                        songs.push({
+                            id: `yt_${ytId || Math.random().toString(36).slice(2)}`,
+                            youtubeId: ytId,
+                            isYouTube: true,
+                            title: cleanTitle || rawTitle,
+                            cleanTitle: cleanTitle,
+                            originalTitle: rawTitle,
+                            artist: (item.uploaderName || 'YouTube Music').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                            channel: (item.uploaderName || 'YouTube Music').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
+                            album: 'YouTube Music',
+                            thumbnail: thumb,
+                            cover: thumb,
+                            duration: durationStr,
+                            url: item.url,
+                            streamUrl: null,
+                            isLive: true,
+                            badge: 'YouTube Music'
+                        });
+                    }
+                });
+            }
+
+            // If we obtained results, stop querying further candidate hosts
+            if (songs.length > 0 || videos.length > 0) {
                 return { videos, songs, artists, playlists, albums };
             }
-        } catch (e) {}
+        } catch (e) {
+            console.warn(`Host ${host} failed:`, e);
+        }
     }
-    return { videos: [], songs: [], artists: [], playlists: [], albums: [] };
+
+    return { videos, songs, artists, playlists, albums };
 }
 
 function formatTrackItem(t) {
@@ -7858,13 +7943,14 @@ function renderFullSearchResults(query, { songs = [], videos = [], playlists = [
             });
         } else {
             const song = topResult.data;
+            const songBadge = song.badge || (song.isYouTube ? 'YouTube Music' : 'JioSaavn');
             topDiv.innerHTML = `
                 <h3 class="result-group-title">Top result</h3>
                 <div class="top-result-card" id="topResultCard">
                     <img src="${song.cover}" alt="${song.title}">
                     <div class="top-result-details">
                         <div class="top-result-title">${song.title}</div>
-                        <div class="top-result-sub">${song.artist}</div>
+                        <div class="top-result-sub">${song.artist} • ${songBadge}</div>
                     </div>
                     <button class="top-result-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                 </div>
@@ -7898,12 +7984,13 @@ function renderFullSearchResults(query, { songs = [], videos = [], playlists = [
 
         songs.forEach((song, idx) => {
             const row = document.createElement('div');
+            const itemBadge = song.badge || (song.isYouTube ? 'YouTube Music' : 'JioSaavn');
             row.className = `result-item-row ${idx >= 5 ? 'search-item-hidden-in-all' : ''}`;
             row.innerHTML = `
                 <img class="result-item-cover" src="${song.cover}" alt="${song.title}">
                 <div class="result-item-details">
                     <div class="result-item-title">${song.title}</div>
-                    <div class="result-item-sub">${song.artist}</div>
+                    <div class="result-item-sub">${song.artist} • ${itemBadge}</div>
                 </div>
                 <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             `;
