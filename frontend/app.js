@@ -4462,11 +4462,23 @@ function onYouTubePlayerStateChange(event) {
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         syncNativeAndroidWidget(currentSongObj, true);
     } else if (event.data === 2) { // YT.PlayerState.PAUSED
-        isPlaying = false;
-        updatePlayPauseIcons(false);
-        stopYtProgressTicker();
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-        syncNativeAndroidWidget(currentSongObj, false);
+        if (isUserInitiatedPause) {
+            isPlaying = false;
+            updatePlayPauseIcons(false);
+            stopYtProgressTicker();
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+            syncNativeAndroidWidget(currentSongObj, false);
+        } else {
+            // Unprompted pause from browser or screen-off/background transition: keep playback state active
+            console.log("[YouTube Engine] Screen-off/background unprompted pause detected. Preserving playback session.");
+            if (isYouTubeTrackPlaying && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                setTimeout(() => {
+                    if (!isUserInitiatedPause && isYouTubeTrackPlaying && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                        try { ytPlayer.playVideo(); } catch (_) {}
+                    }
+                }, 300);
+            }
+        }
     } else if (event.data === 0) { // YT.PlayerState.ENDED
         isPlaying = false;
         updatePlayPauseIcons(false);
@@ -4572,9 +4584,11 @@ function playYouTubeVideo(videoId) {
     isUserInitiatedPause = false;
     try {
         if (audioPlayer) {
-            audioPlayer.pause();
-            audioPlayer.removeAttribute('src');
-            audioPlayer.load();
+            // Play an ultra-low volume silent audio loop to keep Android WebView media pipeline & Foreground Service active when screen is off / app minimized
+            audioPlayer.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            audioPlayer.loop = true;
+            audioPlayer.volume = 0.001;
+            audioPlayer.play().catch(() => {});
         }
     } catch (_) {}
 
@@ -5191,63 +5205,90 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
     isAutoRecovering = true;
     showNotification(`Connecting audio for "${song.title}"...`, "success");
 
-    // Clean title of any video-specific clutter (e.g. Official Music Video, 4K, Lyrical, etc.)
-    const cleanQuery = (song.cleanTitle || song.title || '')
+    // 1. Smart Title Decomposition: Clean titles of video clutter while preserving movie/album context
+    const rawTitle = song.title || '';
+    const cleanTitle = (song.cleanTitle || rawTitle)
         .replace(/\|\s*[^|]+/g, ' ')
-        .replace(/\b(Official\s*(Music\s*)?Video|Video\s*Song|Lyric(al)?\s*Video|Full\s*Video|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo|Visualizer)\b/gi, ' ')
+        .replace(/\b(Official\s*(Music\s*)?Video|Video\s*Song|Lyric(al)?\s*Video|Full\s*Video|Full\s*Song|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo|Visualizer|From|The|Motion|Picture|Soundtrack)\b/gi, ' ')
         .replace(/[-–—]/g, ' ')
-        .replace(/\(\s*\)/g, '')
-        .replace(/\[\s*\]/g, '')
+        .replace(/\(.*?\)/g, ' ')
+        .replace(/\[.*?\]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+
+    // Extract movie/album context if present (e.g. from "From 'Jailer'")
+    const movieMatch = rawTitle.match(/(?:from\s*["']?([^"')\]]+)["']?)/i);
+    const movieContext = movieMatch ? movieMatch[1].trim() : '';
 
     const artistName = song.artist ? song.artist.split('•')[0].split(',')[0].trim() : '';
     const isLabel = isRecordLabelOrChannel(artistName);
     const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
 
+    // Build focused, high-precision search candidates
     const candidateSet = new Set();
-    if (cleanQuery && !isLabel && artistName && !cleanQuery.toLowerCase().includes(artistName.toLowerCase())) {
-        candidateSet.add(`${cleanQuery} ${artistName}`);
+    if (cleanTitle && !isLabel && artistName && !cleanTitle.toLowerCase().includes(artistName.toLowerCase())) {
+        candidateSet.add(`${cleanTitle} ${artistName}`);
     }
-    if (cleanQuery) candidateSet.add(cleanQuery);
-
-    // If title has a hyphen separating movie and song (e.g. "JAILER - Hukum")
-    const titleParts = (song.title || '').split(/[-–—|]/).map(p => p.trim()).filter(p => p.length >= 3);
+    if (cleanTitle && movieContext) {
+        candidateSet.add(`${cleanTitle} ${movieContext}`);
+    }
+    if (cleanTitle) {
+        candidateSet.add(cleanTitle);
+    }
+    // Also try title parts if split by hyphen/pipe (e.g. "JAILER - Hukum")
+    const titleParts = rawTitle.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').split(/[-–—|]/).map(p => p.trim()).filter(p => p.length >= 3);
     if (titleParts.length >= 2) {
-        const part1 = titleParts[1].replace(/\b(Official|Video|Song|Lyric(al)?|HD|4K)\b/gi, '').trim();
-        const part0 = titleParts[0].replace(/\b(Official|Video|Song|Lyric(al)?|HD|4K)\b/gi, '').trim();
-        if (part1 && part0) candidateSet.add(`${part1} ${part0}`);
-        if (part1) candidateSet.add(part1);
+        const p0 = titleParts[0].replace(/\b(Official|Video|Song|Lyric(al)?|HD|4K)\b/gi, '').trim();
+        const p1 = titleParts[1].replace(/\b(Official|Video|Song|Lyric(al)?|HD|4K)\b/gi, '').trim();
+        if (p0 && p1) {
+            candidateSet.add(`${p1} ${p0}`);
+            candidateSet.add(`${p0} ${p1}`);
+        }
+        if (p1) candidateSet.add(p1);
+        if (p0) candidateSet.add(p0);
     }
     if (song.title) candidateSet.add(song.title);
-    const candidates = [...candidateSet].filter(Boolean);
+    const candidates = [...candidateSet].filter(Boolean).slice(0, 4);
 
     let fresh = null;
     let freshDuration = null;
 
-    // 1. Try JioSaavn 320kbps CD Quality Audio ONLY IF it genuinely matches target song
-    for (let q of candidates) {
-        try {
-            const results = await fetchLiveJioSaavn(q);
-            if (results && results.length > 0) {
-                const matched = results.find(r => (r.streamUrl || r.url) && isGenuineTrackMatch(r, song));
-                if (matched && (matched.streamUrl || matched.url)) {
-                    fresh = matched.streamUrl || matched.url;
-                    freshDuration = normalizeDuration(matched.duration);
-                    break;
-                }
-            }
-        } catch (_) {}
-    }
+    // Concurrently query candidates with fast parallel fetch (<400ms)
+    try {
+        const searchPromises = candidates.map(q => fetchLiveJioSaavn(q));
+        const allResultArrays = await Promise.all(searchPromises);
+        const allResults = allResultArrays.flat().filter(r => (r.streamUrl || r.url));
 
-    // 2. If JioSaavn didn't match and it's a YouTube track, fetch direct YouTube audio stream
-    if (!fresh && ytId) {
-        try {
-            const ytAudio = await fetchYouTubeAudioOnlyStream(ytId);
-            if (ytAudio) {
-                fresh = ytAudio;
+        // Priority 1: High-confidence genuine track match
+        let matched = allResults.find(r => isGenuineTrackMatch(r, song));
+
+        // Priority 2: If no strict match, match if candidate has cleanTitle tokens
+        if (!matched && cleanTitle) {
+            const cTokens = cleanTitleTokens(cleanTitle);
+            if (cTokens.length > 0) {
+                matched = allResults.find(r => {
+                    const rTokens = cleanTitleTokens(r.title || r.name);
+                    return cTokens.some(t => rTokens.includes(t));
+                });
             }
-        } catch (_) {}
+        }
+
+        // Priority 3: First result from top query if candidate list was not empty
+        if (!matched && allResults.length > 0 && candidates.length > 0) {
+            const first = allResults[0];
+            const rTokens = cleanTitleTokens(first.title || first.name);
+            const targetTokens = cleanTitleTokens(song.title);
+            if (targetTokens.some(t => rTokens.includes(t))) {
+                matched = first;
+            }
+        }
+
+        if (matched) {
+            fresh = matched.streamUrl || matched.url;
+            freshDuration = normalizeDuration(matched.duration);
+        }
+    } catch (err) {
+        console.warn("Parallel audio stream search error:", err);
     }
 
     if (fresh) {
@@ -5827,13 +5868,30 @@ async function resolveStreamUrlForDownload(song) {
     if (song.url && (song.url.includes('.mp4') || song.url.includes('.mp3') || song.url.includes('saavncdn') || song.url.includes('googlevideo'))) return song.url;
     if (song.media_url) return song.media_url;
 
-    const query = song.cleanTitle || song.title;
-    if (query) {
+    const rawTitle = song.title || '';
+    const cleanTitle = (song.cleanTitle || rawTitle)
+        .replace(/\|\s*[^|]+/g, ' ')
+        .replace(/\b(Official\s*(Music\s*)?Video|Video\s*Song|Lyric(al)?\s*Video|Full\s*Video|Full\s*Song|HD|4K|Remix|Cover|Audio|OST|Shorts|Teaser|Promo|Visualizer|From|The|Motion|Picture|Soundtrack)\b/gi, ' ')
+        .replace(/[-–—]/g, ' ')
+        .replace(/\(.*?\)/g, ' ')
+        .replace(/\[.*?\]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const artistName = song.artist ? song.artist.split('•')[0].split(',')[0].trim() : '';
+    const isLabel = isRecordLabelOrChannel(artistName);
+
+    const candidates = [];
+    if (cleanTitle && !isLabel && artistName) candidates.push(`${cleanTitle} ${artistName}`);
+    if (cleanTitle) candidates.push(cleanTitle);
+
+    for (let q of candidates) {
         try {
-            const results = await fetchLiveJioSaavn(query);
+            const results = await fetchLiveJioSaavn(q);
             if (results && results.length > 0) {
-                const match = results.find(r => r.streamUrl || r.url) || results[0];
-                return match.streamUrl || match.url || match.media_url;
+                const match = results.find(r => (r.streamUrl || r.url) && isGenuineTrackMatch(r, song)) || results[0];
+                if (match && (match.streamUrl || match.url)) {
+                    return match.streamUrl || match.url;
+                }
             }
         } catch (_) {}
     }
@@ -7451,6 +7509,32 @@ async function performLiveSearch(query) {
                 seenYt.add(key);
                 s.score = getSearchScore(s.title, s.artist, query);
                 cleanYtSongs.push(s);
+            }
+        });
+
+        // 100% Background Audio Pre-Binding: Link YouTube Music songs & videos directly to CD Quality audio streams
+        const allJioCandidates = [...cleanJioSongs, ...(directJio || [])];
+        cleanYtSongs.forEach(ytSong => {
+            if (!ytSong.streamUrl) {
+                const matched = allJioCandidates.find(j => (j.streamUrl || j.url) && isGenuineTrackMatch(j, ytSong));
+                if (matched) {
+                    ytSong.streamUrl = matched.streamUrl || matched.url;
+                    ytSong.quality = matched.quality || '320KBPS CD QUALITY';
+                    if (matched.duration) ytSong.duration = matched.duration;
+                    ytSong.matchedAudio = true;
+                }
+            }
+        });
+
+        videos.forEach(v => {
+            if (!v.streamUrl) {
+                const matched = allJioCandidates.find(j => (j.streamUrl || j.url) && isGenuineTrackMatch(j, v));
+                if (matched) {
+                    v.streamUrl = matched.streamUrl || matched.url;
+                    v.quality = matched.quality || '320KBPS CD QUALITY';
+                    if (matched.duration) v.duration = matched.duration;
+                    v.matchedAudio = true;
+                }
             }
         });
 
