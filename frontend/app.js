@@ -4362,16 +4362,16 @@ function playYouTubeVideo(videoId) {
         }
     } catch (_) {}
 
-    // Mount and display the video viewport in full-screen player artwork
+    // Audio-Only Guarantee: Keep video viewport hidden and cover artwork visible
     const viewport = document.getElementById('ytVideoViewport');
-    if (viewport) viewport.style.display = 'flex';
-    if (fullPlayerCover) fullPlayerCover.style.display = 'none';
+    if (viewport) viewport.style.display = 'none';
+    if (fullPlayerCover) fullPlayerCover.style.display = 'block';
 
     if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
         try {
             ytPlayer.loadVideoById({
                 videoId: videoId,
-                suggestedQuality: 'hd720'
+                suggestedQuality: 'small'
             });
             ytPlayer.playVideo();
             startYtProgressTicker();
@@ -4387,7 +4387,7 @@ function playYouTubeVideo(videoId) {
                 try {
                     ytPlayer.loadVideoById({
                         videoId: videoId,
-                        suggestedQuality: 'hd720'
+                        suggestedQuality: 'small'
                     });
                     ytPlayer.playVideo();
                     startYtProgressTicker();
@@ -4451,18 +4451,25 @@ function playTrack(song, playlist = []) {
     syncNativeAndroidWidget(song, true);
     acquireWakeLock();
 
-    // YouTube Native Playback Branch
+    // YouTube / Video Track Audio-First Playback Branch
     if (song.isYouTube || song.youtubeId) {
-        isYouTubeTrackPlaying = true;
-        try {
-            audioPlayer.pause();
-            audioPlayer.src = '';
-        } catch (_) {}
+        const viewport = document.getElementById('ytVideoViewport');
+        if (viewport) viewport.style.display = 'none';
+        if (fullPlayerCover) fullPlayerCover.style.display = 'block';
 
-        const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
-        if (ytId) {
-            playYouTubeVideo(ytId);
+        if (song.streamUrl) {
+            isYouTubeTrackPlaying = false;
+            audioPlayer.src = song.streamUrl;
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                updatePlayPauseIcons(true);
+            }).catch(() => {
+                resolveAndPlayLiveStream(song, true);
+            });
+            return;
         }
+
+        resolveAndPlayLiveStream(song, true);
         return;
     }
 
@@ -4859,17 +4866,36 @@ document.addEventListener('visibilitychange', async () => {
     }
 });
 
+// Stream Direct YouTube Audio-Only Extractor (Piped instances)
+async function fetchYouTubeAudioOnlyStream(youtubeId) {
+    if (!youtubeId) return null;
+    const cleanId = String(youtubeId).replace(/^yt_/, '').split('_')[0];
+    const pipedInstances = [
+        'https://api.piped.private.coffee',
+        'https://piped.video',
+        'https://pipedapi.kavin.rocks',
+        'https://piped-api.lunar.icu'
+    ];
+    for (const inst of pipedInstances) {
+        try {
+            const res = await fetch(`${inst}/streams/${encodeURIComponent(cleanId)}`, { signal: AbortSignal.timeout(4000) });
+            if (res.ok) {
+                const data = await res.json();
+                const audioList = data.audioStreams || [];
+                if (audioList.length > 0) {
+                    const best = audioList.find(a => a.mimeType?.includes('audio/mp4') || a.format === 'M4A') || audioList[0];
+                    if (best && best.url) return best.url;
+                }
+            }
+        } catch (_) {}
+    }
+    return null;
+}
+
 // Stream Auto-Recovery: Reconnects seamlessly if connection drops or token expires
 let isAutoRecovering = false;
-function resolveAndPlayLiveStream(song, forceAudioOnly = false) {
+async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
     if (isAutoRecovering || !song) return;
-    if (!forceAudioOnly && (song.isYouTube || song.youtubeId)) {
-        const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
-        if (ytId) {
-            playYouTubeVideo(ytId);
-            return;
-        }
-    }
     isAutoRecovering = true;
     showNotification(`Connecting high-quality audio for "${song.title}"...`, "success");
 
@@ -4884,59 +4910,74 @@ function resolveAndPlayLiveStream(song, forceAudioOnly = false) {
         .trim();
 
     const artistName = song.artist ? song.artist.split('•')[0].split(',')[0].trim() : '';
+    const ytId = song.youtubeId || (song.id ? String(song.id).replace(/^yt_/, '').split('_')[0] : null);
+
     const candidates = [
         cleanQuery && artistName && !cleanQuery.toLowerCase().includes(artistName.toLowerCase()) ? `${cleanQuery} ${artistName}` : null,
         cleanQuery && cleanQuery.length >= 2 ? cleanQuery : null,
         song.title
     ].filter(Boolean);
 
-    const tryCandidates = async () => {
-        for (let q of candidates) {
-            try {
-                const results = await fetchLiveJioSaavn(q);
-                if (results && results.length > 0) {
-                    const matched = results.find(r => r.streamUrl || r.url) || results[0];
-                    if (matched && (matched.streamUrl || matched.url)) {
-                        return matched;
-                    }
-                }
-            } catch (_) {}
-        }
-        return null;
-    };
+    let fresh = null;
+    let freshDuration = null;
 
-    tryCandidates().then(matched => {
-        if (matched) {
-            const fresh = matched.streamUrl || matched.url;
-            const freshDuration = normalizeDuration(matched.duration);
-            song.streamUrl = fresh;
-            if (freshDuration && freshDuration !== '0:00') {
-                song.duration = freshDuration;
+    // 1. Try JioSaavn 320kbps CD Quality Audio
+    for (let q of candidates) {
+        try {
+            const results = await fetchLiveJioSaavn(q);
+            if (results && results.length > 0) {
+                const matched = results.find(r => r.streamUrl || r.url) || results[0];
+                if (matched && (matched.streamUrl || matched.url)) {
+                    fresh = matched.streamUrl || matched.url;
+                    freshDuration = normalizeDuration(matched.duration);
+                    break;
+                }
             }
-            if (playerTotalDuration) playerTotalDuration.textContent = song.duration;
-            document.querySelectorAll(`[data-track-id="${song.id}"] .result-video-duration-badge`).forEach(b => {
-                b.textContent = song.duration;
-            });
-            audioPlayer.src = fresh;
-            if (audioPlayer.volume === 0) audioPlayer.volume = 1;
-            audioPlayer.muted = false;
-            audioPlayer.play().then(() => {
-                isPlaying = true;
-                updatePlayPauseIcons(true);
-                isAutoRecovering = false;
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-            }).catch(e => {
-                console.warn("Auto-play error:", e);
-                isAutoRecovering = false;
-            });
-        } else {
+        } catch (_) {}
+    }
+
+    // 2. If JioSaavn didn't match and it's a YouTube track, fetch direct YouTube audio stream
+    if (!fresh && ytId) {
+        try {
+            const ytAudio = await fetchYouTubeAudioOnlyStream(ytId);
+            if (ytAudio) {
+                fresh = ytAudio;
+            }
+        } catch (_) {}
+    }
+
+    if (fresh) {
+        song.streamUrl = fresh;
+        if (freshDuration && freshDuration !== '0:00') {
+            song.duration = freshDuration;
+        }
+        if (playerTotalDuration) playerTotalDuration.textContent = song.duration;
+        document.querySelectorAll(`[data-track-id="${song.id}"] .result-video-duration-badge`).forEach(b => {
+            b.textContent = song.duration;
+        });
+
+        isYouTubeTrackPlaying = false;
+        audioPlayer.src = fresh;
+        if (audioPlayer.volume === 0) audioPlayer.volume = 1;
+        audioPlayer.muted = false;
+        audioPlayer.play().then(() => {
+            isPlaying = true;
+            updatePlayPauseIcons(true);
             isAutoRecovering = false;
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+        }).catch(e => {
+            console.warn("Auto-play error:", e);
+            isAutoRecovering = false;
+        });
+    } else {
+        // 3. Fail-safe: play via background player (video viewport hidden!)
+        if (ytId) {
+            playYouTubeVideo(ytId);
+        } else {
             showNotification(`Could not stream "${song.title}"`, "error");
         }
-    }).catch(err => {
         isAutoRecovering = false;
-        console.warn("Stream resolution error:", err);
-    });
+    }
 }
 
 function updatePlayPauseIcons(playing) {
@@ -6910,7 +6951,30 @@ document.querySelectorAll('.search-tab').forEach(tab => {
     });
 });
 
-// D. Filter Chips Handler (✓ All, Songs, Videos, Albums, Artists, Playlists)
+// Helper scoring for Spotify / Echo Music search relevance
+function getSearchScore(title, subtitle, q) {
+    if (!title) return 0;
+    const t = title.toLowerCase().trim();
+    const sub = (subtitle || '').toLowerCase().trim();
+    const qClean = q.toLowerCase().trim();
+    if (t === qClean) return 100;
+    if (t.startsWith(qClean)) return 88;
+    if (t.includes(qClean)) return 72;
+    if (sub === qClean) return 60;
+    if (sub.includes(qClean)) return 48;
+
+    const qTokens = qClean.split(/\s+/).filter(w => w.length > 1);
+    let matchedTokens = 0;
+    for (const tok of qTokens) {
+        if (t.includes(tok) || sub.includes(tok)) matchedTokens++;
+    }
+    if (qTokens.length > 0 && matchedTokens > 0) {
+        return 25 + Math.round((matchedTokens / qTokens.length) * 25);
+    }
+    return 5;
+}
+
+// D. Filter Chips Handler (✓ All, Songs, Playlists, Albums, Artists)
 document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.addEventListener('click', () => {
         document.querySelectorAll('.filter-chip').forEach(c => {
@@ -6951,15 +7015,12 @@ function applyFilterToSearchResults(filter) {
 
     let isEmpty = false;
     let emptyMsg = '';
-    if (filter === 'videos' && (!currentSearchResults.videos || currentSearchResults.videos.length === 0)) {
+    if (filter === 'songs' && (!currentSearchResults.songs || currentSearchResults.songs.length === 0)) {
         isEmpty = true;
-        emptyMsg = 'No video tracks found for this search.';
+        emptyMsg = 'No songs found for this search.';
     } else if (filter === 'playlists' && (!currentSearchResults.playlists || currentSearchResults.playlists.length === 0)) {
         isEmpty = true;
         emptyMsg = 'No playlists found for this search.';
-    } else if (filter === 'songs' && (!currentSearchResults.songs || currentSearchResults.songs.length === 0)) {
-        isEmpty = true;
-        emptyMsg = 'No songs found for this search.';
     } else if (filter === 'albums' && (!currentSearchResults.albums || currentSearchResults.albums.length === 0)) {
         isEmpty = true;
         emptyMsg = 'No albums found for this search.';
@@ -6983,81 +7044,134 @@ async function performLiveSearch(query) {
     searchResultsContent.innerHTML = '';
 
     try {
-        // Parallel queries to JioSaavn search/all and YouTube search
-        const [allData, ytData] = await Promise.all([
+        const [allData, ytData, directJio] = await Promise.all([
             fetchJioSaavnSearchAll(query),
-            fetchYouTubePipedSearch(query)
+            fetchYouTubePipedSearch(query),
+            fetchLiveJioSaavn(query)
         ]);
 
         searchLoader.style.display = 'none';
 
-        // Merge songs from JioSaavn and YouTube Music
+        // 1. Process Songs: JioSaavn + Direct JioSaavn + YouTube songs + YouTube video tracks
         const jioSongs = (allData.songs || []).map(s => ({ ...s, badge: s.badge || 'JioSaavn' }));
+        const liveJio = (directJio || []).map(s => ({ ...s, badge: s.badge || 'JioSaavn' }));
         const ytSongs = (ytData.songs || []).map(s => ({ ...s, badge: s.badge || 'YouTube Music' }));
-        let songs = [...jioSongs, ...ytSongs];
+
+        // Convert any YouTube videos into playable audio songs with clean titles
+        const ytVideoSongs = (ytData.videos || []).map(v => {
+            const cleanTitle = extractCleanSongTitle(v.title);
+            return {
+                id: v.id || `yt_${v.youtubeId || Math.random().toString(36).substring(2, 7)}`,
+                youtubeId: v.youtubeId || (v.url ? v.url.replace('/watch?v=', '').split('&')[0] : null),
+                isYouTube: true,
+                title: cleanTitle || v.title,
+                cleanTitle: cleanTitle,
+                originalTitle: v.title,
+                artist: v.channel ? v.channel.split('•')[0].trim() : 'YouTube Music',
+                album: v.date || 'YouTube Music',
+                cover: v.thumbnail || v.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
+                duration: normalizeDuration(v.duration),
+                streamUrl: v.streamUrl || null,
+                isLive: true,
+                badge: 'YouTube Music'
+            };
+        });
+
+        let allSongs = [...jioSongs, ...liveJio, ...ytSongs, ...ytVideoSongs];
         const seenSongs = new Set();
-        songs = songs.filter(s => {
-            const key = `${(s.title || '').toLowerCase().trim()}__${(s.artist || '').toLowerCase().trim()}`;
-            if (!key || seenSongs.has(key)) return false;
-            seenSongs.add(key);
-            return true;
+        let songs = [];
+        allSongs.forEach(s => {
+            const cleanT = (s.cleanTitle || s.title || '').toLowerCase().trim();
+            const cleanA = (s.artist || '').toLowerCase().split(/[,•/&]/)[0].trim();
+            const key = `${cleanT}__${cleanA}`;
+            if (cleanT && !seenSongs.has(key)) {
+                seenSongs.add(key);
+                s.score = getSearchScore(s.title, s.artist, query);
+                songs.push(s);
+            }
+        });
+        // Sort songs strictly by relevance
+        songs.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+        // 2. Process Artists: JioSaavn + YouTube + Song Artists
+        let rawArtists = [...(allData.artists || []), ...(ytData.artists || [])];
+        const seenArtists = new Set();
+        let artists = [];
+
+        rawArtists.forEach(ar => {
+            const nameKey = (ar.name || '').toLowerCase().trim();
+            if (nameKey && !seenArtists.has(nameKey)) {
+                seenArtists.add(nameKey);
+                ar.score = getSearchScore(ar.name, ar.role, query);
+                artists.push(ar);
+            }
         });
 
-        // Merge albums from JioSaavn and YouTube Music
-        const jioAlbums = (allData.albums || []).map(a => ({ ...a, badge: a.badge || 'JioSaavn' }));
-        const ytAlbums = (ytData.albums || []).map(a => ({ ...a, badge: a.badge || 'YouTube Music' }));
-        let albums = [...jioAlbums, ...ytAlbums];
+        // Extract song artists from top matching songs
+        songs.slice(0, 15).forEach(s => {
+            if (!s.artist) return;
+            const parts = s.artist.split(/[,•/&]/).map(p => p.trim()).filter(p => p.length > 1);
+            parts.forEach(name => {
+                const nameKey = name.toLowerCase();
+                if (!seenArtists.has(nameKey) && !nameKey.includes('various') && !nameKey.includes('official') && !nameKey.includes('audio') && !nameKey.includes('video')) {
+                    seenArtists.add(nameKey);
+                    artists.push({
+                        id: `art_${nameKey.replace(/\s+/g, '_')}`,
+                        name: name,
+                        avatar: s.cover || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80',
+                        role: 'Song Artist',
+                        score: getSearchScore(name, 'Song Artist', query)
+                    });
+                }
+            });
+        });
+        artists.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+        // 3. Process Albums: JioSaavn + YouTube + Albums from songs
+        let rawAlbums = [...(allData.albums || []), ...(ytData.albums || [])];
         const seenAlbums = new Set();
-        albums = albums.filter(a => {
-            const key = (a.title || '').toLowerCase().trim();
-            if (!key || seenAlbums.has(key)) return false;
-            seenAlbums.add(key);
-            return true;
+        let albums = [];
+
+        rawAlbums.forEach(al => {
+            const key = (al.title || '').toLowerCase().trim();
+            if (key && !seenAlbums.has(key)) {
+                seenAlbums.add(key);
+                al.score = getSearchScore(al.title, al.artist, query);
+                albums.push(al);
+            }
         });
 
-        const artists = allData.artists || ytData.artists || [];
-        let rawVideos = ytData.videos || [];
+        songs.forEach(s => {
+            if (!s.album) return;
+            const albTitle = (s.album || '').trim();
+            const albKey = albTitle.toLowerCase();
+            if (albKey && albKey.length > 1 && !seenAlbums.has(albKey) && !albKey.includes('track') && !albKey.includes('youtube music')) {
+                seenAlbums.add(albKey);
+                albums.push({
+                    id: `alb_${albKey.replace(/\s+/g, '_')}`,
+                    albumId: `alb_${albKey.replace(/\s+/g, '_')}`,
+                    title: albTitle,
+                    artist: s.artist,
+                    cover: s.cover,
+                    year: String(new Date().getFullYear()),
+                    badge: s.badge || 'Album',
+                    score: getSearchScore(albTitle, s.artist, query)
+                });
+            }
+        });
+        albums.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+        // 4. Process Playlists: JioSaavn + YouTube
         let jioPlaylists = allData.playlists || [];
         let ytPlaylists = ytData.playlists || [];
 
-        const exactSong = songs.length > 0 ? songs[0] : null;
-        const topArtist = exactSong ? (exactSong.artist || 'Artist').split('•')[0].split(',')[0].trim() : query;
-        const topAlbum = exactSong ? (exactSong.album || query) : query;
-
-        // Build rich, enabled video results guaranteed to feature authentic tracks
-        let videos = [...rawVideos];
-        if (videos.length === 0 && songs.length > 0) {
-            const generatedVideos = [];
-            // Create authentic video entries from the real songs found in the search
-            songs.slice(0, 6).forEach((s, idx) => {
-                const sArtist = s.artist ? s.artist.split('•')[0].split(',')[0].trim() : 'Artist';
-                generatedVideos.push({
-                    id: `yt_v_${idx}_${s.id}`,
-                    youtubeId: s.youtubeId || null,
-                    isYouTube: !!s.isYouTube,
-                    title: `${s.title} - Official Video Song`,
-                    channel: `${sArtist} • YouTube Music`,
-                    thumbnail: s.cover,
-                    date: s.album || 'Trending Video',
-                    duration: normalizeDuration(s.duration),
-                    streamUrl: s.streamUrl,
-                    exactTrack: s
-                });
-            });
-            videos = [...generatedVideos];
-        }
-
-        // Build 100% authentic playlists directly from JioSaavn and YouTube Music (Zero mock/synthesized playlists)
         if (jioPlaylists.length === 0) {
             try {
                 const extraAll = await fetchJioSaavnSearchAll(`${query} playlist`);
-                if (extraAll.playlists && extraAll.playlists.length > 0) {
-                    jioPlaylists = extraAll.playlists;
-                } else if (topArtist) {
-                    const extraArtistAll = await fetchJioSaavnSearchAll(`${topArtist} playlist`);
-                    if (extraArtistAll.playlists && extraArtistAll.playlists.length > 0) {
-                        jioPlaylists = extraArtistAll.playlists;
-                    }
+                if (extraAll.playlists && extraAll.playlists.length > 0) jioPlaylists = extraAll.playlists;
+                else if (artists.length > 0) {
+                    const extraArtist = await fetchJioSaavnSearchAll(`${artists[0].name} playlist`);
+                    if (extraArtist.playlists && extraArtist.playlists.length > 0) jioPlaylists = extraArtist.playlists;
                 }
             } catch (_) {}
         }
@@ -7065,22 +7179,48 @@ async function performLiveSearch(query) {
         if (ytPlaylists.length === 0) {
             try {
                 const extraPiped = await fetchYouTubePipedSearch(`${query} playlist`);
-                if (extraPiped.playlists && extraPiped.playlists.length > 0) {
-                    ytPlaylists = extraPiped.playlists;
-                }
+                if (extraPiped.playlists && extraPiped.playlists.length > 0) ytPlaylists = extraPiped.playlists;
             } catch (_) {}
         }
 
-        // Combine ONLY real playlists from JioSaavn & YouTube Music, attaching exactTrack
-        const playlists = [...jioPlaylists, ...ytPlaylists].map(pl => ({
-            ...pl,
-            id: pl.id || pl.listId,
-            listId: pl.listId || pl.id,
-            exactTrack: exactSong,
-            badge: pl.badge || (pl.isYouTube ? 'YouTube Music' : 'JioSaavn Playlist')
-        }));
+        const seenPlaylists = new Set();
+        let playlists = [];
+        [...jioPlaylists, ...ytPlaylists].forEach(pl => {
+            const key = (pl.title || '').toLowerCase().trim();
+            if (key && !seenPlaylists.has(key)) {
+                seenPlaylists.add(key);
+                pl.score = getSearchScore(pl.title, pl.author, query);
+                playlists.push({
+                    ...pl,
+                    id: pl.id || pl.listId,
+                    listId: pl.listId || pl.id,
+                    exactTrack: songs[0] || null,
+                    badge: pl.badge || (pl.isYouTube ? 'YouTube Music' : 'JioSaavn Playlist')
+                });
+            }
+        });
+        playlists.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-        currentSearchResults = { songs, albums, artists, videos, playlists };
+        // Determine Top Result (Intent Detection: Artist, Album, or Song)
+        let topResult = null;
+        const qLower = query.toLowerCase().trim();
+        const bestArtist = artists.length > 0 ? artists[0] : null;
+        const bestSong = songs.length > 0 ? songs[0] : null;
+        const bestAlbum = albums.length > 0 ? albums[0] : null;
+
+        if (bestArtist && (bestArtist.name.toLowerCase().trim() === qLower || (bestArtist.score >= 85 && (!bestSong || bestSong.score < 90)))) {
+            topResult = { type: 'artist', data: bestArtist };
+        } else if (bestAlbum && (bestAlbum.title.toLowerCase().trim() === qLower && (!bestSong || bestSong.score < 90))) {
+            topResult = { type: 'album', data: bestAlbum };
+        } else if (bestSong) {
+            topResult = { type: 'song', data: bestSong };
+        } else if (bestArtist) {
+            topResult = { type: 'artist', data: bestArtist };
+        } else if (bestAlbum) {
+            topResult = { type: 'album', data: bestAlbum };
+        }
+
+        currentSearchResults = { songs, playlists, albums, artists, topResult };
 
         const activeChip = document.querySelector('.filter-chip.active');
         const activeFilter = activeChip ? activeChip.getAttribute('data-filter') : 'all';
@@ -7273,11 +7413,10 @@ function formatPlaylistItem(p) {
     };
 }
 
-// F. Render Grouped Results (Screenshots 2, 3, 4)
-function renderFullSearchResults(query, { songs, albums, artists, videos, playlists }, activeFilter = 'all') {
+// F. Render Grouped Results (Spotify & Echo Music Standard)
+function renderFullSearchResults(query, { songs = [], playlists = [], albums = [], artists = [], topResult = null }, activeFilter = 'all') {
     searchResultsContent.innerHTML = '';
 
-    // Helper to switch filter chip programmatically
     const activateFilterTab = (targetFilter) => {
         document.querySelectorAll('.filter-chip').forEach(c => {
             const f = c.getAttribute('data-filter');
@@ -7292,36 +7431,96 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         applyFilterToSearchResults(targetFilter);
     };
 
-    // 1. TOP RESULT (Screenshot 2)
-    if (songs.length > 0) {
-        const top = songs[0];
+    // 1. TOP RESULT (Spotify / Echo Music Dynamic Card)
+    if (topResult && topResult.data) {
         const topDiv = document.createElement('div');
         topDiv.className = 'result-group top-result-group';
-        topDiv.setAttribute('data-type', 'songs');
-        topDiv.innerHTML = `
-            <h3 class="result-group-title">Top result</h3>
-            <div class="top-result-card" id="topResultCard">
-                <img src="${top.cover}" alt="${top.title}">
-                <div class="result-item-details">
-                    <div class="result-item-title" style="font-size: 1.05rem;">${top.title}</div>
-                    <div class="result-item-sub">${top.artist}</div>
+        topDiv.setAttribute('data-type', topResult.type === 'song' ? 'songs' : (topResult.type === 'artist' ? 'artists' : 'albums'));
+
+        if (topResult.type === 'artist') {
+            const art = topResult.data;
+            topDiv.innerHTML = `
+                <h3 class="result-group-title">Top result</h3>
+                <div class="top-result-card" id="topResultCard">
+                    <img class="top-result-artist-avatar" src="${art.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}" alt="${art.name}">
+                    <div class="result-item-details">
+                        <span class="top-result-pill artist"><i class="fa-solid fa-circle-check"></i> Artist</span>
+                        <div class="result-item-title top-result-title">${art.name}</div>
+                        <div class="result-item-sub">${art.role || 'Artist • Verified Creator'}</div>
+                    </div>
+                    <button class="top-result-play-btn" title="Explore Artist"><i class="fa-solid fa-play"></i></button>
                 </div>
-                <button class="result-item-more" title="Add to Playlist"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            </div>
-        `;
-        topDiv.querySelector('#topResultCard').addEventListener('click', (e) => {
-            if (e.target.closest('.result-item-more')) return;
-            playTrack(top, songs);
-        });
-        topDiv.querySelector('.result-item-more')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentSongObj = top;
-            openAddToPlaylistModal();
-        });
+            `;
+            topDiv.querySelector('#topResultCard').addEventListener('click', () => {
+                showNotification(`Browsing top tracks for: ${art.name}`, 'success');
+                openPlaylistDetailView({
+                    id: `art_${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'artist',
+                    title: art.name,
+                    query: `${art.name} top hits`,
+                    author: 'Top Hits & Albums',
+                    desc: `${art.role || 'Artist'} • Live JioSaavn & YouTube Music`,
+                    cover: art.avatar,
+                    isLive: true,
+                    badge: 'Artist Hits'
+                }, 'search');
+            });
+        } else if (topResult.type === 'album') {
+            const alb = topResult.data;
+            topDiv.innerHTML = `
+                <h3 class="result-group-title">Top result</h3>
+                <div class="top-result-card" id="topResultCard">
+                    <img src="${alb.cover}" alt="${alb.title}">
+                    <div class="result-item-details">
+                        <span class="top-result-pill album"><i class="fa-solid fa-compact-disc"></i> Album</span>
+                        <div class="result-item-title top-result-title">${alb.title}</div>
+                        <div class="result-item-sub">${alb.artist} • ${alb.year || 'Album'}</div>
+                    </div>
+                    <button class="top-result-play-btn" title="Open Album"><i class="fa-solid fa-play"></i></button>
+                </div>
+            `;
+            topDiv.querySelector('#topResultCard').addEventListener('click', () => {
+                openPlaylistDetailView({
+                    id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
+                    albumId: alb.id,
+                    type: 'album',
+                    title: alb.title,
+                    artist: alb.artist,
+                    desc: `${alb.artist} • ${alb.year || 'Album'}`,
+                    cover: alb.cover,
+                    isLive: true,
+                    badge: 'Album'
+                }, 'search');
+            });
+        } else {
+            const song = topResult.data;
+            topDiv.innerHTML = `
+                <h3 class="result-group-title">Top result</h3>
+                <div class="top-result-card" id="topResultCard">
+                    <img src="${song.cover}" alt="${song.title}">
+                    <div class="result-item-details">
+                        <span class="top-result-pill song"><i class="fa-solid fa-music"></i> Song</span>
+                        <div class="result-item-title top-result-title">${song.title}</div>
+                        <div class="result-item-sub">${song.artist}</div>
+                    </div>
+                    <button class="top-result-play-btn" title="Play Song"><i class="fa-solid fa-play"></i></button>
+                    <button class="result-item-more" title="Add to Playlist"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                </div>
+            `;
+            topDiv.querySelector('#topResultCard').addEventListener('click', (e) => {
+                if (e.target.closest('.result-item-more')) return;
+                playTrack(song, songs);
+            });
+            topDiv.querySelector('.result-item-more')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentSongObj = song;
+                openAddToPlaylistModal();
+            });
+        }
         searchResultsContent.appendChild(topDiv);
     }
 
-    // 2. SONGS LIST (Screenshot 2)
+    // 2. SONGS LIST
     if (songs.length > 0) {
         const songsDiv = document.createElement('div');
         songsDiv.className = 'result-group songs-group';
@@ -7331,19 +7530,21 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                 <h3 class="result-group-title">Songs</h3>
             </div>
             <div class="result-list" id="songsResultList"></div>
-            ${songs.length > 6 ? `<button class="btn-see-all-results" data-filter="songs">See all ${songs.length} songs <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+            ${songs.length > 5 ? `<button class="btn-see-all-results" data-filter="songs">See all ${songs.length} songs <i class="fa-solid fa-chevron-right"></i></button>` : ''}
         `;
         const list = songsDiv.querySelector('#songsResultList');
 
         songs.forEach((song, idx) => {
             const row = document.createElement('div');
-            row.className = `result-item-row ${idx >= 6 ? 'search-item-hidden-in-all' : ''}`;
+            row.className = `result-item-row ${idx >= 5 ? 'search-item-hidden-in-all' : ''}`;
+            const badgeIcon = song.isYouTube ? `<span style="color:#EF4444;font-size:0.75rem;margin-right:4px;"><i class="fa-brands fa-youtube"></i></span>` : '';
             row.innerHTML = `
                 <img class="result-item-cover" src="${song.cover}" alt="${song.title}">
                 <div class="result-item-details">
                     <div class="result-item-title">${song.title}</div>
-                    <div class="result-item-sub">${song.artist}</div>
+                    <div class="result-item-sub">${badgeIcon}${song.artist}</div>
                 </div>
+                <button class="result-item-play-btn" title="Play Song"><i class="fa-solid fa-play"></i></button>
                 <button class="result-item-more" title="Add to Playlist"><i class="fa-solid fa-ellipsis-vertical"></i></button>
             `;
             row.addEventListener('click', (e) => {
@@ -7365,203 +7566,7 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         searchResultsContent.appendChild(songsDiv);
     }
 
-    // 3. VIDEOS LIST (Screenshot 3) - 100% Operational Video Tracks & Video Playlist
-    if (videos.length > 0) {
-        const vidDiv = document.createElement('div');
-        vidDiv.className = 'result-group videos-group';
-        vidDiv.setAttribute('data-type', 'videos');
-        vidDiv.innerHTML = `
-            <div class="result-group-header">
-                <h3 class="result-group-title">Videos</h3>
-                <button class="btn-play-all-group" id="playAllVideosBtn" title="Play Video Playlist">
-                    <i class="fa-solid fa-play"></i> Play Video Playlist
-                </button>
-            </div>
-            <div class="result-list" id="videosResultList"></div>
-            ${videos.length > 6 ? `<button class="btn-see-all-results" data-filter="videos">See all ${videos.length} video tracks <i class="fa-solid fa-chevron-right"></i></button>` : ''}
-        `;
-        const list = vidDiv.querySelector('#videosResultList');
-
-        // Build authentic playable tracks linked to exact YouTube video streams
-        const videoTracks = videos.map((vid, vIdx) => {
-            const cleanTitle = extractCleanSongTitle(vid.title);
-            const ytId = vid.youtubeId || (vid.url ? vid.url.replace('/watch?v=', '').split('&')[0] : (vid.id ? String(vid.id).replace(/^yt_/, '') : null));
-
-            return {
-                id: vid.id || `yt_vid_${vIdx}_${Math.random().toString(36).substring(2, 7)}`,
-                youtubeId: ytId,
-                isYouTube: true,
-                title: vid.title,
-                cleanTitle: cleanTitle,
-                originalTitle: vid.title,
-                artist: vid.channel ? vid.channel.split('•')[0].trim() : 'YouTube Music',
-                album: vid.date || 'YouTube Video Track',
-                cover: vid.thumbnail || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
-                duration: normalizeDuration(vid.duration),
-                streamUrl: null,
-                isLive: true,
-                badge: 'YouTube Video Track',
-                exactTrack: null
-            };
-        });
-
-        videos.forEach((vid, vIdx) => {
-            const trackObj = videoTracks[vIdx];
-            const row = document.createElement('div');
-            row.className = `result-item-row result-video-row ${vIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
-            row.setAttribute('data-track-id', trackObj.id);
-            row.innerHTML = `
-                <div class="result-video-thumb-box">
-                    <img class="result-item-cover" src="${vid.thumbnail || trackObj.cover}" alt="${vid.title}">
-                    <span class="result-video-duration-badge">${trackObj.duration}</span>
-                    <div class="result-video-play-overlay"><i class="fa-solid fa-play"></i></div>
-                </div>
-                <div class="result-item-details">
-                    <div class="result-item-title">${vid.title}</div>
-                    <div class="result-item-sub">
-                        <span class="yt-video-badge"><i class="fa-brands fa-youtube"></i> Video Track</span> • ${vid.channel || trackObj.artist}
-                    </div>
-                </div>
-                <button class="result-video-play-action-btn" title="Play Video Track"><i class="fa-solid fa-play"></i></button>
-                <button class="result-item-more" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            `;
-
-            const handlePlay = (e) => {
-                if (e && e.target.closest('.result-item-more')) return;
-                playTrack(trackObj, videoTracks);
-                showNotification(`Playing Video Track: "${trackObj.title}" 🎥🎶`, 'success');
-            };
-
-            row.addEventListener('click', handlePlay);
-            row.querySelector('.result-video-play-action-btn')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handlePlay(e);
-            });
-
-            row.querySelector('.result-item-more')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                currentSongObj = trackObj;
-                openAddToPlaylistModal();
-            });
-
-            list.appendChild(row);
-        });
-
-        // "Play Video Playlist" button: opens detail view with all video tracks and starts playing exact song!
-        vidDiv.querySelector('#playAllVideosBtn')?.addEventListener('click', () => {
-            if (videoTracks.length > 0) {
-                openPlaylistDetailView({
-                    id: 'video_playlist_' + Date.now(),
-                    title: `${query.charAt(0).toUpperCase() + query.slice(1)} - Video Playlist`,
-                    desc: `YouTube Music Videos • ${videoTracks.length} High-Definition Tracks`,
-                    badge: 'YouTube Video Playlist',
-                    cover: videoTracks[0].cover,
-                    isLive: true,
-                    exactTrack: videoTracks[0],
-                    songs: videoTracks
-                }, 'search');
-                playTrack(videoTracks[0], videoTracks);
-                showNotification(`Playing Video Playlist: "${videoTracks[0].title}" 🎥🎶`, 'success');
-            }
-        });
-
-        vidDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
-            activateFilterTab('videos');
-        });
-
-        searchResultsContent.appendChild(vidDiv);
-    }
-
-    // 4. ALBUMS (Screenshot 3 & 4)
-    if (albums.length > 0) {
-        const albDiv = document.createElement('div');
-        albDiv.className = 'result-group albums-group';
-        albDiv.setAttribute('data-type', 'albums');
-        albDiv.innerHTML = `
-            <div class="result-group-header">
-                <h3 class="result-group-title">Albums</h3>
-            </div>
-            <div class="result-list" id="albumsResultList"></div>
-            ${albums.length > 6 ? `<button class="btn-see-all-results" data-filter="albums">See all ${albums.length} albums <i class="fa-solid fa-chevron-right"></i></button>` : ''}
-        `;
-        const list = albDiv.querySelector('#albumsResultList');
-
-        albums.forEach((alb, aIdx) => {
-            const row = document.createElement('div');
-            row.className = `result-item-row ${aIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
-            row.innerHTML = `
-                <img class="result-item-cover" src="${alb.cover}" alt="${alb.title}">
-                <div class="result-item-details">
-                    <div class="result-item-title">${alb.title}</div>
-                    <div class="result-item-sub">${alb.artist} • ${alb.year}</div>
-                </div>
-                <button class="result-item-more"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            `;
-            row.addEventListener('click', () => {
-                openPlaylistDetailView({
-                    id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
-                    albumId: alb.id,
-                    type: 'album',
-                    title: alb.title,
-                    artist: alb.artist,
-                    desc: `${alb.artist} • ${alb.year || 'Album'}`,
-                    cover: alb.cover,
-                    isLive: true,
-                    badge: 'Album'
-                }, 'search');
-            });
-            list.appendChild(row);
-        });
-
-        albDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
-            activateFilterTab('albums');
-        });
-
-        searchResultsContent.appendChild(albDiv);
-    }
-
-    // 5. ARTISTS (Screenshot 4)
-    if (artists.length > 0) {
-        const artDiv = document.createElement('div');
-        artDiv.className = 'result-group artists-group';
-        artDiv.setAttribute('data-type', 'artists');
-        artDiv.innerHTML = `
-            <div class="result-group-header">
-                <h3 class="result-group-title">Artists</h3>
-            </div>
-            <div class="result-list" id="artistsResultList"></div>
-            ${artists.length > 6 ? `<button class="btn-see-all-results" data-filter="artists">See all ${artists.length} artists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
-        `;
-        const list = artDiv.querySelector('#artistsResultList');
-
-        artists.forEach((art, arIdx) => {
-            const row = document.createElement('div');
-            row.className = `result-item-row ${arIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
-            row.innerHTML = `
-                <img class="result-item-cover result-artist-cover" src="${art.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}" alt="${art.name}">
-                <div class="result-item-details">
-                    <div class="result-item-title">${art.name}</div>
-                    <div class="result-item-sub">${art.role || art.subscribers || 'Artist'}</div>
-                </div>
-                <button class="result-item-more"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            `;
-            row.addEventListener('click', async () => {
-                showNotification(`Browsing artist: ${art.name}`, 'success');
-                searchInput.value = art.name;
-                handleSearchInputChange(art.name);
-                performLiveSearch(art.name);
-            });
-            list.appendChild(row);
-        });
-
-        artDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
-            activateFilterTab('artists');
-        });
-
-        searchResultsContent.appendChild(artDiv);
-    }
-
-    // 6. PLAYLISTS (Screenshot 4) - 100% Real Playlists with Guaranteed Exact Track
+    // 3. PLAYLISTS LIST
     if (playlists.length > 0) {
         const plDiv = document.createElement('div');
         plDiv.className = 'result-group playlists-group';
@@ -7571,13 +7576,13 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
                 <h3 class="result-group-title">Playlists</h3>
             </div>
             <div class="result-list" id="playlistsResultList"></div>
-            ${playlists.length > 6 ? `<button class="btn-see-all-results" data-filter="playlists">See all ${playlists.length} playlists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+            ${playlists.length > 5 ? `<button class="btn-see-all-results" data-filter="playlists">See all ${playlists.length} playlists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
         `;
         const list = plDiv.querySelector('#playlistsResultList');
 
         playlists.forEach((pl, pIdx) => {
             const row = document.createElement('div');
-            row.className = `result-item-row ${pIdx >= 6 ? 'search-item-hidden-in-all' : ''}`;
+            row.className = `result-item-row ${pIdx >= 5 ? 'search-item-hidden-in-all' : ''}`;
             const isYt = pl.badge === 'YouTube Music' || pl.isYouTube || (pl.title && pl.title.includes('YouTube'));
             row.innerHTML = `
                 <div class="result-playlist-thumb-box">
@@ -7632,6 +7637,103 @@ function renderFullSearchResults(query, { songs, albums, artists, videos, playli
         });
 
         searchResultsContent.appendChild(plDiv);
+    }
+
+    // 4. ALBUMS LIST
+    if (albums.length > 0) {
+        const albDiv = document.createElement('div');
+        albDiv.className = 'result-group albums-group';
+        albDiv.setAttribute('data-type', 'albums');
+        albDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Albums</h3>
+            </div>
+            <div class="result-list" id="albumsResultList"></div>
+            ${albums.length > 5 ? `<button class="btn-see-all-results" data-filter="albums">See all ${albums.length} albums <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+        `;
+        const list = albDiv.querySelector('#albumsResultList');
+
+        albums.forEach((alb, aIdx) => {
+            const row = document.createElement('div');
+            row.className = `result-item-row ${aIdx >= 5 ? 'search-item-hidden-in-all' : ''}`;
+            row.innerHTML = `
+                <img class="result-item-cover" src="${alb.cover}" alt="${alb.title}">
+                <div class="result-item-details">
+                    <div class="result-item-title">${alb.title}</div>
+                    <div class="result-item-sub">${alb.artist} • ${alb.year || 'Album'}</div>
+                </div>
+                <button class="result-item-play-btn" title="Open Album"><i class="fa-solid fa-compact-disc"></i></button>
+            `;
+            row.addEventListener('click', () => {
+                openPlaylistDetailView({
+                    id: alb.id ? `alb_${alb.id}` : `alb_${Math.random().toString(36).substring(2, 9)}`,
+                    albumId: alb.id,
+                    type: 'album',
+                    title: alb.title,
+                    artist: alb.artist,
+                    desc: `${alb.artist} • ${alb.year || 'Album'}`,
+                    cover: alb.cover,
+                    isLive: true,
+                    badge: 'Album'
+                }, 'search');
+            });
+            list.appendChild(row);
+        });
+
+        albDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('albums');
+        });
+
+        searchResultsContent.appendChild(albDiv);
+    }
+
+    // 5. ARTISTS LIST
+    if (artists.length > 0) {
+        const artDiv = document.createElement('div');
+        artDiv.className = 'result-group artists-group';
+        artDiv.setAttribute('data-type', 'artists');
+        artDiv.innerHTML = `
+            <div class="result-group-header">
+                <h3 class="result-group-title">Artists</h3>
+            </div>
+            <div class="result-list" id="artistsResultList"></div>
+            ${artists.length > 5 ? `<button class="btn-see-all-results" data-filter="artists">See all ${artists.length} artists <i class="fa-solid fa-chevron-right"></i></button>` : ''}
+        `;
+        const list = artDiv.querySelector('#artistsResultList');
+
+        artists.forEach((art, arIdx) => {
+            const row = document.createElement('div');
+            row.className = `result-item-row ${arIdx >= 5 ? 'search-item-hidden-in-all' : ''}`;
+            row.innerHTML = `
+                <img class="result-item-cover result-artist-cover" src="${art.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}" alt="${art.name}">
+                <div class="result-item-details">
+                    <div class="result-item-title">${art.name}</div>
+                    <div class="result-item-sub">${art.role || 'Artist • Verified Creator'}</div>
+                </div>
+                <button class="result-item-play-btn" title="Explore Artist"><i class="fa-solid fa-play"></i></button>
+            `;
+            row.addEventListener('click', () => {
+                showNotification(`Browsing artist: ${art.name}`, 'success');
+                openPlaylistDetailView({
+                    id: `art_${Math.random().toString(36).substring(2, 9)}`,
+                    type: 'artist',
+                    title: art.name,
+                    query: `${art.name} top hits`,
+                    author: 'Top Hits & Albums',
+                    desc: `${art.role || 'Artist'} • Live JioSaavn & YouTube Music`,
+                    cover: art.avatar,
+                    isLive: true,
+                    badge: 'Artist Hits'
+                }, 'search');
+            });
+            list.appendChild(row);
+        });
+
+        artDiv.querySelector('.btn-see-all-results')?.addEventListener('click', () => {
+            activateFilterTab('artists');
+        });
+
+        searchResultsContent.appendChild(artDiv);
     }
 }
 
