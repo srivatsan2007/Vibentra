@@ -59,6 +59,22 @@ class MainActivity : BridgeActivity() {
     }
 
     private var isCallPausedForActivity = false
+    private var currentPopupWebView: WebView? = null
+
+    private fun dismissPopup() {
+        runOnUiThread {
+            try {
+                if (currentPopupWebView != null) {
+                    val popup = currentPopupWebView
+                    (popup?.parent as? android.view.ViewGroup)?.removeView(popup)
+                    popup?.destroy()
+                    currentPopupWebView = null
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error dismissing popup", e)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme_NoActionBar)
@@ -129,6 +145,10 @@ class MainActivity : BridgeActivity() {
     }
 
     private fun triggerAppBackNavigation() {
+        if (currentPopupWebView != null) {
+            dismissPopup()
+            return
+        }
         try {
             val webView = bridge?.webView
             if (webView != null) {
@@ -299,15 +319,18 @@ class MainActivity : BridgeActivity() {
                 }
             }, "NativeBackBridge")
 
-            // Handle Google Auth popups directly inside the app instead of launching external Chrome browser
+            // Track active popup webview
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
                     val popupWebView = WebView(this@MainActivity)
+                    currentPopupWebView = popupWebView
+
                     popupWebView.settings.javaScriptEnabled = true
                     popupWebView.settings.domStorageEnabled = true
                     popupWebView.settings.databaseEnabled = true
                     popupWebView.settings.javaScriptCanOpenWindowsAutomatically = true
                     popupWebView.settings.setSupportMultipleWindows(true)
+                    popupWebView.settings.cacheMode = WebSettings.LOAD_DEFAULT
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         CookieManager.getInstance().setAcceptThirdPartyCookies(popupWebView, true)
@@ -318,10 +341,93 @@ class MainActivity : BridgeActivity() {
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     )
 
+                    // Cross-window communication bridge between OAuth popup and main app WebView
+                    popupWebView.addJavascriptInterface(object : Any() {
+                        @JavascriptInterface
+                        fun onAuthSuccess(data: String) {
+                            runOnUiThread {
+                                try {
+                                    webView.evaluateJavascript("window.postMessage($data, '*');", null)
+                                    webView.evaluateJavascript("if (typeof window.onGoogleAuthVerified === 'function') { window.onGoogleAuthVerified(); }", null)
+                                } catch (t: Throwable) {
+                                    Log.w(TAG, "Error posting auth message to main webview", t)
+                                }
+                                dismissPopup()
+                            }
+                        }
+
+                        @JavascriptInterface
+                        fun onAuthClose() {
+                            runOnUiThread {
+                                dismissPopup()
+                            }
+                        }
+                    }, "AuthPopupBridge")
+
                     popupWebView.webChromeClient = this
                     popupWebView.webViewClient = object : WebViewClient() {
+                        private fun checkAuthRedirect(url: String?) {
+                            if (url == null) return
+                            if (url.contains("/__/auth/handler") || url.contains("vibentra.firebaseapp.com")) {
+                                Log.d(TAG, "Google OAuth handler reached: $url")
+                                runOnUiThread {
+                                    webView.evaluateJavascript("""
+                                        if (typeof window.onGoogleAuthVerified === 'function') {
+                                            window.onGoogleAuthVerified();
+                                        }
+                                    """.trimIndent(), null)
+                                    // Auto-dismiss safety: close popup after auth handler is reached
+                                    Handler(Looper.getMainLooper()).postDelayed({
+                                        dismissPopup()
+                                    }, 1000)
+                                }
+                            }
+                        }
+
                         override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
+                            val url = request?.url?.toString() ?: ""
+                            checkAuthRedirect(url)
                             return false
+                        }
+
+                        override fun onPageStarted(v: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                            super.onPageStarted(v, url, favicon)
+                            checkAuthRedirect(url)
+                        }
+
+                        override fun onPageFinished(v: WebView?, url: String?) {
+                            super.onPageFinished(v, url)
+                            checkAuthRedirect(url)
+                            if (url != null && (url.contains("/__/auth/handler") || url.contains("vibentra.firebaseapp.com"))) {
+                                v?.evaluateJavascript("""
+                                    (function() {
+                                        var origPost = window.opener ? window.opener.postMessage : null;
+                                        window.opener = window.opener || {};
+                                        window.opener.postMessage = function(msg, targetOrigin) {
+                                            try {
+                                                if (window.AuthPopupBridge) {
+                                                    var str = typeof msg === 'string' ? msg : JSON.stringify(msg);
+                                                    window.AuthPopupBridge.onAuthSuccess(str);
+                                                }
+                                            } catch(e) {}
+                                            if (origPost) {
+                                                try { origPost.call(window.opener, msg, targetOrigin); } catch(e) {}
+                                            }
+                                        };
+                                        var origClose = window.close;
+                                        window.close = function() {
+                                            try {
+                                                if (window.AuthPopupBridge) {
+                                                    window.AuthPopupBridge.onAuthClose();
+                                                }
+                                            } catch(e) {}
+                                            if (origClose) {
+                                                try { origClose.call(window); } catch(e) {}
+                                            }
+                                        };
+                                    })();
+                                """.trimIndent(), null)
+                            }
                         }
                     }
 
@@ -333,11 +439,7 @@ class MainActivity : BridgeActivity() {
                 }
 
                 override fun onCloseWindow(window: WebView?) {
-                    try {
-                        (window?.parent as? android.view.ViewGroup)?.removeView(window)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Error closing popup window", e)
-                    }
+                    dismissPopup()
                 }
             }
         } catch (e: Exception) {

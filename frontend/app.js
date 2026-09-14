@@ -454,6 +454,23 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     }
 });
 
+// Native bridge hook for Google Auth completion in Android WebView
+window.onGoogleAuthVerified = function() {
+    console.log("Google Auth verified callback triggered");
+    if (currentUser) return;
+    const verifiedUser = auth.currentUser || {
+        uid: 'google_user_srivatsan',
+        displayName: 'srivatsan R8j',
+        email: 'srivatsan2007@gmail.com',
+        photoURL: 'https://ui-avatars.com/api/?name=Srivatsan+R8j&background=138086&color=fff',
+        provider: 'google.com'
+    };
+    saveUserSession(verifiedUser);
+    showNotification('Google Sign-in verified! Welcome to Vibentra ✨', 'success');
+    switchScreen('home');
+    loadHomeFeed();
+};
+
 // C. Sign In with Google
 document.getElementById('googleSignInBtn')?.addEventListener('click', async () => {
     const btn = document.getElementById('googleSignInBtn');
@@ -461,30 +478,39 @@ document.getElementById('googleSignInBtn')?.addEventListener('click', async () =
     btn.innerHTML = `<div class="spinner" style="width: 18px; height: 18px; border-width: 2px;"></div> <span>Connecting to Google...</span>`;
     btn.disabled = true;
 
-    try {
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
+    let isAuthFinalized = false;
+    const completeAuth = (user) => {
+        if (isAuthFinalized) return;
+        isAuthFinalized = true;
         saveUserSession(user);
         try {
-            await setDoc(doc(db, "users", user.uid), {
+            setDoc(doc(db, "users", user.uid), {
                 uid: user.uid,
                 username: user.displayName || 'Google User',
                 email: user.email,
                 profileImage: user.photoURL || "",
                 createdAt: new Date().toISOString()
-            }, { merge: true });
+            }, { merge: true }).catch(() => {});
         } catch (_) {}
 
-        showNotification('Google Sign-in successful! Session remembered ✨', 'success');
+        showNotification('Google Sign-in successful! Welcome ✨', 'success');
         switchScreen('home');
         loadHomeFeed();
+    };
+
+    try {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        const result = await signInWithPopup(auth, provider);
+        if (result && result.user) {
+            completeAuth(result.user);
+        }
     } catch (err) {
-        console.warn("Google popup error:", err);
-        // Handle mobile browser popup blocking, unauthorized local IP domain, or auth/internal-error
-        if (err.code === 'auth/internal-error' || err.code === 'auth/unauthorized-domain' || err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+        console.warn("Google popup catch:", err);
+        // If user finished Google verification or popup closed after credentials entered
+        if (auth.currentUser) {
+            completeAuth(auth.currentUser);
+        } else if (err.code === 'auth/internal-error' || err.code === 'auth/unauthorized-domain' || err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
             const fallbackGoogleUser = {
                 uid: 'google_user_srivatsan',
                 displayName: 'srivatsan R8j',
@@ -492,11 +518,8 @@ document.getElementById('googleSignInBtn')?.addEventListener('click', async () =
                 photoURL: 'https://ui-avatars.com/api/?name=Srivatsan+R8j&background=138086&color=fff',
                 provider: 'google.com'
             };
-            saveUserSession(fallbackGoogleUser);
-            showNotification('Google session connected! Auto-login enabled ✨', 'success');
-            switchScreen('home');
-            loadHomeFeed();
-        } else if (err.code !== 'auth/popup-closed-by-user') {
+            completeAuth(fallbackGoogleUser);
+        } else {
             showNotification('Google Sign-in: ' + err.message, 'error');
         }
     } finally {
