@@ -817,7 +817,7 @@
         </div>
     </div>
 
-    <!-- Full-Screen Music Player Screen / Card (Matching Screenshot 2) -->
+    <!-- Full-Screen Music Player Screen / Card (Echo Music Experience) -->
     <div class="full-player-screen" id="fullPlayerScreen">
         <div class="full-player-drag-handle" id="fullPlayerDragHandle" title="Swipe down to collapse"></div>
         <!-- Top Navigation Bar -->
@@ -826,26 +826,41 @@
                 <i class="fa-solid fa-chevron-down"></i>
             </button>
             <div class="full-player-header-text">
-                <span class="full-player-now-playing-label">Now Playing</span>
+                <span class="full-player-now-playing-label" id="fullPlayerHeaderMode">Now Playing</span>
                 <span class="full-player-header-title" id="fullPlayerHeaderTitle">Song Title</span>
             </div>
             <div style="display: flex; gap: 8px;">
-                <button class="full-player-collapse-btn" id="playerPiPBtn" title="Picture-in-Picture Floating Player">
-                    <i class="fa-solid fa-clone"></i>
+                <button class="full-player-collapse-btn" id="playerSleepTimerBtn" title="Sleep Timer">
+                    <i class="fa-solid fa-moon"></i>
                 </button>
                 <button class="full-player-collapse-btn" id="playerShareBtn" title="Share Song">
                     <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                </button>
+                <button class="full-player-collapse-btn" id="playerMoreOptionsBtn" title="More Options">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
             </div>
         </header>
 
         <!-- Player Body Content -->
         <div class="full-player-body">
-            <!-- Big Square Album Art -->
-            <div class="full-player-artwork-container" id="playerArtworkContainer">
-                <img id="fullPlayerCover" class="full-player-artwork" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80" alt="Album Cover">
-                <div class="player-logo-fallback" id="fullPlayerLogoFallback" style="display: none;">
-                    <img src="./logo.png" alt="Vibentra" class="player-fallback-logo-img">
+            <!-- Stage: Visual Artwork <-> Synced Lyrics Crossfade Stage -->
+            <div class="full-player-visual-stage" id="playerVisualStage">
+                <!-- Big Square Album Art -->
+                <div class="full-player-artwork-container" id="playerArtworkContainer">
+                    <img id="fullPlayerCover" class="full-player-artwork" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80" alt="Album Cover">
+                    <div class="player-logo-fallback" id="fullPlayerLogoFallback" style="display: none;">
+                        <img src="./logo.png" alt="Vibentra" class="player-fallback-logo-img">
+                    </div>
+                </div>
+
+                <!-- Live Synced Lyrics Stage (Apple Music / Echo Music auto-scroll) -->
+                <div class="player-lyrics-stage" id="playerLyricsStage" style="display: none;">
+                    <div class="player-lyrics-scroll" id="playerLyricsScroll">
+                        <div class="player-lyrics-content" id="playerLyricsContent">
+                            <p class="lyrics-placeholder" style="color: rgba(255,255,255,0.5); padding: 40px 10px;">Loading live synchronized lyrics...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -854,6 +869,10 @@
                 <div class="full-player-meta">
                     <h2 class="full-player-title" id="fullPlayerTitle">Song Title</h2>
                     <p class="full-player-artist" id="fullPlayerArtist">Artist Name</p>
+                    <div class="full-player-source-pill" id="fullPlayerSourcePill">
+                        <i class="fa-solid fa-bolt" id="playerSourceIcon"></i>
+                        <span id="fullPlayerSourceText">JioSaavn Official Master</span>
+                    </div>
                 </div>
                 <div class="full-player-side-actions">
                     <button class="action-box-btn" id="playerDownloadBtn" title="Download Audio">
@@ -867,30 +886,6 @@
 
             <!-- Seek Slider, Live Soundwave & Live Time (Music Bar) -->
             <div class="full-player-progress-container">
-                <!-- Soundwave Music Visualizer Bar (Bouncing Rhythm) -->
-                <div class="player-soundwave-row" id="playerSoundwaveRow">
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                    <span class="soundwave-bar"></span>
-                </div>
-
                 <div class="progress-bar-wrapper">
                     <input type="range" id="playerProgressBar" class="player-progress-slider" min="0" max="100" value="0" step="0.1">
                 </div>
@@ -907,6 +902,9 @@
 
             <!-- Main Playback Controls Row (with Scalloped Starburst Play Button) -->
             <div class="full-player-controls-row">
+                <button class="ctrl-circle-btn" id="fullPlayerShuffleBtn" title="Shuffle Mode">
+                    <i class="fa-solid fa-shuffle"></i>
+                </button>
                 <button class="ctrl-circle-btn" id="fullPlayerPrevBtn" title="Previous Track">
                     <i class="fa-solid fa-backward-step"></i>
                 </button>
@@ -924,20 +922,63 @@
                 <button class="ctrl-circle-btn" id="fullPlayerNextBtn" title="Next Track">
                     <i class="fa-solid fa-forward-step"></i>
                 </button>
+
+                <button class="ctrl-circle-btn" id="fullPlayerRepeatBtn" title="Repeat Mode">
+                    <i class="fa-solid fa-repeat"></i>
+                    <span class="repeat-one-indicator" id="repeatOneIndicator" style="display: none;">1</span>
+                </button>
             </div>
 
-            <!-- Bottom Action Toolbar (Lyrics, Sleep Timer, Equalizer, Shuffle, Repeat, More) -->
+            <!-- Bottom Action Toolbar (Echo Music Pills: Lyrics, Quality, Queue) -->
             <div class="full-player-bottom-toolbar">
-                <button class="tool-btn" id="toolLyricsBtn" title="Live Synced Lyrics"><i class="fa-solid fa-bars-staggered"></i></button>
-                <button class="tool-btn" id="toolTimerBtn" title="Sleep Timer"><i class="fa-regular fa-moon"></i><span class="timer-badge" id="timerBadge"></span></button>
-                <button class="tool-btn" id="toolRingtoneBtn" title="Equalizer & Effects"><i class="fa-solid fa-sliders"></i></button>
-                <button class="tool-btn" id="toolCommentBtn" title="View Comments" style="display: none;"><i class="fa-solid fa-comment"></i></button>
-                <button class="tool-btn" id="toolShuffleBtn" title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
-                <button class="tool-btn" id="toolRepeatBtn" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
-                <button class="tool-circle-btn" id="toolMoreBtn" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <button class="echo-tool-pill-btn" id="echoLyricsToggleBtn" title="Live Synced Lyrics">
+                    <i class="fa-solid fa-quote-right"></i>
+                    <span id="echoLyricsToggleLabel">Lyrics</span>
+                </button>
+                <div class="echo-quality-pill" id="echoQualityPill" title="Master Audio Stream">
+                    <i class="fa-solid fa-wave-square"></i>
+                    <span>HD 320kbps</span>
+                </div>
+                <button class="echo-tool-pill-btn" id="echoQueueToggleBtn" title="Up Next Queue">
+                    <i class="fa-solid fa-list-ul"></i>
+                    <span>Queue</span>
+                    <span class="queue-counter" id="echoQueueCounter"></span>
+                </button>
             </div>
             <!-- Bottom Home Indicator Bar (Screenshot 2) -->
             <div class="full-player-home-bar"></div>
+        </div>
+    </div>
+
+    <!-- Echo Music Up Next Queue Bottom Sheet Modal -->
+    <div class="queue-bottom-sheet-modal" id="queueBottomSheetModal">
+        <div class="queue-sheet-backdrop" id="queueBackdrop"></div>
+        <div class="queue-bottom-sheet">
+            <div class="sheet-drag-handle"></div>
+            <div class="queue-sheet-header">
+                <div>
+                    <h3 class="queue-sheet-title">Up Next</h3>
+                    <span class="queue-sheet-sub" id="queueSheetSubtitle">0 tracks in queue</span>
+                </div>
+                <div class="queue-sheet-actions">
+                    <button class="queue-action-btn" id="queueClearBtn" title="Clear Queue"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                    <button class="queue-close-btn" id="closeQueueSheetBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <!-- Now Playing Queue Card -->
+            <div class="queue-now-playing-card" id="queueNowPlayingCard">
+                <img class="queue-np-thumb" id="queueNowPlayingThumb" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80" alt="Now Playing">
+                <div class="queue-np-info">
+                    <span class="queue-np-tag">NOW PLAYING</span>
+                    <div class="queue-np-title" id="queueNowPlayingTitle">Song Title</div>
+                    <div class="queue-np-artist" id="queueNowPlayingArtist">Artist Name</div>
+                </div>
+                <div class="queue-np-equalizer">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+            <!-- Queue Tracks Scroll List -->
+            <div class="queue-tracks-list" id="queueTracksList"></div>
         </div>
     </div>
 
