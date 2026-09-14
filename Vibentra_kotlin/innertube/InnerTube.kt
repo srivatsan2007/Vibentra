@@ -268,6 +268,6 @@ object InnerTube {
             }
         }
 
-        songs
+        return songs
     }
 }

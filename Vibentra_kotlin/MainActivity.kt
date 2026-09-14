@@ -10,15 +10,19 @@ import androidx.compose.ui.Modifier
 import com.srivatsan.vibentra.navigation.AppNavigation
 import com.srivatsan.vibentra.theme.DarkBackground
 import com.srivatsan.vibentra.theme.VibentraTheme
+import com.vibentra.music.player.AudioPlayerManager
 
 /**
- * MainActivity for Vibentra Native Kotlin UI
+ * NativeMainActivity for Vibentra Native Kotlin UI
  * Edge-to-edge hardware accelerated presentation with zero WebView lag.
  */
-class MainActivity : ComponentActivity() {
+class NativeMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // Initialize background audio engine
+        AudioPlayerManager.init(this)
+
         // Enable modern immersive edge-to-edge display
         enableEdgeToEdge()
 

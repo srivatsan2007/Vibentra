@@ -23,4 +23,5 @@ data class Song(
     val hasPlayOverlay: Boolean = false
 ) {
     val albumArtUrl: String get() = coverUrl
+    val cover: String get() = coverUrl
 }

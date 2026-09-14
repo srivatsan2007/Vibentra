@@ -196,7 +196,7 @@ fun FullMusicPlayerScreen(
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = !isLyricsMode,
                     enter = fadeIn(animationSpec = tween(280)) + scaleIn(initialScale = 0.92f),
                     exit = fadeOut(animationSpec = tween(200)) + scaleOut(targetScale = 0.92f)
@@ -341,7 +341,7 @@ fun FullMusicPlayerScreen(
                 }
 
                 // Synced Lyrics View (Apple Music Style Auto-Scroll)
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = isLyricsMode,
                     enter = fadeIn(animationSpec = tween(280)) + slideInVertically(initialOffsetY = { 60 }),
                     exit = fadeOut(animationSpec = tween(200)) + slideOutVertically(targetOffsetY = { 60 })

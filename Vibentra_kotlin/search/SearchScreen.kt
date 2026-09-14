@@ -48,8 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.srivatsan.vibentra.components.ShimmerSearchList
 import com.srivatsan.vibentra.data.model.Song
-import com.vibentra.music.theme.VibentraColors
 
 @Composable
 fun SearchScreen(
@@ -684,9 +684,7 @@ fun SearchResultsList(
     }
 
     if (uiState.isLoading) {
-        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFF06B6D4))
-        }
+        ShimmerSearchList(modifier = modifier)
         return
     }
 

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.srivatsan.vibentra.components.ShimmerLyricsList
 import com.srivatsan.vibentra.data.model.Song
 import com.vibentra.music.lyrics.LyricLine
 import com.vibentra.music.lyrics.LyricsEngine
@@ -80,23 +81,7 @@ fun SyncedLyricsView(
     ) {
         when {
             isLoading -> {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = Color(0xFF06B6D4),
-                        strokeWidth = 3.dp,
-                        modifier = Modifier.size(36.dp)
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Text(
-                        text = "Syncing live lyrics...",
-                        color = Color(0xFF94A3B8),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                ShimmerLyricsList()
             }
 
             lyrics.isEmpty() -> {

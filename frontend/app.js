@@ -3612,6 +3612,53 @@ async function fetchPlaylistTracks(playlist) {
 
 // =========================================================
 // LOAD HOME FEED (LIVE & LATEST ALBUMS, PLAYLISTS FROM JIOSAAVN & YOUTUBE MUSIC)
+function getEchoShimmerFeedHtml() {
+    return `
+        <div class="echo-skeleton-feed" style="display: flex; flex-direction: column; gap: 24px; padding-top: 8px;">
+            <div style="padding: 0 16px;">
+                <div class="echo-shimmer-elem" style="width: 130px; height: 18px; border-radius: 6px; margin-bottom: 12px;"></div>
+                <div class="echo-skeleton-grid" style="padding: 0;">
+                    ${Array(6).fill(0).map((_, i) => `
+                        <div class="echo-skeleton-track-item">
+                            <div class="echo-skeleton-thumb echo-shimmer-elem"></div>
+                            <div class="echo-skeleton-meta">
+                                <div class="echo-skeleton-line title echo-shimmer-elem" style="width: ${60 + (i % 3) * 10}%;"></div>
+                                <div class="echo-skeleton-line subtitle echo-shimmer-elem" style="width: ${35 + (i % 2) * 15}%;"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="echo-skeleton-carousel-wrap">
+                <div class="echo-shimmer-elem echo-skeleton-carousel-header"></div>
+                <div class="echo-skeleton-carousel-row">
+                    ${Array(4).fill(0).map(() => `
+                        <div class="echo-skeleton-card">
+                            <div class="echo-skeleton-card-art echo-shimmer-elem"></div>
+                            <div class="echo-skeleton-line title echo-shimmer-elem" style="width: 80%;"></div>
+                            <div class="echo-skeleton-line subtitle echo-shimmer-elem" style="width: 50%;"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="echo-skeleton-carousel-wrap">
+                <div class="echo-shimmer-elem echo-skeleton-carousel-header" style="width: 160px;"></div>
+                <div class="echo-skeleton-carousel-row">
+                    ${Array(4).fill(0).map(() => `
+                        <div class="echo-skeleton-card">
+                            <div class="echo-skeleton-card-art echo-shimmer-elem"></div>
+                            <div class="echo-skeleton-line title echo-shimmer-elem" style="width: 75%;"></div>
+                            <div class="echo-skeleton-line subtitle echo-shimmer-elem" style="width: 45%;"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // =========================================================
 let homeLiveFeedTimer = null;
 
@@ -3619,11 +3666,7 @@ async function loadHomeFeed(forceRefresh = false) {
     const container = document.getElementById('homeSections');
     if (!container) return;
 
-    container.innerHTML = `
-        <div class="loading-spinner-box">
-            ${getGoogleSpinnerHtml(46)}
-        </div>
-    `;
+    container.innerHTML = getEchoShimmerFeedHtml();
 
     try {
         // 1. Read user's preferred language (Tamil, English, Hindi, Telugu)
@@ -4068,11 +4111,7 @@ document.querySelectorAll('.mood-pill').forEach(pill => {
             return;
         }
 
-        container.innerHTML = `
-            <div class="loading-spinner-box">
-                ${getGoogleSpinnerHtml(46)}
-            </div>
-        `;
+        container.innerHTML = getEchoShimmerFeedHtml();
 
         const primaryLang = getPreferredMusicLanguage();
         const currentYear = new Date().getFullYear();
@@ -5555,7 +5594,16 @@ export async function loadInPlayerLyrics(song) {
     const content = document.getElementById('playerLyricsContent');
     if (!stage || !content || !song) return;
 
-    content.innerHTML = `<p class="lyrics-placeholder" style="color: rgba(255,255,255,0.6); padding: 40px 10px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching live synchronized lyrics...</p>`;
+    content.innerHTML = `
+        <div class="echo-skeleton-lyrics-wrap">
+            <div class="echo-skeleton-lyric-line echo-shimmer-elem" style="width: 60%;"></div>
+            <div class="echo-skeleton-lyric-line echo-shimmer-elem" style="width: 85%;"></div>
+            <div class="echo-skeleton-lyric-line echo-shimmer-elem" style="width: 70%;"></div>
+            <div class="echo-skeleton-lyric-line echo-shimmer-elem" style="width: 90%;"></div>
+            <div class="echo-skeleton-lyric-line echo-shimmer-elem" style="width: 50%;"></div>
+            <div class="echo-skeleton-lyric-line echo-shimmer-elem" style="width: 75%;"></div>
+        </div>
+    `;
     currentInPlayerLyricsLines = [];
 
     const cleanTitle = (song.title || '')

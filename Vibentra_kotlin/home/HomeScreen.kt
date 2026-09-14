@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.srivatsan.vibentra.components.*
 import com.srivatsan.vibentra.data.model.MusicSection
 import com.srivatsan.vibentra.data.model.Song
 import com.srivatsan.vibentra.home.components.*
@@ -127,17 +128,10 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(18.dp))
             }
 
-            // 3. Loading Indicator when switching categories
+            // 3. Echo Music Skeleton Shimmer Loading State
             if (uiState.isLoading && uiState.sections.isEmpty()) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = PrimaryCyan)
-                    }
+                    ShimmerQuickPicksGrid()
                 }
             }
 

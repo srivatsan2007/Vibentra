@@ -46,10 +46,11 @@ fun AppNavigation(
                     }
                 },
                 onNavigateToAuth = {
-                    navController.navigate(AppDestination.Auth.route) {
+                    navController.navigate(AppDestination.Home.route) {
                         popUpTo(AppDestination.Splash.route) { inclusive = true }
                     }
-                }
+                },
+                isUserLoggedIn = true
             )
         }
 

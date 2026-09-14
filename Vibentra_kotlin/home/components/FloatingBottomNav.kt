@@ -145,7 +145,7 @@ private fun NavIconButton(
     )
 
     Column(
-        horizontalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .scale(scale)
