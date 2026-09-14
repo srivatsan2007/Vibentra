@@ -184,10 +184,38 @@ fun SettingsScreen(
                         DetailDataRow("Playlists Saved", "$playlistsCount items")
                         DetailDataRow("Cached Songs", "$favoritesCount tracks")
                     }
+                    "system_update" -> {
+                        DetailDataRow("Installed Version", "1.4.4-stable (Build 21)")
+                        DetailDataRow("Update Status", if (hasUpdate) "Update Available (v1.4.5)" else "System Up to Date ✨")
+                        DetailDataRow("Release Channel", "Production (GitHub & Vercel OTA)")
+                        DetailDataRow("Auto OTA Updates", "Enabled (Background Sync)")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        Button(
+                            onClick = {
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://github.com/srivatsan2007/Vibentra/releases")
+                                )
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF06B6D4)
+                            ),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.CloudDownload, contentDescription = null, tint = Color.Black)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "Check Releases & Changelog", color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+                    }
                     else -> {
                         DetailDataRow("Status", "Active (100% Real Dynamic Engine)")
                         DetailDataRow("Configuration", curItem?.subtitle ?: "")
-                        DetailDataRow("Version", "1.2.2-stable")
+                        DetailDataRow("Version", "1.4.4-stable")
                     }
                 }
             }

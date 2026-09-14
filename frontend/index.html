@@ -30,6 +30,21 @@
         </div>
     </div>
 
+    <!-- Echo Music In-App Floating Update Notification Banner -->
+    <div class="echo-update-banner" id="echoUpdateBanner">
+        <div class="echo-update-content" id="echoUpdateContent">
+            <div class="echo-update-badge"><i class="fa-solid fa-cloud-arrow-down"></i> Update</div>
+            <div class="echo-update-text">
+                <span class="echo-update-title" id="echoUpdateTitle">New Version Available</span>
+                <span class="echo-update-desc" id="echoUpdateDesc">A new update of Vibentra is ready</span>
+            </div>
+        </div>
+        <div class="echo-update-actions">
+            <button class="echo-update-btn-action" id="echoUpdateActionBtn">Install</button>
+            <button class="echo-update-btn-dismiss" id="echoUpdateDismissBtn" title="Dismiss">&times;</button>
+        </div>
+    </div>
+
     <!-- 1. SPLASH SCREEN -->
     <div id="splashScreen" class="screen splash-container active">
         <div class="splash-content">
@@ -921,8 +936,11 @@
             </div>
 
             <!-- Seek Slider, Live Soundwave & Live Time (Music Bar) -->
-            <div class="full-player-progress-container">
+            <div class="full-player-progress-container" id="fullPlayerProgressContainer">
                 <div class="progress-bar-wrapper">
+                    <div class="player-progress-track-bg"></div>
+                    <div class="player-buffer-bar" id="playerBufferBar"></div>
+                    <div class="player-timeline-loading-wave" id="playerTimelineLoadingWave"></div>
                     <input type="range" id="playerProgressBar" class="player-progress-slider" min="0" max="100" value="0" step="0.1">
                 </div>
                 <div class="player-time-row">

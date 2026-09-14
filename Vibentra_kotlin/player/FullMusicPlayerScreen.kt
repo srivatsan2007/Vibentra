@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.srivatsan.vibentra.components.echoShimmer
 import com.srivatsan.vibentra.data.model.MusicSource
 import com.srivatsan.vibentra.data.model.Song
 import com.vibentra.music.theme.rememberDynamicPlayerPalette
@@ -82,6 +83,7 @@ fun FullMusicPlayerScreen(
     val sleepTimerMinutes by AudioPlayerManager.sleepTimerMinutes.collectAsState()
     val currentPositionMs by AudioPlayerManager.currentPositionMs.collectAsState()
     val durationMs by AudioPlayerManager.durationMs.collectAsState()
+    val isBuffering by AudioPlayerManager.isBuffering.collectAsState()
 
     val isLiked = likedSongIds.contains(song.id)
 
@@ -358,22 +360,37 @@ fun FullMusicPlayerScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Scrubbing Seek Slider & Timestamps
+            // 3. Scrubbing Seek Slider & Timestamps with Loading Timeline
             Column(modifier = Modifier.fillMaxWidth()) {
-                Slider(
-                    value = progress.coerceIn(0f, 1f),
-                    onValueChange = onSeek,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color(0xFFE2E8F0),
-                        inactiveTrackColor = Color(0x33FFFFFF)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    if (isBuffering) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .echoShimmer(
+                                    baseColor = Color(0x33FFFFFF),
+                                    highlightColor = Color(0x9906B6D4)
+                                )
+                        )
+                    }
+                    Slider(
+                        value = progress.coerceIn(0f, 1f),
+                        onValueChange = onSeek,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color(0xFFE2E8F0),
+                            inactiveTrackColor = if (isBuffering) Color.Transparent else Color(0x33FFFFFF)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = currentTime,
@@ -381,6 +398,14 @@ fun FullMusicPlayerScreen(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
+                    if (isBuffering) {
+                        Text(
+                            text = "Buffering...",
+                            color = Color(0xFF06B6D4),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                     Text(
                         text = totalDuration,
                         color = Color(0xFFCBD5E1),
@@ -429,12 +454,21 @@ fun FullMusicPlayerScreen(
                         .scale(playButtonScale)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.Black,
-                            modifier = Modifier.size(34.dp)
-                        )
+                        AnimatedContent(
+                            targetState = isPlaying,
+                            transitionSpec = {
+                                (fadeIn(animationSpec = tween(180)) + scaleIn(initialScale = 0.7f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)))
+                                    .togetherWith(fadeOut(animationSpec = tween(140)) + scaleOut(targetScale = 0.7f))
+                            },
+                            label = "play_pause_icon_anim"
+                        ) { playing ->
+                            Icon(
+                                imageVector = if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (playing) "Pause" else "Play",
+                                tint = Color.Black,
+                                modifier = Modifier.size(34.dp)
+                            )
+                        }
                     }
                 }
 

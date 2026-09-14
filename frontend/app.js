@@ -4364,11 +4364,26 @@ const fullPlayerPlayIcon = document.getElementById('fullPlayerPlayIcon');
 const fullPlayerPrevBtn = document.getElementById('fullPlayerPrevBtn');
 const fullPlayerNextBtn = document.getElementById('fullPlayerNextBtn');
 const playerProgressBar = document.getElementById('playerProgressBar');
+const playerBufferBar = document.getElementById('playerBufferBar');
+const fullPlayerProgressContainer = document.getElementById('fullPlayerProgressContainer');
 const playerCurrentTime = document.getElementById('playerCurrentTime');
 const playerTotalDuration = document.getElementById('playerTotalDuration');
 const playerDownloadBtn = document.getElementById('playerDownloadBtn');
 const playerFavoriteBtn = document.getElementById('playerFavoriteBtn');
 const playerHeartIcon = document.getElementById('playerHeartIcon');
+
+function updatePlayerBuffer(percent) {
+    if (playerBufferBar) {
+        const clamped = Math.max(0, Math.min(100, percent || 0));
+        playerBufferBar.style.width = `${clamped}%`;
+    }
+}
+
+function setPlayerBuffering(isBuffering) {
+    if (fullPlayerProgressContainer) {
+        fullPlayerProgressContainer.classList.toggle('is-buffering', Boolean(isBuffering));
+    }
+}
 
 const miniPlayer = document.getElementById('miniPlayer');
 const miniPlayerClickZone = document.getElementById('miniPlayerClickZone');
@@ -4507,11 +4522,15 @@ function onYouTubePlayerStateChange(event) {
         isPlaying = true;
         isYouTubeTrackPlaying = true;
         isUserInitiatedPause = false;
+        setPlayerBuffering(false);
         updatePlayPauseIcons(true);
         startYtProgressTicker();
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         syncNativeAndroidWidget(currentSongObj, true);
+    } else if (event.data === 3) { // YT.PlayerState.BUFFERING
+        setPlayerBuffering(true);
     } else if (event.data === 2) { // YT.PlayerState.PAUSED
+        setPlayerBuffering(false);
         if (isUserInitiatedPause) {
             isPlaying = false;
             updatePlayPauseIcons(false);
@@ -4581,7 +4600,12 @@ function startYtProgressTicker() {
                 const curTimeFormatted = formatDuration(curTime);
                 const totalDurationFormatted = formatDuration(dur);
 
-                if (playerProgressBar) playerProgressBar.value = progress;
+                if (playerProgressBar) {
+                    playerProgressBar.value = progress;
+                    playerProgressBar.style.setProperty('--play-percent', `${progress}%`);
+                }
+                const loadedFraction = (typeof ytPlayer.getVideoLoadedFraction === 'function') ? (ytPlayer.getVideoLoadedFraction() || 0) : 0;
+                updatePlayerBuffer(loadedFraction * 100);
                 if (playerCurrentTime) playerCurrentTime.textContent = curTimeFormatted;
                 if (playerTotalDuration) playerTotalDuration.textContent = totalDurationFormatted;
                 if (desktopMiniProgressBar) desktopMiniProgressBar.value = progress;
@@ -5440,11 +5464,23 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
 
 function updatePlayPauseIcons(playing) {
     isPlaying = playing;
+    if (fullPlayerPlayPauseBtn) {
+        fullPlayerPlayPauseBtn.classList.remove('pop-anim');
+        void fullPlayerPlayPauseBtn.offsetWidth;
+        fullPlayerPlayPauseBtn.classList.add('pop-anim');
+    }
     if (miniPlayPauseBtn) {
+        miniPlayPauseBtn.classList.remove('pop-anim');
+        void miniPlayPauseBtn.offsetWidth;
+        miniPlayPauseBtn.classList.add('pop-anim');
         miniPlayPauseBtn.innerHTML = playing ? `<i class="fa-solid fa-pause"></i>` : `<i class="fa-solid fa-play"></i>`;
     }
     if (fullPlayerPlayIcon) {
-        fullPlayerPlayIcon.innerHTML = playing ? `<i class="fa-solid fa-pause"></i>` : `<i class="fa-solid fa-play"></i>`;
+        fullPlayerPlayIcon.classList.add('icon-flip');
+        setTimeout(() => {
+            fullPlayerPlayIcon.innerHTML = playing ? `<i class="fa-solid fa-pause"></i>` : `<i class="fa-solid fa-play"></i>`;
+            fullPlayerPlayIcon.classList.remove('icon-flip');
+        }, 80);
     }
     const soundwaveRow = document.getElementById('playerSoundwaveRow');
     if (soundwaveRow) {
@@ -5973,7 +6009,10 @@ audioPlayer.addEventListener('timeupdate', () => {
     const curTimeFormatted = formatDuration(audioPlayer.currentTime);
     const totalDurationFormatted = formatDuration(audioPlayer.duration);
 
-    if (playerProgressBar) playerProgressBar.value = progress;
+    if (playerProgressBar) {
+        playerProgressBar.value = progress;
+        playerProgressBar.style.setProperty('--play-percent', `${progress}%`);
+    }
     if (playerCurrentTime) playerCurrentTime.textContent = curTimeFormatted;
     if (playerTotalDuration) playerTotalDuration.textContent = totalDurationFormatted;
 
@@ -6043,9 +6082,31 @@ audioPlayer.addEventListener('timeupdate', () => {
     }
 });
 
+// Buffer and Loading Stream Listeners on audioPlayer
+audioPlayer.addEventListener('progress', () => {
+    if (audioPlayer.duration && audioPlayer.buffered.length > 0) {
+        try {
+            const bufferedEnd = audioPlayer.buffered.end(audioPlayer.buffered.length - 1);
+            const bufferPercent = (bufferedEnd / audioPlayer.duration) * 100;
+            updatePlayerBuffer(bufferPercent);
+        } catch (_) {}
+    }
+});
+
+audioPlayer.addEventListener('waiting', () => setPlayerBuffering(true));
+audioPlayer.addEventListener('loadstart', () => {
+    setPlayerBuffering(true);
+    updatePlayerBuffer(0);
+});
+audioPlayer.addEventListener('canplay', () => setPlayerBuffering(false));
+audioPlayer.addEventListener('playing', () => setPlayerBuffering(false));
+audioPlayer.addEventListener('seeking', () => setPlayerBuffering(true));
+audioPlayer.addEventListener('seeked', () => setPlayerBuffering(false));
+
 // Seek bar input scrubber (Full Player)
 if (playerProgressBar) {
     playerProgressBar.addEventListener('input', (e) => {
+        playerProgressBar.style.setProperty('--play-percent', `${e.target.value}%`);
         if (isYouTubeTrackPlaying && ytPlayer && typeof ytPlayer.getDuration === 'function') {
             const dur = ytPlayer.getDuration();
             if (dur && !isNaN(dur) && dur > 0) {
@@ -11073,6 +11134,7 @@ async function checkForAppUpdates(isManual = false) {
             latestUpdateData = releaseData;
             localStorage.setItem('vibentra_has_update', 'true');
             renderSystemUpdateBadge();
+            showEchoUpdateBanner(releaseData);
             showUpdateAvailablePrompt(releaseData);
             // Trigger real Mobile Notification Bar Notification!
             sendSystemUpdateNotification(releaseData.version, releaseData);
@@ -11087,6 +11149,33 @@ async function checkForAppUpdates(isManual = false) {
             showNotification("Unable to check updates right now", "error");
         }
     }
+}
+
+function showEchoUpdateBanner(data) {
+    const banner = document.getElementById('echoUpdateBanner');
+    const title = document.getElementById('echoUpdateTitle');
+    const desc = document.getElementById('echoUpdateDesc');
+    const actionBtn = document.getElementById('echoUpdateActionBtn');
+    const dismissBtn = document.getElementById('echoUpdateDismissBtn');
+    const content = document.getElementById('echoUpdateContent');
+    if (!banner) return;
+    if (title) title.textContent = data.name || `Vibentra v${data.version} Ready`;
+    if (desc) desc.textContent = `New features available • Tap to install`;
+    banner.classList.add('active');
+
+    const handleOpen = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openUpdateDetailsModal();
+        banner.classList.remove('active');
+    };
+
+    actionBtn?.addEventListener('click', handleOpen, { once: true });
+    content?.addEventListener('click', handleOpen, { once: true });
+    dismissBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        banner.classList.remove('active');
+    }, { once: true });
 }
 
 function showUpdateAvailablePrompt(data) {

@@ -127,6 +127,7 @@ object AudioPlayerManager {
         _isBuffering.value = true
         _isPlaying.value = false
         _currentPositionMs.value = 0L
+        notifyWidgetState(song, true)
 
         scope.launch {
             try {
@@ -189,6 +190,7 @@ object AudioPlayerManager {
                 mp.start()
                 acquireWakeLocks()
                 startProgressTracker()
+                notifyWidgetState(song, true)
             }
 
             setOnCompletionListener {
@@ -251,11 +253,13 @@ object AudioPlayerManager {
             player.pause()
             releaseWakeLocks()
             _isPlaying.value = false
+            notifyWidgetState(isPlaying = false)
         } else {
             player.start()
             acquireWakeLocks()
             _isPlaying.value = true
             startProgressTracker()
+            notifyWidgetState(isPlaying = true)
         }
     }
 
@@ -265,6 +269,7 @@ object AudioPlayerManager {
                 it.pause()
                 releaseWakeLocks()
                 _isPlaying.value = false
+                notifyWidgetState(isPlaying = false)
             }
         }
     }
@@ -276,6 +281,7 @@ object AudioPlayerManager {
                 acquireWakeLocks()
                 _isPlaying.value = true
                 startProgressTracker()
+                notifyWidgetState(isPlaying = true)
             }
         }
     }
@@ -507,6 +513,37 @@ object AudioPlayerManager {
         progressJob = null
     }
 
+    fun notifyWidgetState(song: Song? = _currentSong.value, isPlaying: Boolean = _isPlaying.value) {
+        val ctx = appContext ?: return
+        val s = song ?: return
+        scope.launch(Dispatchers.IO) {
+            var coverBitmap: android.graphics.Bitmap? = null
+            try {
+                if (s.coverUrl.isNotBlank()) {
+                    val imageLoader = coil.ImageLoader(ctx)
+                    val request = coil.request.ImageRequest.Builder(ctx)
+                        .data(s.coverUrl)
+                        .allowHardware(false)
+                        .build()
+                    val result = (imageLoader.execute(request) as? coil.request.SuccessResult)?.drawable
+                    coverBitmap = (result as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                }
+            } catch (_: Exception) {}
+
+            withContext(Dispatchers.Main) {
+                try {
+                    com.srivatsan.vibentra.VibentraWidgetProvider.updateWidgetState(
+                        ctx,
+                        s.title,
+                        s.artist,
+                        isPlaying,
+                        coverBitmap
+                    )
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     fun release() {
         stopProgressTracker()
         sleepTimerJob?.cancel()
@@ -515,5 +552,6 @@ object AudioPlayerManager {
         mediaPlayer = null
         _isPlaying.value = false
         _currentSong.value = null
+        notifyWidgetState(isPlaying = false)
     }
 }

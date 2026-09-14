@@ -111,10 +111,19 @@ public class VibentraWidgetProvider extends AppWidgetProvider {
             Log.d(TAG, "Widget broadcast received action: " + action);
 
             if (ACTION_WIDGET_PLAY_PAUSE.equals(action)) {
+                try {
+                    com.vibentra.music.player.AudioPlayerManager.INSTANCE.togglePlayPause();
+                } catch (Throwable ignored) {}
                 sendServiceAction(context, cachedIsPlaying ? BackgroundAudioService.ACTION_PAUSE : BackgroundAudioService.ACTION_PLAY);
             } else if (ACTION_WIDGET_NEXT.equals(action)) {
+                try {
+                    com.vibentra.music.player.AudioPlayerManager.INSTANCE.playNext();
+                } catch (Throwable ignored) {}
                 sendServiceAction(context, BackgroundAudioService.ACTION_NEXT);
             } else if (ACTION_WIDGET_PREV.equals(action)) {
+                try {
+                    com.vibentra.music.player.AudioPlayerManager.INSTANCE.playPrevious();
+                } catch (Throwable ignored) {}
                 sendServiceAction(context, BackgroundAudioService.ACTION_PREVIOUS);
             }
         } catch (Throwable t) {

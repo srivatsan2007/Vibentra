@@ -1919,18 +1919,76 @@ body {
 }
 
 .progress-bar-wrapper {
+    position: relative;
     width: 100%;
+    height: 22px;
+    display: flex;
+    align-items: center;
+}
+
+.player-progress-track-bg {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.14);
+    pointer-events: none;
+}
+
+.player-buffer-bar {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+    transition: width 0.2s ease;
+}
+
+.player-timeline-loading-wave {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
+    background-size: 200% 100%;
+    transition: opacity 0.3s ease;
+}
+
+.full-player-progress-container.is-buffering .player-timeline-loading-wave {
+    opacity: 1;
+    animation: echoTimelineWave 1.2s linear infinite;
+}
+
+@keyframes echoTimelineWave {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 .player-progress-slider {
+    position: relative;
+    z-index: 3;
     width: 100%;
     -webkit-appearance: none;
     height: 6px;
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.25);
+    background: linear-gradient(to right, #ffffff 0%, #ffffff var(--play-percent, 0%), transparent var(--play-percent, 0%), transparent 100%);
     outline: none;
     cursor: pointer;
     border: none;
+    margin: 0;
+    padding: 0;
 }
 
 .player-progress-slider::-webkit-slider-thumb {
@@ -1940,8 +1998,18 @@ body {
     border-radius: 50%;
     background: #ffffff;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-    transition: transform 0.15s ease;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.full-player-progress-container.is-buffering .player-progress-slider::-webkit-slider-thumb {
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.95);
+    animation: thumbPulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes thumbPulse {
+    0% { transform: scale(1); opacity: 0.85; }
+    100% { transform: scale(1.25); opacity: 1; }
 }
 
 .player-progress-slider::-webkit-slider-thumb:hover {
@@ -2034,8 +2102,22 @@ body {
     transform: scale(1.06);
 }
 
-.scalloped-play-btn:active {
-    transform: scale(0.94);
+.scalloped-play-btn:active,
+.mini-btn-play:active {
+    transform: scale(0.92);
+}
+
+@keyframes playPausePop {
+    0% { transform: scale(1); }
+    30% { transform: scale(0.86); }
+    65% { transform: scale(1.15); }
+    85% { transform: scale(0.97); }
+    100% { transform: scale(1); }
+}
+
+.scalloped-play-btn.pop-anim,
+.mini-btn-play.pop-anim {
+    animation: playPausePop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .scallop-svg {
@@ -2055,10 +2137,18 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .scallop-icon-wrapper i {
     color: #000000 !important;
+    display: inline-block;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
+}
+
+.scallop-icon-wrapper.icon-flip i {
+    transform: scale(0.65) rotate(18deg);
+    opacity: 0.1;
 }
 
 /* Echo Music Bottom Action Pills (Lyrics, Quality, Queue) */
@@ -10457,6 +10547,129 @@ body:not(.battery-saver-active) .category-pill.active {
 
 .full-player-screen .scalloped-play-btn .scallop-icon-wrapper i {
     color: #000000 !important;
+}
+
+/* Echo Music Floating Update Notification Capsule */
+.echo-update-banner {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120%);
+    z-index: 999999;
+    width: calc(100% - 32px);
+    max-width: 480px;
+    background: rgba(22, 22, 28, 0.88);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 25px rgba(6, 182, 212, 0.22);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.echo-update-banner.active {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.echo-update-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.echo-update-badge {
+    background: linear-gradient(135deg, #06B6D4, #3B82F6);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 10px rgba(6, 182, 212, 0.4);
+}
+
+.echo-update-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.echo-update-title {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.echo-update-desc {
+    font-size: 0.74rem;
+    color: #94A3B8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.echo-update-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.echo-update-btn-action {
+    background: #ffffff;
+    color: #000000;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.echo-update-btn-action:active {
+    transform: scale(0.94);
+}
+
+.echo-update-btn-dismiss {
+    background: rgba(255, 255, 255, 0.1);
+    color: #CBD5E1;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.echo-update-btn-dismiss:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
 }
 
 
