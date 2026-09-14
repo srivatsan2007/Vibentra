@@ -18,8 +18,12 @@ import com.vibentra.music.player.AudioPlayerManager
  */
 class NativeMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.AppTheme_NoActionBar)
         super.onCreate(savedInstanceState)
         
+        // Ensure window background is a clean solid dark color (never a stretched drawable)
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.parseColor("#061A1C")))
+
         // Initialize background audio engine
         AudioPlayerManager.init(this)
 
