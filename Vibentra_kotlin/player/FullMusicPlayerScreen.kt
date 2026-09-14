@@ -35,6 +35,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.srivatsan.vibentra.data.model.MusicSource
 import com.srivatsan.vibentra.data.model.Song
+import com.vibentra.music.theme.rememberDynamicPlayerPalette
 
 /**
  * 100% Complete Full-Screen Music Player (Ported from Echo Music & Metrolist UI).
@@ -70,9 +71,11 @@ fun FullMusicPlayerScreen(
     var isLyricsMode by remember { mutableStateOf(false) }
     var showSleepTimerSheet by remember { mutableStateOf(false) }
     var showOptionsMenu by remember { mutableStateOf(false) }
+    var showQueueSheet by remember { mutableStateOf(false) }
     var isDownloaded by remember { mutableStateOf(false) }
 
-    // Collect controller states from AudioPlayerManager
+    // Collect controller & queue states from AudioPlayerManager
+    val queue by AudioPlayerManager.queue.collectAsState()
     val repeatMode by AudioPlayerManager.repeatMode.collectAsState()
     val isShuffle by AudioPlayerManager.isShuffle.collectAsState()
     val likedSongIds by AudioPlayerManager.likedSongIds.collectAsState()
@@ -81,6 +84,25 @@ fun FullMusicPlayerScreen(
     val durationMs by AudioPlayerManager.durationMs.collectAsState()
 
     val isLiked = likedSongIds.contains(song.id)
+
+    // Option A: Dynamic Color Extraction (Echo Music Ambient Canvas Parity)
+    val dynamicPalette by rememberDynamicPlayerPalette(song.coverUrl)
+
+    val dominantColorAnimated by animateColorAsState(
+        targetValue = dynamicPalette.dominant,
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+        label = "dominantColor"
+    )
+    val secondaryColorAnimated by animateColorAsState(
+        targetValue = dynamicPalette.secondary,
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+        label = "secondaryColor"
+    )
+    val backgroundColorAnimated by animateColorAsState(
+        targetValue = dynamicPalette.background,
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+        label = "backgroundColor"
+    )
 
     // Play/Pause button bounce animation
     val playButtonScale by animateFloatAsState(
@@ -95,9 +117,9 @@ fun FullMusicPlayerScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF2E0909),
-                        Color(0xFF140303),
-                        Color(0xFF080202)
+                        dominantColorAnimated,
+                        secondaryColorAnimated,
+                        backgroundColorAnimated
                     )
                 )
             )
@@ -508,6 +530,36 @@ fun FullMusicPlayerScreen(
                         )
                     }
                 }
+
+                // Option B: Up Next Queue Drawer Button
+                Surface(
+                    onClick = { showQueueSheet = true },
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (showQueueSheet) Color(0x3306B6D4) else Color(0x22FFFFFF),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (showQueueSheet) Color(0xFF06B6D4) else Color(0x22FFFFFF)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = "Queue",
+                            tint = if (showQueueSheet) Color(0xFF06B6D4) else Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Queue (${queue.size})",
+                            color = if (showQueueSheet) Color(0xFF06B6D4) else Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
 
@@ -599,7 +651,15 @@ fun FullMusicPlayerScreen(
                 isLyricsMode = isLyricsMode,
                 onToggleLyrics = { isLyricsMode = !isLyricsMode },
                 onOpenSleepTimer = { showSleepTimerSheet = true },
+                onOpenQueue = { showQueueSheet = true },
                 onDismiss = { showOptionsMenu = false }
+            )
+        }
+
+        // 8. Up Next Queue Bottom Sheet (Echo Music Option B Parity)
+        if (showQueueSheet) {
+            QueueBottomSheet(
+                onDismiss = { showQueueSheet = false }
             )
         }
     }

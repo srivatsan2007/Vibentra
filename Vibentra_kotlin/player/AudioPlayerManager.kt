@@ -350,6 +350,110 @@ object AudioPlayerManager {
         }
     }
 
+    // Dynamic Radio / Autoplay state (Echo Brain parity)
+    private val _isDynamicRadioEnabled = MutableStateFlow(true)
+    val isDynamicRadioEnabled: StateFlow<Boolean> = _isDynamicRadioEnabled.asStateFlow()
+
+    fun setDynamicRadioEnabled(enabled: Boolean) {
+        _isDynamicRadioEnabled.value = enabled
+    }
+
+    fun toggleDynamicRadio() {
+        _isDynamicRadioEnabled.update { !it }
+    }
+
+    /**
+     * Jumps directly to any song at [index] in the queue and plays it immediately.
+     */
+    fun playSongAtIndex(index: Int) {
+        val q = _queue.value
+        if (index in q.indices) {
+            _currentIndex.value = index
+            playSong(q[index])
+        }
+    }
+
+    /**
+     * Removes a track at [index] from the queue.
+     * If the current track is removed, advances to the next track.
+     */
+    fun removeFromQueue(index: Int) {
+        val currentQ = _queue.value.toMutableList()
+        if (index !in currentQ.indices) return
+
+        val currentIdx = _currentIndex.value
+        currentQ.removeAt(index)
+        _queue.value = currentQ
+
+        when {
+            currentQ.isEmpty() -> {
+                pause()
+                _currentSong.value = null
+                _currentIndex.value = -1
+            }
+            index == currentIdx -> {
+                val newIdx = index.coerceAtMost(currentQ.size - 1)
+                _currentIndex.value = newIdx
+                playSong(currentQ[newIdx])
+            }
+            index < currentIdx -> {
+                _currentIndex.value = currentIdx - 1
+            }
+        }
+    }
+
+    /**
+     * Reorders an item in the queue from [fromIndex] to [toIndex].
+     */
+    fun moveQueueItem(fromIndex: Int, toIndex: Int) {
+        val currentQ = _queue.value.toMutableList()
+        if (fromIndex !in currentQ.indices || toIndex !in currentQ.indices || fromIndex == toIndex) return
+
+        val item = currentQ.removeAt(fromIndex)
+        currentQ.add(toIndex, item)
+
+        val currentIdx = _currentIndex.value
+        val newCurrentIdx = when (currentIdx) {
+            fromIndex -> toIndex
+            in (fromIndex + 1)..toIndex -> currentIdx - 1
+            in toIndex until fromIndex -> currentIdx + 1
+            else -> currentIdx
+        }
+
+        _queue.value = currentQ
+        _currentIndex.value = newCurrentIdx
+    }
+
+    /**
+     * Clears all subsequent tracks in the queue while keeping the currently playing track.
+     */
+    fun clearQueueKeepCurrent() {
+        val current = _currentSong.value ?: return
+        _queue.value = listOf(current)
+        _currentIndex.value = 0
+    }
+
+    /**
+     * Inserts [song] as the next track in the queue ("Play Next").
+     */
+    fun addToNextInQueue(song: Song) {
+        val currentQ = _queue.value.toMutableList()
+        val currentIdx = _currentIndex.value
+        if (currentIdx >= 0 && currentIdx < currentQ.size) {
+            currentQ.add(currentIdx + 1, song)
+        } else {
+            currentQ.add(song)
+        }
+        _queue.value = currentQ
+    }
+
+    /**
+     * Appends [song] to the end of the queue ("Add to Queue").
+     */
+    fun addToQueueEnd(song: Song) {
+        _queue.update { it + song }
+    }
+
     fun setSleepTimer(minutes: Int?) {
         sleepTimerJob?.cancel()
         _sleepTimerMinutes.value = minutes

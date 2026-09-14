@@ -48,6 +48,7 @@ fun PlayerOptionsMenu(
     isLyricsMode: Boolean,
     onToggleLyrics: () -> Unit,
     onOpenSleepTimer: () -> Unit,
+    onOpenQueue: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -187,6 +188,33 @@ fun PlayerOptionsMenu(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
+                // Item 0A: Up Next Queue
+                item {
+                    MenuRowItem(
+                        icon = Icons.Default.QueueMusic,
+                        title = "Up Next Queue",
+                        subtitle = "View, reorder, or clear songs in queue",
+                        onClick = {
+                            onDismiss()
+                            onOpenQueue()
+                        }
+                    )
+                }
+
+                // Item 0B: Play Next
+                item {
+                    MenuRowItem(
+                        icon = Icons.Default.QueuePlayNext,
+                        title = "Play Next",
+                        subtitle = "Insert track right after currently playing song",
+                        onClick = {
+                            AudioPlayerManager.addToNextInQueue(song)
+                            onDismiss()
+                            Toast.makeText(context, "Added '${song.title}' to play next ⏭", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+
                 // Item 1: Set as Ringtone
                 item {
                     MenuRowItem(
