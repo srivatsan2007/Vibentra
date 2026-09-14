@@ -210,7 +210,20 @@ class HomeViewModel @JvmOverloads constructor(
         }
     }
 
+    private fun calculateGreeting(): String {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        return when (hour) {
+            in 5..11 -> "Good morning"
+            in 12..16 -> "Good afternoon"
+            in 17..21 -> "Good evening"
+            else -> "Late night vibes"
+        }
+    }
+
     init {
+        val greetingStr = calculateGreeting()
+        _uiState.update { it.copy(greeting = greetingStr) }
+
         val lastSong = loadLastPlayedSong()
         if (lastSong != null) {
             _uiState.update { it.copy(currentSong = lastSong, isPlaying = false) }
@@ -236,13 +249,17 @@ class HomeViewModel @JvmOverloads constructor(
      */
     fun loadHomeData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, greeting = calculateGreeting()) }
             try {
                 val sections = repository.getHomeSections()
+                // Derive Echo Music Quick Picks from top loaded tracks
+                val picks = sections.flatMap { it.songs }.distinctBy { it.id }.take(6)
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        sections = sections
+                        sections = sections,
+                        quickPicks = picks
                     )
                 }
             } catch (e: Exception) {
@@ -273,7 +290,8 @@ class HomeViewModel @JvmOverloads constructor(
                 _uiState.update { state ->
                     // Place the selected category section right at the top
                     val updatedSections = listOf(newSection) + state.sections.filterNot { it.id.startsWith("category_") }
-                    state.copy(isLoading = false, sections = updatedSections)
+                    val updatedPicks = (categorySongs.take(4) + state.quickPicks).distinctBy { it.id }.take(6)
+                    state.copy(isLoading = false, sections = updatedSections, quickPicks = updatedPicks)
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false) }
@@ -287,8 +305,21 @@ class HomeViewModel @JvmOverloads constructor(
      */
     fun playSong(song: Song) {
         saveLastPlayedSong(song)
-        val allSongs = _uiState.value.sections.flatMap { it.songs }
+        val allSongs = (_uiState.value.quickPicks + _uiState.value.sections.flatMap { it.songs }).distinctBy { it.id }
         AudioPlayerManager.playSong(song, allSongs)
+    }
+
+    fun playSection(section: MusicSection) {
+        val firstSong = section.songs.firstOrNull() ?: return
+        saveLastPlayedSong(firstSong)
+        AudioPlayerManager.playSong(firstSong, section.songs)
+    }
+
+    fun startRadio() {
+        val seed = _uiState.value.currentSong ?: _uiState.value.quickPicks.firstOrNull() ?: _uiState.value.sections.flatMap { it.songs }.firstOrNull()
+        if (seed != null) {
+            playSong(seed)
+        }
     }
 
     fun togglePlayPause() {
