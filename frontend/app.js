@@ -5108,32 +5108,6 @@ document.addEventListener('visibilitychange', async () => {
     }
 });
 
-// Stream Direct YouTube Audio-Only Extractor (Piped instances)
-async function fetchYouTubeAudioOnlyStream(youtubeId) {
-    if (!youtubeId) return null;
-    const cleanId = String(youtubeId).replace(/^yt_/, '').split('_')[0];
-    const pipedInstances = [
-        'https://api.piped.private.coffee',
-        'https://piped.video',
-        'https://pipedapi.kavin.rocks',
-        'https://piped-api.lunar.icu'
-    ];
-    for (const inst of pipedInstances) {
-        try {
-            const res = await fetch(`${inst}/streams/${encodeURIComponent(cleanId)}`, { signal: AbortSignal.timeout(4000) });
-            if (res.ok) {
-                const data = await res.json();
-                const audioList = data.audioStreams || [];
-                if (audioList.length > 0) {
-                    const best = audioList.find(a => a.mimeType?.includes('audio/mp4') || a.format === 'M4A') || audioList[0];
-                    if (best && best.url) return best.url;
-                }
-            }
-        } catch (_) {}
-    }
-    return null;
-}
-
 // Strict Track Verification: Ensures a search match is genuine before swapping audio streams
 const isRecordLabelOrChannel = (art) => {
     const l = (art || '').toLowerCase();
@@ -5196,6 +5170,55 @@ function isGenuineTrackMatch(candidate, target) {
     }
 
     return true;
+}
+
+// Echo Music Direct Audio Stream Resolver (Native VisionOS / Android VR cascade + Piped/Invidious Web fallback)
+async function fetchYouTubeAudioOnlyStream(videoId) {
+    if (!videoId) return null;
+    const cleanId = String(videoId).replace(/^yt_/, '').split('_')[0].split('&')[0];
+
+    // Priority 1: Native Android Plugin Bridge (Echo Music VisionOS Engine)
+    try {
+        const bgPlugin = getBackgroundAudioPlugin();
+        if (bgPlugin && typeof bgPlugin.resolveYouTubeStream === 'function') {
+            const res = await bgPlugin.resolveYouTubeStream({ videoId: cleanId });
+            if (res && res.streamUrl && res.streamUrl.startsWith('http')) {
+                console.log("[AudioEngine] Resolved direct YouTube audio via native VisionOS engine:", cleanId);
+                return res.streamUrl;
+            }
+        }
+    } catch (err) {
+        console.warn("[AudioEngine] Native stream resolver fallback:", err);
+    }
+
+    // Priority 2: Public Piped / Invidious Audio Stream Endpoints (Web Browser & PWA fallback)
+    const streamGateways = [
+        `https://api.piped.private.coffee/streams/${cleanId}`,
+        `https://pipedapi.kavin.rocks/streams/${cleanId}`,
+        `https://inv.tux.pizza/api/v1/videos/${cleanId}`
+    ];
+
+    for (let gw of streamGateways) {
+        try {
+            const res = await fetch(gw, { signal: AbortSignal.timeout(4500) });
+            if (res.ok) {
+                const data = await res.json();
+                const audioStreams = data.audioStreams || (data.adaptiveFormats ? data.adaptiveFormats.filter(f => (f.type || f.mimeType || '').includes('audio')) : []);
+                if (Array.isArray(audioStreams) && audioStreams.length > 0) {
+                    const best = audioStreams.find(s => s.itag === 251 || s.format === 'opus')
+                        || audioStreams.find(s => s.itag === 140 || s.format === 'm4a')
+                        || audioStreams[audioStreams.length - 1];
+                    const chosen = best?.url || (typeof best === 'string' ? best : null);
+                    if (chosen && chosen.startsWith('http')) {
+                        console.log("[AudioEngine] Resolved YouTube audio stream via gateway:", gw);
+                        return chosen;
+                    }
+                }
+            }
+        } catch (_) {}
+    }
+
+    return null;
 }
 
 // Stream Auto-Recovery: Reconnects seamlessly if connection drops or token expires
@@ -5291,6 +5314,21 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
         console.warn("Parallel audio stream search error:", err);
     }
 
+    // 2. Direct Echo Music Audio Stream Resolution if JioSaavn did not match and track is from YouTube
+    if (!fresh && ytId) {
+        try {
+            const ytAudio = await fetchYouTubeAudioOnlyStream(ytId);
+            if (ytAudio) {
+                fresh = ytAudio;
+                if (!song.duration || song.duration === '0:00') {
+                    freshDuration = '3:30';
+                }
+            }
+        } catch (ytErr) {
+            console.warn("Echo Music direct audio stream resolution error:", ytErr);
+        }
+    }
+
     if (fresh) {
         song.streamUrl = fresh;
         if (freshDuration && freshDuration !== '0:00') {
@@ -5316,7 +5354,7 @@ async function resolveAndPlayLiveStream(song, forceAudioOnly = true) {
             isAutoRecovering = false;
         });
     } else {
-        // 3. Direct YouTube playback if it's a YouTube track and not already known unplayable
+        // 3. Fallback only if direct audio stream resolution completely failed
         if (ytId && !isYouTubeTrackPlaying && !unplayableYouTubeIds.has(ytId)) {
             playYouTubeVideo(ytId);
         } else {
@@ -5535,8 +5573,15 @@ audioPlayer.addEventListener('timeupdate', () => {
         const nextSong = currentPlaylist[nextIdx];
         if (nextSong && !nextSong.streamUrl && !nextSong._preloading) {
             nextSong._preloading = true;
-            fetchLiveJioSaavn(nextSong.title).then(r => {
-                if (r && r[0]?.streamUrl) nextSong.streamUrl = r[0].streamUrl;
+            const q = nextSong.cleanTitle || nextSong.title;
+            fetchLiveJioSaavn(q).then(async r => {
+                if (r && r[0]?.streamUrl) {
+                    nextSong.streamUrl = r[0].streamUrl;
+                } else if (nextSong.youtubeId || (nextSong.id && String(nextSong.id).startsWith('yt_'))) {
+                    const ytId = nextSong.youtubeId || String(nextSong.id).replace(/^yt_/, '').split('_')[0];
+                    const ytStream = await fetchYouTubeAudioOnlyStream(ytId);
+                    if (ytStream) nextSong.streamUrl = ytStream;
+                }
             }).catch(() => {});
         }
     }

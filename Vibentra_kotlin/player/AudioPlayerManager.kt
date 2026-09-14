@@ -1,7 +1,11 @@
 package com.vibentra.music.player
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.net.wifi.WifiManager
+import android.os.Build
+import android.os.PowerManager
 import com.srivatsan.vibentra.data.model.MusicSource
 import com.srivatsan.vibentra.data.model.Song
 import com.vibentra.music.innertube.YTPlayerUtils
@@ -21,6 +25,7 @@ enum class RepeatMode {
  * Universal Audio Engine for Vibentra.
  * Seamlessly plays both JioSaavn (untouched direct CDN) and YouTube Music (Echo Music engine).
  * Provides full controller logic for play/pause, seek, repeat, shuffle, sleep timer, and liked tracks.
+ * Backed by PARTIAL_WAKE_LOCK & WifiLock for 100% uninterrupted screen-off background streaming.
  */
 object AudioPlayerManager {
 
@@ -28,6 +33,44 @@ object AudioPlayerManager {
     private var mediaPlayer: MediaPlayer? = null
     private var progressJob: Job? = null
     private var sleepTimerJob: Job? = null
+
+    private var appContext: Context? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
+
+    fun init(context: Context) {
+        if (appContext != null) return
+        val ctx = context.applicationContext
+        appContext = ctx
+        try {
+            val pm = ctx.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            wakeLock = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "vibentra:AudioPlayerWakeLock")?.apply {
+                setReferenceCounted(false)
+            }
+            val wm = ctx.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            wifiLock = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                wm?.createWifiLock(WifiManager.WIFI_MODE_FULL_LOW_LATENCY, "vibentra:AudioPlayerWifiLock")
+            } else {
+                wm?.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "vibentra:AudioPlayerWifiLock")
+            }?.apply {
+                setReferenceCounted(false)
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun acquireWakeLocks() {
+        try {
+            wakeLock?.let { if (!it.isHeld) it.acquire(6 * 60 * 60 * 1000L) }
+            wifiLock?.let { if (!it.isHeld) it.acquire() }
+        } catch (_: Exception) {}
+    }
+
+    private fun releaseWakeLocks() {
+        try {
+            wakeLock?.let { if (it.isHeld) it.release() }
+            wifiLock?.let { if (it.isHeld) it.release() }
+        } catch (_: Exception) {}
+    }
 
     // State Flows for Jetpack Compose UI
     private val _currentSong = MutableStateFlow<Song?>(null)
@@ -132,6 +175,11 @@ object AudioPlayerManager {
                     .build()
             )
 
+            // Critical: Enable CPU wake lock on the MediaPlayer directly
+            appContext?.let { ctx ->
+                setWakeMode(ctx, PowerManager.PARTIAL_WAKE_LOCK)
+            }
+
             setDataSource(streamUrl)
 
             setOnPreparedListener { mp ->
@@ -139,6 +187,7 @@ object AudioPlayerManager {
                 _isPlaying.value = true
                 _durationMs.value = mp.duration.toLong().coerceAtLeast(0L)
                 mp.start()
+                acquireWakeLocks()
                 startProgressTracker()
             }
 
@@ -149,6 +198,7 @@ object AudioPlayerManager {
             setOnErrorListener { _, _, _ ->
                 _isBuffering.value = false
                 _isPlaying.value = false
+                releaseWakeLocks()
                 false
             }
 
@@ -163,6 +213,7 @@ object AudioPlayerManager {
             RepeatMode.ONE -> {
                 mediaPlayer?.seekTo(0)
                 mediaPlayer?.start()
+                acquireWakeLocks()
                 _isPlaying.value = true
                 startProgressTracker()
             }
@@ -175,6 +226,7 @@ object AudioPlayerManager {
                     playSong(q[nextIdx])
                 } else {
                     _isPlaying.value = false
+                    releaseWakeLocks()
                 }
             }
             RepeatMode.OFF -> {
@@ -184,6 +236,7 @@ object AudioPlayerManager {
                     playNext()
                 } else {
                     _isPlaying.value = false
+                    releaseWakeLocks()
                 }
             }
         }
@@ -196,9 +249,11 @@ object AudioPlayerManager {
         }
         if (player.isPlaying) {
             player.pause()
+            releaseWakeLocks()
             _isPlaying.value = false
         } else {
             player.start()
+            acquireWakeLocks()
             _isPlaying.value = true
             startProgressTracker()
         }
@@ -208,6 +263,7 @@ object AudioPlayerManager {
         mediaPlayer?.let {
             if (it.isPlaying) {
                 it.pause()
+                releaseWakeLocks()
                 _isPlaying.value = false
             }
         }
@@ -217,6 +273,7 @@ object AudioPlayerManager {
         mediaPlayer?.let {
             if (!it.isPlaying) {
                 it.start()
+                acquireWakeLocks()
                 _isPlaying.value = true
                 startProgressTracker()
             }
@@ -309,10 +366,31 @@ object AudioPlayerManager {
     private fun startProgressTracker() {
         stopProgressTracker()
         progressJob = scope.launch {
+            var hasPreFetchedNext = false
             while (isActive) {
-                mediaPlayer?.let {
-                    if (it.isPlaying) {
-                        _currentPositionMs.value = it.currentPosition.toLong()
+                mediaPlayer?.let { mp ->
+                    if (mp.isPlaying) {
+                        val pos = mp.currentPosition.toLong()
+                        _currentPositionMs.value = pos
+                        val dur = _durationMs.value
+
+                        // Pre-resolve the next YouTube stream 20 seconds before song ends
+                        // to guarantee zero-latency, uninterrupted background track transitions
+                        if (!hasPreFetchedNext && dur > 30000L && (dur - pos) < 20000L) {
+                            hasPreFetchedNext = true
+                            val q = _queue.value
+                            val nextIdx = _currentIndex.value + 1
+                            if (nextIdx in q.indices) {
+                                val nextSong = q[nextIdx]
+                                if (nextSong.source == MusicSource.YOUTUBE_MUSIC && nextSong.streamUrl.isNullOrEmpty()) {
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            YTPlayerUtils.resolveStreamUrl(nextSong.id)
+                                        } catch (_: Exception) {}
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 delay(250)
@@ -328,6 +406,7 @@ object AudioPlayerManager {
     fun release() {
         stopProgressTracker()
         sleepTimerJob?.cancel()
+        releaseWakeLocks()
         mediaPlayer?.release()
         mediaPlayer = null
         _isPlaying.value = false

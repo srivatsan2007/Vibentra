@@ -63,6 +63,10 @@ fun FullMusicPlayerScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        AudioPlayerManager.init(context.applicationContext)
+    }
+
     var isLyricsMode by remember { mutableStateOf(false) }
     var showSleepTimerSheet by remember { mutableStateOf(false) }
     var showOptionsMenu by remember { mutableStateOf(false) }
