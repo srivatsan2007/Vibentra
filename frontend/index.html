@@ -189,7 +189,10 @@
             <div class="topbar-left">
                 <div class="brand-with-logo">
                     <img src="./logo.png" alt="Vibentra Logo" class="brand-logo-img">
-                    <span class="home-brand">Vibentra</span>
+                    <div class="brand-title-group">
+                        <span class="home-greeting-sub" id="homeGreetingSub">GOOD EVENING</span>
+                        <span class="home-brand">Vibentra<span class="brand-dot">●</span></span>
+                    </div>
                 </div>
                 <nav class="desktop-nav-tabs">
                     <button class="desktop-nav-link active" id="desktopNavHome"><i class="fa-solid fa-house"></i> Home</button>
@@ -224,6 +227,18 @@
             <button class="mood-pill" data-category="Indie">Indie</button>
         </div>
 
+        <!-- Echo Music Quick Picks / Listen Again Grid -->
+        <div class="quick-picks-section" id="homeQuickPicksSection" style="display: none;">
+            <div class="quick-picks-header">
+                <div>
+                    <span class="quick-picks-sub">START RADIO BASED ON YOUR TASTE</span>
+                    <h2 class="quick-picks-title">Quick picks</h2>
+                </div>
+                <button class="quick-picks-playall-btn" id="quickPicksPlayAllBtn"><i class="fa-solid fa-play"></i> Play all</button>
+            </div>
+            <div class="quick-picks-grid" id="quickPicksGrid"></div>
+        </div>
+
         <!-- Dynamic Home Music Widget Area (Vinyl Turntable / Dynamic Blur Card / Capsule Pill) -->
         <div class="home-widget-area" id="homeWidgetArea">
             <div id="homeWidgetContainer"></div>
@@ -254,7 +269,7 @@
             </nav>
             <div class="search-input-pill">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Search YouTube Music, JioSaavn..." autocomplete="off">
+                <input type="text" id="searchInput" placeholder="Search YouTube Music, JioSaavn..." autocomplete="off" enterkeyhint="search">
                 <button class="search-clear-btn" id="searchClearBtn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
                 <button class="search-mic-btn" id="searchBarMicBtn" title="Voice Search"><i class="fa-solid fa-microphone"></i></button>
             </div>
@@ -262,6 +277,11 @@
             <div class="profile-avatar-btn" id="searchProfileBtn" title="Your Account">
                 <img id="searchUserAvatarImg" src="https://ui-avatars.com/api/?name=V&background=138086&color=fff" alt="Avatar">
             </div>
+        </div>
+
+        <!-- Live Autocomplete Suggestions List with Diagonal Refine Arrow (↖) -->
+        <div class="search-suggestions-overlay" id="searchSuggestionsOverlay" style="display: none;">
+            <div class="suggestions-list" id="suggestionsList"></div>
         </div>
 
         <!-- Sub-Navigation Tabs (Explore, Top Charts, YouTube Music, JioSaavn, Albums) -->
@@ -285,6 +305,15 @@
 
         <!-- A. EXPLORE VIEW (Default State - Screenshot 1) -->
         <div class="search-explore-view" id="searchExploreView">
+            <!-- Echo Music Recent Searches History Chips -->
+            <div class="explore-section recent-searches-section" id="recentSearchesSection" style="display: none;">
+                <div class="recent-searches-header">
+                    <h3 class="explore-heading">Recent searches</h3>
+                    <button class="clear-all-recent-btn" id="clearAllRecentBtn">Clear all</button>
+                </div>
+                <div class="recent-chips-row" id="recentChipsRow"></div>
+            </div>
+
             <div class="explore-section">
                 <h3 class="explore-heading">For you</h3>
                 <div class="explore-grid">
@@ -912,24 +941,28 @@
         </div>
     </div>
 
-    <!-- Floating Capsule Bottom Navigation Bar (Mobile & Tablet - Matching Screenshot 1) -->
+    <!-- Floating Capsule Bottom Navigation Bar (Mobile & Tablet - Echo Music Capsule) -->
     <nav class="floating-bottom-nav" id="globalBottomNav">
         <button class="nav-item active" id="navHome" title="Home">
             <i class="fa-solid fa-house"></i>
-            <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-item" id="navRecognition" title="Voice Recognition">
-            <i class="fa-solid fa-microphone"></i>
-            <span class="nav-label">Recognition</span>
-        </button>
-        <button class="nav-item" id="navLibrary" title="Library">
-            <i class="fa-solid fa-music"></i>
-            <span class="nav-label">Library</span>
+            <span class="nav-dot"></span>
         </button>
         <button class="nav-item" id="navSearch" title="Search">
             <i class="fa-solid fa-magnifying-glass"></i>
+            <span class="nav-dot"></span>
         </button>
-        <button class="nav-item more-badge" id="navMore" title="More Quick Actions" style="display: none;"><i class="fa-solid fa-ellipsis"></i></button>
+        <button class="nav-item mic-accent" id="navRecognition" title="Voice Search">
+            <i class="fa-solid fa-microphone"></i>
+            <span class="nav-dot"></span>
+        </button>
+        <button class="nav-item" id="navLibrary" title="Library">
+            <i class="fa-solid fa-music"></i>
+            <span class="nav-dot"></span>
+        </button>
+        <button class="nav-item more-badge" id="navMore" title="More Quick Actions">
+            <i class="fa-solid fa-ellipsis"></i>
+            <span class="nav-dot"></span>
+        </button>
     </nav>
 
     <!-- 5. VOICE SEARCH MODAL OVERLAY -->

@@ -191,12 +191,14 @@ function switchScreen(screenName, skipHistory = false) {
             document.querySelectorAll('#desktopNavHome, #desktopSearchNavHome, #desktopLibNavHome').forEach(btn => btn.classList.add('active'));
             if (typeof renderHomeWidget === 'function') renderHomeWidget();
             if (typeof initLastPlayedSong === 'function') initLastPlayedSong();
+            if (typeof updateEchoGreeting === 'function') updateEchoGreeting();
         }
         if (screenName === 'search') {
             searchScreen.classList.add('active');
             const navSearch = document.getElementById('navSearch');
             if (navSearch) navSearch.classList.add('active');
             document.querySelectorAll('#desktopNavSearch, #desktopSearchNavSearch, #desktopLibNavSearch').forEach(btn => btn.classList.add('active'));
+            if (typeof renderRecentSearches === 'function') renderRecentSearches();
         }
         if (screenName === 'library') {
             if (libraryScreen) libraryScreen.classList.add('active');
@@ -317,6 +319,10 @@ window.addEventListener('DOMContentLoaded', () => {
             updateGoogleSyncCardUI(null);
         }
     });
+
+    // Initialize Echo Music Greeting & Recent Searches
+    if (typeof updateEchoGreeting === 'function') updateEchoGreeting();
+    if (typeof renderRecentSearches === 'function') renderRecentSearches();
 
     // 3. Splash presentation - if user was logged in previously, ALWAYS auto-login directly to Home!
     setTimeout(() => {
@@ -3754,6 +3760,11 @@ async function loadHomeFeed(forceRefresh = false) {
 
         container.innerHTML = '';
 
+        // Render Echo Music Quick Picks Grid (Top 6 songs from Trending & YouTube Music)
+        if (typeof renderEchoQuickPicks === 'function') {
+            renderEchoQuickPicks([...mergedViral, ...ytTracks]);
+        }
+
         // Live Feed Status Header Bar
         const statusBar = document.createElement('div');
         statusBar.className = 'home-live-status-bar';
@@ -5380,6 +5391,9 @@ function updatePlayPauseIcons(playing) {
         updateHomeWidgetPlaybackState(playing);
     }
     syncNativeAndroidWidget(null, playing);
+    if (typeof updateQuickPicksActiveState === 'function') {
+        updateQuickPicksActiveState();
+    }
 
     // Live vinyl rotating thumbnail support
     const cover = document.getElementById('fullPlayerCover');
@@ -6769,11 +6783,30 @@ const navSearch = document.getElementById('navSearch');
 const navLibrary = document.getElementById('navLibrary');
 const navMore = document.getElementById('navMore');
 
-if (navHome) navHome.addEventListener('click', () => switchScreen('home'));
+if (navHome) {
+    navHome.addEventListener('click', () => {
+        if (currentActiveScreen === 'home') {
+            const homeScreen = document.getElementById('homeScreen');
+            if (homeScreen) homeScreen.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            switchScreen('home');
+        }
+    });
+}
 if (navSearch) {
     navSearch.addEventListener('click', () => {
-        switchScreen('search');
-        document.getElementById('searchInput')?.focus();
+        if (currentActiveScreen === 'search') {
+            const input = document.getElementById('searchInput');
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        } else {
+            switchScreen('search');
+            setTimeout(() => {
+                document.getElementById('searchInput')?.focus();
+            }, 100);
+        }
     });
 }
 if (navLibrary) navLibrary.addEventListener('click', () => switchScreen('library'));
@@ -7227,6 +7260,302 @@ document.querySelectorAll('#desktopNavLibrary, #desktopSearchNavLibrary, #deskto
 });
 
 // =========================================================
+// ECHO MUSIC DYNAMIC GREETING & QUICK PICKS SYSTEM
+// =========================================================
+export function updateEchoGreeting() {
+    const el = document.getElementById('homeGreetingSub');
+    if (!el) return;
+    const hour = new Date().getHours();
+    let greeting = 'GOOD EVENING';
+    if (hour >= 5 && hour < 12) {
+        greeting = 'GOOD MORNING';
+    } else if (hour >= 12 && hour < 17) {
+        greeting = 'GOOD AFTERNOON';
+    } else if (hour >= 17 && hour < 22) {
+        greeting = 'GOOD EVENING';
+    } else {
+        greeting = 'LATE NIGHT VIBES';
+    }
+    el.textContent = greeting;
+}
+
+let currentQuickPicksList = [];
+
+export function renderEchoQuickPicks(candidateSongs = []) {
+    const sec = document.getElementById('homeQuickPicksSection');
+    const grid = document.getElementById('quickPicksGrid');
+    const playAllBtn = document.getElementById('quickPicksPlayAllBtn');
+    if (!sec || !grid) return;
+
+    // Deduplicate and filter up to 6 distinct valid songs
+    const seen = new Set();
+    const picks = [];
+    (candidateSongs || []).forEach(s => {
+        if (!s || !s.title) return;
+        const key = (s.title || '').toLowerCase().trim();
+        if (!seen.has(key) && picks.length < 6) {
+            seen.add(key);
+            picks.push(s);
+        }
+    });
+
+    if (picks.length === 0) {
+        sec.style.display = 'none';
+        return;
+    }
+
+    currentQuickPicksList = picks;
+    sec.style.display = 'block';
+    grid.innerHTML = '';
+
+    picks.forEach((song, idx) => {
+        const isMatch = currentSongObj && (currentSongObj.id === song.id || currentSongObj.title === song.title);
+        const isPlayingThis = isMatch && isPlaying;
+        const item = document.createElement('div');
+        item.className = `quick-pick-item ${isPlayingThis ? 'playing' : ''}`;
+        item.setAttribute('data-id', song.id || idx);
+
+        item.innerHTML = `
+            <img class="quick-pick-thumb" src="${song.cover || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&q=80'}" alt="${sanitizeText(song.title)}" onerror="this.src='https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&q=80'">
+            <div class="quick-pick-info">
+                <div class="quick-pick-title">${sanitizeText(song.cleanTitle || song.title)}</div>
+                <div class="quick-pick-artist">${sanitizeText(song.artist || 'Featured Artist')}</div>
+            </div>
+            <button class="quick-pick-play-btn" title="Play">
+                <i class="fa-solid ${isPlayingThis ? 'fa-pause' : 'fa-play'}"></i>
+            </button>
+        `;
+
+        item.addEventListener('click', () => {
+            const isCurr = currentSongObj && (currentSongObj.id === song.id || currentSongObj.title === song.title);
+            if (isCurr) {
+                togglePlayPause();
+            } else {
+                playTrack(song, currentQuickPicksList);
+            }
+            updateQuickPicksActiveState();
+        });
+
+        grid.appendChild(item);
+    });
+
+    if (playAllBtn && !playAllBtn.dataset.bound) {
+        playAllBtn.dataset.bound = 'true';
+        playAllBtn.addEventListener('click', () => {
+            if (currentQuickPicksList.length > 0) {
+                playTrack(currentQuickPicksList[0], currentQuickPicksList);
+                showNotification('Playing Quick picks radio 🎶', 'success');
+                updateQuickPicksActiveState();
+            }
+        });
+    }
+}
+
+export function updateQuickPicksActiveState() {
+    const items = document.querySelectorAll('.quick-pick-item');
+    items.forEach(item => {
+        const id = item.getAttribute('data-id');
+        const title = item.querySelector('.quick-pick-title')?.textContent;
+        const isMatch = currentSongObj && (currentSongObj.id == id || currentSongObj.title === title);
+        const icon = item.querySelector('.quick-pick-play-btn i');
+        if (isMatch) {
+            item.classList.toggle('playing', isPlaying);
+            if (icon) {
+                icon.className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+            }
+        } else {
+            item.classList.remove('playing');
+            if (icon) {
+                icon.className = 'fa-solid fa-play';
+            }
+        }
+    });
+}
+
+// =========================================================
+// ECHO MUSIC RECENT SEARCHES HISTORY MANAGEMENT
+// =========================================================
+const RECENT_SEARCHES_KEY = 'vibentra_recent_searches';
+
+export function getRecentSearches() {
+    try {
+        const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+        if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) return arr;
+        }
+    } catch (_) {}
+    return [];
+}
+
+export function addRecentSearch(query) {
+    if (!query || typeof query !== 'string') return;
+    const clean = query.trim();
+    if (!clean || clean.length < 2) return;
+    let list = getRecentSearches().filter(q => q.toLowerCase() !== clean.toLowerCase());
+    list.unshift(clean);
+    if (list.length > 10) list = list.slice(0, 10);
+    try {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(list));
+    } catch (_) {}
+    renderRecentSearches();
+}
+
+export function removeRecentSearch(query) {
+    if (!query) return;
+    let list = getRecentSearches().filter(q => q.toLowerCase() !== query.toLowerCase().trim());
+    try {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(list));
+    } catch (_) {}
+    renderRecentSearches();
+}
+
+export function clearRecentSearches() {
+    try {
+        localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch (_) {}
+    renderRecentSearches();
+}
+
+export function renderRecentSearches() {
+    const section = document.getElementById('recentSearchesSection');
+    const row = document.getElementById('recentChipsRow');
+    if (!section || !row) return;
+
+    const list = getRecentSearches();
+    if (list.length === 0) {
+        section.style.display = 'none';
+        row.innerHTML = '';
+        return;
+    }
+
+    section.style.display = 'block';
+    row.innerHTML = '';
+
+    list.forEach(q => {
+        const chip = document.createElement('div');
+        chip.className = 'recent-chip';
+        chip.setAttribute('data-query', q);
+        chip.innerHTML = `
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>${sanitizeText(q)}</span>
+            <button class="recent-chip-remove" data-remove="${sanitizeText(q)}" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+        `;
+
+        chip.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.recent-chip-remove');
+            if (removeBtn) {
+                e.stopPropagation();
+                removeRecentSearch(q);
+                return;
+            }
+            if (searchInput) {
+                searchInput.value = q;
+                handleSearchInputChange(q);
+                performLiveSearch(q);
+                searchInput.blur();
+            }
+        });
+
+        row.appendChild(chip);
+    });
+}
+
+document.getElementById('clearAllRecentBtn')?.addEventListener('click', () => {
+    clearRecentSearches();
+    showNotification('Cleared all recent searches', 'success');
+});
+
+// =========================================================
+// ECHO MUSIC AUTOCOMPLETE SUGGESTIONS & VIRTUAL KEYBOARD
+// =========================================================
+export function updateSearchSuggestions(rawQuery) {
+    const overlay = document.getElementById('searchSuggestionsOverlay');
+    const listEl = document.getElementById('suggestionsList');
+    if (!overlay || !listEl) return;
+
+    const q = (rawQuery || '').trim();
+    if (q.length < 2) {
+        overlay.style.display = 'none';
+        listEl.innerHTML = '';
+        return;
+    }
+
+    // 1. Gather suggestions:
+    // a. Matching recent searches
+    const recent = getRecentSearches().filter(r => r.toLowerCase().includes(q.toLowerCase()) && r.toLowerCase() !== q.toLowerCase());
+    
+    // b. Smart music suffix completions matching Echo Music style
+    const suffixes = ['songs', 'hits', 'melody', 'remix', 'bgm', 'status', 'audio', 'theme'];
+    const candidates = [];
+
+    // Add recent matches first
+    recent.forEach(r => candidates.push({ text: r, isRecent: true }));
+
+    // Add prefix-based completions
+    suffixes.forEach(s => {
+        if (!q.toLowerCase().includes(s)) {
+            candidates.push({ text: `${q} ${s}`, isRecent: false });
+        }
+    });
+
+    const suggestions = candidates.slice(0, 6);
+    if (suggestions.length === 0) {
+        overlay.style.display = 'none';
+        listEl.innerHTML = '';
+        return;
+    }
+
+    overlay.style.display = 'block';
+    listEl.innerHTML = '';
+
+    suggestions.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'suggestion-row';
+        row.setAttribute('data-text', item.text);
+
+        row.innerHTML = `
+            <i class="fa-solid ${item.isRecent ? 'fa-clock-rotate-left' : 'fa-magnifying-glass'} suggestion-icon"></i>
+            <span class="suggestion-text">${sanitizeText(item.text)}</span>
+            <button class="suggestion-refine-btn" data-refine="${sanitizeText(item.text)}" title="Refine search">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+        `;
+
+        row.addEventListener('click', (e) => {
+            const refineBtn = e.target.closest('.suggestion-refine-btn');
+            if (refineBtn) {
+                // Refine button: populate search input and keep keyboard active
+                e.stopPropagation();
+                if (searchInput) {
+                    searchInput.value = item.text;
+                    searchInput.focus();
+                    handleSearchInputChange(item.text);
+                }
+                return;
+            }
+
+            // Row click: execute search, add to recent, dismiss keyboard
+            if (searchInput) {
+                searchInput.value = item.text;
+                addRecentSearch(item.text);
+                hideSearchSuggestions();
+                searchInput.blur();
+                handleSearchInputChange(item.text);
+                performLiveSearch(item.text);
+            }
+        });
+
+        listEl.appendChild(row);
+    });
+}
+
+export function hideSearchSuggestions() {
+    const overlay = document.getElementById('searchSuggestionsOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// =========================================================
 // 6. SEARCH PAGE & 100% LIVE MULTI-SOURCE SEARCH ENGINE
 // =========================================================
 const searchInput = document.getElementById('searchInput');
@@ -7243,7 +7572,7 @@ const searchResultsContent = document.getElementById('searchResultsContent');
 let searchDebounceTimer = null;
 let currentSearchResults = null;
 
-// A. Input Event & Clear Logic
+// A. Input Event & Clear Logic with Virtual Keyboard Ergonomics
 if (searchInput) {
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
@@ -7255,6 +7584,9 @@ if (searchInput) {
             const query = searchInput.value.trim();
             if (query.length > 0) {
                 clearTimeout(searchDebounceTimer);
+                addRecentSearch(query);
+                hideSearchSuggestions();
+                searchInput.blur();
                 performLiveSearch(query);
             }
         }
@@ -7279,6 +7611,24 @@ if (searchBarMicBtn) {
     });
 }
 
+// Dismiss keyboard and suggestions on scroll
+searchResultsView?.addEventListener('scroll', () => {
+    searchInput?.blur();
+    hideSearchSuggestions();
+}, { passive: true });
+
+searchExploreView?.addEventListener('scroll', () => {
+    searchInput?.blur();
+    hideSearchSuggestions();
+}, { passive: true });
+
+// Close suggestions when tapping outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-input-pill') && !e.target.closest('.search-suggestions-overlay')) {
+        hideSearchSuggestions();
+    }
+});
+
 function handleSearchInputChange(query) {
     if (query.length === 0) {
         resetSearchToExplore();
@@ -7290,6 +7640,8 @@ function handleSearchInputChange(query) {
         searchFilterChips.style.display = 'flex';
         searchExploreView.style.display = 'none';
         searchResultsView.style.display = 'block';
+
+        updateSearchSuggestions(query);
 
         clearTimeout(searchDebounceTimer);
         searchDebounceTimer = setTimeout(() => {
@@ -7307,6 +7659,8 @@ function resetSearchToExplore() {
     searchExploreView.style.display = 'flex';
     searchResultsView.style.display = 'none';
     searchResultsContent.innerHTML = '';
+    hideSearchSuggestions();
+    renderRecentSearches();
 }
 
 // B. Explore Cards Click Handler (Screenshot 1)
@@ -7469,6 +7823,8 @@ function applyFilterToSearchResults(filter) {
 
 // E. 100% Live Multi-Source Search (JioSaavn + YouTube Music)
 async function performLiveSearch(query) {
+    if (typeof addRecentSearch === 'function') addRecentSearch(query);
+    if (typeof hideSearchSuggestions === 'function') hideSearchSuggestions();
     searchLoader.style.display = 'flex';
     searchResultsContent.innerHTML = '';
 
