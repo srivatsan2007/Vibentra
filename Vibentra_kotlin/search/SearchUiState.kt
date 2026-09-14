@@ -57,5 +57,14 @@ data class SearchUiState(
     val albums: List<AlbumResult> = emptyList(),
     val artists: List<ArtistResult> = emptyList(),
     val playlists: List<PlaylistResult> = emptyList(),
+    val recentSearches: List<String> = listOf(
+        "Leo - Badass",
+        "Anirudh Ravichander",
+        "A.R. Rahman Hits",
+        "Hukum - Thalaivar Alappara",
+        "Kalaastar",
+        "Arabic Kuthu"
+    ),
+    val suggestions: List<String> = emptyList(),
     val errorMessage: String? = null
 )

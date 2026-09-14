@@ -22,7 +22,18 @@ class SearchViewModel(
     private var searchJob: Job? = null
 
     fun onQueryChanged(newQuery: String) {
-        _uiState.update { it.copy(query = newQuery) }
+        val cleanQ = newQuery.trim()
+        val suggestionsList = if (cleanQ.length >= 2) {
+            listOf(
+                cleanQ,
+                "$cleanQ Song",
+                "$cleanQ Lyrical Video",
+                "$cleanQ Full Album",
+                "$cleanQ Remix"
+            ).distinct()
+        } else emptyList()
+
+        _uiState.update { it.copy(query = newQuery, suggestions = suggestionsList) }
         if (newQuery.isBlank()) {
             clearSearch()
             return
@@ -33,6 +44,26 @@ class SearchViewModel(
         searchJob = viewModelScope.launch {
             delay(350)
             executeSearch(newQuery.trim())
+        }
+    }
+
+    fun addRecentSearch(query: String) {
+        if (query.isBlank()) return
+        _uiState.update { state ->
+            val updated = (listOf(query.trim()) + state.recentSearches.filterNot { it.equals(query.trim(), ignoreCase = true) }).take(10)
+            state.copy(recentSearches = updated)
+        }
+    }
+
+    fun removeRecentSearch(query: String) {
+        _uiState.update { state ->
+            state.copy(recentSearches = state.recentSearches.filterNot { it.equals(query, ignoreCase = true) })
+        }
+    }
+
+    fun clearRecentSearches() {
+        _uiState.update { state ->
+            state.copy(recentSearches = emptyList())
         }
     }
 
@@ -154,6 +185,7 @@ class SearchViewModel(
     }
 
     private suspend fun executeSearch(query: String) {
+        if (query.isNotBlank()) addRecentSearch(query)
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         try {
             val songs = repository.searchSongsLive(query)

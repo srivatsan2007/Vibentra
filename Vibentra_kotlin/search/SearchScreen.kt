@@ -5,18 +5,24 @@ import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -25,11 +31,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,13 +61,27 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+    var isInputFocused by remember { mutableStateOf(false) }
+
+    val dismissKeyboard = {
+        keyboardController?.hide()
+        focusManager.clearFocus()
+        isInputFocused = false
+    }
+
     // Voice recognition launcher
     val voiceSearchLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            spokenText?.let { viewModel.onVoiceSearchRecognized(it) }
+            spokenText?.let {
+                dismissKeyboard()
+                viewModel.onVoiceSearchRecognized(it)
+            }
         }
     }
 
@@ -62,6 +89,7 @@ fun SearchScreen(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF090F14))
+            .imePadding()
     ) {
         val screenWidth = maxWidth
         val isTabletOrLaptop = screenWidth >= 768.dp
@@ -71,11 +99,20 @@ fun SearchScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            // 1. Search Bar Header
+            // 1. Search Bar Header with FocusRequester & Virtual Keyboard Actions
             SearchBarHeader(
                 query = uiState.query,
                 onQueryChange = { viewModel.onQueryChanged(it) },
-                onClearClick = { viewModel.clearSearch() },
+                onSearchAction = {
+                    dismissKeyboard()
+                    if (uiState.query.isNotBlank()) {
+                        viewModel.addRecentSearch(uiState.query)
+                    }
+                },
+                onClearClick = {
+                    viewModel.clearSearch()
+                    focusRequester.requestFocus()
+                },
                 onVoiceClick = {
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -84,6 +121,7 @@ fun SearchScreen(
                     voiceSearchLauncher.launch(intent)
                 },
                 onBackClick = {
+                    dismissKeyboard()
                     if (uiState.query.isNotBlank()) {
                         viewModel.clearSearch()
                     } else {
@@ -91,6 +129,8 @@ fun SearchScreen(
                     }
                 },
                 isSearching = uiState.query.isNotBlank(),
+                focusRequester = focusRequester,
+                onFocusChanged = { focused -> isInputFocused = focused },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = if (isTabletOrLaptop) 36.dp else 16.dp, vertical = 12.dp)
@@ -100,46 +140,88 @@ fun SearchScreen(
             if (uiState.query.isBlank()) {
                 SearchTabsRow(
                     selectedTab = uiState.selectedTab,
-                    onTabSelected = { viewModel.onTabSelected(it) },
+                    onTabSelected = { tab ->
+                        dismissKeyboard()
+                        viewModel.onTabSelected(tab)
+                    },
                     modifier = Modifier.padding(horizontal = if (isTabletOrLaptop) 36.dp else 20.dp)
                 )
             } else {
                 SearchFilterChipsRow(
                     selectedFilter = uiState.selectedFilter,
-                    onFilterSelected = { viewModel.onFilterSelected(it) },
+                    onFilterSelected = { filter ->
+                        dismissKeyboard()
+                        viewModel.onFilterSelected(filter)
+                    },
                     modifier = Modifier.padding(horizontal = if (isTabletOrLaptop) 36.dp else 16.dp, vertical = 8.dp)
                 )
             }
 
-            // 3. Main Content: Explore View vs Search Results View
+            // 3. Main Content: Explore View vs Suggestions vs Search Results View
             if (uiState.query.isBlank()) {
                 ExploreView(
-                    onCardClick = { query -> viewModel.onQueryChanged(query) },
+                    recentSearches = uiState.recentSearches,
+                    onCardClick = { query ->
+                        dismissKeyboard()
+                        viewModel.onQueryChanged(query)
+                    },
+                    onRemoveRecent = { query ->
+                        viewModel.removeRecentSearch(query)
+                    },
+                    onClearAllRecent = {
+                        viewModel.clearRecentSearches()
+                    },
                     isTabletOrLaptop = isTabletOrLaptop,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = if (isTabletOrLaptop) 36.dp else 20.dp, vertical = 16.dp)
                 )
+            } else if (isInputFocused && uiState.suggestions.isNotEmpty()) {
+                // Live Auto-complete Suggestions overlay when typing with virtual keyboard active
+                SearchSuggestionsList(
+                    suggestions = uiState.suggestions,
+                    query = uiState.query,
+                    onSelectSuggestion = { suggestion ->
+                        dismissKeyboard()
+                        viewModel.onQueryChanged(suggestion)
+                        viewModel.addRecentSearch(suggestion)
+                    },
+                    onRefineSuggestion = { suggestion ->
+                        viewModel.onQueryChanged(suggestion)
+                        focusRequester.requestFocus()
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = if (isTabletOrLaptop) 36.dp else 16.dp, vertical = 8.dp)
+                )
             } else {
                 SearchResultsList(
                     uiState = uiState,
-                    onSongClick = onSongClick,
+                    onSongClick = { song ->
+                        dismissKeyboard()
+                        onSongClick(song)
+                    },
                     onPlaylistClick = { playlist ->
+                        dismissKeyboard()
                         viewModel.loadPlaylistTracks(playlist) { tracks ->
                             if (tracks.isNotEmpty()) onSongClick(tracks.first())
                         }
                     },
                     onVideoClick = { video ->
+                        dismissKeyboard()
                         val song = viewModel.getVideoTrackAsSong(video)
                         onSongClick(song)
                     },
                     onPlayAllVideos = {
+                        dismissKeyboard()
                         val videoSongs = viewModel.loadVideoPlaylistTracks()
                         if (videoSongs.isNotEmpty()) onSongClick(videoSongs.first())
                     },
                     onFilterClick = { filter ->
+                        dismissKeyboard()
                         viewModel.onFilterSelected(filter)
                     },
+                    onDismissKeyboard = dismissKeyboard,
                     isTabletOrLaptop = isTabletOrLaptop,
                     modifier = Modifier
                         .fillMaxSize()
@@ -154,10 +236,13 @@ fun SearchScreen(
 fun SearchBarHeader(
     query: String,
     onQueryChange: (String) -> Unit,
+    onSearchAction: () -> Unit,
     onClearClick: () -> Unit,
     onVoiceClick: () -> Unit,
     onBackClick: () -> Unit,
     isSearching: Boolean,
+    focusRequester: FocusRequester,
+    onFocusChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -174,13 +259,14 @@ fun SearchBarHeader(
             }
         }
 
-        // Pill Input
+        // Echo Music-style Pill Search Input Capsule
         Box(
             modifier = Modifier
                 .weight(1f)
-                .height(48.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(Color(0xFF1E242C))
+                .height(50.dp)
+                .clip(RoundedCornerShape(25.dp))
+                .background(Color(0xFF18222C))
+                .border(BorderStroke(1.dp, Color(0xFF243545)), RoundedCornerShape(25.dp))
                 .padding(horizontal = 14.dp),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -213,10 +299,20 @@ fun SearchBarHeader(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color(0xFF06B6D4)
                     ),
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = { onSearchAction() }
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { onFocusChanged(it.isFocused) }
                 )
 
                 if (query.isNotEmpty()) {
@@ -248,6 +344,69 @@ fun SearchBarHeader(
                 imageVector = Icons.Default.Public,
                 contentDescription = "Globe / Sources",
                 tint = Color(0xFF94A3B8)
+            )
+        }
+    }
+}
+
+@Composable
+fun SearchSuggestionsList(
+    suggestions: List<String>,
+    query: String,
+    onSelectSuggestion: (String) -> Unit,
+    onRefineSuggestion: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF141E26))
+            .padding(vertical = 6.dp)
+    ) {
+        items(suggestions) { suggestion ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSelectSuggestion(suggestion) }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = Color(0xFF06B6D4),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(14.dp))
+                Text(
+                    text = suggestion,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                // Echo Music-style Diagonal Refine Arrow (↖)
+                IconButton(
+                    onClick = { onRefineSuggestion(suggestion) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Refine suggestion",
+                        tint = Color(0xFF94A3B8),
+                        modifier = Modifier
+                            .size(16.dp)
+                            .rotate(135f)
+                    )
+                }
+            }
+            HorizontalDivider(
+                color = Color(0xFF243545).copy(alpha = 0.5f),
+                thickness = 0.5.dp,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
     }
@@ -314,6 +473,13 @@ fun SearchFilterChipsRow(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .background(if (isSelected) Color(0xFF243545) else Color(0xFF18222C))
+                    .border(
+                        BorderStroke(
+                            1.dp,
+                            if (isSelected) Color(0xFF06B6D4) else Color(0xFF243545)
+                        ),
+                        RoundedCornerShape(20.dp)
+                    )
                     .clickable { onFilterSelected(filter) }
                     .padding(horizontal = 16.dp, vertical = 7.dp)
             ) {
@@ -330,7 +496,10 @@ fun SearchFilterChipsRow(
 
 @Composable
 fun ExploreView(
+    recentSearches: List<String>,
     onCardClick: (String) -> Unit,
+    onRemoveRecent: (String) -> Unit,
+    onClearAllRecent: () -> Unit,
     isTabletOrLaptop: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -338,6 +507,82 @@ fun ExploreView(
     val moodsList = listOf("Chill", "Commute", "Energize", "Feel good", "Focus", "Gaming", "Party", "Romance")
 
     LazyColumn(modifier = modifier) {
+        // Recent Searches Section (Echo Music History chips)
+        if (recentSearches.isNotEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Recent searches",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Clear all",
+                        color = Color(0xFF06B6D4),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .clickable { onClearAllRecent() }
+                            .padding(4.dp)
+                    )
+                }
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp)
+                ) {
+                    items(recentSearches) { query ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color(0xFF18222C))
+                                .border(BorderStroke(1.dp, Color(0xFF243545)), RoundedCornerShape(20.dp))
+                                .clickable { onCardClick(query) }
+                                .padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = null,
+                                tint = Color(0xFF06B6D4),
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = query,
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(
+                                onClick = { onRemoveRecent(query) },
+                                modifier = Modifier.size(22.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remove",
+                                    tint = Color(0xFF94A3B8),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // For You Section
         item {
             Text(
                 text = "For you",
@@ -401,6 +646,7 @@ fun ExplorePillCard(title: String, onClick: () -> Unit) {
             .height(52.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(Color(0xFF18222C))
+            .border(BorderStroke(1.dp, Color(0xFF243545).copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
             .clickable { onClick() }
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.CenterStart
@@ -424,9 +670,19 @@ fun SearchResultsList(
     onVideoClick: (VideoResult) -> Unit = {},
     onPlayAllVideos: () -> Unit = {},
     onFilterClick: (SearchFilter) -> Unit = {},
+    onDismissKeyboard: () -> Unit = {},
     isTabletOrLaptop: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val listState = rememberLazyListState()
+
+    // Dismiss virtual keyboard automatically upon scrolling results
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            onDismissKeyboard()
+        }
+    }
+
     if (uiState.isLoading) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Color(0xFF06B6D4))
@@ -435,6 +691,7 @@ fun SearchResultsList(
     }
 
     LazyColumn(
+        state = listState,
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -454,7 +711,11 @@ fun SearchResultsList(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0xFF141E26))
-                            .clickable { onSongClick(top) }
+                            .border(BorderStroke(1.dp, Color(0xFF243545)), RoundedCornerShape(14.dp))
+                            .clickable {
+                                onDismissKeyboard()
+                                onSongClick(top)
+                            }
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -514,8 +775,12 @@ fun SearchResultsList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onSongClick(song) }
-                        .padding(vertical = 6.dp),
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            onDismissKeyboard()
+                            onSongClick(song)
+                        }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
@@ -596,7 +861,10 @@ fun SearchResultsList(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
-                                .clickable { onPlayAllVideos() }
+                                .clickable {
+                                    onDismissKeyboard()
+                                    onPlayAllVideos()
+                                }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                         if (uiState.selectedFilter == SearchFilter.ALL && uiState.videos.size > 5) {
@@ -606,7 +874,10 @@ fun SearchResultsList(
                                 color = Color(0xFF94A3B8),
                                 fontSize = 12.sp,
                                 modifier = Modifier
-                                    .clickable { onFilterClick(SearchFilter.VIDEOS) }
+                                    .clickable {
+                                        onDismissKeyboard()
+                                        onFilterClick(SearchFilter.VIDEOS)
+                                    }
                                     .padding(horizontal = 4.dp, vertical = 4.dp)
                             )
                         }
@@ -618,8 +889,12 @@ fun SearchResultsList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onVideoClick(video) }
-                        .padding(vertical = 6.dp),
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            onDismissKeyboard()
+                            onVideoClick(video)
+                        }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(modifier = Modifier.size(width = 68.dp, height = 44.dp)) {
@@ -703,8 +978,9 @@ fun SearchResultsList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { }
-                        .padding(vertical = 6.dp),
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onDismissKeyboard() }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
@@ -759,8 +1035,9 @@ fun SearchResultsList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { }
-                        .padding(vertical = 6.dp),
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onDismissKeyboard() }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
@@ -837,7 +1114,10 @@ fun SearchResultsList(
                             color = Color(0xFF94A3B8),
                             fontSize = 12.sp,
                             modifier = Modifier
-                                .clickable { onFilterClick(SearchFilter.PLAYLISTS) }
+                                .clickable {
+                                    onDismissKeyboard()
+                                    onFilterClick(SearchFilter.PLAYLISTS)
+                                }
                                 .padding(horizontal = 4.dp, vertical = 4.dp)
                         )
                     }
@@ -848,8 +1128,12 @@ fun SearchResultsList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onPlaylistClick(playlist) }
-                        .padding(vertical = 6.dp),
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            onDismissKeyboard()
+                            onPlaylistClick(playlist)
+                        }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
