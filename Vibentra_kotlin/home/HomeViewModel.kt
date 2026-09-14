@@ -16,6 +16,7 @@ import com.srivatsan.vibentra.data.model.MusicSection
 import com.srivatsan.vibentra.data.model.Song
 import com.srivatsan.vibentra.data.repository.MusicRepository
 import com.srivatsan.vibentra.home.components.HomeNavTab
+import com.vibentra.music.player.AudioPlayerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -214,6 +215,19 @@ class HomeViewModel @JvmOverloads constructor(
         if (lastSong != null) {
             _uiState.update { it.copy(currentSong = lastSong, isPlaying = false) }
         }
+
+        // Keep UI state synchronized with AudioPlayerManager in real time
+        viewModelScope.launch {
+            AudioPlayerManager.currentSong.collect { song ->
+                _uiState.update { it.copy(currentSong = song) }
+            }
+        }
+        viewModelScope.launch {
+            AudioPlayerManager.isPlaying.collect { playing ->
+                _uiState.update { it.copy(isPlaying = playing) }
+            }
+        }
+
         loadHomeData()
     }
 
@@ -268,104 +282,25 @@ class HomeViewModel @JvmOverloads constructor(
     }
 
     /**
-     * Play a song with instant audio streaming
+     * Play a song with instant audio streaming.
+     * Delegates to AudioPlayerManager (seamlessly supports both untouched JioSaavn & Echo Music YouTube).
      */
     fun playSong(song: Song) {
         saveLastPlayedSong(song)
-        _uiState.update {
-            it.copy(currentSong = song, isPlaying = true)
-        }
-
-        // Initialize and stream audio
-        song.streamUrl?.let { url ->
-            playAudioUrl(url)
-        } ?: run {
-            // Resolve stream on the fly if needed
-            viewModelScope.launch {
-                val resolved = repository.searchJioSaavn("${song.title} ${song.artist}").firstOrNull()
-                resolved?.streamUrl?.let { stream ->
-                    playAudioUrl(stream)
-                }
-            }
-        }
-    }
-
-    private fun playAudioUrl(url: String) {
-        try {
-            mediaPlayer?.release()
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .build()
-                )
-                setDataSource(url)
-                prepareAsync()
-                setOnPreparedListener { mp ->
-                    if (requestAudioFocus()) {
-                        wasPlayingBeforeFocusLoss = false
-                        mp.start()
-                        registerNoisyReceiver()
-                        _uiState.update { it.copy(isPlaying = true) }
-                    }
-                }
-                setOnCompletionListener {
-                    unregisterNoisyReceiver()
-                    abandonAudioFocus()
-                    nextTrack()
-                }
-                setOnErrorListener { _, _, _ ->
-                    unregisterNoisyReceiver()
-                    abandonAudioFocus()
-                    _uiState.update { it.copy(isPlaying = false) }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            unregisterNoisyReceiver()
-            abandonAudioFocus()
-            _uiState.update { it.copy(isPlaying = false) }
-        }
+        val allSongs = _uiState.value.sections.flatMap { it.songs }
+        AudioPlayerManager.playSong(song, allSongs)
     }
 
     fun togglePlayPause() {
-        mediaPlayer?.let { mp ->
-            if (mp.isPlaying) {
-                wasPlayingBeforeFocusLoss = false
-                mp.pause()
-                unregisterNoisyReceiver()
-                abandonAudioFocus()
-                _uiState.update { it.copy(isPlaying = false) }
-            } else {
-                if (requestAudioFocus()) {
-                    wasPlayingBeforeFocusLoss = false
-                    mp.start()
-                    registerNoisyReceiver()
-                    _uiState.update { it.copy(isPlaying = true) }
-                }
-            }
-        } ?: run {
-            _uiState.value.currentSong?.let { playSong(it) }
-        }
+        AudioPlayerManager.togglePlayPause()
     }
 
     fun nextTrack() {
-        val current = _uiState.value.currentSong ?: return
-        val allSongs = _uiState.value.sections.flatMap { it.songs }
-        val currentIndex = allSongs.indexOfFirst { it.id == current.id }
-        if (currentIndex != -1 && currentIndex + 1 < allSongs.size) {
-            playSong(allSongs[currentIndex + 1])
-        }
+        AudioPlayerManager.playNext()
     }
 
     fun dismissPlayer() {
-        unregisterNoisyReceiver()
-        abandonAudioFocus()
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-        mediaPlayer = null
-        wasPlayingBeforeFocusLoss = false
+        AudioPlayerManager.pause()
         _uiState.update { it.copy(currentSong = null, isPlaying = false) }
     }
 

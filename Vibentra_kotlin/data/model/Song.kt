@@ -21,4 +21,6 @@ data class Song(
     val isCollage: Boolean = false,
     val collageUrls: List<String> = emptyList(),
     val hasPlayOverlay: Boolean = false
-)
+) {
+    val albumArtUrl: String get() = coverUrl
+}

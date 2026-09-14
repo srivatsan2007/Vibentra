@@ -15,6 +15,8 @@ import java.net.URL
 import java.net.URLEncoder
 import com.vibentra.music.search.PlaylistResult
 import com.vibentra.music.search.VideoResult
+import com.vibentra.music.innertube.InnerTube
+import com.vibentra.music.innertube.YTPlayerUtils
 
 /**
  * 100% Dynamic MusicRepository for Vibentra
@@ -59,9 +61,21 @@ class MusicRepository {
     }
 
     /**
-     * 2. Live Search on YouTube Music
+     * 2. Live Search on YouTube Music (100% Echo Music InnerTube Engine)
+     * Queries YouTube Music directly via InnerTube WEB_REMIX with fallback to Piped.
      */
     suspend fun searchYouTubeMusic(query: String): List<Song> = withContext(Dispatchers.IO) {
+        // 1. Primary: Direct InnerTube search (Echo Music architecture)
+        try {
+            val innerTubeSongs = InnerTube.search(query)
+            if (innerTubeSongs.isNotEmpty()) {
+                return@withContext innerTubeSongs
+            }
+        } catch (e: Exception) {
+            // Fall through to fallback
+        }
+
+        // 2. Fallback: Secondary Piped Gateways
         val encodedQuery = URLEncoder.encode(query, "UTF-8")
         for (baseUrl in pipedYouTubeEndpoints) {
             try {
@@ -76,6 +90,23 @@ class MusicRepository {
             }
         }
         emptyList()
+    }
+
+    /**
+     * Resolves the playable audio stream for any song.
+     * - JioSaavn: strictly untouched, returns the direct JioSaavn 320kbps CDN URL.
+     * - YouTube Music: resolves via YTPlayerUtils (VisionOS / Android VR cascade) to bypass 403 blocks.
+     */
+    suspend fun resolveStreamUrl(song: Song): String? = withContext(Dispatchers.IO) {
+        when (song.source) {
+            MusicSource.JIOSAAVN -> {
+                song.streamUrl
+            }
+            MusicSource.YOUTUBE_MUSIC -> {
+                val videoId = if (song.id.startsWith("yt_")) song.id.removePrefix("yt_") else song.id
+                YTPlayerUtils.resolveStreamUrl(videoId)
+            }
+        }
     }
 
     /**
