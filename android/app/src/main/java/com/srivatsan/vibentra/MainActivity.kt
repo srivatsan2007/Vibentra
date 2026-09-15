@@ -60,6 +60,36 @@ class MainActivity : BridgeActivity() {
 
     private var isCallPausedForActivity = false
     private var currentPopupWebView: WebView? = null
+    private val paletteExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+
+    private fun extractImagePaletteNative(imageUrl: String) {
+        if (imageUrl.isBlank()) return
+        paletteExecutor.execute {
+            try {
+                val palette = kotlinx.coroutines.runBlocking {
+                    com.vibentra.music.theme.DynamicPaletteExtractor.extractFromUrl(this@MainActivity, imageUrl)
+                }
+                val domHex = palette.dominantHex
+                val secHex = palette.secondaryHex
+                val accHex = palette.accentHex
+                val bgHex = palette.backgroundHex
+
+                runOnUiThread {
+                    try {
+                        val safeUrl = imageUrl.replace("'", "\\'")
+                        bridge?.webView?.evaluateJavascript(
+                            "if (typeof window.onNativePaletteExtracted === 'function') { window.onNativePaletteExtracted('$safeUrl', '$domHex', '$secHex', '$accHex', '$bgHex'); }",
+                            null
+                        )
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Error posting extracted palette to WebView", t)
+                    }
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Native palette extraction error for $imageUrl", t)
+            }
+        }
+    }
 
     private fun dismissPopup() {
         runOnUiThread {
@@ -312,12 +342,19 @@ class MainActivity : BridgeActivity() {
                 cookieManager.setAcceptThirdPartyCookies(webView, true)
             }
 
-            webView.addJavascriptInterface(object : Any() {
+            val paletteBridgeObj = object : Any() {
                 @JavascriptInterface
                 fun exitApp() {
                     runOnUiThread { finish() }
                 }
-            }, "NativeBackBridge")
+
+                @JavascriptInterface
+                fun extractPalette(imageUrl: String) {
+                    extractImagePaletteNative(imageUrl)
+                }
+            }
+            webView.addJavascriptInterface(paletteBridgeObj, "NativeBackBridge")
+            webView.addJavascriptInterface(paletteBridgeObj, "NativePaletteBridge")
 
             // Track active popup webview
             webView.webChromeClient = object : WebChromeClient() {

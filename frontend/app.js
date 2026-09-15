@@ -5610,42 +5610,121 @@ let isPlayerLyricsMode = false;
 let currentInPlayerLyricsLines = [];
 let playerRepeatMode = 'off'; // 'off' | 'all' | 'one'
 
+// Echo Music Dynamic Canvas Palettes (Curated Harmonic Fallbacks for Web / Offline)
+const DYNAMIC_FALLBACK_PALETTES = [
+    { dom: '#0E7490', sec: '#1E1B4B', vib: '#06B6D4', bg: '#070B14' }, // Cyber Cyan
+    { dom: '#9333EA', sec: '#1E1B4B', vib: '#A855F7', bg: '#09071A' }, // Electric Purple
+    { dom: '#E11D48', sec: '#3B0716', vib: '#FB7185', bg: '#120509' }, // Neon Rose
+    { dom: '#D97706', sec: '#291804', vib: '#FBBF24', bg: '#0F0903' }, // Amber Sunset
+    { dom: '#059669', sec: '#062C24', vib: '#10B981', bg: '#040F0C' }, // Emerald Glow
+    { dom: '#2563EB', sec: '#0F172A', vib: '#38BDF8', bg: '#060B18' }, // Ocean Indigo
+    { dom: '#C026D3', sec: '#2E0854', vib: '#E879F9', bg: '#10051C' }  // Magenta Dusk
+];
+
+function getFallbackPaletteForSong(key) {
+    if (!key) return DYNAMIC_FALLBACK_PALETTES[0];
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+        hash = ((hash << 5) - hash) + key.charCodeAt(i);
+        hash |= 0;
+    }
+    const idx = Math.abs(hash) % DYNAMIC_FALLBACK_PALETTES.length;
+    return DYNAMIC_FALLBACK_PALETTES[idx];
+}
+
+export function applyDynamicPlayerPalette(dom, sec, vib, bg) {
+    const fullPlayer = document.getElementById('fullPlayerScreen');
+    if (!fullPlayer) return;
+
+    if (dom) fullPlayer.style.setProperty('--ambient-c1', dom);
+    if (sec) fullPlayer.style.setProperty('--ambient-c2', sec);
+    if (vib) fullPlayer.style.setProperty('--ambient-vibrant', vib);
+    if (bg) fullPlayer.style.setProperty('--ambient-bg', bg);
+
+    // Dynamic artwork ambient drop-shadow glow
+    const artContainer = document.getElementById('playerArtworkContainer');
+    if (artContainer && dom) {
+        artContainer.style.boxShadow = `0 16px 48px -10px ${dom}88, 0 8px 24px -6px rgba(0,0,0,0.7)`;
+    }
+
+    // Dynamic progress bar wave & track accent
+    const waveEl = document.getElementById('playerTimelineLoadingWave');
+    if (waveEl && vib) {
+        waveEl.style.setProperty('--ambient-vibrant', vib);
+    }
+}
+
+// Global callback triggered by Android NativeBackBridge.extractPalette
+if (typeof window !== 'undefined') {
+    window.onNativePaletteExtracted = function(url, dom, sec, vib, bg) {
+        applyDynamicPlayerPalette(dom, sec, vib, bg);
+    };
+}
+
 export function updateDynamicPlayerAmbient(coverUrl) {
     if (!coverUrl) return;
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.src = coverUrl;
-    img.onload = () => {
-        try {
-            const canvas = document.createElement('canvas');
-            canvas.width = 16;
-            canvas.height = 16;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, 16, 16);
-            const data = ctx.getImageData(0, 0, 16, 16).data;
-            let rTotal = 0, gTotal = 0, bTotal = 0, count = 0;
-            for (let i = 0; i < data.length; i += 16) {
-                const r = data[i], g = data[i + 1], b = data[i + 2];
-                const lum = (r * 299 + g * 587 + b * 114) / 1000;
-                if (lum > 25 && lum < 230) {
-                    rTotal += r;
-                    gTotal += g;
-                    bTotal += b;
-                    count++;
-                }
+
+    // 1. Immediately update blurred artwork backdrop (100% immune to CORS)
+    const blurEl = document.getElementById('playerAmbientArtBlur');
+    if (blurEl) {
+        blurEl.style.backgroundImage = `url("${coverUrl}")`;
+        blurEl.style.opacity = '0.88';
+    }
+
+    // 2. Query Native Android Bridge if running inside Vibentra Kotlin APK
+    if (typeof window !== 'undefined') {
+        const bridge = window.NativePaletteBridge || window.NativeBackBridge;
+        if (bridge && typeof bridge.extractPalette === 'function') {
+            try {
+                bridge.extractPalette(coverUrl);
+                return;
+            } catch (e) {
+                console.warn('Native extractPalette error:', e);
             }
-            if (count > 0) {
-                const r = Math.round(rTotal / count);
-                const g = Math.round(gTotal / count);
-                const b = Math.round(bTotal / count);
-                const fullPlayer = document.getElementById('fullPlayerScreen');
-                if (fullPlayer) {
-                    fullPlayer.style.setProperty('--ambient-c1', `rgb(${Math.max(16, Math.min(200, r))}, ${Math.max(22, Math.min(200, g))}, ${Math.max(32, Math.min(200, b))})`);
-                    fullPlayer.style.setProperty('--ambient-c2', `rgb(${Math.max(10, Math.round(r * 0.4))}, ${Math.max(14, Math.round(g * 0.4))}, ${Math.max(22, Math.round(b * 0.4))})`);
+        }
+    }
+
+    // 3. Web & Cross-Origin Resilient Color Extraction
+    const fallback = getFallbackPaletteForSong(coverUrl + (currentSongObj?.title || ''));
+    applyDynamicPlayerPalette(fallback.dom, fallback.sec, fallback.vib, fallback.bg);
+
+    // Try canvas extraction (works when CORS headers are present or image is local/proxied)
+    try {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = coverUrl;
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 16;
+                canvas.height = 16;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 16, 16);
+                const data = ctx.getImageData(0, 0, 16, 16).data;
+                let rTotal = 0, gTotal = 0, bTotal = 0, count = 0;
+                for (let i = 0; i < data.length; i += 16) {
+                    const r = data[i], g = data[i + 1], b = data[i + 2];
+                    const lum = (r * 299 + g * 587 + b * 114) / 1000;
+                    if (lum > 25 && lum < 230) {
+                        rTotal += r;
+                        gTotal += g;
+                        bTotal += b;
+                        count++;
+                    }
                 }
-            }
-        } catch (_) {}
-    };
+                if (count > 0) {
+                    const r = Math.round(rTotal / count);
+                    const g = Math.round(gTotal / count);
+                    const b = Math.round(bTotal / count);
+                    const dom = `rgb(${Math.max(16, Math.min(200, r))}, ${Math.max(22, Math.min(200, g))}, ${Math.max(32, Math.min(200, b))})`;
+                    const sec = `rgb(${Math.max(10, Math.round(r * 0.45))}, ${Math.max(14, Math.round(g * 0.45))}, ${Math.max(22, Math.round(b * 0.55))})`;
+                    const vib = `rgb(${Math.min(255, Math.round(r * 1.3))}, ${Math.min(255, Math.round(g * 1.3))}, ${Math.min(255, Math.round(b * 1.3))})`;
+                    const bg = `rgb(${Math.max(6, Math.round(r * 0.15))}, ${Math.max(9, Math.round(g * 0.15))}, ${Math.max(16, Math.round(b * 0.20))})`;
+                    applyDynamicPlayerPalette(dom, sec, vib, bg);
+                }
+            } catch (_) {}
+        };
+    } catch (_) {}
 }
 
 export async function loadInPlayerLyrics(song) {

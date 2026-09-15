@@ -322,6 +322,18 @@ class HomeViewModel @JvmOverloads constructor(
         }
     }
 
+    fun searchAndPlayQuery(query: String) {
+        viewModelScope.launch {
+            try {
+                val results = repository.searchSongsLive(query)
+                val first = results.firstOrNull()
+                if (first != null) {
+                    AudioPlayerManager.playSong(first, results)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     fun togglePlayPause() {
         AudioPlayerManager.togglePlayPause()
     }

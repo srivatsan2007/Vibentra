@@ -19,6 +19,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -100,10 +102,15 @@ fun FullMusicPlayerScreen(
         animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
         label = "secondaryColor"
     )
-    val backgroundColorAnimated by animateColorAsState(
-        targetValue = dynamicPalette.background,
+    val ambientTopAnimated by animateColorAsState(
+        targetValue = dynamicPalette.ambientTop,
         animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
-        label = "backgroundColor"
+        label = "ambientTopColor"
+    )
+    val ambientBottomAnimated by animateColorAsState(
+        targetValue = dynamicPalette.ambientBottom,
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+        label = "ambientBottomColor"
     )
 
     // Play/Pause button bounce animation
@@ -116,21 +123,45 @@ fun FullMusicPlayerScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        dominantColorAnimated,
-                        secondaryColorAnimated,
-                        backgroundColorAnimated
+            .background(ambientBottomAnimated)
+    ) {
+        // Echo Music Ambient Canvas: Dynamically blurred artwork backdrop
+        if (song.coverUrl.isNotBlank()) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(song.coverUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scale(1.25f)
+                    .blur(50.dp)
+                    .alpha(0.35f)
+            )
+        }
+
+        // Animated dynamic palette gradient mesh overlay matching Echo Music
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            ambientTopAnimated.copy(alpha = 0.92f),
+                            ambientTopAnimated.copy(alpha = 0.85f),
+                            ambientBottomAnimated.copy(alpha = 0.98f)
+                        )
                     )
                 )
-            )
-            .statusBarsPadding()
-            .navigationBarsPadding()
-    ) {
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

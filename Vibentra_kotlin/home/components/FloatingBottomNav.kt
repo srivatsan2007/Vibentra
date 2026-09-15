@@ -106,13 +106,18 @@ fun FloatingBottomNav(
                 onClick = { onTabSelected(HomeNavTab.LIBRARY) }
             )
 
-            // 5. More Options / Profile
+            // 5. More Options / Quick Hubs (AI Hub, Connect Hub, Wrapped, Favorites) - Styled exactly as Image 1
+            val isMoreSelected = currentTab == HomeNavTab.MORE
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF202B38))
-                    .border(1.dp, Color(0xFF2E3D4E), CircleShape)
+                    .background(if (isMoreSelected) Color(0xFF5C3833) else Color(0xFF442B28))
+                    .border(
+                        width = if (isMoreSelected) 1.5.dp else 1.dp,
+                        color = if (isMoreSelected) Color(0xFFE5A88B) else Color(0xFF63413B),
+                        shape = CircleShape
+                    )
                     .clickable {
                         onTabSelected(HomeNavTab.MORE)
                         onMoreClick()
@@ -121,9 +126,9 @@ fun FloatingBottomNav(
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreHoriz,
-                    contentDescription = "More Options",
+                    contentDescription = "More Hubs (AI, Connect, Wrapped, Favorites)",
                     tint = Color.White,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

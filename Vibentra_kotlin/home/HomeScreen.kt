@@ -40,6 +40,7 @@ import com.srivatsan.vibentra.data.model.Song
 import com.srivatsan.vibentra.home.components.*
 import com.srivatsan.vibentra.settings.AccountBottomSheet
 import com.srivatsan.vibentra.theme.*
+import com.vibentra.music.player.AudioPlayerManager
 import kotlinx.coroutines.launch
 
 /**
@@ -57,12 +58,18 @@ fun HomeScreen(
     onNavigateToPlayer: (Song) -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToLibrary: () -> Unit = {},
+    onNavigateToFavorites: () -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val likedSongIds by AudioPlayerManager.likedSongIds.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var showAccountSheet by remember { mutableStateOf(false) }
+    var showNavMoreSheet by remember { mutableStateOf(false) }
+    var showAiHubSheet by remember { mutableStateOf(false) }
+    var showConnectHubSheet by remember { mutableStateOf(false) }
+    var showWrappedSheet by remember { mutableStateOf(false) }
 
     // Native Speech Recognizer for Voice Search from Home / Floating Nav
     val voiceSearchLauncher = rememberLauncherForActivityResult(
@@ -208,18 +215,66 @@ fun HomeScreen(
                     }
                 },
                 onVoiceClick = triggerVoiceSearch,
-                onMoreClick = { showAccountSheet = true }
+                onMoreClick = { showNavMoreSheet = true }
             )
         }
 
-        // Account Bottom Sheet Modal
+        // Three-Dot More Bottom Sheet (Favorites, AI Hub, Connect Hub, Wrapped)
+        if (showNavMoreSheet) {
+            NavMoreSheet(
+                onDismissRequest = { showNavMoreSheet = false },
+                onFavoritesClick = onNavigateToFavorites,
+                onAiHubClick = { showAiHubSheet = true },
+                onConnectHubClick = { showConnectHubSheet = true },
+                onWrappedClick = { showWrappedSheet = true },
+                favoritesCount = likedSongIds.size
+            )
+        }
+
+        // AI Hub Modal
+        if (showAiHubSheet) {
+            AiHubSheet(
+                onDismissRequest = { showAiHubSheet = false },
+                onMoodSelected = { _, query ->
+                    showAiHubSheet = false
+                    viewModel.searchAndPlayQuery(query)
+                },
+                onCustomGenerate = { prompt ->
+                    showAiHubSheet = false
+                    viewModel.searchAndPlayQuery(prompt)
+                }
+            )
+        }
+
+        // Connect Hub Modal
+        if (showConnectHubSheet) {
+            ConnectHubSheet(
+                onDismissRequest = { showConnectHubSheet = false }
+            )
+        }
+
+        // Wrapped Modal
+        if (showWrappedSheet) {
+            WrappedSheet(
+                onDismissRequest = { showWrappedSheet = false },
+                totalMinutes = 148,
+                totalSongs = 42,
+                topSongTitle = uiState.currentSong?.title ?: "Vakratunda Mahakaya Mix",
+                topSongArtist = uiState.currentSong?.artist ?: "Shankar Mahadevan"
+            )
+        }
+
+        // Account Bottom Sheet Modal (From profile icon)
         if (showAccountSheet) {
             AccountBottomSheet(
                 userName = "Srivatsan",
                 userAvatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
                 onDismissRequest = { showAccountSheet = false },
                 onAccountClick = { showAccountSheet = false },
-                onAiHubClick = { showAccountSheet = false },
+                onAiHubClick = {
+                    showAccountSheet = false
+                    showAiHubSheet = true
+                },
                 onSettingsClick = { showAccountSheet = false },
                 onAboutClick = { showAccountSheet = false }
             )

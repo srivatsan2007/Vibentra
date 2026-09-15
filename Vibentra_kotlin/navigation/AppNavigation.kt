@@ -11,8 +11,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.remember
 import com.srivatsan.vibentra.auth.AuthScreen
 import com.srivatsan.vibentra.home.HomeScreen
+import com.srivatsan.vibentra.library.FavoritesScreen
 import com.srivatsan.vibentra.splash.SplashScreen
 import com.vibentra.music.player.AudioPlayerManager
 import com.vibentra.music.player.FullMusicPlayerScreen
@@ -24,6 +26,7 @@ sealed class AppDestination(val route: String) {
     object Home : AppDestination("home")
     object Search : AppDestination("search")
     object Player : AppDestination("player")
+    object Favorites : AppDestination("favorites")
 }
 
 @Composable
@@ -73,6 +76,50 @@ fun AppNavigation(
                     navController.navigate(AppDestination.Player.route)
                 },
                 onNavigateToSearch = {
+                    navController.navigate(AppDestination.Search.route)
+                },
+                onNavigateToFavorites = {
+                    navController.navigate(AppDestination.Favorites.route)
+                }
+            )
+        }
+
+        // 3b. Favorites / Liked Songs Screen
+        composable(AppDestination.Favorites.route) {
+            val queue by AudioPlayerManager.queue.collectAsState()
+            val likedIds by AudioPlayerManager.likedSongIds.collectAsState()
+            val currentSong by AudioPlayerManager.currentSong.collectAsState()
+
+            val favSongs = remember(queue, likedIds, currentSong) {
+                val pool = (queue + listOfNotNull(currentSong)).distinctBy { it.id }
+                val liked = pool.filter { likedIds.contains(it.id) }
+                if (liked.isNotEmpty()) liked else pool
+            }
+
+            FavoritesScreen(
+                favoriteSongs = favSongs,
+                onSongClick = { song, list ->
+                    AudioPlayerManager.playSong(song, list)
+                    navController.navigate(AppDestination.Player.route)
+                },
+                onPlayAll = {
+                    favSongs.firstOrNull()?.let { first ->
+                        AudioPlayerManager.playSong(first, favSongs)
+                        navController.navigate(AppDestination.Player.route)
+                    }
+                },
+                onShuffle = {
+                    if (favSongs.isNotEmpty()) {
+                        val shuffled = favSongs.shuffled()
+                        AudioPlayerManager.playSong(shuffled.first(), shuffled)
+                        navController.navigate(AppDestination.Player.route)
+                    }
+                },
+                onRemoveFavorite = { song ->
+                    AudioPlayerManager.toggleLike(song.id)
+                },
+                onAddToPlaylist = {},
+                onExploreClick = {
                     navController.navigate(AppDestination.Search.route)
                 }
             )
