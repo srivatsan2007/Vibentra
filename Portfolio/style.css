@@ -59,6 +59,8 @@
 html {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 * {
@@ -542,7 +544,24 @@ h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
 }
 
-/* Mobile Drawer */
+/* Mobile Drawer & Overlay */
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 10, 18, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.drawer-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .mobile-drawer {
     position: fixed;
     top: 0;
@@ -550,6 +569,9 @@ h1, h2, h3, h4, h5, h6 {
     width: 85%;
     max-width: 380px;
     height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: rgba(6, 14, 23, 0.96);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
@@ -558,7 +580,7 @@ h1, h2, h3, h4, h5, h6 {
     padding: 30px 24px;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 24px;
     transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1927,10 +1949,73 @@ h1, h2, h3, h4, h5, h6 {
 /* ==========================================================================
    RESPONSIVE MEDIA QUERIES
    ========================================================================== */
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES (TABLETS, MOBILES & ALL VIEWPORTS)
+   ========================================================================== */
+
+/* 1. TABLETS & SMALL LAPTOPS (<= 1024px) */
 @media (max-width: 1024px) {
+    .nav-links {
+        display: none;
+    }
+
+    .nav-actions .btn-github,
+    .nav-actions .btn-apk {
+        display: none;
+    }
+
+    .mobile-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .hero-container {
         grid-template-columns: 1fr;
-        gap: 48px;
+        gap: 44px;
+        text-align: center;
+    }
+
+    .hero-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hero-buttons {
+        justify-content: center;
+    }
+
+    .hero-stats {
+        justify-content: center;
+    }
+
+    .mockup-card {
+        max-width: 620px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .tech-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .features-bento {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .bento-wide {
+        grid-column: span 2;
+    }
+
+    .demo-wrapper {
+        grid-template-columns: 1fr;
+        gap: 36px;
+    }
+
+    .turntable-deck {
+        margin: 0 auto;
     }
 
     .developer-card {
@@ -1950,63 +2035,441 @@ h1, h2, h3, h4, h5, h6 {
         justify-content: center;
     }
 
-    .demo-wrapper {
-        grid-template-columns: 1fr;
+    .release-categories-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
+/* 2. MEDIUM TABLETS & LARGE SMARTPHONES (<= 768px) */
 @media (max-width: 768px) {
-    .nav-links, .nav-actions {
+    .section-container {
+        padding: 0 20px;
+    }
+
+    .nav-actions {
         display: none;
     }
 
-    .mobile-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .hero-section {
+        padding: 50px 0 60px 0;
     }
 
     .hero-buttons {
         flex-direction: column;
         width: 100%;
+        gap: 14px;
     }
 
     .hero-buttons .btn {
         width: 100%;
     }
 
+    .btn-hero-apk-content {
+        justify-content: center;
+        width: 100%;
+    }
+
     .hero-stats {
-        flex-wrap: wrap;
-        gap: 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        padding-top: 20px;
     }
 
     .stat-divider {
         display: none;
     }
 
+    .features-bento {
+        grid-template-columns: 1fr;
+    }
+
+    .bento-wide {
+        grid-column: span 1;
+    }
+
+    .tech-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .release-categories-grid {
+        grid-template-columns: 1fr;
+    }
+
     .demo-wrapper {
-        padding: 24px;
+        padding: 20px;
     }
 
     .developer-card {
-        padding: 24px;
+        padding: 24px 20px;
     }
 
     .release-box {
-        padding: 24px;
+        padding: 24px 18px;
     }
 
     .release-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 16px;
     }
 
     .release-actions {
         width: 100%;
+        flex-direction: column;
+        gap: 12px;
     }
 
     .release-actions .btn {
         width: 100%;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 28px;
+    }
+
+    .footer-links {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+/* 3. COMPACT SMARTPHONES (<= 480px) */
+@media (max-width: 480px) {
+    .section-container {
+        padding: 0 16px;
+    }
+
+    .section-header {
+        margin-bottom: 36px;
+    }
+
+    .section-tag {
+        font-size: 0.72rem;
+        padding: 4px 12px;
+        margin-bottom: 12px;
+    }
+
+    .section-header h2 {
+        font-size: 1.85rem;
+    }
+
+    .section-header p {
+        font-size: 0.92rem;
+    }
+
+    .hero-title {
+        font-size: 2.15rem;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-subtitle {
+        font-size: 0.94rem;
+        line-height: 1.6;
+        margin-bottom: 26px;
+    }
+
+    .btn-hero-primary,
+    .btn-hero-apk,
+    .btn-hero-github {
+        padding: 13px 18px;
+        font-size: 0.92rem;
+    }
+
+    .auto-timer-badge {
+        font-size: 0.7rem;
+        padding: 2px 7px;
+    }
+
+    .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.15rem;
+    }
+
+    .stat-label {
+        font-size: 0.68rem;
+        letter-spacing: 0;
+    }
+
+    .mockup-card {
+        border-radius: 18px;
+        margin: 0;
+    }
+
+    .mockup-header {
+        padding: 10px 14px;
+    }
+
+    .mockup-body {
+        padding: 14px 12px;
+    }
+
+    .mockup-now-playing {
+        gap: 10px;
+    }
+
+    .mockup-album-art {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+    }
+
+    .mockup-track-info h3 {
+        font-size: 0.95rem;
+    }
+
+    .mockup-track-info p {
+        font-size: 0.78rem;
+    }
+
+    .mockup-ctrl-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.85rem;
+    }
+
+    .btn-play-pause {
+        width: 38px;
+        height: 38px;
+        font-size: 0.95rem;
+    }
+
+    .dsp-studio-card {
+        padding: 16px 12px;
+        border-radius: 18px;
+    }
+
+    .dsp-sliders-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        padding: 16px 10px;
+    }
+
+    .slider-track-wrap {
+        height: 95px;
+    }
+
+    .dsp-vertical-range {
+        width: 80px;
+    }
+
+    .dsp-preset-pill {
+        padding: 5px 10px;
+        font-size: 0.72rem;
+    }
+
+    .turntable-deck {
+        max-width: 100%;
+        height: 290px;
+        border-radius: 20px;
+    }
+
+    .turntable-platter {
+        width: 200px;
+        height: 200px;
+    }
+
+    .vinyl-disc {
+        width: 180px;
+        height: 180px;
+    }
+
+    .g-1 { width: 155px; height: 155px; }
+    .g-2 { width: 125px; height: 125px; }
+    .g-3 { width: 95px; height: 95px; }
+
+    .vinyl-label {
+        width: 56px;
+        height: 56px;
+    }
+
+    .vinyl-label img {
+        width: 32px;
+        height: 32px;
+    }
+
+    .turntable-tonearm {
+        width: 75px;
+        height: 120px;
+        top: 20px;
+        right: 20px;
+    }
+
+    .rpm-chip {
+        padding: 4px 10px;
+        font-size: 0.72rem;
+    }
+
+    .dev-avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .dev-name {
+        font-size: 1.85rem;
+    }
+
+    .dev-role {
+        font-size: 0.95rem;
+    }
+
+    .dev-bio {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .dev-tech-pills {
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .dev-pill {
+        font-size: 0.72rem;
+        padding: 3px 9px;
+    }
+
+    .dev-stats-row {
+        gap: 16px;
+    }
+
+    .dev-stat .num {
+        font-size: 1.15rem;
+    }
+
+    .dev-stat .lbl {
+        font-size: 0.72rem;
+    }
+
+    .release-title {
+        font-size: 1.55rem;
+    }
+
+    .release-date {
+        font-size: 0.78rem;
+    }
+
+    .release-summary-lead {
+        padding: 12px 14px;
+        margin: 16px 0 20px;
+    }
+
+    .release-summary-lead .lead-text {
+        font-size: 0.9rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .release-summary-lead .sub-lead-text {
+        font-size: 0.82rem;
+    }
+
+    .release-cat-card {
+        padding: 16px 12px;
+    }
+
+    .cat-card-header h3 {
+        font-size: 1rem;
+    }
+
+    .cat-feature-list li {
+        font-size: 0.82rem;
+        padding-left: 16px;
+        line-height: 1.5;
+    }
+
+    .faq-question {
+        padding: 16px 14px;
+        font-size: 0.9rem;
+    }
+
+    .faq-answer p {
+        padding: 0 14px 16px;
+        font-size: 0.85rem;
+    }
+
+    .auto-download-banner {
+        bottom: 12px;
+        width: calc(100% - 16px);
+    }
+
+    .banner-inner {
+        border-radius: 18px;
+        padding: 10px 12px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .banner-info {
+        width: calc(100% - 56px);
+    }
+
+    .banner-title {
+        font-size: 0.82rem;
+    }
+
+    .banner-sub {
+        font-size: 0.72rem;
+        white-space: normal;
+        line-height: 1.35;
+    }
+
+    .banner-buttons {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 2px;
+    }
+
+    .banner-buttons .btn-sm {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 0.78rem;
+    }
+
+    .back-to-top {
+        bottom: 78px;
+        right: 14px;
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* 4. LANDSCAPE MOBILE PHONES */
+@media (max-height: 520px) and (orientation: landscape) {
+    .navbar {
+        padding: 8px 0;
+    }
+
+    .hero-section {
+        padding: 30px 0 50px 0;
+    }
+
+    .mobile-drawer {
+        padding: 16px 20px;
+        gap: 16px;
+    }
+
+    .drawer-links {
+        gap: 8px;
+    }
+
+    .drawer-link {
+        padding: 6px 0;
+        font-size: 0.95rem;
+    }
+
+    .drawer-actions {
+        gap: 8px;
     }
 }
 
@@ -3137,18 +3600,39 @@ body:hover .cursor-glow {
 }
 
 @media (max-width: 600px) {
+    .auto-download-banner {
+        bottom: 12px;
+        width: calc(100% - 16px);
+        max-width: 100%;
+    }
     .banner-inner {
-        border-radius: 20px;
-        padding: 10px 14px;
+        border-radius: 18px;
+        padding: 10px 12px;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
     }
     .banner-info {
-        width: calc(100% - 60px);
+        width: calc(100% - 56px);
+    }
+    .banner-title {
+        font-size: 0.84rem;
+        white-space: normal;
+    }
+    .banner-sub {
+        font-size: 0.74rem;
+        white-space: normal;
+        line-height: 1.35;
     }
     .banner-buttons {
         width: 100%;
         justify-content: flex-end;
+        gap: 8px;
+        margin-top: 2px;
+    }
+    .banner-buttons .btn-sm {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 0.78rem;
     }
 }
 

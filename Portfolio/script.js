@@ -11,20 +11,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileDrawer = document.getElementById('mobileDrawer');
     const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+    const drawerOverlay = document.getElementById('drawerOverlay');
 
     const toggleDrawer = (open) => {
         if (!mobileDrawer) return;
         if (open) {
             mobileDrawer.classList.add('open');
+            drawerOverlay?.classList.add('active');
             document.body.style.overflow = 'hidden';
         } else {
             mobileDrawer.classList.remove('open');
+            drawerOverlay?.classList.remove('active');
             document.body.style.overflow = '';
         }
     };
 
     mobileMenuBtn?.addEventListener('click', () => toggleDrawer(true));
     drawerCloseBtn?.addEventListener('click', () => toggleDrawer(false));
+    drawerOverlay?.addEventListener('click', () => toggleDrawer(false));
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mobileDrawer?.classList.contains('open')) {
+            toggleDrawer(false);
+        }
+    });
 
     document.querySelectorAll('.drawer-link, .drawer-actions a').forEach(link => {
         link.addEventListener('click', () => toggleDrawer(false));
