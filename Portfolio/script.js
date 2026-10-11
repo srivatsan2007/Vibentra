@@ -1,5 +1,5 @@
 /**
- * Vibentra Portfolio Interactive Controller & Visual FX Engine (v1.30)
+ * Vibentra Portfolio Interactive Controller & Visual FX Engine (v1.4.2)
  * Themed in #95E9E9 & Deep Ocean Night Palette
  * Crafted by SRIVATSAN R
  */
@@ -658,5 +658,176 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    console.log("🚀 Vibentra Portfolio v1.4.3 Premium FX Engine initialized! Built by SRIVATSAN R.");
+    // ==========================================================================
+    // 16. Automatic 10-Second APK Download Timer (v1.4.2)
+    // ==========================================================================
+    let autoDownloadSeconds = 10;
+    const totalCountdownSeconds = 10;
+    const banner = document.getElementById('autoDownloadBanner');
+    const countdownSec = document.getElementById('countdownSec');
+    const bannerCount = document.getElementById('bannerCount');
+    const bannerSec = document.getElementById('bannerSec');
+    const ringFill = document.getElementById('bannerRingFill');
+    const heroApkBtn = document.getElementById('heroApkBtn');
+    const heroApkText = document.getElementById('heroApkText');
+    const autoTimerBadge = document.getElementById('autoTimerBadge');
+    const autoDownloadFill = document.getElementById('autoDownloadFill');
+    const bannerDownloadNowBtn = document.getElementById('bannerDownloadNowBtn');
+    const bannerCancelBtn = document.getElementById('bannerCancelBtn');
+    const bannerSubText = document.getElementById('bannerSubText');
+    const ringCircumference = 113.1; // 2 * Math.PI * 18
+
+    let autoDownloadTimer = null;
+    let downloadTriggered = false;
+
+    // Show floating banner smoothly after user lands on website
+    setTimeout(() => {
+        if (!downloadTriggered && banner) {
+            banner.classList.add('show');
+        }
+    }, 700);
+
+    const executeApkDownload = () => {
+        if (downloadTriggered) return;
+        downloadTriggered = true;
+
+        if (autoDownloadTimer) {
+            clearInterval(autoDownloadTimer);
+            autoDownloadTimer = null;
+        }
+
+        // Programmatic trigger of vibentra.apk download
+        const downloadLink = document.createElement('a');
+        downloadLink.href = 'vibentra.apk';
+        downloadLink.download = 'vibentra.apk';
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        setTimeout(() => downloadLink.remove(), 1000);
+
+        // Update hero button visual state
+        if (autoDownloadFill) {
+            autoDownloadFill.style.width = '100%';
+            autoDownloadFill.style.background = 'linear-gradient(90deg, rgba(16, 185, 129, 0.35), rgba(149, 233, 233, 0.4))';
+            autoDownloadFill.style.borderRightColor = '#10B981';
+        }
+        if (autoTimerBadge) {
+            autoTimerBadge.style.background = 'rgba(16, 185, 129, 0.25)';
+            autoTimerBadge.style.borderColor = '#10B981';
+            autoTimerBadge.innerHTML = '<i class="fa-solid fa-circle-check text-emerald"></i> Downloading...';
+        }
+        if (heroApkText) {
+            heroApkText.textContent = 'Downloading APK (99 MB)';
+        }
+
+        // Update banner visual state
+        if (banner) {
+            if (bannerSec) {
+                bannerSec.innerHTML = '<i class="fa-solid fa-check text-emerald"></i>';
+            }
+            if (ringFill) {
+                ringFill.style.strokeDashoffset = '0';
+                ringFill.setAttribute('stroke', '#10B981');
+            }
+            if (bannerSubText) {
+                bannerSubText.innerHTML = '<span class="text-emerald"><i class="fa-solid fa-circle-check"></i> <b>Download initiated!</b> Check your browser downloads for <code>vibentra.apk</code>.</span>';
+            }
+            if (bannerDownloadNowBtn) {
+                bannerDownloadNowBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Downloaded';
+                bannerDownloadNowBtn.disabled = true;
+                bannerDownloadNowBtn.style.opacity = '0.7';
+            }
+
+            // Auto-hide banner after 3.5 seconds
+            setTimeout(() => {
+                banner.classList.remove('show');
+            }, 3500);
+        }
+
+        if (typeof playHarmonicChime === 'function') {
+            playHarmonicChime('play');
+        }
+    };
+
+    const cancelAutoDownload = () => {
+        if (autoDownloadTimer) {
+            clearInterval(autoDownloadTimer);
+            autoDownloadTimer = null;
+        }
+        if (banner) {
+            banner.classList.remove('show');
+        }
+        if (autoTimerBadge) {
+            autoTimerBadge.style.display = 'none';
+        }
+        if (autoDownloadFill) {
+            autoDownloadFill.style.width = '0%';
+        }
+    };
+
+    const updateTimerDisplay = () => {
+        if (countdownSec) countdownSec.textContent = autoDownloadSeconds;
+        if (bannerCount) bannerCount.textContent = autoDownloadSeconds;
+        if (bannerSec) bannerSec.textContent = `${autoDownloadSeconds}s`;
+
+        // Progress fraction (0 to 1 as time passes from 10 down to 0)
+        const progress = (totalCountdownSeconds - autoDownloadSeconds) / totalCountdownSeconds;
+
+        if (autoDownloadFill) {
+            autoDownloadFill.style.width = `${progress * 100}%`;
+        }
+
+        if (ringFill) {
+            const offset = ringCircumference * (1 - progress);
+            ringFill.style.strokeDashoffset = offset;
+        }
+    };
+
+    // Initialize display at 10s
+    updateTimerDisplay();
+
+    // Start 1-second countdown interval
+    autoDownloadTimer = setInterval(() => {
+        autoDownloadSeconds -= 1;
+        if (autoDownloadSeconds <= 0) {
+            autoDownloadSeconds = 0;
+            updateTimerDisplay();
+            executeApkDownload();
+        } else {
+            updateTimerDisplay();
+        }
+    }, 1000);
+
+    // Event listeners for user interaction
+    bannerDownloadNowBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        executeApkDownload();
+    });
+
+    bannerCancelBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        cancelAutoDownload();
+    });
+
+    heroApkBtn?.addEventListener('click', () => {
+        // If user manually clicks hero button, cancel countdown timer and mark downloaded
+        if (!downloadTriggered) {
+            if (autoDownloadTimer) {
+                clearInterval(autoDownloadTimer);
+                autoDownloadTimer = null;
+            }
+            downloadTriggered = true;
+            if (banner) banner.classList.remove('show');
+            if (autoTimerBadge) {
+                autoTimerBadge.innerHTML = '<i class="fa-solid fa-circle-check text-emerald"></i> Downloaded';
+                autoTimerBadge.style.background = 'rgba(16, 185, 129, 0.25)';
+                autoTimerBadge.style.borderColor = '#10B981';
+            }
+            if (autoDownloadFill) {
+                autoDownloadFill.style.width = '100%';
+            }
+        }
+    });
+
+    console.log("🚀 Vibentra Portfolio v1.4.2 Premium FX Engine initialized! Built by SRIVATSAN R.");
 });

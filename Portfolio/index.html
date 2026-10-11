@@ -63,7 +63,7 @@
                 <a href="#architecture" class="nav-link">Tech Stack</a>
                 <a href="#developer" class="nav-link">Creator</a>
                 <a href="#faq" class="nav-link">FAQ</a>
-                <a href="#releases" class="nav-link">Releases (v1.4.3)</a>
+                <a href="#releases" class="nav-link">Releases (v1.4.2)</a>
             </nav>
 
             <div class="nav-actions">
@@ -101,7 +101,7 @@
             <a href="#architecture" class="drawer-link"><i class="fa-solid fa-layer-group"></i> Architecture</a>
             <a href="#developer" class="drawer-link"><i class="fa-solid fa-user-astronaut"></i> Creator Bio</a>
             <a href="#faq" class="drawer-link"><i class="fa-solid fa-circle-question"></i> FAQ & Guide</a>
-            <a href="#releases" class="drawer-link"><i class="fa-solid fa-code-branch"></i> Releases (v1.4.3)</a>
+            <a href="#releases" class="drawer-link"><i class="fa-solid fa-code-branch"></i> Releases (v1.4.2)</a>
         </div>
         <div class="drawer-actions">
             <a href="https://vibentra.vercel.app/" target="_blank" rel="noopener noreferrer"
@@ -125,7 +125,7 @@
                 <div class="version-badge border-beam-badge">
                     <span class="badge-pulse"></span>
                     <i class="fa-solid fa-bolt-lightning text-cyan"></i>
-                    <span>Vibentra v1.4.3 Stable Release</span>
+                    <span>Vibentra v1.4.2 Stable Release</span>
                 </div>
 
                 <h1 class="hero-title">
@@ -146,9 +146,15 @@
                         <span>Launch Live Web App</span>
                     </a>
 
-                    <a href="vibentra.apk" download="vibentra.apk" class="btn btn-hero-apk">
-                        <i class="fa-brands fa-android"></i>
-                        <span>Download APK (99 MB)</span>
+                    <a href="vibentra.apk" download="vibentra.apk" class="btn btn-hero-apk" id="heroApkBtn">
+                        <div class="btn-hero-apk-content">
+                            <i class="fa-brands fa-android"></i>
+                            <span id="heroApkText">Download APK (99 MB)</span>
+                            <span class="auto-timer-badge" id="autoTimerBadge">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Auto in <b id="countdownSec">10</b>s
+                            </span>
+                        </div>
+                        <div class="auto-download-fill" id="autoDownloadFill"></div>
                     </a>
 
                     <a href="https://github.com/srivatsan2007/Vibentra" target="_blank" rel="noopener noreferrer"
@@ -160,7 +166,7 @@
 
                 <div class="hero-stats">
                     <div class="stat-item">
-                        <span class="stat-number count-up" data-target="1.43" data-prefix="v" data-decimals="2">v1.4.3</span>
+                        <span class="stat-number count-up" data-target="1.42" data-prefix="v" data-decimals="2">v1.42</span>
                         <span class="stat-label">Stable Release</span>
                     </div>
                     <div class="stat-divider"></div>
@@ -270,7 +276,7 @@
                         <div class="dsp-mockup-inner" id="playerDspView" style="display: none;">
                             <div class="dsp-header-row">
                                 <div class="dsp-title-wrap">
-                                    <span class="dsp-badge"><i class="fa-solid fa-sliders text-cyan"></i> DSP STUDIO v1.4.3</span>
+                                    <span class="dsp-badge"><i class="fa-solid fa-sliders text-cyan"></i> DSP STUDIO v1.4.2</span>
                                     <h4>Graphic Equalizer & Acoustic Shaping</h4>
                                 </div>
                                 <span class="dsp-status"><span class="badge-live-pulse"></span>ACTIVE</span>
@@ -324,7 +330,7 @@
     <section class="features-section" id="features">
         <div class="section-container">
             <div class="section-header text-center">
-                <span class="section-tag"><i class="fa-solid fa-microchip"></i> INNOVATION SUITE v1.4.3</span>
+                <span class="section-tag"><i class="fa-solid fa-microchip"></i> INNOVATION SUITE v1.4.2</span>
                 <h2>Engineered for Audiophiles & Next-Gen Streaming</h2>
                 <p>Designed with liquid glass aesthetics, native Android home widgets, real-time cloud guard, and studio-grade 10-band DSP processing.</p>
             </div>
@@ -339,7 +345,7 @@
                             </div>
                             <div class="bento-badge-group">
                                 <span class="bento-cdn-chip"><span class="badge-live-pulse"></span>18ms CDN RESOLVER</span>
-                                <span class="feature-pill">NEW in v1.4.3</span>
+                                <span class="feature-pill">NEW in v1.4.2</span>
                             </div>
                         </div>
                         <h3>100% Real Live Tracks Engine</h3>
@@ -375,7 +381,7 @@
                             </div>
                             <div class="bento-badge-group">
                                 <span class="feature-pill">NATIVE ANDROID</span>
-                                <span class="feature-pill">NEW in v1.4.3</span>
+                                <span class="feature-pill">NEW in v1.4.2</span>
                             </div>
                         </div>
                         <h3>Android Home Widgets Studio</h3>
@@ -712,7 +718,7 @@
                             <span class="lbl">Open Source</span>
                         </div>
                         <div class="dev-stat">
-                            <span class="num count-up" data-target="1.30" data-prefix="v" data-decimals="2">v1.30</span>
+                            <span class="num count-up" data-target="1.42" data-prefix="v" data-decimals="2">v1.42</span>
                             <span class="lbl">Latest Build</span>
                         </div>
                         <div class="dev-stat">
@@ -762,7 +768,7 @@
                         <i class="fa-solid fa-chevron-down faq-chevron"></i>
                     </button>
                     <div class="faq-answer">
-                        <p>In version 1.30, every single album and playlist connects directly to live provider endpoints (JioSaavn and YouTube Music). When you open an album or curated playlist, Vibentra fetches its authentic tracklist instead of duplicate sample songs.</p>
+                        <p>In version 1.4.2, every single album and playlist connects directly to live provider endpoints (JioSaavn and YouTube Music). When you open an album or curated playlist, Vibentra fetches its authentic tracklist instead of duplicate sample songs.</p>
                     </div>
                 </div>
 
@@ -820,8 +826,8 @@
                 <div class="release-header">
                     <div>
                         <span class="release-status"><i class="fa-solid fa-circle-check text-cyan"></i> LATEST STABLE RELEASE</span>
-                        <h2 class="release-title">Vibentra v1.4.3</h2>
-                        <p class="release-date"><i class="fa-regular fa-calendar"></i> October 2026 • Build 2026.10 (v1.4.3-stable)</p>
+                        <h2 class="release-title">Vibentra v1.4.2</h2>
+                        <p class="release-date"><i class="fa-regular fa-calendar"></i> October 2026 • Build 2026.10 (v1.4.2-stable)</p>
                     </div>
                     <div class="release-actions">
                         <a href="vibentra.apk" download="vibentra.apk" class="btn btn-primary glow-btn">
@@ -835,7 +841,7 @@
                 </div>
 
                 <div class="release-changelog">
-                    <h4>v1.4.3 Milestone Highlights:</h4>
+                    <h4>v1.4.2 Milestone Highlights:</h4>
                     <div class="changelog-grid">
                         <div class="changelog-item">
                             <i class="fa-solid fa-tower-broadcast text-cyan"></i>
@@ -919,6 +925,31 @@
         </svg>
         <i class="fa-solid fa-arrow-up"></i>
     </button>
+
+    <!-- Floating Auto-Download Countdown Toast Banner -->
+    <div class="auto-download-banner" id="autoDownloadBanner">
+        <div class="banner-inner">
+            <div class="banner-spinner">
+                <svg class="banner-ring" width="44" height="44" viewBox="0 0 44 44">
+                    <circle class="banner-ring-bg" cx="22" cy="22" r="18" stroke="rgba(149, 233, 233, 0.2)" stroke-width="3" fill="transparent"/>
+                    <circle class="banner-ring-fill" id="bannerRingFill" cx="22" cy="22" r="18" stroke="#95E9E9" stroke-width="3" stroke-dasharray="113.1" stroke-dashoffset="0" fill="transparent"/>
+                </svg>
+                <span class="banner-sec" id="bannerSec">10s</span>
+            </div>
+            <div class="banner-info">
+                <div class="banner-title"><i class="fa-solid fa-bolt text-cyan"></i> Automatic APK Download (v1.4.2)</div>
+                <p class="banner-sub" id="bannerSubText"><code>vibentra.apk</code> (99 MB) will start downloading in <b id="bannerCount">10</b> seconds.</p>
+            </div>
+            <div class="banner-buttons">
+                <button class="btn btn-primary btn-sm glow-btn" id="bannerDownloadNowBtn">
+                    <i class="fa-solid fa-download"></i> Download Now
+                </button>
+                <button class="banner-cancel-btn" id="bannerCancelBtn" title="Cancel automatic download">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Custom Portfolio Interactive JS -->
     <script src="./script.js"></script>
