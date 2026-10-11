@@ -79,6 +79,25 @@ document.addEventListener('DOMContentLoaded', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
+    // Smooth Anchor Scroll Navigation with Sticky Navbar Offset
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const targetId = this.getAttribute('href');
+            if (targetId && targetId !== '#') {
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    e.preventDefault();
+                    const navbarHeight = navbar ? navbar.offsetHeight : 70;
+                    const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - navbarHeight + 4;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        });
+    });
+
     // ==========================================================================
     // 3. Interactive Ambient Cursor Spotlight Follower
     // ==========================================================================
