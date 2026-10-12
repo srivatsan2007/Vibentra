@@ -1,6 +1,7 @@
 /**
- * Vibentra Portfolio Interactive Controller & Visual FX Engine (v1.4.2)
- * Themed in #95E9E9 & Deep Ocean Night Palette
+ * Vibentra Music Ecosystem - Master Interactive Controller & Visual FX Engine (v1.4.2)
+ * Themed in Midnight Studio (#080A12), Electric Purple (#8B5CF6) & Cyan (#22D3EE)
+ * Tagline: "Where Vibes Connect."
  * Crafted by SRIVATSAN R
  */
 
@@ -41,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================================================
-    // 2. Top Scroll Progress Bar & Navbar Elevation
+    // 2. Top Scroll Progress Bar, Navbar Elevation & Back-to-Top Button
     // ==========================================================================
     const navbar = document.getElementById('navbar');
     const scrollProgressBar = document.getElementById('scrollProgressBar');
@@ -73,11 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Navbar blur and elevation
         if (navbar) {
             if (scrollY > 40) {
-                navbar.style.background = 'rgba(6, 14, 23, 0.94)';
-                navbar.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(149, 233, 233, 0.15)';
+                navbar.style.background = 'rgba(8, 10, 18, 0.94)';
+                navbar.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(139, 92, 246, 0.15)';
+                navbar.style.borderColor = 'rgba(139, 92, 246, 0.2)';
             } else {
-                navbar.style.background = 'rgba(6, 14, 23, 0.85)';
+                navbar.style.background = 'rgba(8, 10, 18, 0.85)';
                 navbar.style.boxShadow = 'none';
+                navbar.style.borderColor = 'rgba(255, 255, 255, 0.10)';
             }
         }
     };
@@ -134,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
-    // 4. Ambient Liquid Soundwave Canvas Engine
+    // 4. Ambient Liquid Soundwave Canvas Engine (Purple & Cyan Aurora)
     // ==========================================================================
     const canvas = document.getElementById('soundwaveCanvas');
     let isMockPlaying = true;
@@ -152,9 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let step = 0;
         const waveConfig = [
-            { color: 'rgba(149, 233, 233, 0.22)', speed: 0.015, freq: 0.003, amp: 45, yRatio: 0.52 },
-            { color: 'rgba(56, 189, 248, 0.16)', speed: 0.022, freq: 0.004, amp: 35, yRatio: 0.54 },
-            { color: 'rgba(45, 212, 191, 0.18)', speed: 0.012, freq: 0.0025, amp: 55, yRatio: 0.50 }
+            { color: 'rgba(139, 92, 246, 0.22)', speed: 0.015, freq: 0.003, amp: 45, yRatio: 0.52 },
+            { color: 'rgba(34, 211, 238, 0.18)', speed: 0.022, freq: 0.004, amp: 35, yRatio: 0.54 },
+            { color: 'rgba(167, 139, 250, 0.15)', speed: 0.012, freq: 0.0025, amp: 55, yRatio: 0.50 }
         ];
 
         const renderWaveform = () => {
@@ -189,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================================================
-    // 5. Interactive Web Audio Synthesizer (Harmonic Chimes)
+    // 5. Interactive Web Audio Synthesizer (Harmonic Chimes in E-Major / Cyan)
     // ==========================================================================
     let audioCtx = null;
     let isSoundMuted = false;
@@ -215,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!audioCtx) return;
 
             const now = audioCtx.currentTime;
-            // Notes for harmonious chord (E major / Aquamarine vibe)
+            // Notes for harmonious chord (E major / Electric Purple vibe)
             const freqs = type === 'play' ? [329.63, 415.30, 493.88, 659.25] : [493.88, 392.00, 329.63];
 
             freqs.forEach((freq, i) => {
@@ -290,13 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const tr = sampleTracks[currentTrackIdx];
 
         if (animate && mockTrackMeta) {
-            mockTrackMeta.classList.remove('track-slide-in');
-            mockTrackMeta.classList.add('track-slide-out');
+            mockTrackMeta.style.opacity = '0';
+            mockTrackMeta.style.transform = 'translateY(6px)';
             setTimeout(() => {
                 if (mockTrackTitle) mockTrackTitle.textContent = tr.title;
                 if (mockTrackArtist) mockTrackArtist.textContent = tr.artist;
-                mockTrackMeta.classList.remove('track-slide-out');
-                mockTrackMeta.classList.add('track-slide-in');
+                mockTrackMeta.style.opacity = '1';
+                mockTrackMeta.style.transform = 'translateY(0)';
             }, 200);
         } else {
             if (mockTrackTitle) mockTrackTitle.textContent = tr.title;
@@ -375,234 +378,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mockShuffleBtn?.addEventListener('click', () => {
         mockShuffleBtn.classList.toggle('active');
-        mockShuffleBtn.style.color = mockShuffleBtn.classList.contains('active') ? '#95E9E9' : '';
-        mockShuffleBtn.style.borderColor = mockShuffleBtn.classList.contains('active') ? '#95E9E9' : '';
+        mockShuffleBtn.style.color = mockShuffleBtn.classList.contains('active') ? '#8B5CF6' : '';
+        mockShuffleBtn.style.borderColor = mockShuffleBtn.classList.contains('active') ? '#8B5CF6' : '';
     });
 
     mockRepeatBtn?.addEventListener('click', () => {
         mockRepeatBtn.classList.toggle('active');
-        mockRepeatBtn.style.color = mockRepeatBtn.classList.contains('active') ? '#38BDF8' : '';
-        mockRepeatBtn.style.borderColor = mockRepeatBtn.classList.contains('active') ? '#38BDF8' : '';
+        mockRepeatBtn.style.color = mockRepeatBtn.classList.contains('active') ? '#22D3EE' : '';
+        mockRepeatBtn.style.borderColor = mockRepeatBtn.classList.contains('active') ? '#22D3EE' : '';
     });
 
     setPlaybackState(true);
     startMockTimer();
 
     // ==========================================================================
-    // 7. Interactive Turntable Demo & Dual RPM Physics (33 & 45 RPM)
-    // ==========================================================================
-    const demoTurntableToggleBtn = document.getElementById('demoTurntableToggleBtn');
-    const demoVinylDisc = document.getElementById('demoVinylDisc');
-    const demoTonearm = document.getElementById('demoTonearm');
-    const rpm33Btn = document.getElementById('rpm33Btn');
-    const rpm45Btn = document.getElementById('rpm45Btn');
-    const pitchValueDisplay = document.getElementById('pitchValueDisplay');
-    const turntableStrobe = document.getElementById('turntableStrobe');
-
-    let isTurntableSpinning = true;
-    let currentRpm = 33;
-
-    const setTurntableSpeed = (rpm) => {
-        currentRpm = rpm;
-        rpm33Btn?.classList.toggle('active', rpm === 33);
-        rpm45Btn?.classList.toggle('active', rpm === 45);
-
-        if (demoVinylDisc) {
-            demoVinylDisc.style.animationDuration = rpm === 33 ? '6s' : '4.4s';
-        }
-        if (pitchValueDisplay) {
-            pitchValueDisplay.textContent = rpm === 33 ? '±0.0%' : '+36.4%';
-        }
-        if (turntableStrobe) {
-            turntableStrobe.style.animationDuration = rpm === 33 ? '0.18s' : '0.11s';
-        }
-    };
-
-    rpm33Btn?.addEventListener('click', () => setTurntableSpeed(33));
-    rpm45Btn?.addEventListener('click', () => setTurntableSpeed(45));
-
-    demoTurntableToggleBtn?.addEventListener('click', () => {
-        isTurntableSpinning = !isTurntableSpinning;
-        if (isTurntableSpinning) {
-            demoVinylDisc?.classList.add('spinning');
-            demoTonearm?.classList.add('active');
-            demoTurntableToggleBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause Turntable';
-            if (turntableStrobe) turntableStrobe.style.opacity = '1';
-            playHarmonicChime('play');
-        } else {
-            demoVinylDisc?.classList.remove('spinning');
-            demoTonearm?.classList.remove('active');
-            demoTurntableToggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Spin Turntable';
-            if (turntableStrobe) turntableStrobe.style.opacity = '0.35';
-            playHarmonicChime('pause');
-        }
-    });
-
-    // ==========================================================================
-    // 8. 3D Perspective Tilt & Specular Light Reflection on Cards
-    // ==========================================================================
-    const tiltCards = document.querySelectorAll('.tilt-card, .feature-card, .tech-card, .release-box');
-
-    tiltCards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            card.style.setProperty('--mouse-x', `${x}px`);
-            card.style.setProperty('--mouse-y', `${y}px`);
-
-            // Calculate subtle tilt angle (-5deg to +5deg)
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = ((y - centerY) / centerY) * -5;
-            const rotateY = ((x - centerX) / centerX) * 5;
-
-            card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-4px)`;
-        });
-
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = '';
-        });
-    });
-
-    // ==========================================================================
-    // 9. Scroll-Driven Staggered Reveal System (IntersectionObserver)
-    // ==========================================================================
-    const revealElements = document.querySelectorAll(
-        '.bento-card, .feature-card, .tech-card, .faq-card, .changelog-item, .section-header, .demo-wrapper, .developer-card, .release-box'
-    );
-
-    revealElements.forEach(el => el.classList.add('reveal'));
-
-    const revealObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
-    revealElements.forEach(el => revealObserver.observe(el));
-
-    // Stagger grid cards delay
-    document.querySelectorAll('.features-bento, .features-grid, .tech-grid, .changelog-grid').forEach(grid => {
-        const children = grid.children;
-        Array.from(children).forEach((child, index) => {
-            child.style.transitionDelay = `${(index % 4) * 0.08}s`;
-        });
-    });
-
-    // ==========================================================================
-    // 10. Animated Numerical Counters (Count-Up)
-    // ==========================================================================
-    const counterElements = document.querySelectorAll('.count-up');
-
-    const counterObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const el = entry.target;
-                const target = parseFloat(el.getAttribute('data-target'));
-                const prefix = el.getAttribute('data-prefix') || '';
-                const suffix = el.getAttribute('data-suffix') || '';
-                const decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
-
-                if (!isNaN(target)) {
-                    let start = 0;
-                    const duration = 1400; // ms
-                    const startTime = performance.now();
-
-                    const step = (now) => {
-                        const elapsed = now - startTime;
-                        const progress = Math.min(1, elapsed / duration);
-                        // Ease out cubic
-                        const easeOut = 1 - Math.pow(1 - progress, 3);
-                        const current = start + (target - start) * easeOut;
-
-                        el.textContent = `${prefix}${current.toFixed(decimals)}${suffix}`;
-
-                        if (progress < 1) {
-                            requestAnimationFrame(step);
-                        } else {
-                            el.textContent = `${prefix}${target.toFixed(decimals)}${suffix}`;
-                        }
-                    };
-                    requestAnimationFrame(step);
-                }
-
-                observer.unobserve(el);
-            }
-        });
-    }, { threshold: 0.5 });
-
-    counterElements.forEach(el => counterObserver.observe(el));
-
-    // ==========================================================================
-    // 11. Button Liquid Ripple Micro-Interaction
-    // ==========================================================================
-    document.querySelectorAll('.btn, .mock-btn, .rpm-btn').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            const circle = document.createElement('span');
-            circle.classList.add('btn-ripple');
-            const diameter = Math.max(this.clientWidth, this.clientHeight);
-            const radius = diameter / 2;
-
-            const rect = this.getBoundingClientRect();
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${e.clientX - rect.left - radius}px`;
-            circle.style.top = `${e.clientY - rect.top - radius}px`;
-
-            const existingRipple = this.querySelector('.btn-ripple');
-            if (existingRipple) existingRipple.remove();
-
-            this.appendChild(circle);
-            setTimeout(() => circle.remove(), 600);
-        });
-    });
-
-    // ==========================================================================
-    // 12. Active Navbar Link Highlight on Scroll
-    // ==========================================================================
-    const sections = document.querySelectorAll('section[id]');
-    const navLinks = document.querySelectorAll('.nav-link');
-
-    window.addEventListener('scroll', () => {
-        const scrollY = window.pageYOffset;
-        sections.forEach(section => {
-            const sectionHeight = section.offsetHeight;
-            const sectionTop = section.offsetTop - 120;
-            const sectionId = section.getAttribute('id');
-
-            if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${sectionId}`) {
-                        link.classList.add('active');
-                    }
-                });
-            }
-        });
-    }, { passive: true });
-
-    // ==========================================================================
-    // 13. Interactive FAQ Accordion Hub
-    // ==========================================================================
-    document.querySelectorAll('.faq-question').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const card = btn.closest('.faq-card');
-            if (!card) return;
-            const isOpen = card.classList.contains('open');
-            document.querySelectorAll('.faq-card').forEach(c => c.classList.remove('open'));
-            if (!isOpen) {
-                card.classList.add('open');
-                playHarmonicChime('play');
-            }
-        });
-    });
-
-    // ==========================================================================
-    // 14. Interactive Player View Switcher & DSP Studio Controls
+    // 7. Interactive Player View Switcher & DSP Studio Controls
     // ==========================================================================
     const tabPlayerBtn = document.getElementById('tabPlayerBtn');
     const tabDspBtn = document.getElementById('tabDspBtn');
@@ -672,10 +462,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.dsp-preset-pill').forEach(pill => {
         pill.addEventListener('click', () => {
-            document.querySelectorAll('.dsp-preset-pill').forEach(p => p.classList.remove('active'));
+            const container = pill.closest('.dsp-presets-row');
+            container?.querySelectorAll('.dsp-preset-pill').forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
             const key = pill.getAttribute('data-preset');
-            if (dspPresets[key]) {
+            if (key && dspPresets[key]) {
                 const p = dspPresets[key];
                 if (sliderBass) sliderBass.value = p.bass;
                 if (sliderMid) sliderMid.value = p.mid;
@@ -688,7 +479,292 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================================================
-    // 16. Automatic 10-Second APK Download Timer (v1.4.2)
+    // 8. Product Experience Showcase Tabs Switcher
+    // ==========================================================================
+    const showcaseTabBtns = document.querySelectorAll('.showcase-tab-btn');
+    const showcasePanels = {
+        lyrics: document.getElementById('showcasePanelLyrics'),
+        dsp: document.getElementById('showcasePanelDsp'),
+        widgets: document.getElementById('showcasePanelWidgets'),
+        discovery: document.getElementById('showcasePanelDiscovery')
+    };
+
+    showcaseTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            showcaseTabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const tabKey = btn.getAttribute('data-showcase');
+            Object.keys(showcasePanels).forEach(key => {
+                const panel = showcasePanels[key];
+                if (panel) {
+                    if (key === tabKey) {
+                        panel.classList.add('active');
+                    } else {
+                        panel.classList.remove('active');
+                    }
+                }
+            });
+
+            playHarmonicChime('play');
+        });
+    });
+
+    // Language Chips Toggle
+    document.querySelectorAll('.lang-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            chip.classList.toggle('active');
+            playHarmonicChime('play');
+        });
+    });
+
+    // ==========================================================================
+    // 9. Feature Section Category Filter
+    // ==========================================================================
+    const categoryFilterBtns = document.querySelectorAll('.category-filter-btn');
+    const featureCards = document.querySelectorAll('.features-grid .feature-card');
+
+    categoryFilterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            categoryFilterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const filterValue = btn.getAttribute('data-filter');
+
+            featureCards.forEach(card => {
+                const cardCategory = card.getAttribute('data-category');
+                if (filterValue === 'all' || cardCategory === filterValue) {
+                    card.style.display = 'flex';
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 50);
+                } else {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 250);
+                }
+            });
+
+            playHarmonicChime('play');
+        });
+    });
+
+    // ==========================================================================
+    // 10. Interactive Turntable Demo & Dual RPM Physics (33 & 45 RPM)
+    // ==========================================================================
+    const demoTurntableToggleBtn = document.getElementById('demoTurntableToggleBtn');
+    const demoVinylDisc = document.getElementById('demoVinylDisc');
+    const demoTonearm = document.getElementById('demoTonearm');
+    const rpm33Btn = document.getElementById('rpm33Btn');
+    const rpm45Btn = document.getElementById('rpm45Btn');
+    const pitchValueDisplay = document.getElementById('pitchValueDisplay');
+    const turntableStrobe = document.getElementById('turntableStrobe');
+
+    let isTurntableSpinning = true;
+
+    const setTurntableSpeed = (rpm) => {
+        rpm33Btn?.classList.toggle('active', rpm === 33);
+        rpm45Btn?.classList.toggle('active', rpm === 45);
+
+        if (demoVinylDisc) {
+            demoVinylDisc.style.animationDuration = rpm === 33 ? '6s' : '4.4s';
+        }
+        if (pitchValueDisplay) {
+            pitchValueDisplay.textContent = rpm === 33 ? '±0.0%' : '+36.4%';
+        }
+        if (turntableStrobe) {
+            turntableStrobe.style.animationDuration = rpm === 33 ? '0.18s' : '0.11s';
+        }
+    };
+
+    rpm33Btn?.addEventListener('click', () => setTurntableSpeed(33));
+    rpm45Btn?.addEventListener('click', () => setTurntableSpeed(45));
+
+    demoTurntableToggleBtn?.addEventListener('click', () => {
+        isTurntableSpinning = !isTurntableSpinning;
+        if (isTurntableSpinning) {
+            demoVinylDisc?.classList.add('spinning');
+            demoTonearm?.classList.add('active');
+            demoTurntableToggleBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause Turntable';
+            if (turntableStrobe) turntableStrobe.style.opacity = '1';
+            playHarmonicChime('play');
+        } else {
+            demoVinylDisc?.classList.remove('spinning');
+            demoTonearm?.classList.remove('active');
+            demoTurntableToggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Spin Turntable';
+            if (turntableStrobe) turntableStrobe.style.opacity = '0.35';
+            playHarmonicChime('pause');
+        }
+    });
+
+    // ==========================================================================
+    // 11. 3D Perspective Tilt & Specular Light Reflection on Cards
+    // ==========================================================================
+    const tiltCards = document.querySelectorAll('.tilt-card, .feature-card, .tech-card, .release-box, .widget-presentation-card');
+
+    tiltCards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+
+            // Calculate subtle tilt angle (-4deg to +4deg)
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -4;
+            const rotateY = ((x - centerX) / centerX) * 4;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-4px)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+        });
+    });
+
+    // ==========================================================================
+    // 12. Scroll-Driven Staggered Reveal System (IntersectionObserver)
+    // ==========================================================================
+    const revealElements = document.querySelectorAll(
+        '.feature-card, .tech-card, .faq-card, .section-header, .demo-wrapper, .developer-card, .release-box, .install-step-card'
+    );
+
+    revealElements.forEach(el => el.classList.add('reveal'));
+
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // Stagger grid cards delay
+    document.querySelectorAll('.features-grid, .tech-grid, .install-steps-grid').forEach(grid => {
+        const children = grid.children;
+        Array.from(children).forEach((child, index) => {
+            child.style.transitionDelay = `${(index % 4) * 0.08}s`;
+        });
+    });
+
+    // ==========================================================================
+    // 13. Animated Numerical Counters (Count-Up)
+    // ==========================================================================
+    const counterElements = document.querySelectorAll('.count-up');
+
+    const counterObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                const target = parseFloat(el.getAttribute('data-target'));
+                const prefix = el.getAttribute('data-prefix') || '';
+                const suffix = el.getAttribute('data-suffix') || '';
+                const decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
+
+                if (!isNaN(target)) {
+                    let start = 0;
+                    const duration = 1400; // ms
+                    const startTime = performance.now();
+
+                    const step = (now) => {
+                        const elapsed = now - startTime;
+                        const progress = Math.min(1, elapsed / duration);
+                        // Ease out cubic
+                        const easeOut = 1 - Math.pow(1 - progress, 3);
+                        const current = start + (target - start) * easeOut;
+
+                        el.textContent = `${prefix}${current.toFixed(decimals)}${suffix}`;
+
+                        if (progress < 1) {
+                            requestAnimationFrame(step);
+                        } else {
+                            el.textContent = `${prefix}${target.toFixed(decimals)}${suffix}`;
+                        }
+                    };
+                    requestAnimationFrame(step);
+                }
+
+                observer.unobserve(el);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    counterElements.forEach(el => counterObserver.observe(el));
+
+    // ==========================================================================
+    // 14. Button Liquid Ripple Micro-Interaction
+    // ==========================================================================
+    document.querySelectorAll('.btn, .mock-btn, .rpm-btn, .showcase-tab-btn, .category-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            const circle = document.createElement('span');
+            circle.classList.add('btn-ripple');
+            const diameter = Math.max(this.clientWidth, this.clientHeight);
+            const radius = diameter / 2;
+
+            const rect = this.getBoundingClientRect();
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${e.clientX - rect.left - radius}px`;
+            circle.style.top = `${e.clientY - rect.top - radius}px`;
+
+            const existingRipple = this.querySelector('.btn-ripple');
+            if (existingRipple) existingRipple.remove();
+
+            this.appendChild(circle);
+            setTimeout(() => circle.remove(), 600);
+        });
+    });
+
+    // ==========================================================================
+    // 15. Active Navbar Link Highlight on Scroll
+    // ==========================================================================
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    window.addEventListener('scroll', () => {
+        const scrollY = window.pageYOffset;
+        sections.forEach(section => {
+            const sectionHeight = section.offsetHeight;
+            const sectionTop = section.offsetTop - 120;
+            const sectionId = section.getAttribute('id');
+
+            if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${sectionId}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, { passive: true });
+
+    // ==========================================================================
+    // 16. Interactive FAQ Accordion Hub
+    // ==========================================================================
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const card = btn.closest('.faq-card');
+            if (!card) return;
+            const isOpen = card.classList.contains('open');
+            document.querySelectorAll('.faq-card').forEach(c => c.classList.remove('open'));
+            if (!isOpen) {
+                card.classList.add('open');
+                playHarmonicChime('play');
+            }
+        });
+    });
+
+    // ==========================================================================
+    // 17. Automatic 10-Second APK Download Countdown Timer (v1.4.2)
     // ==========================================================================
     let autoDownloadSeconds = 10;
     const totalCountdownSeconds = 10;
@@ -737,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update hero button visual state
         if (autoDownloadFill) {
             autoDownloadFill.style.width = '100%';
-            autoDownloadFill.style.background = 'linear-gradient(90deg, rgba(16, 185, 129, 0.35), rgba(149, 233, 233, 0.4))';
+            autoDownloadFill.style.background = 'linear-gradient(90deg, rgba(16, 185, 129, 0.35), rgba(34, 211, 238, 0.4))';
             autoDownloadFill.style.borderRightColor = '#10B981';
         }
         if (autoTimerBadge) {
@@ -858,5 +934,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    console.log("🚀 Vibentra Portfolio v1.4.2 Premium FX Engine initialized! Built by SRIVATSAN R.");
+    console.log("🚀 Vibentra Music Ecosystem v1.4.2 Cinematic Engine initialized! Built by SRIVATSAN R.");
 });

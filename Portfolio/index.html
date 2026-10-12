@@ -4,19 +4,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibentra - Next-Gen Music Streaming Ecosystem | Portfolio</title>
+    <title>Vibentra - Next-Gen Music Streaming Ecosystem | Where Vibes Connect</title>
     <meta name="description"
         content="Vibentra is a next-generation high-fidelity music streaming ecosystem with 100% Real Live Tracks, Firebase Cloud Sync Guard, Permanent Playlist Deletion, 10-Band DSP Equalizer, Sleep Timer, and zero-stutter background playback. Created by SRIVATSAN R.">
     <link rel="icon" href="./images/vibentra-logo.png" type="image/png">
 
-    <!-- Google Fonts: Outfit, Inter & JetBrains Mono -->
+    <!-- Open Graph Metadata -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Vibentra - Next-Gen Music Streaming Ecosystem">
+    <meta property="og:description" content="Where Vibes Connect. High-fidelity audio streaming with 10-Band Equalizer, Vinyl Turntable, and Android Home Widgets.">
+    <meta property="og:image" content="./images/vibentra-logo.png">
+
+    <!-- Google Fonts: Unbounded, Outfit, Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
         rel="stylesheet">
 
-    <!-- FontAwesome 6.5.0 Pro/Free Icons -->
+    <!-- FontAwesome 6.5.1 Pro/Free Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Custom Portfolio Stylesheet -->
@@ -33,7 +39,7 @@
     <!-- Luxury Velvet Film Grain Noise Texture -->
     <div class="noise-overlay"></div>
 
-    <!-- Ambient Liquid Aurora Glow Orbs & Interactive Soundwave Canvas (#95E9E9 Aquamarine Ocean Theme) -->
+    <!-- Ambient Liquid Aurora Glow Orbs & Soundwave Canvas -->
     <div class="ambient-background">
         <canvas id="soundwaveCanvas" class="soundwave-canvas"></canvas>
         <div class="glow-orb orb-1"></div>
@@ -46,7 +52,7 @@
     <!-- Navigation Header Bar -->
     <header class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="#" class="brand-logo">
+            <a href="#about" class="brand-logo">
                 <div class="logo-wrapper">
                     <img src="./images/vibentra-logo.png" alt="Vibentra Logo">
                 </div>
@@ -58,12 +64,14 @@
 
             <nav class="nav-links">
                 <a href="#about" class="nav-link active">About</a>
+                <a href="#showcase" class="nav-link">Showcase</a>
                 <a href="#features" class="nav-link">Features</a>
-                <a href="#demo" class="nav-link">Live Demo</a>
-                <a href="#architecture" class="nav-link">Tech Stack</a>
+                <a href="#demo" class="nav-link">Turntable</a>
+                <a href="#architecture" class="nav-link">Architecture</a>
                 <a href="#developer" class="nav-link">Creator</a>
+                <a href="#download" class="nav-link">Download</a>
                 <a href="#faq" class="nav-link">FAQ</a>
-                <a href="#releases" class="nav-link">Releases (v1.4.2)</a>
+                <a href="#releases" class="nav-link">Releases</a>
             </nav>
 
             <div class="nav-actions">
@@ -85,30 +93,37 @@
         </div>
     </header>
 
-    <!-- Mobile/Tablet Drawer Backdrop Overlay -->
+    <!-- Mobile Navigation Drawer Overlay -->
     <div class="drawer-overlay" id="drawerOverlay"></div>
 
     <!-- Mobile Navigation Drawer -->
     <div class="mobile-drawer" id="mobileDrawer">
         <div class="drawer-header">
             <div class="brand-logo">
-                <img src="./images/vibentra-logo.png" alt="Vibentra">
-                <span class="brand-name">VIBENTRA</span>
+                <div class="logo-wrapper">
+                    <img src="./images/vibentra-logo.png" alt="Vibentra">
+                </div>
+                <div class="brand-text-col">
+                    <span class="brand-name">VIBENTRA</span>
+                    <span class="brand-sub">MUSIC ECOSYSTEM</span>
+                </div>
             </div>
-            <button class="drawer-close" id="drawerCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+            <button class="drawer-close" id="drawerCloseBtn" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="drawer-links">
             <a href="#about" class="drawer-link"><i class="fa-solid fa-house"></i> About</a>
+            <a href="#showcase" class="drawer-link"><i class="fa-solid fa-layer-group"></i> Showcase</a>
             <a href="#features" class="drawer-link"><i class="fa-solid fa-sparkles"></i> Feature Hub</a>
-            <a href="#demo" class="drawer-link"><i class="fa-solid fa-compact-disc"></i> Interactive Demo</a>
-            <a href="#architecture" class="drawer-link"><i class="fa-solid fa-layer-group"></i> Architecture</a>
+            <a href="#demo" class="drawer-link"><i class="fa-solid fa-compact-disc"></i> Turntable Demo</a>
+            <a href="#architecture" class="drawer-link"><i class="fa-solid fa-microchip"></i> Architecture</a>
             <a href="#developer" class="drawer-link"><i class="fa-solid fa-user-astronaut"></i> Creator Bio</a>
+            <a href="#download" class="drawer-link"><i class="fa-brands fa-android"></i> Android Install</a>
             <a href="#faq" class="drawer-link"><i class="fa-solid fa-circle-question"></i> FAQ & Guide</a>
             <a href="#releases" class="drawer-link"><i class="fa-solid fa-code-branch"></i> Releases (v1.4.2)</a>
         </div>
         <div class="drawer-actions">
             <a href="https://vibentra.vercel.app/" target="_blank" rel="noopener noreferrer"
-                class="btn btn-primary btn-full">
+                class="btn btn-primary btn-full glow-btn">
                 <i class="fa-solid fa-globe"></i> Launch Web App
             </a>
             <a href="vibentra.apk" download="vibentra.apk" class="btn btn-apk btn-full">
@@ -121,11 +136,14 @@
         </div>
     </div>
 
-    <!-- Hero Section -->
+    <!-- ==========================================================================
+         HERO SECTION — BALANCED TWO-COLUMN CINEMATIC COMPOSITION
+         ========================================================================== -->
     <section class="hero-section" id="about">
         <div class="hero-container">
+            <!-- Left Side: Brand, Headline, Copy, CTAs, Verified Stats -->
             <div class="hero-content">
-                <div class="version-badge border-beam-badge">
+                <div class="version-badge">
                     <span class="badge-pulse"></span>
                     <i class="fa-solid fa-bolt-lightning text-cyan"></i>
                     <span>Vibentra v1.4.2 Stable Release</span>
@@ -139,7 +157,7 @@
                 <p class="hero-subtitle">
                     Vibentra is a next-generation high-fidelity music streaming ecosystem. Engineered with 
                     <strong>100% Real Live Tracks</strong>, <strong>10-Band Graphic Equalizer</strong>, 
-                    <strong>Native Android Home Widgets</strong>, <strong>AI Multilingual Lyrics</strong>, and zero-stutter native background playback.
+                    <strong>Native Android Home Widgets</strong>, <strong>AI Multilingual Synced Lyrics</strong>, and zero-stutter native background playback.
                 </p>
 
                 <div class="hero-buttons">
@@ -190,9 +208,21 @@
                 </div>
             </div>
 
-            <!-- Hero Interactive Glass Player Preview -->
+            <!-- Right Side: Cinematic Vinyl Record + Floating Interactive Player Mockup -->
             <div class="hero-visual">
-                <div class="mockup-card glass-panel tilt-card border-beam-card">
+                <!-- Large Rotating Vinyl Record Peeking Out Behind the Card -->
+                <div class="hero-vinyl-backdrop">
+                    <div class="vinyl-grooves-layer"></div>
+                    <div class="vinyl-sheen-layer"></div>
+                    <div class="vinyl-center-label">
+                        <img src="./images/vibentra-logo.png" alt="Vibentra Vinyl Label">
+                        <span>33⅓ RPM • STEREO</span>
+                    </div>
+                    <div class="vinyl-spindle-hole"></div>
+                </div>
+
+                <!-- Floating Glass Player Preview Card -->
+                <div class="mockup-card glass-panel tilt-card">
                     <div class="mockup-header">
                         <div class="window-dots">
                             <span class="dot dot-red"></span>
@@ -216,11 +246,10 @@
                     <div class="mockup-body">
                         <!-- Mode 1: Now Playing Live Stream -->
                         <div class="player-mockup-inner active-view" id="playerStreamView">
-                            <div class="mockup-album-art" id="mockupAlbumArt">
+                            <div class="mockup-album-art playing" id="mockupAlbumArt">
                                 <div class="subwoofer-ring ring-1"></div>
                                 <div class="subwoofer-ring ring-2"></div>
                                 <div class="subwoofer-ring ring-3"></div>
-                                <div class="album-art-shine"></div>
                                 <img src="./images/vibentra-logo.png" alt="Vibentra Playing Track" id="mockupCoverImg">
                                 <div class="playing-equalizer active" id="mockupEqualizer">
                                     <span class="eq-bar"></span>
@@ -236,11 +265,11 @@
 
                             <div class="mockup-info">
                                 <div class="mockup-track-meta" id="mockupTrackMeta">
-                                    <h3 id="mockupTrackTitle">Bloody Sweet (From "Leo")</h3>
-                                    <p id="mockupTrackArtist">Anirudh Ravichander • 100% Real Live Track</p>
+                                    <h3 id="mockTrackTitle">Bloody Sweet (From "Leo")</h3>
+                                    <p id="mockTrackArtist">Anirudh Ravichander • 100% Real Live Track</p>
                                 </div>
 
-                                <!-- Mini Progress Bar -->
+                                <!-- Seekable Progress Bar -->
                                 <div class="mockup-progress-wrap">
                                     <div class="mockup-progress-bar" id="mockupProgressBar">
                                         <div class="mockup-progress-fill" id="mockupProgressFill" style="width: 52%;"></div>
@@ -256,12 +285,12 @@
                                 <div class="mockup-controls">
                                     <button class="mock-btn" id="mockShuffleBtn" title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
                                     <button class="mock-btn" id="mockPrevBtn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
-                                    <button class="mock-btn play-main glow-btn ripple-trigger" id="mockPlayBtn" title="Play/Pause">
+                                    <button class="mock-btn play-main glow-btn" id="mockPlayBtn" title="Play/Pause">
                                         <i class="fa-solid fa-pause" id="mockPlayIcon"></i>
                                     </button>
                                     <button class="mock-btn" id="mockNextBtn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
                                     <button class="mock-btn" id="mockRepeatBtn" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
-                                    <button class="mock-btn sound-synth-btn" id="mockSoundToggle" title="Toggle Interactive Web Audio Chimes">
+                                    <button class="mock-btn sound-synth-btn active" id="mockSoundToggle" title="Toggle Interactive Web Audio Chimes">
                                         <i class="fa-solid fa-volume-high" id="mockSoundIcon"></i>
                                     </button>
                                 </div>
@@ -289,28 +318,28 @@
                                 <div class="dsp-slider-col">
                                     <span class="dsp-val" id="dspBassVal">+12 dB</span>
                                     <div class="slider-track-wrap">
-                                        <input type="range" class="dsp-vertical-range" id="sliderBass" min="0" max="15" value="12">
+                                        <input type="range" class="dsp-vertical-range" id="sliderBass" min="0" max="15" value="12" aria-label="Sub-Bass Gain">
                                     </div>
                                     <span class="dsp-band-lbl">Sub-Bass<br><small>60 Hz</small></span>
                                 </div>
                                 <div class="dsp-slider-col">
                                     <span class="dsp-val" id="dspMidVal">+4 dB</span>
                                     <div class="slider-track-wrap">
-                                        <input type="range" class="dsp-vertical-range" id="sliderMid" min="-6" max="12" value="4">
+                                        <input type="range" class="dsp-vertical-range" id="sliderMid" min="-6" max="12" value="4" aria-label="Vocal Mid Gain">
                                     </div>
                                     <span class="dsp-band-lbl">Vocal Mid<br><small>1.2 kHz</small></span>
                                 </div>
                                 <div class="dsp-slider-col">
                                     <span class="dsp-val" id="dspTrebleVal">+8 dB</span>
                                     <div class="slider-track-wrap">
-                                        <input type="range" class="dsp-vertical-range" id="sliderTreble" min="-6" max="12" value="8">
+                                        <input type="range" class="dsp-vertical-range" id="sliderTreble" min="-6" max="12" value="8" aria-label="Treble Air Gain">
                                     </div>
                                     <span class="dsp-band-lbl">Treble Air<br><small>8.0 kHz</small></span>
                                 </div>
                                 <div class="dsp-slider-col">
                                     <span class="dsp-val" id="dspSpatialVal">85%</span>
                                     <div class="slider-track-wrap">
-                                        <input type="range" class="dsp-vertical-range" id="sliderSpatial" min="0" max="100" value="85">
+                                        <input type="range" class="dsp-vertical-range" id="sliderSpatial" min="0" max="100" value="85" aria-label="3D Spatial Surround">
                                     </div>
                                     <span class="dsp-band-lbl">3D Spatial<br><small>Surround</small></span>
                                 </div>
@@ -329,222 +358,317 @@
         </div>
     </section>
 
-    <!-- Key Features Suite Section (Bento Grid Architecture) -->
-    <section class="features-section" id="features">
+    <!-- ==========================================================================
+         EXPERIENCE MARQUEE TICKER STRIP
+         ========================================================================== -->
+    <section class="marquee-ticker-section">
+        <div class="marquee-strip">
+            <div class="marquee-content">
+                <span class="ticker-item"><i class="fa-solid fa-compact-disc"></i> 100% REAL LIVE TRACKS</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-sliders"></i> 10-BAND GRAPHIC EQUALIZER</span>
+                <span class="ticker-item"><i class="fa-solid fa-microchip"></i> BIT-PERFECT USB-DAC PASSTHROUGH (#545)</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-shield-halved"></i> ZERO AD INTERRUPTIONS</span>
+                <span class="ticker-item"><i class="fa-solid fa-mobile-screen"></i> NATIVE ANDROID HOME WIDGETS</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-language"></i> AI MULTILINGUAL SYNCHRONIZED LYRICS</span>
+                <span class="ticker-item"><i class="fa-solid fa-tower-broadcast"></i> 320KBPS LOSSLESS RESOLVERS</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-moon"></i> SMART SLEEP FADE-OUT</span>
+                <span class="ticker-item"><i class="fa-solid fa-battery-half"></i> OLED TRUE-BLACK MODE</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-cloud"></i> FIREBASE CLOUD SYNC GUARD</span>
+            </div>
+            <!-- Duplicated for seamless continuous scroll loop -->
+            <div class="marquee-content" aria-hidden="true">
+                <span class="ticker-item"><i class="fa-solid fa-compact-disc"></i> 100% REAL LIVE TRACKS</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-sliders"></i> 10-BAND GRAPHIC EQUALIZER</span>
+                <span class="ticker-item"><i class="fa-solid fa-microchip"></i> BIT-PERFECT USB-DAC PASSTHROUGH (#545)</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-shield-halved"></i> ZERO AD INTERRUPTIONS</span>
+                <span class="ticker-item"><i class="fa-solid fa-mobile-screen"></i> NATIVE ANDROID HOME WIDGETS</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-language"></i> AI MULTILINGUAL SYNCHRONIZED LYRICS</span>
+                <span class="ticker-item"><i class="fa-solid fa-tower-broadcast"></i> 320KBPS LOSSLESS RESOLVERS</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-moon"></i> SMART SLEEP FADE-OUT</span>
+                <span class="ticker-item"><i class="fa-solid fa-battery-half"></i> OLED TRUE-BLACK MODE</span>
+                <span class="ticker-item highlight"><i class="fa-solid fa-cloud"></i> FIREBASE CLOUD SYNC GUARD</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+         PREMIUM MUSIC PRODUCT SHOWCASE (INTERACTIVE TABS)
+         ========================================================================== -->
+    <section class="product-showcase-section" id="showcase">
         <div class="section-container">
             <div class="section-header text-center">
-                <span class="section-tag"><i class="fa-solid fa-microchip"></i> INNOVATION SUITE v1.4.2</span>
-                <h2>Engineered for Audiophiles & Next-Gen Streaming</h2>
-                <p>Designed with liquid glass aesthetics, native Android home widgets, real-time cloud guard, and studio-grade 10-band DSP processing.</p>
+                <span class="section-tag"><i class="fa-solid fa-layer-group"></i> PRODUCT EXPERIENCE SHOWCASE</span>
+                <h2>Handcrafted For Sonic Immersion</h2>
+                <p>Explore the handcrafted interface architecture of Vibentra across synchronized lyrics, studio DSP tuning, and Android home widgets.</p>
             </div>
 
-            <div class="features-bento">
-                <!-- Bento 1: Real Live Tracks Engine (Wide Showcase) -->
-                <div class="bento-card bento-wide glass-card tilt-card border-beam-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-cyan">
-                                <i class="fa-solid fa-tower-broadcast"></i>
-                            </div>
-                            <div class="bento-badge-group">
-                                <span class="bento-cdn-chip"><span class="badge-live-pulse"></span>18ms CDN RESOLVER</span>
-                                <span class="feature-pill">NEW in v1.4.2</span>
-                            </div>
-                        </div>
-                        <h3>100% Real Live Tracks Engine</h3>
-                        <p>Authentic, dedicated tracklists for YouTube Music albums, Spotify recommendation feeds, and third-party extension audio streams. Albums like <em>Leo</em>, <em>Devara</em>, and <em>Tamil Top 50</em> load their genuine complete song sets with zero placeholder duplicates.</p>
-                        
-                        <!-- Mini Live Track Resolver Demo Visual -->
-                        <div class="bento-stream-visual">
-                            <div class="stream-pill active">
-                                <i class="fa-solid fa-compact-disc spin-icon"></i>
-                                <span>Bloody Sweet (Leo)</span>
-                                <span class="bitrate-tag">320kbps</span>
-                            </div>
-                            <div class="stream-pill">
-                                <i class="fa-solid fa-circle-play"></i>
-                                <span>Fear Song (Devara)</span>
-                                <span class="bitrate-tag">Master HQ</span>
-                            </div>
-                            <div class="stream-pill">
-                                <i class="fa-solid fa-circle-play"></i>
-                                <span>Radhimaa (Indie)</span>
-                                <span class="bitrate-tag">Lossless</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- Showcase Tab Navigation -->
+            <div class="showcase-tab-nav">
+                <button class="showcase-tab-btn active" data-showcase="lyrics">
+                    <i class="fa-solid fa-language"></i>
+                    <span>Now Playing & Synced Lyrics</span>
+                </button>
+                <button class="showcase-tab-btn" data-showcase="dsp">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>10-Band DSP Studio</span>
+                </button>
+                <button class="showcase-tab-btn" data-showcase="widgets">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <span>Android Home Widgets</span>
+                </button>
+                <button class="showcase-tab-btn" data-showcase="discovery">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    <span>Real Live Discovery & Addons</span>
+                </button>
+            </div>
 
-                <!-- Bento 2: Native Android Home Widgets Studio (Wide Showcase) -->
-                <div class="bento-card bento-wide glass-card tilt-card border-beam-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-blue">
-                                <i class="fa-solid fa-mobile-screen-button"></i>
+            <div class="showcase-panels-container">
+                <!-- Panel 1: Now Playing & Synced Lyrics -->
+                <div class="showcase-panel active" id="showcasePanelLyrics">
+                    <div class="lyrics-showcase-grid glass-panel">
+                        <div class="showcase-cover-card tilt-card">
+                            <div class="showcase-cover-img">
+                                <img src="./images/vibentra-logo.png" alt="Playing Album Cover">
                             </div>
-                            <div class="bento-badge-group">
-                                <span class="feature-pill">NATIVE ANDROID</span>
-                                <span class="feature-pill">NEW in v1.4.2</span>
+                            <h3 class="showcase-track-title">Bloody Sweet (From "Leo")</h3>
+                            <p class="showcase-track-artist">Anirudh Ravichander • 320kbps Master HQ</p>
+                            <div class="mockup-badges" style="margin-top: 16px;">
+                                <span class="mock-badge"><i class="fa-solid fa-check"></i> 100% Real Track</span>
+                                <span class="mock-badge"><i class="fa-solid fa-bolt text-cyan"></i> AI Synced</span>
                             </div>
                         </div>
-                        <h3>Android Home Widgets Studio</h3>
-                        <p>Control your vibes straight from your phone home screen without opening the app. Featuring the interactive Vinyl Turntable widget and large Hero Music Player widget.</p>
-                        
-                        <!-- Mini Android Widget Interactive Mockup -->
-                        <div class="widget-preview-grid">
-                            <div class="widget-preview-card">
-                                <span class="widget-card-tag"><i class="fa-solid fa-compact-disc"></i> Turntable Vinyl Widget</span>
-                                <div class="widget-mock-content">
-                                    <div class="widget-mini-disc spinning"></div>
-                                    <div class="widget-mini-meta">
-                                        <strong>Bloody Sweet</strong>
-                                        <span>33⅓ RPM Spin</span>
-                                        <div class="widget-mini-btns">
-                                            <button class="widget-mini-btn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
-                                            <button class="widget-mini-btn" title="Play/Pause"><i class="fa-solid fa-pause"></i></button>
-                                            <button class="widget-mini-btn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
-                                        </div>
-                                    </div>
+
+                        <div class="lyrics-container-card">
+                            <div class="lyrics-header">
+                                <div>
+                                    <h4 style="color: var(--text-main); font-size: 1.1rem;">Synchronized AI Lyrics</h4>
+                                    <p style="font-size: 0.82rem; color: var(--accent-cyan);">Real-time translation & Romanization</p>
+                                </div>
+                                <div class="lyrics-lang-selector">
+                                    <button class="lang-chip active">English</button>
+                                    <button class="lang-chip active">Tamil தமிழ்</button>
+                                    <button class="lang-chip">Hindi हिंदी</button>
+                                    <button class="lang-chip">Español</button>
+                                    <button class="lang-chip">Français</button>
+                                    <button class="lang-chip">日本語</button>
                                 </div>
                             </div>
-                            <div class="widget-preview-card">
-                                <span class="widget-card-tag"><i class="fa-solid fa-music"></i> Hero Player Widget</span>
-                                <div class="widget-mock-content">
-                                    <div class="widget-mini-meta">
-                                        <strong>Fear Song (Devara)</strong>
-                                        <span>Anirudh Ravichander • 320kbps</span>
-                                        <div class="widget-mini-btns">
-                                            <button class="widget-mini-btn" title="Heart"><i class="fa-solid fa-heart text-pink"></i></button>
-                                            <button class="widget-mini-btn" title="Play"><i class="fa-solid fa-play"></i></button>
-                                            <button class="widget-mini-btn" title="Forward"><i class="fa-solid fa-forward-step"></i></button>
-                                        </div>
-                                    </div>
+
+                            <div class="lyrics-scroller">
+                                <div class="lyric-line">
+                                    I am waiting for you on the border line...
+                                    <span class="lyric-translation">நான் எல்லைக் கோட்டில் உனக்காக காத்திருக்கிறேன்...</span>
+                                </div>
+                                <div class="lyric-line active">
+                                    Bloody sweet, this game has only just begun!
+                                    <span class="lyric-translation">ரத்த சுவை கொண்ட இந்த ஆட்டம் இப்போது தான் துவங்கியுள்ளது!</span>
+                                </div>
+                                <div class="lyric-line">
+                                    Never turn back when the fire starts to roar...
+                                    <span class="lyric-translation">நெருப்பு கர்ஜிக்கும் போது பின்வாங்காதே...</span>
+                                </div>
+                                <div class="lyric-line">
+                                    Every beat resounds in 320kbps pure harmony.
+                                    <span class="lyric-translation">ஒவ்வொரு துடிப்பும் தூய ஒலியில் எதிரொலிக்கிறது.</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bento 3: Sound DSP Studio -->
-                <div class="bento-card glass-card tilt-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-purple">
-                                <i class="fa-solid fa-sliders"></i>
+                <!-- Panel 2: 10-Band DSP Studio Showcase -->
+                <div class="showcase-panel" id="showcasePanelDsp">
+                    <div class="dsp-showcase-rack glass-panel">
+                        <div class="dsp-rack-header">
+                            <div>
+                                <span class="section-tag tag-cyan"><i class="fa-solid fa-sliders"></i> BIT-PERFECT DSP CORE</span>
+                                <h3 style="font-size: 1.5rem; margin-top: 6px;">Studio Graphic Equalizer & Acoustic Shaping</h3>
+                                <p style="font-size: 0.95rem; color: var(--text-secondary);">Direct hardware-accelerated audio processing with sub-bass booster and surround virtualizer.</p>
                             </div>
-                            <span class="feature-pill">DSP Core</span>
+                            <div class="dsp-presets-row">
+                                <button class="dsp-preset-pill active">Bass Punch (+15dB)</button>
+                                <button class="dsp-preset-pill">Vocal Clarity</button>
+                                <button class="dsp-preset-pill">Lossless Flat</button>
+                                <button class="dsp-preset-pill">Vinyl Warmth</button>
+                            </div>
                         </div>
-                        <h3>Sound & DSP Studio</h3>
-                        <p>10-Band Graphic Equalizer, sub-bass drive booster (0 to +15 dB), 3D spatial virtualizer, pitch preservation, and 0.5x–2.0x playback tempo tuning.</p>
-                        <div class="bento-db-meter">
-                            <span class="db-tag">Bass: +15 dB</span>
-                            <div class="db-bar-fill"></div>
-                            <span class="db-tag">3D Surround: 85%</span>
+
+                        <!-- Equalizer Frequency Curve Visualizer -->
+                        <div class="dsp-curve-visualizer">
+                            <svg class="dsp-curve-svg" viewBox="0 0 800 120" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="eqCurveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.8" />
+                                        <stop offset="50%" stop-color="#22D3EE" stop-opacity="0.9" />
+                                        <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.8" />
+                                    </linearGradient>
+                                    <linearGradient id="eqFillGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.25" />
+                                        <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.0" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M 0 90 Q 100 20 200 45 T 400 30 T 600 65 T 800 50 L 800 120 L 0 120 Z" fill="url(#eqFillGradient)"></path>
+                                <path d="M 0 90 Q 100 20 200 45 T 400 30 T 600 65 T 800 50" fill="none" stroke="url(#eqCurveGradient)" stroke-width="3"></path>
+                            </svg>
+                        </div>
+
+                        <!-- 8-Band Frequency Control Rack -->
+                        <div class="dsp-rack-sliders">
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+15 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="15" aria-label="31 Hz">
+                                </div>
+                                <span class="dsp-band-lbl">Sub-Bass<br><small>31 Hz</small></span>
+                            </div>
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+12 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="12" aria-label="62 Hz">
+                                </div>
+                                <span class="dsp-band-lbl">Bass<br><small>62 Hz</small></span>
+                            </div>
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+8 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="8" aria-label="125 Hz">
+                                </div>
+                                <span class="dsp-band-lbl">Warmth<br><small>125 Hz</small></span>
+                            </div>
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+3 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="3" aria-label="500 Hz">
+                                </div>
+                                <span class="dsp-band-lbl">Body<br><small>500 Hz</small></span>
+                            </div>
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+5 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="5" aria-label="1 kHz">
+                                </div>
+                                <span class="dsp-band-lbl">Vocal Mid<br><small>1.0 kHz</small></span>
+                            </div>
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+6 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="6" aria-label="2 kHz">
+                                </div>
+                                <span class="dsp-band-lbl">Clarity<br><small>2.0 kHz</small></span>
+                            </div>
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+9 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="9" aria-label="8 kHz">
+                                </div>
+                                <span class="dsp-band-lbl">Presence<br><small>8.0 kHz</small></span>
+                            </div>
+                            <div class="dsp-slider-col">
+                                <span class="dsp-val">+10 dB</span>
+                                <div class="slider-track-wrap">
+                                    <input type="range" class="dsp-vertical-range" min="-12" max="15" value="10" aria-label="16 kHz">
+                                </div>
+                                <span class="dsp-band-lbl">Air & Shine<br><small>16 kHz</small></span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bento 4: AI Multilingual Lyrics Translation -->
-                <div class="bento-card glass-card tilt-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-teal">
-                                <i class="fa-solid fa-language"></i>
+                <!-- Panel 3: Android Home Widgets Studio -->
+                <div class="showcase-panel" id="showcasePanelWidgets">
+                    <div class="widgets-showcase-grid">
+                        <div class="widget-presentation-card">
+                            <span class="widget-card-tag"><i class="fa-solid fa-compact-disc"></i> WIDGET 1: TURNTABLE VINYL WIDGET</span>
+                            <h3 style="color: var(--text-main); font-size: 1.3rem;">Interactive Analog Disc Widget</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.95rem;">Experience continuous 33⅓ RPM vinyl rotation with responsive touch-play controls directly from your Android home screen.</p>
+                            
+                            <div class="widget-mock-content">
+                                <div class="widget-mini-disc spinning"></div>
+                                <div class="widget-mini-meta">
+                                    <strong>Bloody Sweet (Leo)</strong>
+                                    <span>33⅓ RPM Analog Spin • Live</span>
+                                    <div class="widget-mini-btns">
+                                        <button class="widget-mini-btn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+                                        <button class="widget-mini-btn" title="Pause"><i class="fa-solid fa-pause"></i></button>
+                                        <button class="widget-mini-btn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+                                    </div>
+                                </div>
                             </div>
-                            <span class="feature-pill">AI Engine</span>
+                            <div class="feature-metric-row">
+                                <span class="feature-metric-tag"><i class="fa-solid fa-bolt text-cyan"></i> Zero-Open Control</span>
+                                <span class="feature-metric-tag"><i class="fa-solid fa-battery-full text-emerald"></i> Battery Optimized</span>
+                            </div>
                         </div>
-                        <h3>Multilingual Lyrics Translation</h3>
-                        <p>Real-time AI translation of synced live lyrics across 7 languages directly inside the full-screen player view.</p>
-                        <div class="lyrics-lang-chips">
-                            <span class="lang-chip active">English</span>
-                            <span class="lang-chip active">Tamil தமிழ்</span>
-                            <span class="lang-chip">Hindi हिंदी</span>
-                            <span class="lang-chip">Español</span>
-                            <span class="lang-chip">Français</span>
-                            <span class="lang-chip">日本語</span>
+
+                        <div class="widget-presentation-card">
+                            <span class="widget-card-tag"><i class="fa-solid fa-music"></i> WIDGET 2: HERO PLAYER WIDGET</span>
+                            <h3 style="color: var(--text-main); font-size: 1.3rem;">Hero Audio Dashboard Widget</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.95rem;">High-contrast track title, lossless bitrate tag, real-time progress scrub, and one-tap heart favorite button without entering the app.</p>
+                            
+                            <div class="widget-mock-content">
+                                <img src="./images/vibentra-logo.png" alt="Hero Widget Artwork" style="width: 64px; height: 64px; border-radius: 12px; border: 1px solid var(--border-subtle);">
+                                <div class="widget-mini-meta">
+                                    <strong>Fear Song (Devara)</strong>
+                                    <span>Anirudh Ravichander • 320kbps</span>
+                                    <div class="widget-mini-btns">
+                                        <button class="widget-mini-btn" title="Heart Favorite"><i class="fa-solid fa-heart text-pink"></i></button>
+                                        <button class="widget-mini-btn" title="Play"><i class="fa-solid fa-play"></i></button>
+                                        <button class="widget-mini-btn" title="Forward"><i class="fa-solid fa-forward-step"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="feature-metric-row">
+                                <span class="feature-metric-tag"><i class="fa-solid fa-check text-cyan"></i> Native MediaSession</span>
+                                <span class="feature-metric-tag"><i class="fa-solid fa-lock text-purple"></i> Lock Screen Active</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bento 5: Vinyl Turntable Studio (Wide Showcase) -->
-                <div class="bento-card bento-wide glass-card tilt-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-cyan">
-                                <i class="fa-solid fa-compact-disc"></i>
-                            </div>
-                            <span class="feature-pill">Analog Audio</span>
+                <!-- Panel 4: Real Live CDN Resolver Streams -->
+                <div class="showcase-panel" id="showcasePanelDiscovery">
+                    <div class="discovery-showcase-grid glass-panel">
+                        <div style="text-align: center; max-width: 700px; margin: 0 auto;">
+                            <span class="section-tag tag-cyan"><i class="fa-solid fa-tower-broadcast"></i> ZERO DUPLICATES GUARANTEE</span>
+                            <h3 style="font-size: 1.6rem; margin-top: 8px;">100% Real Live Tracks CDN Resolvers</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.98rem; margin-top: 6px;">
+                                In Vibentra v1.4.2, every single album and playlist connects directly to authentic provider endpoints. Albums like <em>Leo</em>, <em>Devara</em>, and <em>Tamil Top 50</em> load complete authentic song sets with zero placeholder duplicates.
+                            </p>
                         </div>
-                        <h3>Vinyl Turntable Studio (33⅓ & 45 RPM)</h3>
-                        <p>Interactive rotating vinyl disc with fluid tonearm needle animations, quartz lock pitch display, ambient record reflection glow, and lossless ringtone trimmer.</p>
-                        <div class="bento-turntable-preview">
-                            <span class="rpm-chip"><i class="fa-solid fa-rotate"></i> 33⅓ Standard</span>
-                            <span class="rpm-chip active"><i class="fa-solid fa-bolt text-cyan"></i> 45 RPM Club Mode</span>
-                            <span class="rpm-chip"><i class="fa-solid fa-crosshairs"></i> Quartz Lock ±0.0%</span>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Bento 6: Smart Call Focus & Auto-Resume -->
-                <div class="bento-card glass-card tilt-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-emerald">
-                                <i class="fa-solid fa-phone-volume"></i>
+                        <div class="stream-resolver-list">
+                            <div class="resolver-card">
+                                <div class="resolver-header">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <i class="fa-solid fa-compact-disc text-cyan" style="font-size: 1.3rem;"></i>
+                                        <strong style="color: var(--text-main);">Bloody Sweet (Leo)</strong>
+                                    </div>
+                                    <span class="resolver-badge">18ms RESOLVER</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Direct stream from high-speed audio CDN. 320kbps bit-perfect lossless transfer.</p>
                             </div>
-                            <span class="feature-pill">Audio Focus</span>
-                        </div>
-                        <h3>Smart Call Focus & Auto-Resume</h3>
-                        <p>Detects phone calls via Android TelephonyManager. Zero sound bleed: instantly mutes music during calls, and smoothly resumes where you left off when you hang up.</p>
-                        <div class="bento-notification-mock">
-                            <i class="fa-solid fa-check-double text-emerald"></i>
-                            <span>Zero Sound Bleed • Smooth Auto-Resume</span>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Bento 7: Smart Sleep Timer -->
-                <div class="bento-card glass-card tilt-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-pink">
-                                <i class="fa-solid fa-moon"></i>
+                            <div class="resolver-card">
+                                <div class="resolver-header">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <i class="fa-solid fa-circle-play text-purple" style="font-size: 1.3rem;"></i>
+                                        <strong style="color: var(--text-main);">Fear Song (Devara)</strong>
+                                    </div>
+                                    <span class="resolver-badge">AUTHENTIC</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Verified full soundtrack stream. Zero duplicate filler songs or placeholders.</p>
                             </div>
-                            <span class="feature-pill">Automation</span>
-                        </div>
-                        <h3>Smart Sleep Timer</h3>
-                        <p>Automated sleep countdowns (15m to 90m), custom duration inputs, stop-after-current-track triggers, and smooth 30-second volume fade-out.</p>
-                    </div>
-                </div>
 
-                <!-- Bento 8: Battery Saver & OLED True-Black -->
-                <div class="bento-card glass-card tilt-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-amber">
-                                <i class="fa-solid fa-battery-half"></i>
+                            <div class="resolver-card">
+                                <div class="resolver-header">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <i class="fa-brands fa-spotify text-emerald" style="font-size: 1.3rem;"></i>
+                                        <strong style="color: var(--text-main);">Daily Taste Mix</strong>
+                                    </div>
+                                    <span class="resolver-badge">LOCAL TASTE #542</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">On-device taste engine refreshing playlists every 24 hours based on play counts & recency.</p>
                             </div>
-                            <span class="feature-pill">Battery Lab</span>
-                        </div>
-                        <h3>Battery Saver & OLED Mode</h3>
-                        <p>1-tap battery saver halts continuous GPU blurs and switches to pure OLED true-black, complete with real-time device battery diagnostics.</p>
-                    </div>
-                </div>
-
-                <!-- Bento 9: Permanent Playlist Deletion & Cloud Guard -->
-                <div class="bento-card glass-card tilt-card">
-                    <div class="bento-inner">
-                        <div class="feature-header">
-                            <div class="feature-icon icon-teal">
-                                <i class="fa-solid fa-shield-halved"></i>
-                            </div>
-                            <span class="feature-pill">Security</span>
-                        </div>
-                        <h3>Permanent Deletion & Cloud Guard</h3>
-                        <p>Deleted playlist IDs are permanently blacklisted locally and purged in Firebase Cloud Firestore. Zero zombie playlists resurrecting on cloud sync.</p>
-                        <div class="bento-shield-badge">
-                            <i class="fa-solid fa-lock text-teal"></i>
-                            <span>Blacklist Guard: Zero Zombie Playlists</span>
                         </div>
                     </div>
                 </div>
@@ -552,7 +676,262 @@
         </div>
     </section>
 
-    <!-- Interactive Live Demo & Turntable Showcase Section -->
+    <!-- ==========================================================================
+         FEATURE SECTION REDESIGN (CATEGORIZED DISCOVER / EXPERIENCE / ENHANCE / CONTROL)
+         ========================================================================== -->
+    <section class="features-section" id="features">
+        <div class="section-container">
+            <div class="section-header text-center">
+                <span class="section-tag"><i class="fa-solid fa-microchip"></i> COMPREHENSIVE INNOVATION SUITE</span>
+                <h2>Architected for Audiophiles & Daily Vibers</h2>
+                <p>All verified capabilities organized into four distinct engineering categories: Discover, Experience, Enhance, and Control.</p>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="category-filter-bar">
+                <button class="category-filter-btn active" data-filter="all">All Features (15)</button>
+                <button class="category-filter-btn" data-filter="discover">Category A — Discover</button>
+                <button class="category-filter-btn" data-filter="experience">Category B — Experience</button>
+                <button class="category-filter-btn" data-filter="enhance">Category C — Enhance</button>
+                <button class="category-filter-btn" data-filter="control">Category D — Control</button>
+            </div>
+
+            <div class="features-grid">
+                <!-- 1. Real Live Tracks Engine (Discover - Wide) -->
+                <div class="feature-card col-wide tilt-card" data-category="discover">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-tower-broadcast"></i>
+                        </div>
+                        <span class="feature-category-pill">DISCOVER • v1.4.2 CORE</span>
+                    </div>
+                    <h3>100% Real Live Tracks Engine</h3>
+                    <p>Authentic, dedicated tracklists for YouTube Music albums, Spotify recommendation feeds, and third-party extension audio streams. Albums like <em>Leo</em>, <em>Devara</em>, and <em>Tamil Top 50</em> load their genuine complete song sets with zero placeholder duplicates.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-bolt text-cyan"></i> 18ms CDN Resolver</span>
+                        <span class="feature-metric-tag"><i class="fa-solid fa-compact-disc text-purple"></i> 320kbps Master</span>
+                        <span class="feature-metric-tag"><i class="fa-solid fa-circle-check text-emerald"></i> Zero Placeholders</span>
+                    </div>
+                </div>
+
+                <!-- 2. Extensible Addon Sources (Discover) -->
+                <div class="feature-card tilt-card" data-category="discover">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-plug"></i>
+                        </div>
+                        <span class="feature-category-pill">DISCOVER • ADDONS</span>
+                    </div>
+                    <h3>Extensible Content Extensions (Addons)</h3>
+                    <p>Plug in custom third-party extension server URLs to pull in independent audio catalogs straight into native Search and playback, protected by strict HTTPS scheme validation.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-shield-halved text-cyan"></i> HTTPS Validation</span>
+                    </div>
+                </div>
+
+                <!-- 3. Local Taste Engine & Recommendations (Discover) -->
+                <div class="feature-card tilt-card" data-category="discover">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <span class="feature-category-pill">DISCOVER • AI HUB</span>
+                    </div>
+                    <h3>Local Taste Engine & Daily Mix (#542)</h3>
+                    <p>Generates tailored playlists on-device by evaluating play counts, skip rates, likes, and time of day. Refreshes the "My Taste Mix" every 24 hours with a permanent "Never Recommend Again" blacklist.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-clock-rotate-left text-purple"></i> 24-Hour Cycle</span>
+                    </div>
+                </div>
+
+                <!-- 4. Bit-Perfect USB-DAC Passthrough (Experience) -->
+                <div class="feature-card tilt-card" data-category="experience">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <span class="feature-category-pill">EXPERIENCE • BIT-PERFECT</span>
+                    </div>
+                    <h3>Bit-Perfect USB-DAC Output (#545)</h3>
+                    <p>Direct low-level C++ audio passthrough to external audiophile USB DACs. Supports UAC1 and UAC2 devices with automatic hardware sample-rate switching and lossless master volume control.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-sliders text-cyan"></i> UAC1 / UAC2 Native</span>
+                    </div>
+                </div>
+
+                <!-- 5. AI Multilingual Synced Lyrics (Experience) -->
+                <div class="feature-card tilt-card" data-category="experience">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-language"></i>
+                        </div>
+                        <span class="feature-category-pill">EXPERIENCE • LYRICS</span>
+                    </div>
+                    <h3>AI Multilingual Synced Lyrics</h3>
+                    <p>Live synchronized lyrics with real-time AI translation across 7 languages (English, Tamil, Hindi, Spanish, French, Japanese). Features an Ambient Mode with centered 60% readability block.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-globe text-purple"></i> 7 Languages Synced</span>
+                    </div>
+                </div>
+
+                <!-- 6. Vinyl Turntable Studio (Experience - Wide) -->
+                <div class="feature-card col-wide tilt-card" data-category="experience">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-compact-disc"></i>
+                        </div>
+                        <span class="feature-category-pill">EXPERIENCE • ANALOG AUDIO</span>
+                    </div>
+                    <h3>Vinyl Turntable Studio (33⅓ & 45 RPM)</h3>
+                    <p>Interactive rotating vinyl disc with fluid tonearm needle physics, realistic grooved light reflections, quartz lock pitch indicator (±0.0%), and strobe light. Bridges retro analog warmth with lossless 320kbps web streaming.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-rotate text-cyan"></i> Dual RPM Physics</span>
+                        <span class="feature-metric-tag"><i class="fa-solid fa-crosshairs text-purple"></i> Quartz Pitch Lock</span>
+                    </div>
+                </div>
+
+                <!-- 7. Zero-Stutter Native Background Playback (Experience) -->
+                <div class="feature-card tilt-card" data-category="experience">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-emerald">
+                            <i class="fa-solid fa-play"></i>
+                        </div>
+                        <span class="feature-category-pill">EXPERIENCE • AUDIO ENGINE</span>
+                    </div>
+                    <h3>Zero-Stutter Background Playback</h3>
+                    <p>Engineered with active WebAudio keep-alive threading, MediaSession API integration, and native Capacitor Android background audio services. Uninterrupted playback when locked or in pocket.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-lock text-emerald"></i> Lock-Screen Active</span>
+                    </div>
+                </div>
+
+                <!-- 8. 10-Band Graphic Equalizer (Enhance) -->
+                <div class="feature-card tilt-card" data-category="enhance">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <span class="feature-category-pill">ENHANCE • DSP STUDIO</span>
+                    </div>
+                    <h3>10-Band Graphic Equalizer</h3>
+                    <p>Studio-grade acoustic shaping from 31 Hz to 16 kHz. Includes a dedicated sub-bass drive booster (0 to +15 dB) that delivers punchy low-end response without digital clipping.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-bolt text-purple"></i> Bass Boost: +15 dB</span>
+                    </div>
+                </div>
+
+                <!-- 9. 3D Spatial Virtualizer & Surround (Enhance) -->
+                <div class="feature-card tilt-card" data-category="enhance">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-headphones"></i>
+                        </div>
+                        <span class="feature-category-pill">ENHANCE • SPATIAL AUDIO</span>
+                    </div>
+                    <h3>3D Spatial Virtualizer</h3>
+                    <p>Transforms standard stereo tracks into an expansive, holographic 3D surround soundstage with adjustable spatial immersion percentage (0 to 100%).</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-arrows-to-circle text-cyan"></i> Holographic Soundstage</span>
+                    </div>
+                </div>
+
+                <!-- 10. Varispeed Pitch & Tempo Engine (Enhance) -->
+                <div class="feature-card tilt-card" data-category="enhance">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-amber">
+                            <i class="fa-solid fa-gauge-high"></i>
+                        </div>
+                        <span class="feature-category-pill">ENHANCE • TAPE VARISPEED</span>
+                    </div>
+                    <h3>Varispeed Pitch & Tempo Engine</h3>
+                    <p>Analog tape-style playback control that optionally links pitch to playback tempo from 0.5x to 2.0x, or locks pitch for pure time-stretching accuracy.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-tape text-amber"></i> 0.5x–2.0x Pitch Link</span>
+                    </div>
+                </div>
+
+                <!-- 11. Equal-Power Crossfade & Prebuffering (Enhance) -->
+                <div class="feature-card tilt-card" data-category="enhance">
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-shuffle"></i>
+                        </div>
+                        <span class="feature-category-pill">ENHANCE • TRANSITIONS</span>
+                    </div>
+                    <h3>Equal-Power Crossfade Engine</h3>
+                    <p>Ultra-smooth track transitions using mathematical equal-power loudness curves paired with adaptive track prebuffering to eliminate silent gaps between songs.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-wave-square text-purple"></i> Gapless Prebuffer</span>
+                    </div>
+                </div>
+
+                <!-- 12. Android Home Widgets Studio (Control - Wide) -->
+                <div class="feature-card col-wide tilt-card" data-category="control">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                        </div>
+                        <span class="feature-category-pill">CONTROL • NATIVE ANDROID</span>
+                    </div>
+                    <h3>Android Home Widgets Studio</h3>
+                    <p>Control music straight from your phone home screen without opening the app. Featuring the interactive Vinyl Turntable Widget with live 33⅓ RPM disc spinning, and the Hero Music Player Widget with instant favorite hearting.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-compact-disc text-cyan"></i> Turntable Widget</span>
+                        <span class="feature-metric-tag"><i class="fa-solid fa-music text-purple"></i> Hero Dashboard Widget</span>
+                    </div>
+                </div>
+
+                <!-- 13. Smart Call Focus & Auto-Resume (Control) -->
+                <div class="feature-card tilt-card" data-category="control">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-emerald">
+                            <i class="fa-solid fa-phone-volume"></i>
+                        </div>
+                        <span class="feature-category-pill">CONTROL • AUDIO FOCUS</span>
+                    </div>
+                    <h3>Smart Call Focus & Auto-Resume</h3>
+                    <p>Integrates with Android TelephonyManager. Zero sound bleed: automatically pauses music the moment an incoming phone call is detected, and smoothly resumes playback when you hang up.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-check-double text-emerald"></i> Zero Bleed</span>
+                    </div>
+                </div>
+
+                <!-- 14. Smart Sleep Timer (Control) -->
+                <div class="feature-card tilt-card" data-category="control">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-pink">
+                            <i class="fa-solid fa-moon"></i>
+                        </div>
+                        <span class="feature-category-pill">CONTROL • AUTOMATION</span>
+                    </div>
+                    <h3>Smart Sleep Timer</h3>
+                    <p>Automated sleep countdowns (15m to 90m), custom timer durations, stop-after-current-track triggers, and a gentle 30-second volume fade-out that protects hearing while falling asleep.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-volume-low text-pink"></i> 30s Volume Fade</span>
+                    </div>
+                </div>
+
+                <!-- 15. Permanent Deletion & Cloud Guard (Control) -->
+                <div class="feature-card tilt-card" data-category="control">
+                    <div class="feature-header">
+                        <div class="feature-icon icon-cyan">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <span class="feature-category-pill">CONTROL • CLOUD SYNC</span>
+                    </div>
+                    <h3>Permanent Deletion & Cloud Guard</h3>
+                    <p>Deleted playlist IDs are permanently blacklisted on-device and purged in Firebase Cloud Firestore. Zero zombie playlists resurfacing on background cloud synchronizations.</p>
+                    <div class="feature-metric-row">
+                        <span class="feature-metric-tag"><i class="fa-solid fa-lock text-cyan"></i> Zero Zombie Playlists</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+         INTERACTIVE LIVE TURNTABLE DEMO & AUDIO PHYSICS
+         ========================================================================== -->
     <section class="demo-section" id="demo">
         <div class="section-container">
             <div class="demo-wrapper glass-panel">
@@ -565,22 +944,22 @@
                         <div class="demo-feature-item">
                             <div class="demo-bullet"><i class="fa-solid fa-check"></i></div>
                             <div>
-                                <h4>Interactive Tonearm Needle</h4>
+                                <h4>Interactive Tonearm Stylus</h4>
                                 <p>Tonearm glides smoothly onto the vinyl record when playing, and returns to rest when paused.</p>
                             </div>
                         </div>
                         <div class="demo-feature-item">
                             <div class="demo-bullet"><i class="fa-solid fa-check"></i></div>
                             <div>
-                                <h4>33⅓ RPM Realistic Spin</h4>
-                                <p>Hardware-accelerated CSS3 matrix keyframe spinning with ambient light reflection.</p>
+                                <h4>33⅓ & 45 RPM Dual Physics</h4>
+                                <p>Hardware-accelerated CSS3 keyframe spinning with ambient specular light reflection and strobe synchronization.</p>
                             </div>
                         </div>
                         <div class="demo-feature-item">
                             <div class="demo-bullet"><i class="fa-solid fa-check"></i></div>
                             <div>
                                 <h4>Lossless Stream Resolution</h4>
-                                <p>Integrated with YouTube Music, Spotify integration, and third-party addon extension streaming backends delivering authentic 320kbps sound.</p>
+                                <p>Integrated with YouTube Music, Spotify recommendation carousels, and third-party extension stream resolvers delivering authentic 320kbps sound.</p>
                             </div>
                         </div>
                     </div>
@@ -590,7 +969,7 @@
                             <i class="fa-solid fa-play"></i> Experience Full App
                         </a>
                         <button class="btn btn-outline" id="demoTurntableToggleBtn">
-                            <i class="fa-solid fa-rotate"></i> Toggle Turntable Spin
+                            <i class="fa-solid fa-pause"></i> Pause Turntable
                         </button>
                     </div>
                 </div>
@@ -640,7 +1019,9 @@
         </div>
     </section>
 
-    <!-- Architecture & Tech Stack Section -->
+    <!-- ==========================================================================
+         ARCHITECTURE & TECH STACK SECTION
+         ========================================================================== -->
     <section class="architecture-section" id="architecture">
         <div class="section-container">
             <div class="section-header text-center">
@@ -689,7 +1070,9 @@
         </div>
     </section>
 
-    <!-- Creator & Developer Spotlight Section -->
+    <!-- ==========================================================================
+         CREATOR & DEVELOPER SPOTLIGHT SECTION
+         ========================================================================== -->
     <section class="developer-section" id="developer">
         <div class="section-container">
             <div class="developer-card glass-panel tilt-card">
@@ -700,7 +1083,7 @@
                     </div>
                     <div class="dev-socials">
                         <a href="https://srivatsan-portfolio.vercel.app/" target="_blank" rel="noopener noreferrer" class="social-btn" title="Creator Portfolio"><i class="fa-solid fa-globe"></i></a>
-                        <a href="https://github.com/srivatsan2007" target="_blank" rel="noopener noreferrer" class="social-btn" title="GitHub"><i class="fa-brands fa-github"></i></a>
+                        <a href="https://github.com/srivatsan2007" target="_blank" rel="noopener noreferrer" class="social-btn" title="GitHub Profile"><i class="fa-brands fa-github"></i></a>
                     </div>
                 </div>
 
@@ -752,7 +1135,66 @@
         </div>
     </section>
 
-    <!-- FAQ & Help Hub Section -->
+    <!-- ==========================================================================
+         ANDROID DOWNLOAD & INSTALLATION GUIDE SECTION
+         ========================================================================== -->
+    <section class="download-section" id="download">
+        <div class="section-container">
+            <div class="download-box glass-panel">
+                <div class="download-header">
+                    <div class="download-title-group">
+                        <span class="section-tag tag-cyan"><i class="fa-brands fa-android"></i> OFFICIAL ANDROID APK</span>
+                        <h2>Get Vibentra for Android</h2>
+                        <p>Experience bit-perfect playback, offline caching, and interactive home widgets with zero ads.</p>
+                    </div>
+                    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                        <a href="vibentra.apk" download="vibentra.apk" class="btn btn-primary glow-btn">
+                            <i class="fa-brands fa-android"></i> Download APK (99 MB)
+                        </a>
+                        <a href="https://github.com/srivatsan2007/Vibentra" target="_blank" rel="noopener noreferrer" class="btn btn-github">
+                            <i class="fa-brands fa-github"></i> View Releases
+                        </a>
+                    </div>
+                </div>
+
+                <div class="install-steps-grid">
+                    <div class="install-step-card">
+                        <span class="step-num-badge">1</span>
+                        <h4>Download the APK</h4>
+                        <p>Click the download button to grab <code>vibentra.apk</code> (98.8 MB verified package). Compatible with Android 8.0 (Oreo) and newer.</p>
+                    </div>
+
+                    <div class="install-step-card">
+                        <span class="step-num-badge">2</span>
+                        <h4>Allow Unknown Sources</h4>
+                        <p>Open the downloaded APK. If prompted by your browser or Android system, toggle on <em>"Allow installation from this source"</em>.</p>
+                    </div>
+
+                    <div class="install-step-card">
+                        <span class="step-num-badge">3</span>
+                        <h4>Install & Enjoy Vibes</h4>
+                        <p>Tap <strong>Install</strong>. Once complete, launch Vibentra and add the Vinyl Turntable or Hero widget to your home screen!</p>
+                    </div>
+                </div>
+
+                <div class="download-meta-bar">
+                    <div class="meta-badges-group">
+                        <span class="meta-chip"><i class="fa-solid fa-code-branch"></i> Version: <strong>v1.4.2-stable</strong></span>
+                        <span class="meta-chip"><i class="fa-solid fa-weight-scale"></i> Size: <strong>98.8 MB (99 MB)</strong></span>
+                        <span class="meta-chip"><i class="fa-brands fa-android"></i> Minimum: <strong>Android 8.0+</strong></span>
+                        <span class="meta-chip"><i class="fa-solid fa-shield-halved"></i> License: <strong>100% Free & Open Source</strong></span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">
+                        Build 2026.10 • October 11, 2026
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================================================
+         FAQ & HELP HUB SECTION
+         ========================================================================== -->
     <section class="faq-section" id="faq">
         <div class="section-container">
             <div class="section-header text-center">
@@ -831,7 +1273,9 @@
         </div>
     </section>
 
-    <!-- Release Notes & Download Console Section -->
+    <!-- ==========================================================================
+         RELEASE NOTES & DOWNLOAD CONSOLE SECTION
+         ========================================================================== -->
     <section class="releases-section" id="releases">
         <div class="section-container">
             <div class="section-header text-center">
@@ -840,14 +1284,14 @@
                 <p>Released on October 11, 2026 • Bit-Perfect USB-DAC Passthrough, Extension Addons, Modular Architecture & AI Hub.</p>
             </div>
 
-            <div class="release-box glass-card border-beam-card">
+            <div class="release-box glass-card">
                 <div class="release-header">
                     <div>
                         <span class="release-status"><i class="fa-solid fa-circle-check text-cyan"></i> OFFICIAL RELEASE • OCTOBER 11, 2026</span>
                         <h2 class="release-title">Vibentra v1.4.2</h2>
                         <p class="release-date"><i class="fa-regular fa-calendar-check"></i> Released on October 11, 2026 • Build 2026.10 (v1.4.2-stable)</p>
                     </div>
-                    <div class="release-actions">
+                    <div class="release-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
                         <a href="vibentra.apk" download="vibentra.apk" class="btn btn-primary glow-btn">
                             <i class="fa-brands fa-android"></i> Download APK (99 MB)
                         </a>
@@ -858,7 +1302,7 @@
                     </div>
                 </div>
 
-                <!-- Latest Release Prompt Lead Notice -->
+                <!-- Latest Release Lead Notice -->
                 <div class="release-summary-lead">
                     <p class="lead-text">
                         <i class="fa-solid fa-bullhorn text-cyan"></i>
@@ -1010,7 +1454,9 @@
         </div>
     </section>
 
-    <!-- Footer -->
+    <!-- ==========================================================================
+         FOOTER
+         ========================================================================== -->
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-brand">
@@ -1039,8 +1485,8 @@
     <!-- Back to Top Floating Interactive Button with Circular Progress -->
     <button class="back-to-top" id="backToTopBtn" aria-label="Back to Top" title="Back to top">
         <svg class="progress-ring" width="50" height="50" viewBox="0 0 50 50">
-            <circle class="progress-ring-circle-bg" stroke="rgba(149, 233, 233, 0.15)" stroke-width="3" fill="transparent" r="21" cx="25" cy="25"/>
-            <circle class="progress-ring-circle" id="progressRingCircle" stroke="#95E9E9" stroke-width="3" stroke-dasharray="131.95" stroke-dashoffset="131.95" fill="transparent" r="21" cx="25" cy="25"/>
+            <circle class="progress-ring-circle-bg" stroke="rgba(139, 92, 246, 0.15)" stroke-width="3" fill="transparent" r="21" cx="25" cy="25"/>
+            <circle class="progress-ring-circle" id="progressRingCircle" stroke="#8B5CF6" stroke-width="3" stroke-dasharray="131.95" stroke-dashoffset="131.95" fill="transparent" r="21" cx="25" cy="25"/>
         </svg>
         <i class="fa-solid fa-arrow-up"></i>
     </button>
@@ -1050,8 +1496,8 @@
         <div class="banner-inner">
             <div class="banner-spinner">
                 <svg class="banner-ring" width="44" height="44" viewBox="0 0 44 44">
-                    <circle class="banner-ring-bg" cx="22" cy="22" r="18" stroke="rgba(149, 233, 233, 0.2)" stroke-width="3" fill="transparent"/>
-                    <circle class="banner-ring-fill" id="bannerRingFill" cx="22" cy="22" r="18" stroke="#95E9E9" stroke-width="3" stroke-dasharray="113.1" stroke-dashoffset="0" fill="transparent"/>
+                    <circle class="banner-ring-bg" cx="22" cy="22" r="18" stroke="rgba(139, 92, 246, 0.2)" stroke-width="3" fill="transparent"/>
+                    <circle class="banner-ring-fill" id="bannerRingFill" cx="22" cy="22" r="18" stroke="#22D3EE" stroke-width="3" stroke-dasharray="113.1" stroke-dashoffset="0" fill="transparent"/>
                 </svg>
                 <span class="banner-sec" id="bannerSec">10s</span>
             </div>
