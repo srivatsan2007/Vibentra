@@ -74,13 +74,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Navbar blur and elevation
         if (navbar) {
             if (scrollY > 40) {
-                navbar.style.background = 'rgba(8, 10, 18, 0.94)';
-                navbar.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(139, 92, 246, 0.15)';
-                navbar.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                navbar.classList.add('scrolled');
+                navbar.style.background = 'rgba(250, 245, 232, 0.98)';
+                navbar.style.boxShadow = '0 4px 20px rgba(10, 10, 10, 0.08)';
+                navbar.style.borderColor = '#0A0A0A';
             } else {
-                navbar.style.background = 'rgba(8, 10, 18, 0.85)';
+                navbar.classList.remove('scrolled');
+                navbar.style.background = 'rgba(250, 245, 232, 0.92)';
                 navbar.style.boxShadow = 'none';
-                navbar.style.borderColor = 'rgba(255, 255, 255, 0.10)';
+                navbar.style.borderColor = '#0A0A0A';
             }
         }
     };
@@ -155,9 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let step = 0;
         const waveConfig = [
-            { color: 'rgba(139, 92, 246, 0.22)', speed: 0.015, freq: 0.003, amp: 45, yRatio: 0.52 },
-            { color: 'rgba(34, 211, 238, 0.18)', speed: 0.022, freq: 0.004, amp: 35, yRatio: 0.54 },
-            { color: 'rgba(167, 139, 250, 0.15)', speed: 0.012, freq: 0.0025, amp: 55, yRatio: 0.50 }
+            { color: 'rgba(184, 164, 237, 0.28)', speed: 0.015, freq: 0.003, amp: 45, yRatio: 0.52 },
+            { color: 'rgba(255, 77, 139, 0.20)', speed: 0.022, freq: 0.004, amp: 35, yRatio: 0.54 },
+            { color: 'rgba(164, 212, 197, 0.25)', speed: 0.012, freq: 0.0025, amp: 55, yRatio: 0.50 }
         ];
 
         const renderWaveform = () => {
@@ -378,14 +380,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mockShuffleBtn?.addEventListener('click', () => {
         mockShuffleBtn.classList.toggle('active');
-        mockShuffleBtn.style.color = mockShuffleBtn.classList.contains('active') ? '#8B5CF6' : '';
-        mockShuffleBtn.style.borderColor = mockShuffleBtn.classList.contains('active') ? '#8B5CF6' : '';
+        mockShuffleBtn.style.color = mockShuffleBtn.classList.contains('active') ? '#0A0A0A' : '';
+        mockShuffleBtn.style.backgroundColor = mockShuffleBtn.classList.contains('active') ? '#B8A4ED' : '';
+        mockShuffleBtn.style.borderColor = mockShuffleBtn.classList.contains('active') ? '#0A0A0A' : '';
     });
 
     mockRepeatBtn?.addEventListener('click', () => {
         mockRepeatBtn.classList.toggle('active');
-        mockRepeatBtn.style.color = mockRepeatBtn.classList.contains('active') ? '#22D3EE' : '';
-        mockRepeatBtn.style.borderColor = mockRepeatBtn.classList.contains('active') ? '#22D3EE' : '';
+        mockRepeatBtn.style.color = mockRepeatBtn.classList.contains('active') ? '#0A0A0A' : '';
+        mockRepeatBtn.style.backgroundColor = mockRepeatBtn.classList.contains('active') ? '#B8A4ED' : '';
+        mockRepeatBtn.style.borderColor = mockRepeatBtn.classList.contains('active') ? '#0A0A0A' : '';
     });
 
     setPlaybackState(true);
@@ -813,13 +817,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update hero button visual state
         if (autoDownloadFill) {
             autoDownloadFill.style.width = '100%';
-            autoDownloadFill.style.background = 'linear-gradient(90deg, rgba(16, 185, 129, 0.35), rgba(34, 211, 238, 0.4))';
-            autoDownloadFill.style.borderRightColor = '#10B981';
+            autoDownloadFill.style.background = 'rgba(255, 77, 139, 0.35)';
+            autoDownloadFill.style.borderRightColor = '#0A0A0A';
         }
         if (autoTimerBadge) {
-            autoTimerBadge.style.background = 'rgba(16, 185, 129, 0.25)';
-            autoTimerBadge.style.borderColor = '#10B981';
-            autoTimerBadge.innerHTML = '<i class="fa-solid fa-circle-check text-emerald"></i> Downloading...';
+            autoTimerBadge.style.background = '#A4D4C5';
+            autoTimerBadge.style.borderColor = '#0A0A0A';
+            autoTimerBadge.style.color = '#0A0A0A';
+            autoTimerBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Downloading...';
         }
         if (heroApkText) {
             heroApkText.textContent = 'Downloading APK (99 MB)';
@@ -828,14 +833,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update banner visual state
         if (banner) {
             if (bannerSec) {
-                bannerSec.innerHTML = '<i class="fa-solid fa-check text-emerald"></i>';
+                bannerSec.innerHTML = '<i class="fa-solid fa-check"></i>';
             }
             if (ringFill) {
                 ringFill.style.strokeDashoffset = '0';
-                ringFill.setAttribute('stroke', '#10B981');
+                ringFill.setAttribute('stroke', '#0A0A0A');
             }
             if (bannerSubText) {
-                bannerSubText.innerHTML = '<span class="text-emerald"><i class="fa-solid fa-circle-check"></i> <b>Download initiated!</b> Check your browser downloads for <code>vibentra.apk</code>.</span>';
+                bannerSubText.innerHTML = '<span><i class="fa-solid fa-circle-check"></i> <b>Download initiated!</b> Check your browser downloads for <code>vibentra.apk</code>.</span>';
             }
             if (bannerDownloadNowBtn) {
                 bannerDownloadNowBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Downloaded';
@@ -924,12 +929,15 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadTriggered = true;
             if (banner) banner.classList.remove('show');
             if (autoTimerBadge) {
-                autoTimerBadge.innerHTML = '<i class="fa-solid fa-circle-check text-emerald"></i> Downloaded';
-                autoTimerBadge.style.background = 'rgba(16, 185, 129, 0.25)';
-                autoTimerBadge.style.borderColor = '#10B981';
+                autoTimerBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Downloaded';
+                autoTimerBadge.style.background = '#A4D4C5';
+                autoTimerBadge.style.borderColor = '#0A0A0A';
+                autoTimerBadge.style.color = '#0A0A0A';
             }
             if (autoDownloadFill) {
                 autoDownloadFill.style.width = '100%';
+                autoDownloadFill.style.background = 'rgba(255, 77, 139, 0.35)';
+                autoDownloadFill.style.borderRightColor = '#0A0A0A';
             }
         }
     });
