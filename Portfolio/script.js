@@ -827,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
             autoTimerBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Downloading...';
         }
         if (heroApkText) {
-            heroApkText.textContent = 'Downloading APK (99 MB)';
+            heroApkText.textContent = 'Downloading APK (60 MB)';
         }
 
         // Update banner visual state
